@@ -1,2 +1,2 @@
 # AgoRapide
-Lightweight pragmatic integrated .NET REST API offering JSON and HTML views written in C# 7.0
+Lightweight pragmatic integrated .NET REST API offering JSON and HTML views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
