@@ -1,12 +1,12 @@
 # AgoRapide
-Lightweight pragmatic integrated library for creation of .NET REST API offering JSON and HTML views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
+Lightweight pragmatic integrated library for creation of .NET REST APIs offering JSON and HTML views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
 
 PLEASE NOTE: AgoRapide is currently in the alpha-stage of development. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document!
 
 # What is AgoRapide?
 (Note: For code examples please scroll further down)
 
-AgoRapide is a REST API library based on .NET offering JSON and HTML views.
+AgoRapide is a .NET library for creation of REST APIs offering JSON and HTML views.
 
 AgoRapide is open sourced and MIT-licensed 
 
@@ -50,7 +50,7 @@ public enum P {
     [AgoRapide(
         Description = "Used for demo-method in -" + nameof(SomeController.DemoDoubler) + "-",
         SampleValues = new string[] { "42", "1968", "2001" },
-		InvalidValues = new string[] { "1.0" },
+        InvalidValues = new string[] { "1.0" },
         Type = typeof(long))]
     SomeNumber,
 	...
@@ -85,7 +85,7 @@ public class SomeController : BaseController {
 
 Note how methods are data just like everything else in your API (illustrating our idea of avoiding repetition, we just reuse the general API-mechanism for documentation purposes). 
 
-[This method](http://sample.agorapide.com/api/APIMethod/1443/HTML) [JSON](http://sample.agorapide.com/api/APIMethod/1443/)
+[This method](http://sample.agorapide.com/api/APIMethod/1443/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/APIMethod/1443/)
 
 (TODO: Link will probably break in the near future)
 
@@ -93,21 +93,21 @@ Note suggested URLs for immediate testing.
 
 Test friendliness of API:
 
-[Call method with missing parameter](http://sample.agorapide.com/api/DemoDoubler/HTML) [JSON](http://sample.agorapide.com/api/DemoDoubler)
+[Call method with missing parameter](http://sample.agorapide.com/api/DemoDoubler/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/DemoDoubler)
 
 Note suggestions of complete URL for valid parameter.
 
-[Call method with invalid parameter](http://sample.agorapide.com/api/DemoDoubler/1.0/HTML) [JSON](http://sample.agorapide.com/api/DemoDoubler/1.0)
+[Call method with invalid parameter](http://sample.agorapide.com/api/DemoDoubler/1.0/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/DemoDoubler/1.0)
 
 Note suggestion of sample values.
 
-[Call method normally](http://sample.agorapide.com/api/DemoDoubler/42/HTML) [JSON](http://sample.agorapide.com/api/DemoDoubler/42)
+[Call method normally](http://sample.agorapide.com/api/DemoDoubler/42/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/DemoDoubler/42)
 
-[Call method provocate exception](http://sample.agorapide.com/api/DemoDoubler/7777777777777777777/HTML) [JSON](http://sample.agorapide.com/api/)DemoDoubler/7777777777777777777)>
+[Call method provocate exception](http://sample.agorapide.com/api/DemoDoubler/7777777777777777777/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/)DemoDoubler/7777777777777777777)>
 
 Note balance between security (holding back information) and user friendliness (giving out information). Some exception information is given but not everything.
 
-[Ask for exception details](http://sample.agorapide.com/api/ExceptionDetails/HTML) [JSON](http://sample.agorapide.com/api/ExceptionDetails)
+[Ask for exception details](http://sample.agorapide.com/api/ExceptionDetails/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/ExceptionDetails)
 
 (use credentials admin / admin for above link)
 
@@ -179,15 +179,15 @@ Properties of objects like Person.FirstName are usually implemented as public st
 
 These have instead been generalised by AgoRapide and are accessed like 
 
-Person.PV&lt;string&gt;(P.FirstName) (where P is the enum used throughout your application)
+person.PV&lt;string&gt;(P.FirstName) (where P is the enum used throughout your application)
 
 or more static strongly typed as
 
-.PVM&lt;Colour&gt;() or 
+person.PVM&lt;Colour&gt;() or 
 
-Person.PV&lt;int&gt;(P.Age). 
+person.PV&lt;int&gt;(P.Age). 
 
-Of course, if you see that you have to repeat Person.PV&lt;int&gt;(P.Age) all over your codebase then you just implement a traditional property getter int Age =&gt; PV&lt;int&gt;(P.Age). But please note that you still do not have to implement the setter (and validator) as that is done from a general properties collection.
+Of course, if you see that you have to repeat person.PV&lt;int&gt;(P.Age) all over your codebase then you just implement a traditional property getter int Age =&gt; PV&lt;int&gt;(P.Age). But please note that you still do not have to implement the setter (and validator) as that is done from a general properties collection.
 
 ## Creating tables is a repetition:
 (optional for you to apply. You may use a traditional database and still leverage all of the API functionality of AgoRapide).
@@ -240,7 +240,7 @@ The entity model can be changed very rapidly. The database schema will usually n
 
 Example: UPDATE p SET name = 'colour' WHERE name = 'color' together with a simple rename of enum P.color to P.colour in the C# code. 
 
-You do not need to implement specific accessors in your objects. Properties are accessed in a strongly static typed fashion like car.PAs&lt;P_colour&gt; (PAs is shorthand for "property as..."). 
+You do not need to implement specific accessors in your objects. Properties are accessed in a strongly static typed fashion like car.PAs&lt;Colour&gt; (PAs is shorthand for "property as..."). 
 
 Changes in relations can likewise be adjusted through UPDATE statements. 
 
@@ -261,14 +261,18 @@ at AgoRapideSample.AnotherController.DemoDoubler
 in C:\AgoRapide2\trunk\AgoRapideSample\Controllers\AnotherController.cs:line 35 
 2017-03-22 15:25:01.839: 13: AnotherController.TryGetRequest: Parameter SomeNumber: 7777777777777777777 
 
-[Or ask for last exception](http://sample.agorapide.com/api/ExceptionDetails/HTML) [JSON](http://sample.agorapide.com/api/ExceptionDetails)
+[Or ask for last exception](http://sample.agorapide.com/api/ExceptionDetails/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/ExceptionDetails)
 
 (use credentials admin / admin for above link)
 
 Note how actual data in both exception message and log greatly helps in pinpointing problem.
 
 ## A history of all changes to database
-AgoRapide does not even support the concept of deletion. Properties are only added to the database, with older properties marked as invalid. The entity (the user) doing the change is also logged telling you who change what data. See methods like Property/{IntegerQueryId}/History.
+AgoRapide does not even support the concept of deletion. 
+
+Properties are only added to the database, with older properties marked as invalid. 
+
+The entity (the user) doing the change is also logged telling you who changed what data. See methods like Property/{IntegerQueryId}/History.
 
 ## A C# centric approach. 
 AgoRapide is more C# centric than database centric in the sense that the database schema is in reality stored as C# code. Auto generated libraries are then used as basis for access through other programming environment (like Java, Swift, ObjectiveC and so on). 
@@ -280,7 +284,7 @@ A philosophy similar to AgoRapide has been used with success in projects where:
 
 The entity model is relatively simple (10-20 types of entities). 
 
-Each entity has lots of field associated with it (no need to implement accessors for each and every field). 
+Each entity has lots of field associated with it and the fields change over time (since there is no need to implement accessors for each and every field there is little code to keep updated). 
 
 Entity fields rapidly change name or character as you develop (changing names is extremely simple for instance). 
 
@@ -313,13 +317,15 @@ TODO: As of March 2017 we have not worked out how to automate this yet. Contribu
 
 # Future development.
 
-(we have a thousand other ideas, please give us a call if you are interested in contributing)
+(we have a thousand other ideas than those listed below, please give us a call if you are interested in contributing)
 
 AgoRapide and AgoRapideSample as Nuget packages.
 
 Doing security more "right" while the library is still quite small and easy to understand.
 
 Support for OAuth 2.0 in AgoRapideSample. 
+
+Support for relations in user interface (everything is thought through, only time is needed for implementation)
 
 Unit testing (data driven based on existing annotations). 
 
@@ -328,6 +334,7 @@ Support for other database engines than PostgreSQL.
 Support for "traditional" database tables (multiple tables instead of the current single table approach). 
 
 # FAQ
+
 ## What do you  mean by HTML administrative view?
 A rudimentary interface useful for administrering your backend, API, and doing support. 
 
@@ -351,7 +358,9 @@ Use AgoRapideSample as a starting point and you should be up and running with yo
 ## Other interesting aspects about AgoRapide?
 Yes, of course! 
 
-A particular useful feature is impersonating users through the "entity-to-represent" and "represented-by-entity" concept. With this concept the API can give the view of one API client (user) based on the credentials of another API-client (administrative user). In practice this means that your support department may see exactly the same data as your customer sees in your application, without the customer having to give away his / her / its password. 
+A particular useful feature is impersonating users through the "entity-to-represent" and "represented-by-entity" concept. With this concept the API can give the view of one API client (user) based on the credentials of another API-client (administrative user). 
+
+In practice this means that your support department may see exactly the same data as your customer sees in your application, without the customer having to give away his / her / its password. 
 
 ## What is AgoRapide.com?
 AgoRapide.com is an earlier implementation of the same idea as the AgoRapide C# library. 
@@ -372,9 +381,13 @@ Great care has been taken in order to avoid repetitive calculations within the c
 Entity properties however are read from a dictionary, instad of directly. This could be an issue if you intensively use certain properties repeatedly. In such cases you can always implement traditional cached properties though as needed.
 
 ## What security features does AgoRapide has?
-There is a focus on offering user friendliness if you so desire. This means that you have the choice of having only the basic authorization done by an "outside" mechanism like Basic Authentication, OAuth or similar. 
+There is a focus on offering user friendliness if you so desire. 
 
-You may choose to have further authorization like distinguishing between ordinary users and administrative users of your application done within the library. This gives easy administration and friendly error messages. Use with caution however!
+This means that you have the choice of having only the basic authorization done by an "outside" mechanism like Basic Authentication, OAuth or similar. 
+
+You may choose to have further authorization like distinguishing between ordinary users and administrative users of your application done within the library. This gives easy administration and friendly error messages. 
+
+Use with caution however!
 
 ## How does AgoRapide relate to Entity Framework and Razor?
 AgoRapide does not use any of these concepts. 
