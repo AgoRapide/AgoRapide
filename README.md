@@ -44,21 +44,23 @@ and C# 6.0 for instance, or something even older, but it has not been tested yet
 ### Annotate a special enum (if needed):
 
 ```C#
-    public enum P {
-        None,
-		...
-        [AgoRapide(
-            Description = "Used for demo-method in -" + nameof(AnotherController.DemoDoubler) + "-",
-            SampleValues = new string[] { "42", "1968", "2001" },
-			InvalidValues = new string[] { "1.0" },
-            Type = typeof(long))]
-        SomeNumber,
-		...
-    }
+public enum P {
+    None,
+	...
+    [AgoRapide(
+        Description = "Used for demo-method in -" + nameof(SomeController.DemoDoubler) + "-",
+        SampleValues = new string[] { "42", "1968", "2001" },
+		InvalidValues = new string[] { "1.0" },
+        Type = typeof(long))]
+    SomeNumber,
+	...
+}
+```
 
-### Create method
+### Create API method
 
 ```C#
+public class SomeController : BaseController {
     [HttpGet]
     [Method(
         Description = "Doubles the number given (every time)",
@@ -74,14 +76,57 @@ and C# 6.0 for instance, or something even older, but it has not been tested yet
             DBDispose();
         }
     }
+}
+```
 
+### Test method
+
+[All methods] (http://sample.agorapide.com/)
+
+[This method] (http://sample.agorapide.com/api/APIMethod/1443/HTML) [JSON] (http://sample.agorapide.com/api/APIMethod/1443/)
+
+(TODO: Link will probably break in the near future)
+
+Note suggested URLs for immediate testing.
+
+Test friendliness of API:
+
+[Call method with missing parameter] (http://sample.agorapide.com/api/DemoDoubler/HTML) [JSON] (http://sample.agorapide.com/api/DemoDoubler)
+
+Note suggestions of complete URL for valid parameter.
+
+[Call method with invalid parameter] (http://sample.agorapide.com/api/DemoDoubler/1.0/HTML) [JSON] (http://sample.agorapide.com/api/DemoDoubler/1.0)
+
+Note suggestion of sample values.
+
+[Call method normally] (http://sample.agorapide.com/api/DemoDoubler/42/HTML) [JSON] (http://sample.agorapide.com/api/DemoDoubler/42)
+
+[Call method provocate exception] (http://sample.agorapide.com/api/DemoDoubler/7777777777777777777/HTML) [JSON] (http://sample.agorapide.com/api/)DemoDoubler/7777777777777777777)>
+
+Note balance between security (holding back information) and user friendliness (giving out information). Some exception information is given but not everything.
+
+[Ask for exception details] (http://sample.agorapide.com/api/ExceptionDetails/HTML) [JSON] (http://sample.agorapide.com/api/ExceptionDetails)
+
+(use credentials admin / admin for above link)
+
+Note logging of parameter values (although exception message only says OverflowException the log itself has kept the actual data value (like 7777777777777777777) facilitating easier debugging)
 
 # How AgoRapide avoids repetition:
 ## Creating API-methods is a repetition:
 API-methods of the form GetSomeObjectTypeBySomePropertyValue have been generalised in AgoRapide into one single idea, Api/SomeObjectType/WHERE property = 'value', meaning you do not have to repeatedly create API-methods that in essence are copies of each other. And since the general mechanism supports all kinds of operators like "greater than", "less than" and so on, you get all that flexibility for all your object classes, not only those that you write specific API-methods for.
 
 ## Creating properties of objects is a repetition:
-Properties of objects like Person.FirstName are usually implemented as public string FirstName { get; set; }. This is just another kind of repetition. These have been generalised by AgoRapide into Person.PV&lt;string&gt;(P.FirstName) where P is an enum. Or more static strongly typed as Car.PVM&lt;Colour&gt;() or Person.PV&lt;int&gt;(P.Age). Of course, if you see that you have to repeat Person.PV&lt;int&gt;(P.Age) all over your codebase then you just implement a traditional property getter int Age =&gt; PV&lt;int&gt;(P.Age). But please note that you still do not have to implement the setter (and validator) as that is done from a general properties collection.
+Properties of objects like Person.FirstName are usually implemented as public string FirstName { get; set; }. This is just another kind of repetition. 
+
+These have instead been generalised by AgoRapide and are accessed like 
+
+Person.PV&lt;string&gt;(P.FirstName) (where P is the enum used throughout your application)
+
+or more static strongly typed as Car
+
+.PVM&lt;Colour&gt;() or Person.PV&lt;int&gt;(P.Age). 
+
+Of course, if you see that you have to repeat Person.PV&lt;int&gt;(P.Age) all over your codebase then you just implement a traditional property getter int Age =&gt; PV&lt;int&gt;(P.Age). But please note that you still do not have to implement the setter (and validator) as that is done from a general properties collection.
 
 ## Creating tables is a repetition:
 (optional for you to apply. You may use a traditional database and still leverage almost all the API functionality of AgoRapide).
