@@ -1,5 +1,5 @@
 # AgoRapide
-Lightweight pragmatic integrated .NET REST API offering JSON and HTML views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
+Lightweight pragmatic integrated library for creation of .NET REST API offering JSON and HTML views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
 
 PLEASE NOTE: AgoRapide is currently in the alpha-stage of development. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document!
 
@@ -36,6 +36,45 @@ AgoRapide is written all-new in C# 7.0 targettng .NET framework 4.5.2 (using Vis
 
 The compiled DLLs should be possible to reference in older environments (like Visual Studio 2015 
 and C# 6.0 for instance, or something even older, but it has not been tested yet)
+
+# Code examples:
+
+## Implement a simple API method:
+
+### Annotate a special enum (if needed):
+
+```C#
+    public enum P {
+        None,
+		...
+        [AgoRapide(
+            Description = "Used for demo-method in -" + nameof(AnotherController.DemoDoubler) + "-",
+            SampleValues = new string[] { "42", "1968", "2001" },
+			InvalidValues = new string[] { "1.0" },
+            Type = typeof(long))]
+        SomeNumber,
+		...
+    }
+
+### Create method
+
+```C#
+    [HttpGet]
+    [Method(
+        Description = "Doubles the number given (every time)",
+        S1 = "DemoDoubler", S2 = P.SomeNumber)]
+    public object DemoDoubler(string SomeNumber) {
+        try {
+            if (!TryGetRequest(SomeNumber, out var request, out var errorResponse)) return errorResponse;
+            var answer = checked(request.Parameters.PV<long>(P.SomeNumber) * 2);
+            return request.GetOKResponseAsText(answer.ToString(), "Your number doubled is: " + answer);
+        } catch (Exception ex) {
+            return HandleExceptionAndGenerateResponse(ex);
+        } finally {
+            DBDispose();
+        }
+    }
+
 
 # How AgoRapide avoids repetition:
 ## Creating API-methods is a repetition:
