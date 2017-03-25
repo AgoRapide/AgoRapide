@@ -30,8 +30,7 @@ namespace AgoRapideSample {
             S1 = "DemoDoubler", S2 = P.SomeNumber)]
         public object DemoDoubler(string SomeNumber) {
             try {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                ValidRequest<P> request; object errorResponse; if (!TryGetRequest(SomeNumber, out request, out errorResponse)) return errorResponse;
+                if (!TryGetRequest(SomeNumber, out var request, out var errorResponse)) return errorResponse;
                 var answer = checked(request.Parameters.PV<long>(P.SomeNumber) * 2);
                 return request.GetOKResponseAsText(answer.ToString(), "Your number doubled is: " + answer);
             } catch (Exception ex) {
@@ -48,8 +47,7 @@ namespace AgoRapideSample {
             S1 = "DemoTripler", S2 = P.SomeNumber)]
         public object DemoTripler(string SomeNumber) {
             try {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                ValidRequest<P> request; object errorResponse; if (!TryGetRequest(SomeNumber, out request, out errorResponse)) return errorResponse;
+                if (!TryGetRequest(SomeNumber, out var request, out var errorResponse)) return errorResponse;
                 var answer = request.Parameters.PV<long>(P.SomeNumber) * 3;
                 return request.GetOKResponseAsText(answer.ToString(), "Your number tripled is: " + answer);
             } catch (Exception ex) {

@@ -177,8 +177,7 @@ namespace AgoRapide.API {
             // TODO: INCREASE LIMIT OF NUMBER OF PARAMETERS HERE!
             Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(p1) + ": " + p1 + ", " + nameof(p2) + ": " + p2 + ", " + nameof(p3) + ": " + p3 + ", " + nameof(p4) + ": " + p4 + ", " + nameof(p5) + ": " + p5);
             method.A.A.AssertCoreMethod(CoreMethod.AddEntity);
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected            
-            ValidRequest<TProperty> request; object errorResponse; if (!TryGetRequest(p1, p2, p3, p4, p5, method, out request, out errorResponse)) return errorResponse;
+            if (!TryGetRequest(p1, p2, p3, p4, p5, method, out var request, out var errorResponse)) return errorResponse;
             foreach (var p in request.Parameters.Properties.Values.Where(p => p.KeyA.A.IsUniqueInDatabase)) {
                 Property<TProperty> existing; string strErrorResponse; if (!DB.TryAssertUniqueness(p.KeyT, p.ADotTypeValue(), out existing, out strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
             }
@@ -196,12 +195,10 @@ namespace AgoRapide.API {
         public object HandleCoreMethodEntityIndex(APIMethod<TProperty> method, string id) {
             Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(id) + ": " + id);
             method.A.A.AssertCoreMethod(CoreMethod.EntityIndex);
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            ValidRequest<TProperty> request; object errorResponse; if (!TryGetRequest(id, method, out request, out errorResponse)) return errorResponse;
+            if (!TryGetRequest(id, method, out var request, out var errorResponse)) return errorResponse;
             var queryId = request.Parameters.PVM<QueryId<TProperty>>();
             /// TODO: Utilize <see cref="APIMethod{TProperty}.EntityType"/> here. Maybe give up having TryGetEntities generic?
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            List<BaseEntityT<TProperty>> entities; Tuple<ResultCode, string> tplErrorResponse; if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, useCache: false, requiredType: method.EntityType, entities: out entities, errorResponse: out tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
         }
 
@@ -220,11 +217,9 @@ namespace AgoRapide.API {
             var objValue = parseResult.Result.ADotTypeValue();
 
             if (tPropertyKey.GetAgoRapideAttribute().A.IsUniqueInDatabase) {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                Property<TProperty> existing; string strErrorResponse; if (!DB.TryAssertUniqueness(tPropertyKey, objValue, out existing, out strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
+                if (!DB.TryAssertUniqueness(tPropertyKey, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
             }
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected            
-            List<BaseEntityT<TProperty>> entities; Tuple<ResultCode, string> tplErrorResponse; if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out entities, errorResponse: out tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, tPropertyKey, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             var integerQueryId = queryId as IntegerQueryId<TProperty>;
@@ -236,11 +231,9 @@ namespace AgoRapide.API {
         public object HandleCoreMethodPropertyOperation(APIMethod<TProperty> method, string id, string operation) {
             Log(nameof(id) + ": " + id + ", " + nameof(operation) + ": " + operation);
             method.A.A.AssertCoreMethod(CoreMethod.PropertyOperation);
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            ValidRequest<TProperty> request; object objErrorResponse; if (!TryGetRequest(id, operation, method, out request, out objErrorResponse)) return objErrorResponse;
+            if (!TryGetRequest(id, operation, method, out var request, out var objErrorResponse)) return objErrorResponse;
             var queryId = request.Parameters.PVM<QueryId<TProperty>>();
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            List<Property<TProperty>> properties; Tuple<ResultCode, string> tplErrorResponse; if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, entities: out properties, errorResponse: out tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, entities: out List<Property<TProperty>> properties, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;
             var integerQueryId = queryId as IntegerQueryId<TProperty>;
@@ -252,18 +245,14 @@ namespace AgoRapide.API {
         public object HandleCoreMethodHistory(APIMethod<TProperty> method, string id) {
             Log(nameof(id) + ": " + id);
             method.A.A.AssertCoreMethod(CoreMethod.History);
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            ValidRequest<TProperty> request; object objErrorResponse; if (!TryGetRequest(id, method, out request, out objErrorResponse)) return objErrorResponse;
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            BaseEntityT<TProperty> entity; Tuple<ResultCode, string> tplErrorResponse; if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<IntegerQueryId<TProperty>>(), AccessType.Read, useCache: false, entity: out entity, errorResponse: out tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!TryGetRequest(id, method, out var request, out var objErrorResponse)) return objErrorResponse;
+            if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<IntegerQueryId<TProperty>>(), AccessType.Read, useCache: false, entity: out BaseEntityT<TProperty> entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntityT<TProperty>)p).ToList());
         }
 
         public object HandleCoreMethodExceptionDetails(APIMethod<TProperty> method) {
             Log("");
             method.A.A.AssertCoreMethod(CoreMethod.ExceptionDetails);
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            // ValidRequest<P> request; object errorResponse; if (!TryGetRequest(out request, out errorResponse)) return errorResponse;
             var request = new Request<TProperty>(Request, method, CurrentUser(method), exceptionHasOccurred: false);
 
             var logDirectory = System.IO.Path.GetDirectoryName(Util.Configuration.LogPath);
