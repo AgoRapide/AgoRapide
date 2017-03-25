@@ -11,6 +11,7 @@ namespace AgoRapide.Core {
     /// TODO: Use <see cref="AgoRapideAttribute"/> itself on this class in order to describe the different
     /// TODO: elements instead of using XML comments.
     /// 
+    /// 
     /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
     /// 
     /// Use for describing either

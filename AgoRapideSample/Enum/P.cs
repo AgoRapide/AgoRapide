@@ -96,10 +96,10 @@ namespace AgoRapideSample {
         AuthResult,
 
         [AgoRapide(
-            Type = typeof(Colour), 
-            Parents = new Type[] { typeof(Car) }, 
-            IsObligatory = true, 
-            AccessLevelRead = AccessLevel.Anonymous, 
+            Type = typeof(Colour),
+            Parents = new Type[] { typeof(Car) },
+            IsObligatory = true,
+            AccessLevelRead = AccessLevel.Anonymous,
             AccessLevelWrite = AccessLevel.Anonymous)]
         Colour,
 
@@ -145,22 +145,14 @@ namespace AgoRapideSample {
     /// </summary>
     public class NorwegianPostalCode : ITypeDescriber {
         public string Value { get; private set; }
-        public override string ToString() => Value; // ?? throw new NullReferenceException(nameof(Value)); // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 unable to use ?? operator here
+        public override string ToString() => Value ?? throw new NullReferenceException(nameof(Value));
 
         private NorwegianPostalCode(string value) {
             // Private constructor, value to be trusted
-            //var validatorResult = Validator(value);
-            //if (validatorResult != null) throw new InvalidNorwegianPostalCodeException(validatorResult);
             Value = value;
         }
 
-        // public static NorwegianPostalCode Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidNorwegianPostalCodeException(errorResponse);
-        public static bool TryParse(string value, out NorwegianPostalCode norwegianPostalCode) {
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            string dummy;
-            return TryParse(value, out norwegianPostalCode, out dummy);
-        }
-
+        public static bool TryParse(string value, out NorwegianPostalCode norwegianPostalCode) => TryParse(value, out norwegianPostalCode, out _);
         public static bool TryParse(string value, out NorwegianPostalCode norwegianPostalCode, out string errorResponse) {
             var validatorResult = Validator(value);
             if (validatorResult != null) {
@@ -176,8 +168,8 @@ namespace AgoRapideSample {
         private static Func<string, string> Validator = value => {
             if (value == null) return "value == null";
             if (value.Length != 4) return "value.Length != 4";
-            // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-            int dummy; if (!int.TryParse(value, out dummy)) return "Invalid integer";
+            /// Note how result of <see cref="int.TryParse"/> is not wasted because we actually would not use it anyway
+            if (!int.TryParse(value, out _)) return "Invalid integer";
             return null;
         };
 
@@ -191,13 +183,11 @@ namespace AgoRapideSample {
             /// enumAttribute.Cleaner=
             /// 
             /// TODO: IMPLEMENT CHAINING OF VALIDATION!
-            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult<P>>(value => {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                NorwegianPostalCode retval; string errorResponse;
-                return TryParse(value, out retval, out errorResponse) ?
+            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult<P>>(value =>
+                TryParse(value, out var retval, out var errorResponse) ?
                     new ParseResult<P>(new Property<P>(agoRapideAttribute.P, retval), retval) :
-                    new ParseResult<P>(errorResponse);
-            });
+                    new ParseResult<P>(errorResponse)
+            );
         }
 
         public class InvalidNorwegianPostalCodeException : ApplicationException {

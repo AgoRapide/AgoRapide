@@ -312,9 +312,8 @@ namespace AgoRapideSample {
                     // NOTE:   context.ErrorResult = errorResultGenerator();
                     // NOTE: here if security is important. 
 
-                    // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                    Tuple<AgoRapide.APIMethod<P>, List<string>> exactMatch; Tuple<List<AgoRapide.APIMethod<P>>, int, string> candidateMatches; Tuple<List<AgoRapide.APIMethod<P>>, string> dummy1; 
-                    AgoRapide.API.Request<P>.GetMethodsMatchingRequest(context.Request, AgoRapide.API.Request<P>.GetResponseFormatFromURL(context.Request.RequestUri.ToString()), out exactMatch, out candidateMatches, out dummy1);
+                    // Tuple<AgoRapide.APIMethod<P>, List<string>> exactMatch; Tuple<List<AgoRapide.APIMethod<P>>, int, string> candidateMatches; Tuple<List<AgoRapide.APIMethod<P>>, string> dummy1; 
+                    AgoRapide.API.Request<P>.GetMethodsMatchingRequest(context.Request, AgoRapide.API.Request<P>.GetResponseFormatFromURL(context.Request.RequestUri.ToString()), out var exactMatch, out var candidateMatches, out _);
                     if (
                         (exactMatch != null && exactMatch.Item1.RequiresAuthorization) ||
                         (candidateMatches != null && candidateMatches.Item1.Any(m => m.RequiresAuthorization))
@@ -329,8 +328,7 @@ namespace AgoRapideSample {
                     if (credArray.Length != 2) {
                         context.ErrorResult = errorResultGenerator();
                     } else {
-                        // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                        AgoRapide.BaseEntityT<P> currentUser; if (!database.TryVerifyCredentials(credArray[0], credArray[1], out currentUser)) {
+                        if (!database.TryVerifyCredentials(credArray[0], credArray[1], out var currentUser)) {
                             context.ErrorResult = errorResultGenerator();
                         } else {
                             generatePrincipal(currentUser);

@@ -22,8 +22,7 @@ namespace AgoRapideSample {
         /// </summary>
         public override string Name {
             get {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                string retval; if (TryGetPV<string>(M(CoreProperty.Name), out retval)) return retval;
+                if (TryGetPV(M(CoreProperty.Name), out string retval)) return retval;
                 var firstName = PV(P.FirstName, "");
                 var lastName = PV(P.LastName, "");
                 if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName)) {

@@ -20,8 +20,7 @@ namespace AgoRapideSample {
         [Method(CoreMethod = CoreMethod.RootIndex)]
         public object RootIndex() {
             try {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                ValidRequest<P> request; object errorResponse; if (!TryGetRequest(out request, out errorResponse)) return errorResponse;
+                if (!TryGetRequest(out var request, out var errorResponse)) return errorResponse;
                 request.ForceHTMLResponse(); // It is much more user friendly to have HTML respons always here. If JSON is needed it can always be obtained by querying api/Method/All or similar.
                 // TODO: Replace this with dictionary with links
                 // TODO: Like AllMethods, AllClassAndMethod, AllEnumClass
@@ -49,8 +48,7 @@ namespace AgoRapideSample {
             S1 = nameof(CoreMethod.GeneralQuery), S2 = CoreProperty.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
         public object GeneralQuery(string GeneralQueryId) {
             try {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                ValidRequest<P> request; object errorResponse; if (!TryGetRequest(GeneralQueryId, out request, out errorResponse)) return errorResponse;
+                if (!TryGetRequest(GeneralQueryId, out var request, out var errorResponse)) return errorResponse;
 
                 /// TODO: PostgreSQL specific? Where do we want to add this?
                 /// TODO: Should we add a WILDCARD-parameter to <see cref="PropertyValueQueryId{TProperty}"/>.
@@ -111,8 +109,7 @@ namespace AgoRapideSample {
             ShowDetailedResult = true)]
         public object AddFirstAdminUser(string Email, string Password) {
             try {
-                // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-                ValidRequest<P> request; object errorResponse; if (!TryGetRequest(Email, Password, out request, out errorResponse)) return errorResponse;
+                if (!TryGetRequest(Email, Password, out var request, out var errorResponse)) return errorResponse;
 
                 // Check that the only person in the database at the moment is the anonymous user created by Startup.cs
                 // ------------------------------
@@ -178,53 +175,5 @@ namespace AgoRapideSample {
                 DBDispose();
             }
         }
-
-        ///// <summary>
-        ///// TODO: DOCUMENT CORRECTLYT
-        ///// TODO: DELETE THIS? Together with <see cref="CoreMethod.HTTPStatus"/>???
-        ///// --
-        ///// Returns an HTTP / HTML-respons with the specified HTTP {status_code} and the specified plain-text {message}<br>
-        ///// <br>
-        ///// Not used by the API itself. Used for presentation of static HTML pages in order to have standardized error-pages<br>
-        ///// <br>
-        ///// TODO: Clarify this statement: 
-        ///// Could be used in web.config in order to return standardised 404-responses where also the 404-code is kept
-        ///// in order to function correct against search engines (see system.webServer, httpErrors)
-        ///// <br>
-        ///// If {status_code} is not given or if {status_code} is an invalid HTTP status code then 404 is assumed.<br>
-        ///// If {message} is not given then "Page not found" is assumed.<br>
-        ///// if {status_code} starts with '3' and {message} starts with 'http' then the HTTP Location header in the returned response will be set to {message}
-        ///// <br>
-        ///// HTML is returned regardless of HTML being added at the end of the query-string or not.<br>
-        ///// <br>
-        ///// SampleS:
-        /////   Api("HTTPStatus")
-        /////   Api("HTTPStatus?status_code=404")
-        /////   Api("HTTPStatus?status_code=404&message=Page%20not%20found")
-        /////   Api("HTTPStatus?status_code=301&message=http_COLON__SLASH__SLASH_new.location/")
-        ///// --
-        ///// </summary>
-        ///// <returns></returns>
-        //[HttpGet]
-        //[Method(CoreMethod = CoreMethod.HTTPStatus, S1 = "HTTPStatus", S2 = P.http_status_code)]
-        //public object HTTPStatus(string http_status_code) { // , string message) {
-        //    try {
-        //        // TODO: REPLACE THIS WITH TryGetParameter syntax
-        //        // Due to bug in Visual Studio 2017 RC build 15.0.26014.0 we can not inline variable declaration here. Leads to CS1003	Syntax error, ',' expected
-        //        System.Net.HttpStatusCode statusCode; if (!Util.EnumTryParse(http_status_code, out statusCode)) statusCode = System.Net.HttpStatusCode.NotFound;
-        //        // TODO: REPLACE THIS WITH TryGetParameter syntax
-        //        // TODO: (since with new system we can validate all parameters behind the scenes)
-
-        //        throw new NotImplementedException();
-        //        //if (string.IsNullOrEmpty(message)) message = "Page not found";
-        //        //message = Util.UrlDecodeAdditional(message);
-        //        //string location = null; if (message.ToLower().StartsWith("http") && ((int)statusCode).ToString().StartsWith("3")) location = message;
-        //        //return GenerateHTMLResponse("<html><body><p>" + message.HTMLEncode() + "</p></body></html>", statusCode, location);
-        //    } catch (Exception ex) {
-        //        return HandleExceptionAndGenerateResponse(ex);
-        //    } finally {
-        //        DBDispose();
-        //    }
-        //}
     }
 }
