@@ -47,9 +47,9 @@ namespace AgoRapide.Core {
             if (!type.IsEnum) throw new NotOfTypeEnumException(type);
             var retval = new List<T>();
 
-            foreach (T value in Enum.GetValues(type)) {
+            foreach (var value in Enum.GetValues(type)) {
                 if (value.Equals(exclude)) continue;
-                retval.Add(value);
+                retval.Add((T)value);
             }
             return retval;
         }

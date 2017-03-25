@@ -61,12 +61,12 @@ namespace AgoRapideSample {
                 }, Operator.ILIKE, GeneralQueryId);
                 /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId{TProperty}"/>.
                 /// Note relatively expensive reading of whole <see cref="Person"/>-objects now. 
-                List<Person> persons; Tuple<ResultCode, string> tplErrorResponse; if (!DB.TryGetEntities(                    
+                if (!DB.TryGetEntities(                    
                     request.CurrentUser.RepresentedByEntity ?? request.CurrentUser, /// Note how search will always be done viewed from <see cref="BaseEntityT{TProperty}.RepresentedByEntity"/>
                     queryId,
                     AccessType.Read, useCache: true,
-                    entities: out persons,
-                    errorResponse: out tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+                    entities: out List<Person> persons,
+                    errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
                 // Note, you can search for other types of entities here also, and add the corresponding persons to the
                 // persons collection found now. 
                 if (persons.Count == 0) return request.GetErrorResponse(ResultCode.data_error, "No persons found for query '" + GeneralQueryId + "'");

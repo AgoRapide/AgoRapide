@@ -408,16 +408,12 @@ namespace AgoRapide.Core {
         public static AgoRapideAttribute GetAgoRapideAttribute(Type type) {
             var retval = (AgoRapideAttribute)GetCustomAttribute(type, typeof(AgoRapideAttribute));
             if (retval == null) return GetNewDefaultInstance();
-            if (type.ToStringVeryShort().Equals("Person")) {
-                var a = 1;
-            }
             if (string.IsNullOrEmpty(retval.DefinedForClass) || type.ToStringVeryShort().Equals(retval.DefinedForClass)) {
                 return retval;
             }
-
             /// Create whole new instance and set <see cref="IsInherited"/> for it. 
             var newRetval = GetNewDefaultInstance();
-            newRetval.EnrichFrom(retval); /// TODO: Ensure that <see cref="EnrichFrom"/> is up-to-date
+            newRetval.EnrichFrom(retval); /// TODO: Ensure that code in <see cref="EnrichFrom"/> is up-to-date (last checked Feb 2017)
             newRetval.IsDefault = false;
             newRetval.IsInherited = true;
             return newRetval;
