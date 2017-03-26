@@ -1,7 +1,9 @@
 # AgoRapide
 Lightweight pragmatic integrated library for creation of .NET REST APIs offering JSON and HTML views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
 
-&#x1F53A; PLEASE NOTE: AgoRapide is currently in the alpha-stage of development. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document!
+&#x1F53A; PLEASE NOTE: AgoRapide is currently in the alpha-stage of development. Do not use it for any production purposes yet. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document! 
+
+&#9650; Branch v0.1 is the stable one (as of March 2017) to use if you want something that easily compiles and runs locally.
 
 # What is AgoRapide?
 (Note: For code examples please scroll further down)
