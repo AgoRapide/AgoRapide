@@ -41,7 +41,7 @@ namespace AgoRapideSample {
             // private (Uri rootUrl, AgoRapide.Environment environment) GetEnvironment() {
             // What happened to the promised named tuple elements?
 
-            if (System.IO.Directory.Exists(@"C:\AgoRapide")) {
+            if (System.IO.Directory.Exists(@"c:\git\AgoRapide")) {
                 return new Tuple<Uri, AgoRapide.Environment>(new Uri("http://localhost:52668/"), AgoRapide.Environment.Development);
             } else if (System.IO.Directory.Exists(@"D:\p\wwwRootAgoRapideSample")) {
                 return new Tuple<Uri, AgoRapide.Environment>(new Uri("http://sample.agorapide.com"), AgoRapide.Environment.Production);
@@ -158,7 +158,7 @@ namespace AgoRapideSample {
 
                 Log("Looking for " + AgoRapide.CoreProperty.IsAnonymous + " persons");
                 var queryId = new AgoRapide.Core.PropertyValueQueryId<P>(M(AgoRapide.CoreProperty.IsAnonymous), AgoRapide.Core.Operator.EQ, true);
-                Person anonymousUser; Tuple<AgoRapide.ResultCode, string> errorResponse; if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out anonymousUser, errorResponse: out errorResponse)) {
+                if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
                     Log(AgoRapide.CoreProperty.IsAnonymous + " person not found, creating one");
                     AgoRapide.Core.Util.Configuration.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(
                         cid: startupAsApplicationPart.Id,
@@ -357,9 +357,7 @@ namespace AgoRapideSample {
 
         public class ResultWithChallenge : System.Web.Http.IHttpActionResult {
             private readonly System.Web.Http.IHttpActionResult next;
-            public ResultWithChallenge(System.Web.Http.IHttpActionResult next) {
-                this.next = next;
-            }
+            public ResultWithChallenge(System.Web.Http.IHttpActionResult next) => this.next = next;            
             public async System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> ExecuteAsync(System.Threading.CancellationToken cancellationToken) {
                 var response = await next.ExecuteAsync(cancellationToken);
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) {

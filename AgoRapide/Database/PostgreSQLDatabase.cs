@@ -47,7 +47,7 @@ namespace AgoRapide.Database {
 
         public List<T> GetEntities<T>(BaseEntity currentUser, QueryId<TProperty> id, AccessType accessTypeRequired, bool useCache) where T : BaseEntityT<TProperty>, new() {
             id.AssertIsMultiple();
-            List<T> entities; Tuple<ResultCode, string> errorResponse; if (!TryGetEntities(currentUser, id, accessTypeRequired, useCache, out entities, out errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.Item1 + ", " + errorResponse.Item2);
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, useCache, out List<T> entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.Item1 + ", " + errorResponse.Item2);
             return entities;
         }
 
@@ -80,8 +80,7 @@ namespace AgoRapide.Database {
                     errorResponse = new Tuple<ResultCode, string>(ResultCode.data_error, requiredType.ToStringVeryShort() + " with " + nameof(id) + " " + id + " not found");
                     return false;
                 }
-                string strErrorResponse;
-                if (!TryVerifyAccess(currentUser, temp, accessTypeRequired, out strErrorResponse)) {
+                if (!TryVerifyAccess(currentUser, temp, accessTypeRequired, out var strErrorResponse)) {
                     entities = null;
                     errorResponse = new Tuple<ResultCode, string>(ResultCode.access_error, strErrorResponse);
                     return false;
@@ -146,9 +145,8 @@ namespace AgoRapide.Database {
             return ReadAllPropertyValues(cmd);
         }
 
-        void AssertAccess(BaseEntity currentUser, BaseEntityT<TProperty> entity, AccessType accessTypeRequired) {
-            string errorResponse;
-            if (!TryVerifyAccess(currentUser, entity, accessTypeRequired, out errorResponse)) throw new AccessViolationException(nameof(currentUser) + " " + currentUser.Id + " " + nameof(currentUser.AccessLevelGiven) + " " + currentUser.AccessLevelGiven + " insufficent for " + entity.Id + " (" + nameof(accessTypeRequired) + ": " + accessTypeRequired + "). Details: " + errorResponse);
+        void AssertAccess(BaseEntity currentUser, BaseEntityT<TProperty> entity, AccessType accessTypeRequired) { 
+            if (!TryVerifyAccess(currentUser, entity, accessTypeRequired, out var errorResponse)) throw new AccessViolationException(nameof(currentUser) + " " + currentUser.Id + " " + nameof(currentUser.AccessLevelGiven) + " " + currentUser.AccessLevelGiven + " insufficent for " + entity.Id + " (" + nameof(accessTypeRequired) + ": " + accessTypeRequired + "). Details: " + errorResponse);
         }
 
         /// <summary>

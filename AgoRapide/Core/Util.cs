@@ -182,18 +182,20 @@ namespace AgoRapide.Core {
                         /// already have been checked above but since the whole thing is cached anyway it really does not matter. 
                         var cpm = new CorePropertyMapper<TProperty>();
                         var M = new Func<AgoRapide.CoreProperty, TProperty>(p => cpm.Map(p));
-                        var corePropertyCandidates =  EnumGetValues<CoreProperty>().Where(p => M(p).GetAgoRapideAttribute().A.Type?.Equals(type) ?? false).ToList();
+                        var corePropertyCandidates = EnumGetValues<CoreProperty>().Where(p => M(p).GetAgoRapideAttribute().A.Type?.Equals(type) ?? false).ToList();
                         switch (corePropertyCandidates.Count) {
                             case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + " (not even from " + typeof(CoreProperty).ToStringShort() + ")";
                             case 1: return new CorePropertyMapper<TProperty>().Map(corePropertyCandidates[0]);
-                            default: return 
-                                "Multiple mappings (from " + typeof(CoreProperty).ToStringShort() + ") exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
-                                "The actual mappings found where: " + string.Join(", ", corePropertyCandidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c) + ".");
+                            default:
+                                return
+                           "Multiple mappings (from " + typeof(CoreProperty).ToStringShort() + ") exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
+                           "The actual mappings found where: " + string.Join(", ", corePropertyCandidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c) + ".");
                         }
                     case 1: return candidates[0];
-                    default: return 
-                        "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
-                        "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(TProperty).ToStringShort() + "." + c) + ".");
+                    default:
+                        return
+                   "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
+                   "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(TProperty).ToStringShort() + "." + c) + ".");
                 }
             });
             if (mapping is string) {
@@ -284,7 +286,7 @@ namespace AgoRapide.Core {
 
             var serialNo = System.Threading.Interlocked.Increment(ref exceptionSerialNo);
             var writer = new Action(() => {
-                var exceptionPath = logPath + "_" + "Exception " + timeStamp.Replace(":", ".") + " " + (serialNo).ToString("0000") + " " + ex.GetType().ToStringShort().Replace("<","{").Replace(">","}") + ".txt";
+                var exceptionPath = logPath + "_" + "Exception " + timeStamp.Replace(":", ".") + " " + (serialNo).ToString("0000") + " " + ex.GetType().ToStringShort().Replace("<", "{").Replace(">", "}") + ".txt";
                 System.IO.File.WriteAllText(exceptionPath, text + "\r\n");
                 Log("\r\n--\r\nAn exception of type " + ex.GetType().ToStringShort() + " occurred.\r\nSee\r\n" + exceptionPath + "\r\nfor details\r\n--\r\n");
             });
@@ -346,7 +348,7 @@ namespace AgoRapide.Core {
                     start = stackTrace.IndexOf("(");
                 }
 
-                msg.AppendLine("Stacktrace: " + stackTrace.Replace(" at ","\r\n\r\nat ").Replace(" in ","\r\nin ") + "\r\n");
+                msg.AppendLine("Stacktrace: " + stackTrace.Replace(" at ", "\r\n\r\nat ").Replace(" in ", "\r\nin ") + "\r\n");
 
                 ex = ex.InnerException;
                 if (ex != null) {
@@ -533,8 +535,13 @@ namespace AgoRapide.Core {
         public EmptyStringException(string message, Exception inner) : base(message, inner) { }
     }
 
-    public class InvalidMappingException<T, TProperty> : ApplicationException         
-        where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where TProperty : Enum"
+    public class InvalidMappingException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where TProperty : Enum"
+        public InvalidMappingException(string message) : base("Unable to map from " + typeof(T).ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
+        public InvalidMappingException(T _enum, string message) : base("Unable to map from " + _enum.GetType() + "." + _enum.ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
+    }
+
+    public class InvalidMappingException<T, TProperty> : ApplicationException
+    where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where TProperty : Enum"
         public InvalidMappingException(string message) : base(
             "It is not possible to map from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
             "Explanation: Exact one of the enum values for " + typeof(TProperty).ToStringShort() + " must specify\r\n" +
@@ -626,7 +633,7 @@ namespace AgoRapide.Core {
     /// all uses <see cref="TypeIntNotSupportedByAgoRapideException"/> for 
     /// information about where to change the code. 
     /// </summary>
-    public class TypeIntNotSupportedByAgoRapideException: ApplicationException {
+    public class TypeIntNotSupportedByAgoRapideException : ApplicationException {
         private const string message = "Resolution: Use long instead of int";
         public TypeIntNotSupportedByAgoRapideException() : base(message) { }
         public TypeIntNotSupportedByAgoRapideException(string details) : base(message + "\r\nDetails: " + details) { }

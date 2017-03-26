@@ -307,11 +307,17 @@ namespace AgoRapide.Core {
             if (A.Type == null) throw new NullReferenceException(nameof(A.Type) + " for " + A.ToString());
             if (!A.Type.IsAssignableFrom(obj.GetType())) {
                 if (typeof(ITypeDescriber).IsAssignableFrom(A.Type)) { /// Make exception if we succeed in parsing the value found.
-                    var objAsString = obj as string;
-                    if (objAsString != null) {
-                        var parseResult = ValidatorAndParser(objAsString);
-                        if (parseResult.ErrorResponse == null) return objAsString; // string is valid
+                    switch (obj) {
+                        case string objAsString:
+                            var parseResult = ValidatorAndParser(objAsString);
+                            if (parseResult.ErrorResponse == null) return objAsString; // string is valid
+                            break;
                     }
+                    //var objAsString = obj as string;
+                    //if (objAsString != null) {
+                    //    var parseResult = ValidatorAndParser(objAsString);
+                    //    if (parseResult.ErrorResponse == null) return objAsString; // string is valid
+                    //}
                 }
                 InvalidTypeException.AssertAssignable(obj.GetType(), A.Type, () => A.ToString());
             }
