@@ -9,10 +9,9 @@ namespace AgoRapide.API {
     /// TODO: MOVE TO FOLDER "Entity"? OR, LET BE WHERE IS, since have entities all over the place now.
     /// 
     /// Slightly refined version of <see cref="MethodAttribute"/> in order to use against database and as API-result itself.
-    /// (since inherits <see cref="BaseEntityT{TProperty}"/>
+    /// (since inherits <see cref="BaseEntityT"/>
     /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
-    public class MethodAttributeT<TProperty> : ApplicationPart<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class MethodAttributeT : ApplicationPart { 
         public MethodAttribute A { get; private set; }
 
         public MethodAttributeT(MethodAttribute methodAttribute) {

@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 namespace AgoRapide.Core {
 
     /// <summary>
+    /// TODO: <see cref="IGroupDescriber"/> could be replaced by enum-"class" level attributes now that we (Mar 2017) map
+    /// TODO: TO <see cref="CoreProperty"/> instead of FROM <see cref="CoreProperty"/> and can have multiple enums in each project.
+    /// TODO: (the enums again can be placed inside each entity class that we want to use)
+    /// 
     /// Enabling practical grouping of properties together by specifying a type implementing 
     /// this interface in <see cref="AgoRapideAttribute.Group"/>.
     /// 
@@ -27,20 +31,19 @@ namespace AgoRapide.Core {
     /// <see cref="ITypeDescriber"/> is not to be confused with <see cref="IGroupDescriber"/>. 
     /// The former is specified through <see cref="AgoRapideAttribute.Type"/> describing an actual class (usually used for a single TProperty), 
     /// while the latter is specified through <see cref="AgoRapideAttribute.Group"/> describing common attributes for a group of properties. 
-    /// (although technically they both do the one and same kind of operations, enriching <see cref="AgoRapideAttributeT{TProperty}"/> 
-    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT{TProperty}.A"/>)
+    /// (although technically they both do the one and same kind of operations, enriching <see cref="AgoRapideAttributeT"/> 
+    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT.A"/>)
     /// </summary>
     public interface IGroupDescriber {
 
         /// <summary>
-        /// This method will be called before any initializing is done in <see cref="AgoRapideAttributeT{TProperty}"/>. 
+        /// This method will be called before any initializing is done in <see cref="AgoRapideAttributeT"/>. 
         /// 
         /// The implementation may change both the properties of 
-        /// <see cref="AgoRapideAttributeT{TProperty}"/> and the properties of its member class 
-        /// <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT{TProperty}.A"/>)
+        /// <see cref="AgoRapideAttributeT"/> and the properties of its member class 
+        /// <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT.A"/>)
         /// </summary>
-        /// <typeparam name="TProperty"></typeparam>
         /// <param name="agoRapideAttribute"></param>
-        void EnrichAttribute<TProperty>(AgoRapideAttributeT<TProperty> agoRapideAttribute) where TProperty : struct, IFormattable, IConvertible, IComparable;  // What we really would want is "where T : Enum"
+        void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute);
     }
 }

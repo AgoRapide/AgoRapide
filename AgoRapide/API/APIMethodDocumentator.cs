@@ -17,9 +17,9 @@ namespace AgoRapide.API {
     /// 
     /// TODO: MAYBE TO BE REMOVED? Since storing in database / generating as ordinary entities instead?
     /// </summary>
-    public class APIMethodDocumentator<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable {
+    public class APIMethodDocumentator { 
 
-        public static void DocumentMethods(List<APIMethod<TProperty>> methods, Request<TProperty> request) {
+        public static void DocumentMethods(List<APIMethod> methods, Request request) {
             //System.IO.File.WriteAllText(Util.Configuration.ApiDocumentationRootPath + Util.Configuration.ApiDocumentationIndexFilename,
 
             //    "<table>" + methods.First() +

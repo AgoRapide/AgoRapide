@@ -12,16 +12,16 @@ namespace AgoRapide {
     /// Never stored in database. 
     /// 
     /// Note how many of the methods in the AgoRapide-library will log 
-    /// extensively to <see cref="BaseEntityTWithLogAndCount{TProperty}.LogInternal"/> in <see cref="Result{TProperty}"/>.
+    /// extensively to <see cref="BaseEntityTWithLogAndCount.LogInternal"/> in <see cref="Result"/>.
     /// (meaning your server logs are not filled up with unnecessary clutter, but the system is still available to give an API client
     /// detailed information about problems). 
     /// 
     /// See also <see cref="MethodAttribute.ShowDetailedResult"/>
     /// 
-    /// Usually available as <see cref="ValidRequest{TProperty}.Result"/>
+    /// Usually available as <see cref="ValidRequest.Result"/>
     /// </summary>  
     [AgoRapide(Description = "Communicates results of an API command back to client")]
-    public class Result<TProperty> : BaseEntityTWithLogAndCount<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class Result : BaseEntityTWithLogAndCount { 
 
         public ResultCode ResultCode {
             get => PVM<ResultCode>();
@@ -33,7 +33,7 @@ namespace AgoRapide {
         /// For <see cref="ResultCode.exception_error"/> will set <see cref="CoreProperty.ExceptionDetailsUrl"/>. 
         /// </summary>
         /// <param name="request"></param>
-        private void AdjustAccordingToResultCodeAndMethod(Request<TProperty> request) {
+        private void AdjustAccordingToResultCodeAndMethod(Request request) {
             if (ResultCode == ResultCode.ok && !request.Method.A.A.ShowDetailedResult) {
                 if (Properties != null && Properties.ContainsKey(M(CoreProperty.Log))) Properties.Remove(M(CoreProperty.Log));
             }
@@ -47,18 +47,18 @@ namespace AgoRapide {
             }
         }
 
-        public BaseEntityT<TProperty> SingleEntityResult;
-        public List<BaseEntityT<TProperty>> MultipleEntitiesResult;
+        public BaseEntityT SingleEntityResult;
+        public List<BaseEntityT> MultipleEntitiesResult;
 
         // public override string Name => "Result summary of API call: " + ResultCode;
         public override string Name => ResultCode.ToString();
 
-        public override string ToHTMLDetailed(Request<TProperty> request) {
+        public override string ToHTMLDetailed(Request request) {
             AdjustAccordingToResultCodeAndMethod(request);
             var retval = new StringBuilder();
             // var showDetails = false;
             if (SingleEntityResult != null) {
-                if (SingleEntityResult is Result<TProperty>) throw new InvalidObjectTypeException(SingleEntityResult, "Would have resulted in recursive call in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " if allowed");
+                if (SingleEntityResult is Result) throw new InvalidObjectTypeException(SingleEntityResult, "Would have resulted in recursive call in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " if allowed");
                 // retval.Append("<p>Single entity</p>");
                 retval.Append(SingleEntityResult.ToHTMLDetailed(request));
             } else if (MultipleEntitiesResult != null) {
@@ -81,17 +81,17 @@ namespace AgoRapide {
                 // ToHTMLDetailed will return details needed. 
             }
 
-            /// Note how <see cref="BaseEntityT{TProperty}.ToHTMLDetailed"/> contains special code for <see cref="Result{TProperty}"/> hiding type and name
+            /// Note how <see cref="BaseEntityT.ToHTMLDetailed"/> contains special code for <see cref="Result"/> hiding type and name
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
 
         /// <summary>
-        /// Note how <see cref="Result{TProperty}"/> is the only <see cref="BaseEntityT{TProperty}"/>-class having a method called <see cref="ToJSONDetailed"/>. 
-        /// (while all <see cref="BaseEntityT{TProperty}"/>-classes implement <see cref="BaseEntityT{TProperty}.ToJSONEntity"/>)
+        /// Note how <see cref="Result"/> is the only <see cref="BaseEntityT"/>-class having a method called <see cref="ToJSONDetailed"/>. 
+        /// (while all <see cref="BaseEntityT"/>-classes implement <see cref="BaseEntityT.ToJSONEntity"/>)
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public dynamic ToJSONDetailed(Request<TProperty> request) {
+        public dynamic ToJSONDetailed(Request request) {
             AdjustAccordingToResultCodeAndMethod(request);
             dynamic json = new System.Web.Helpers.DynamicJsonObject(new Dictionary<string, object>());
             if (SingleEntityResult != null) {
@@ -100,7 +100,7 @@ namespace AgoRapide {
                 try {
                     json["SingleEntity"] = System.Web.Helpers.Json.Decode(encoded);
                 } catch (ArgumentException ex) {
-                    throw new JsonDecodeArgumentException(new List<BaseEntityT<TProperty>> { SingleEntityResult }, ex);
+                    throw new JsonDecodeArgumentException(new List<BaseEntityT> { SingleEntityResult }, ex);
                 }
             } else if (MultipleEntitiesResult != null) {
                 // TODO: This is old "working" code that definitely can be improved upon somehow...
@@ -122,7 +122,7 @@ namespace AgoRapide {
                 }
             } else {
                 json = new System.Web.Helpers.DynamicJsonObject(new Dictionary<string, object>());
-                /// Note how actual result will be returned by <see cref="BaseEntityTWithLogAndCount{TProperty}.ToJSONEntity"/> 
+                /// Note how actual result will be returned by <see cref="BaseEntityTWithLogAndCount.ToJSONEntity"/> 
             }
 
             /// Inserting <see cref="ResultCode"/> at "top" of JSON hierarchy makes for easier parsing. 
@@ -133,7 +133,7 @@ namespace AgoRapide {
                 try {
                     json["details"] = System.Web.Helpers.Json.Decode(encoded);
                 } catch (ArgumentException ex) {
-                    throw new JsonDecodeArgumentException(new List<BaseEntityT<TProperty>> { this }, ex);
+                    throw new JsonDecodeArgumentException(new List<BaseEntityT> { this }, ex);
                 }
             }
             return new System.Web.Mvc.JsonResult { Data = json };
@@ -143,7 +143,7 @@ namespace AgoRapide {
         /// Handles problem with case-sensitive .NET dictionary keys being incompatible with case-insensitive JSON 
         /// </summary>
         public class JsonDecodeArgumentException : ApplicationException {
-            public JsonDecodeArgumentException(IEnumerable<BaseEntityT<TProperty>> entities, ArgumentException ex) : base(new Func<string>(() => {
+            public JsonDecodeArgumentException(IEnumerable<BaseEntityT> entities, ArgumentException ex) : base(new Func<string>(() => {
                 var retval = new StringBuilder();
                 entities.ForEach(entity => {
                     entity.Properties.ForEach(p1 => {
@@ -171,7 +171,7 @@ namespace AgoRapide {
             })(), ex) { }
         }
 
-        public void Include(Result<TProperty> other) {
+        public void Include(Result other) {
             if (other.ResultCode > ResultCode) ResultCode = other.ResultCode;
             other.Counts.ForEach(otherCount => SetCount(otherCount.Key, Counts.TryGetValue(otherCount.Key, out var myValue) ? myValue + otherCount.Value : otherCount.Value));
             if (other.LogData.Length > 0) LogData.Append(other.LogData);

@@ -29,13 +29,13 @@ namespace AgoRapide {
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]
-    public class APIMethod<TProperty> : ApplicationPart<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class APIMethod : ApplicationPart {
 
         /// <summary>
         /// Note about AgoRapide concepts in general:
         /// This property <see cref="Origin"/> is an example of how to expose properties more clearly (doing it directly from outside using 
-        /// <see cref="BaseEntityT{TProperty}.PVM"/> and 
-        /// <see cref="BaseEntityT{TProperty}.AddPropertyM{T}(T)"/> 
+        /// <see cref="BaseEntityT.PVM"/> and 
+        /// <see cref="BaseEntityT.AddPropertyM{T}(T)"/> 
         /// would have worked just as well).
         /// 
         /// TODO: Make read-only!
@@ -61,7 +61,7 @@ namespace AgoRapide {
         /// </summary>
         public System.Reflection.MethodInfo ControllerMethod { get; private set; }
 
-        public MethodAttributeT<TProperty> A { get; private set; }
+        public MethodAttributeT A { get; private set; }
 
         /// <summary>
         /// TODO: Add to CoreProperty, and access straight from Properties-colllection
@@ -72,8 +72,8 @@ namespace AgoRapide {
         public bool RequiresAuthorization => PV<bool>(M(CoreProperty.RequiresAuthorization));
 
         /// <summary>
-        /// Dummy constructor for use by <see cref="IDatabase{TProperty}.TryGetEntityById"/>. Object meant to be discarded immediately
-        /// afterwards in <see cref="ApplicationPart{TProperty}.GetOrAdd{T}"/>. 
+        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. Object meant to be discarded immediately
+        /// afterwards in <see cref="ApplicationPart.GetOrAdd{T}"/>. 
         /// DO NOT USE!
         /// </summary>
         public APIMethod() {
@@ -85,12 +85,12 @@ namespace AgoRapide {
         /// <param name="httpMethods"></param>
         /// <param name="routeSegments"></param>
         /// <param name="routeTemplate"></param>
-        public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass<TProperty>> routeSegments, List<TProperty> parameters, string routeTemplate) {
+        public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<CoreProperty> parameters, string routeTemplate) {
             EntityType = entityType;
-            A = new MethodAttributeT<TProperty>(methodAttribute);
+            A = new MethodAttributeT(methodAttribute);
             HttpMethods = httpMethods;
             RouteSegments = routeSegments;
-            Parameters = parameters.Select(p => new Tuple<TProperty, AgoRapideAttributeT<TProperty>>(p, p.GetAgoRapideAttribute())).ToList();
+            Parameters = parameters.Select(p => new CPA { cp = p, a = p.GetAgoRapideAttribute() }).ToList();
             RouteTemplates = new List<string> { routeTemplate };
         }
 
@@ -105,21 +105,21 @@ namespace AgoRapide {
             Controller = controller ?? throw new ArgumentNullException(nameof(controller));
             if (!Controller.ToStringShort().EndsWith("Controller")) throw new InvalidControllernameException("'" + controller.ToStringShort() + "' does not end with 'Controller'");
             ControllerMethod = controllerMethod ?? throw new ArgumentNullException(nameof(controllerMethod));
-            A = new MethodAttributeT<TProperty>(methodAttribute);
+            A = new MethodAttributeT(methodAttribute);
             HttpMethods = httpMethods ?? throw new ArgumentNullException(nameof(httpMethods));
 
             var detailer1 = new Func<string>(() => "\r\nerrorDetails: " + ToString());
 
-            RouteSegments = new List<RouteSegmentClass<TProperty>>();
-            if (A.A.S1 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S1), A.A.S1, detailer1));
-            if (A.A.S2 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S2), A.A.S2, detailer1));
-            if (A.A.S3 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S3), A.A.S3, detailer1));
-            if (A.A.S4 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S4), A.A.S4, detailer1));
-            if (A.A.S5 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S5), A.A.S5, detailer1));
-            if (A.A.S6 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S6), A.A.S6, detailer1));
-            if (A.A.S7 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S7), A.A.S7, detailer1));
-            if (A.A.S8 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S8), A.A.S8, detailer1));
-            if (A.A.S9 != null) RouteSegments.Add(new RouteSegmentClass<TProperty>(nameof(A.A.S9), A.A.S9, detailer1));
+            RouteSegments = new List<RouteSegmentClass>();
+            if (A.A.S1 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S1), A.A.S1, detailer1));
+            if (A.A.S2 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S2), A.A.S2, detailer1));
+            if (A.A.S3 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S3), A.A.S3, detailer1));
+            if (A.A.S4 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S4), A.A.S4, detailer1));
+            if (A.A.S5 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S5), A.A.S5, detailer1));
+            if (A.A.S6 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S6), A.A.S6, detailer1));
+            if (A.A.S7 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S7), A.A.S7, detailer1));
+            if (A.A.S8 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S8), A.A.S8, detailer1));
+            if (A.A.S9 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S9), A.A.S9, detailer1));
 
             switch (A.A.CoreMethod) {
                 case CoreMethod.RootIndex:
@@ -142,7 +142,7 @@ namespace AgoRapide {
                 throw new NotImplementedException(nameof(MethodAttribute) + "." + nameof(MethodAttribute.RouteTemplate) + ", " + detailer1());
             }
 
-            Parameters = new List<Tuple<TProperty, AgoRapideAttributeT<TProperty>>>();
+            Parameters = new List<CPA>();
 
             if (RouteSegments.Count == 0) {
                 switch (A.A.CoreMethod) {
@@ -181,13 +181,13 @@ namespace AgoRapide {
                         detailer2());
                     EntityType = s.Type;
                 } else if (s.Parameter != null) {
-                    var p = (TProperty)s.Parameter;
+                    var p = (CoreProperty)s.Parameter;
                     var ea = p.GetAgoRapideAttribute();
                     if (ea.A.Parents != null && EntityType != null && !ea.IsParentFor(EntityType)) throw new MethodInitialisationException(
                             "Incompatible types given for " +
                             ea.GetType().ToString() + "-segment (" + EntityType + ") and " +
-                            typeof(TProperty).ToString() + "." + p.ToString() + " (" + ea.A.Parents.ToString() + ")\r\n" +
-                            "You can not have " + typeof(TProperty).ToString() + "." + p.ToString() + " " +
+                            typeof(CoreProperty).ToString() + "." + p.ToString() + " (" + ea.A.Parents.ToString() + ")\r\n" +
+                            "You can not have " + typeof(CoreProperty).ToString() + "." + p.ToString() + " " +
                             "as parameter for operations involving entities of type " + EntityType + " " +
                             "because !" + nameof(ea.IsParentFor) + "(" + EntityType + ")" + detailer2());
 
@@ -200,8 +200,8 @@ namespace AgoRapide {
                         "is missing (or wrongly named) for method " + ControllerMethod.Name + ".\r\n" +
                         "Is one of the following mis-named: " + restParameters.KeysAsString() + "?" +
                         detailer2());
-                    if (Parameters.Any(t => t.Item1.Equals(p))) throw new MethodInitialisationException("Duplicate parameter " + typeof(TProperty).ToString() + "." + p.ToString() + " given" + detailer2());
-                    Parameters.Add(new Tuple<TProperty, AgoRapideAttributeT<TProperty>>(p, ea));
+                    if (Parameters.Any(t => t.cp.Equals(p))) throw new MethodInitialisationException("Duplicate parameter " + typeof(CoreProperty).ToString() + "." + p.ToString() + " given" + detailer2());
+                    Parameters.Add(new CPA { cp = p, a = ea });
                     restParameters.Remove(ea.PToString);
                     routeTemplate.Append("/{" + ea.PToString + "}");
                     // break;
@@ -209,10 +209,10 @@ namespace AgoRapide {
                 } else if (s.String != null) {
                     routeTemplate.Append("/" + s.String);
                 } else {
-                    throw new RouteSegmentClass<TProperty>.InvalidRouteSegmentClass("Did not recognize any of the supposed required types" + detailer2());
+                    throw new RouteSegmentClass.InvalidRouteSegmentClass("Did not recognize any of the supposed required types" + detailer2());
                 }
             });
-            if (restParameters.Count > 0) throw new MethodInitialisationException("The following parameters does not have corresponding [" + A.GetType().ToString() + "(Sx = " + typeof(TProperty).ToString() + ".yyy)] initialisations: " + string.Join(", ", restParameters.Keys) + detailer1);
+            if (restParameters.Count > 0) throw new MethodInitialisationException("The following parameters does not have corresponding [" + A.GetType().ToString() + "(Sx = " + typeof(CoreProperty).ToString() + ".yyy)] initialisations: " + string.Join(", ", restParameters.Keys) + detailer1);
             var strRouteTemplate = routeTemplate.ToString();
             if (strRouteTemplate.Length > 0 && strRouteTemplate.StartsWith("/")) strRouteTemplate = strRouteTemplate.Substring(1);
             RouteTemplates = new List<string> { strRouteTemplate };
@@ -251,7 +251,7 @@ namespace AgoRapide {
 
         /// <summary>
         /// TODO: Turn this into a single string since overloads are now handled by the 
-        /// TODO: <see cref="BaseController{TProperty}.AgoRapideGenericMethod"/> concept.
+        /// TODO: <see cref="BaseController.AgoRapideGenericMethod"/> concept.
         /// 
         /// Guaranteed always set with at least one value (but for <see cref="CoreMethod.RootIndex"/> the value will usually be empty)
         /// 
@@ -259,12 +259,12 @@ namespace AgoRapide {
         /// For <see cref="CoreMethod.GenericMethod"/> it is usually {*url} 
         /// 
         /// Note that <see cref="Util.Configuration"/>.<see cref="Configuration.ApiPrefix"/> (normally "api/") is not present here. 
-        /// It is added later by <see cref="APIMethodMapper{TProperty}.MapHTTPRoutes"/>
+        /// It is added later by <see cref="APIMethodMapper.MapHTTPRoutes"/>
         /// </summary>
         public List<string> RouteTemplates { get; private set; }
 
         /// <summary>
-        /// Inserts each <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeT{TProperty}.ConvertObjectToString"/>
+        /// Inserts each <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeT.ConvertObjectToString"/>
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
@@ -273,8 +273,8 @@ namespace AgoRapide {
             var retval = RouteTemplates[0];
             for (var i = 0; i < parameters.Length; i++) {
                 if (Parameters.Count <= i) return retval;
-                var key = "{" + Parameters[i].Item2.PToString + "}";
-                var next = retval.Replace(key, Parameters[i].Item2.ConvertObjectToString(parameters[i]));
+                var key = "{" + Parameters[i].a.PToString + "}";
+                var next = retval.Replace(key, Parameters[i].a.ConvertObjectToString(parameters[i]));
                 if (next.Equals(retval)) throw new MethodInitialisationException(key + " not found for " + ToString());
                 retval = next;
             }
@@ -329,12 +329,7 @@ namespace AgoRapide {
         /// <param name="text">
         /// Tip: Use the shortest route templates, like -Person/Add- since the documentation URL is the same for all overloads.        /// </param>
         /// <returns></returns>
-        public static string InsertDocumentationURLs(string text) {
-            throw new NotImplementedException();
-            //if (string.IsNullOrEmpty(text)) return text;
-            //AllMethods.ForEach(m => m.RouteTemplates.ForEach(r => text = text.Replace("-" + r + "-", m.DocumentationUrl)));
-            //return text;
-        }
+        public static string InsertDocumentationURLs(string text) => throw new NotImplementedException();
 
         ///// <summary>
         ///// TODO: MOVE TO SEPARATE DOCUMENTATOR CLASS!
@@ -352,73 +347,71 @@ namespace AgoRapide {
 
         public Type EntityType { get; private set; }
 
-        public List<Tuple<TProperty, AgoRapideAttributeT<TProperty>>> Parameters { get; private set; }
+        public List<CPA> Parameters { get; private set; }
 
         /// <summary>
         /// Set by <see cref="CreateSemiAutogeneratedMethods"/>
         /// </summary>
-        protected static List<APIMethod<TProperty>> _allMethods = null;
+        protected static List<APIMethod> _allMethods = null;
         /// <summary>
         /// TODO: Add GetByName / GetByInternalKey, GetByCoreMethod and corresponding TryGet...-methods
         /// </summary>
-        public static List<APIMethod<TProperty>> AllMethods => _allMethods ?? throw new NullReferenceException(nameof(_allMethods) + ", Call " + nameof(CreateSemiAutogeneratedMethods) + " first");
+        public static List<APIMethod> AllMethods => _allMethods ?? throw new NullReferenceException(nameof(_allMethods) + ", Call " + nameof(CreateSemiAutogeneratedMethods) + " first");
 
         /// <summary>
         /// Methods ignored because <see cref="MethodAttribute.Environment"/> does not match current <see cref="Configuration.Environment"/>
         /// </summary>
-        public static List<APIMethod<TProperty>> IgnoredMethods = new List<APIMethod<TProperty>>();
+        public static List<APIMethod> IgnoredMethods = new List<APIMethod>();
 
         /// <summary>
         /// Set by <see cref="CreateSemiAutogeneratedMethods"/>
         /// Key is <see cref="BaseEntity.Name"/> which again is set as method.Controller.ToStringShort() + "." + method.ControllerMethod.Name
         /// TODO: Add GetByName / GetByInternalKey, GetByCoreMethod and corresponding TryGet...-methods
         /// </summary>
-        protected static Dictionary<string, APIMethod<TProperty>> _allMethodsByControllerAndMethodName;
+        protected static Dictionary<string, APIMethod> _allMethodsByControllerAndMethodName;
         /// <summary>
         /// Set by <see cref="CreateSemiAutogeneratedMethods"/>
         /// TODO: Add GetByName / GetByInternalKey, GetByCoreMethod and corresponding TryGet...-methods
         /// </summary>
-        // protected static SortedDictionary<string, APIMethod<TProperty>> _allMethodsByName = null;
+        // protected static SortedDictionary<string, APIMethod> _allMethodsByName = null;
 
-        public static APIMethod<TProperty> GetByControllerAndMethodName(Type controller, string controllerMethodName) => TryGetByControllerAndMethodName(controller, controllerMethodName, out var retval) ? retval : throw new MethodNotFoundException("Method '" + controller + "." + controllerMethodName + "' not found");
-        public static bool TryGetByControllerAndMethodName(Type controller, string controllerMethodName, out APIMethod<TProperty> method) {
+        public static APIMethod GetByControllerAndMethodName(Type controller, string controllerMethodName) => TryGetByControllerAndMethodName(controller, controllerMethodName, out var retval) ? retval : throw new MethodNotFoundException("Method '" + controller + "." + controllerMethodName + "' not found");
+        public static bool TryGetByControllerAndMethodName(Type controller, string controllerMethodName, out APIMethod method) {
             var dummy = AllMethods;
             return _allMethodsByControllerAndMethodName.TryGetValue(controller.ToStringShort() + "." + controllerMethodName, out method);
         }
 
-        public static APIMethod<TProperty> GetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType) => TryGetByCoreMethodAndEntityType(coreMethod, entityType, out var retval) ? retval : throw new MethodNotFoundException(coreMethod, entityType);
-        protected static ConcurrentDictionary<string, APIMethod<TProperty>> _allMethodsByCoreMethodAndEntityType = new ConcurrentDictionary<string, APIMethod<TProperty>>();
-        public static bool TryGetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType, out APIMethod<TProperty> method) => (method = _allMethodsByCoreMethodAndEntityType.GetOrAdd(coreMethod.ToString() + entityType.ToString(), k => {
+        public static APIMethod GetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType) => TryGetByCoreMethodAndEntityType(coreMethod, entityType, out var retval) ? retval : throw new MethodNotFoundException(coreMethod, entityType);
+        protected static ConcurrentDictionary<string, APIMethod> _allMethodsByCoreMethodAndEntityType = new ConcurrentDictionary<string, APIMethod>();
+        public static bool TryGetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType, out APIMethod method) => (method = _allMethodsByCoreMethodAndEntityType.GetOrAdd(coreMethod.ToString() + entityType.ToString(), k => {
             return AllMethods.SingleOrDefault(m => m.A.A.CoreMethod == coreMethod && entityType.Equals(m.EntityType), () => nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + entityType.ToStringShort());
         })) != null;
 
         /// <summary>
         /// This consists of the values for <see cref="MethodAttribute.S1"/> to <see cref="MethodAttribute.S9"/>. Set by <see cref="CreateSemiAutogeneratedMethods"/>
         /// </summary>
-        public List<RouteSegmentClass<TProperty>> RouteSegments { get; private set; }
+        public List<RouteSegmentClass> RouteSegments { get; private set; }
 
-        protected static Dictionary<string, APIMethod<TProperty>> _allMethodsByRouteTemplate;
+        protected static Dictionary<string, APIMethod> _allMethodsByRouteTemplate;
         /// <summary>
         /// Constructs <see cref="APIMethodOrigin.SemiAutogenerated"/>-methods.
         /// </summary>
         /// <param name="controllers"></param>
         /// <param name="attributeClassesSignifyingRequiresAuthorization">
-        /// Used to set <see cref="APIMethod{TProperty}.RequiresAuthorization"/>.
+        /// Used to set <see cref="APIMethod.RequiresAuthorization"/>.
         /// Typical values would be type of <see cref="System.Web.Http.AuthorizeAttribute"/> or 
         /// your own types like AgoRapideSample.BasicAuthenticationAttribute
         /// </param>
         /// <returns></returns>
-        public static void CreateSemiAutogeneratedMethods(List<Type> controllers, List<Type> attributeClassesSignifyingRequiresAuthorization, IDatabase<TProperty> db) {
-            // var cid = GetOrAdd<ApplicationPart<TProperty>>(typeof(APIMethod<TProperty>), System.Reflection.MethodBase.GetCurrentMethod().Name, db, null).Id;
-
-            _allMethods = new List<APIMethod<TProperty>>();
+        public static void CreateSemiAutogeneratedMethods(List<Type> controllers, List<Type> attributeClassesSignifyingRequiresAuthorization, IDatabase db) {
+            _allMethods = new List<APIMethod>();
             controllers.ForEach(controller => {
                 controller.GetMethods().ForEach(methodInfo => {
                     var ma = Attribute.GetCustomAttribute(methodInfo, typeof(MethodAttribute)) as MethodAttribute;
                     if (ma == null) return; // OK, just ignore this method
                     var detailer1 = new Func<string>(() => ". errorDetails: " + controller.ToString() + "." + methodInfo.Name);
 
-                    var method = new APIMethod<TProperty>(
+                    var method = new APIMethod(
                         controller: controller,
                         controllerMethod: methodInfo,
                         methodAttribute: ma,
@@ -456,9 +449,9 @@ namespace AgoRapide {
             });
 
             /// TODO: Add GetByName / GetByInternalKey, GetByCoreMethod and corresponding TryGet...-methods
-            _allMethodsByControllerAndMethodName = new Dictionary<string, APIMethod<TProperty>>();
-            _allMethodsByRouteTemplate = new Dictionary<string, APIMethod<TProperty>>();
-            // _allMethodsByName = new SortedDictionary<string, APIMethod<TProperty>>();
+            _allMethodsByControllerAndMethodName = new Dictionary<string, APIMethod>();
+            _allMethodsByRouteTemplate = new Dictionary<string, APIMethod>();
+            // _allMethodsByName = new SortedDictionary<string, APIMethod>();
             _allMethods.ForEach(m => {
                 _allMethodsByControllerAndMethodName.AddValue(m.Implementator, m, () => "Duplicate " + nameof(Implementator) + " (" + m.Implementator + ") has already been added to collection " + nameof(_allMethodsByControllerAndMethodName));
                 _allMethodsByRouteTemplate.AddValue(m.RouteTemplates[0], m, () => "Duplicate " + nameof(m.RouteTemplates) + "[0] (" + m.RouteTemplates[0] + ") has already been added to collection " + nameof(_allMethodsByRouteTemplate));
@@ -477,10 +470,10 @@ namespace AgoRapide {
         /// <param name="types">
         /// List of entities for which client wants standardised methods like Person/{id}, Person/{id}/AddProperty/{key}/{value}
         /// </param>
-        public static void CreateAutogeneratedMethods(List<Type> types, IDatabase<TProperty> db) {
+        public static void CreateAutogeneratedMethods(List<Type> types, IDatabase db) {
             if (_allMethods == null) throw new NullReferenceException(nameof(_allMethods) + ". Resolution: " + nameof(CreateSemiAutogeneratedMethods) + " must be called before " + nameof(CreateAutogeneratedMethods));
 
-            var connector = new Action<APIMethod<TProperty>, bool>((method, requiresAuthorization) => {
+            var connector = new Action<APIMethod, bool>((method, requiresAuthorization) => {
                 /// TODO: Find mechanism for setting invalid for methods no longer relevant (that is, old methods resisting in database
                 /// TODO: no longer relevant since ConnectMethodWithDatabase is not called for them)
                 if (_allMethodsByRouteTemplate.TryGetValue(method.RouteTemplates[0], out var existing)) throw new MethodInitialisationException(
@@ -498,13 +491,13 @@ namespace AgoRapide {
             /// Creates <see cref="CoreMethod.AddEntity"/> like Person/Add/{email}/{password}
             var addEntityCreator = new Action<Type>(t => { // TODO: There appears to be too much duplicated code in the creators methods here
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.AddEntity + " attempt for " + t.ToStringDB());
-                var obligatoryParameters = t.GetObligatoryChildProperties<TProperty>();
-                var routeSegments = new List<RouteSegmentClass<TProperty>> {
-                    new RouteSegmentClass<TProperty>(t.ToStringVeryShort(), t, detailer),
-                    new RouteSegmentClass<TProperty>("Add", "Add", detailer),
+                var obligatoryParameters = t.GetObligatoryChildProperties();
+                var routeSegments = new List<RouteSegmentClass> {
+                    new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
+                    new RouteSegmentClass("Add", "Add", detailer),
                 };
-                obligatoryParameters.ForEach(p => routeSegments.Add(new RouteSegmentClass<TProperty>(p.Value.PToString, p.Key, detailer)));
-                var method = new APIMethod<TProperty>(
+                obligatoryParameters.ForEach(p => routeSegments.Add(new RouteSegmentClass(p.Value.PToString, p.Key, detailer)));
+                var method = new APIMethod(
                     entityType: t,
                     methodAttribute: new MethodAttribute {
                         CoreMethod = CoreMethod.AddEntity,
@@ -528,7 +521,7 @@ namespace AgoRapide {
             /// Creates <see cref="CoreMethod.EntityIndex"/> like Person/{id}
             var entityIndexCreator = new Action<Type>(t => { // TODO: There appears to be too much duplicated code in the creators methods here
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.EntityIndex + " attempt for " + t.ToStringDB());
-                var method = new APIMethod<TProperty>(
+                var method = new APIMethod(
                     entityType: t,
                     methodAttribute: new MethodAttribute {
                         CoreMethod = CoreMethod.EntityIndex,
@@ -539,23 +532,23 @@ namespace AgoRapide {
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
-                    routeSegments: new List<RouteSegmentClass<TProperty>> {
-                        new RouteSegmentClass<TProperty>(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass<TProperty>(CoreProperty.QueryId.ToString(), M(CoreProperty.QueryId) , detailer)
+                    routeSegments: new List<RouteSegmentClass> {
+                        new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
+                        new RouteSegmentClass(CoreProperty.QueryId.ToString(), M(CoreProperty.QueryId) , detailer)
                     },
-                    parameters: new List<TProperty> { M(CoreProperty.QueryId) },
+                    parameters: new List<CoreProperty> { M(CoreProperty.QueryId) },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.QueryId + "}" // Do not use M here!
                     );
                 // TODO: Create a configuration parameter deciding whether API-documentation should be available without authorization.
                 // TODO: We could also change this between production and test, for instance tightening down access to 
                 // TODO: API-documentation in test, while having anonymous access in production, hiding new features until launched.
-                connector(method, !typeof(ApplicationPart<TProperty>).IsAssignableFrom(method.EntityType)); /// Note how <see cref="ApplicationPart{TProperty}"/> like <see cref="ClassAndMethod{TProperty}"/>, <see cref="EnumClass{TProperty}"/> and <see cref="APIMethod{TProperty}"/> can be read-accessed (queried) without authorization (that is, the API documentation is common available)
+                connector(method, !typeof(ApplicationPart).IsAssignableFrom(method.EntityType)); /// Note how <see cref="ApplicationPart"/> like <see cref="ClassAndMethod"/>, <see cref="EnumClass"/> and <see cref="APIMethod"/> can be read-accessed (queried) without authorization (that is, the API documentation is common available)
             });
 
             /// Creates <see cref="CoreMethod.UpdateProperty"/> like Person/{id}/AddProperty/{id}/{value]
             var updatePropertyCreator = new Action<Type>(t => { // TODO: There appears to be too much duplicated code in the creators methods here
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.UpdateProperty + " attempt for " + t.ToStringDB());
-                var method = new APIMethod<TProperty>(
+                var method = new APIMethod(
                     entityType: t,
                     methodAttribute: new MethodAttribute {
                         CoreMethod = CoreMethod.UpdateProperty,
@@ -566,14 +559,14 @@ namespace AgoRapide {
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
-                    routeSegments: new List<RouteSegmentClass<TProperty>> {
-                        new RouteSegmentClass<TProperty>(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass<TProperty>(nameof(CoreProperty.QueryId), M(CoreProperty.QueryId) , detailer),
-                        new RouteSegmentClass<TProperty>(CoreMethod.UpdateProperty.ToString(), CoreMethod.UpdateProperty.ToString(), detailer),
-                        new RouteSegmentClass<TProperty>(nameof(CoreProperty.Key), M(CoreProperty.Key) , detailer),
-                        new RouteSegmentClass<TProperty>(nameof(CoreProperty.Value), M(CoreProperty.Value) , detailer)
+                    routeSegments: new List<RouteSegmentClass> {
+                        new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.QueryId), M(CoreProperty.QueryId) , detailer),
+                        new RouteSegmentClass(CoreMethod.UpdateProperty.ToString(), CoreMethod.UpdateProperty.ToString(), detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.Key), M(CoreProperty.Key) , detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.Value), M(CoreProperty.Value) , detailer)
                     },
-                    parameters: new List<TProperty> {
+                    parameters: new List<CoreProperty> {
                         M(CoreProperty.QueryId),
                         M(CoreProperty.Key),
                         M(CoreProperty.Value)
@@ -586,7 +579,7 @@ namespace AgoRapide {
             /// Creates <see cref="CoreMethod.PropertyOperation"/> like Person/{id}/AddProperty/{id}/{value]
             var propertyOperationCreator = new Action<Type>(t => { // TODO: There appears to be too much duplicated code in the creators methods here
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.PropertyOperation + " attempt for " + t.ToStringDB());
-                var method = new APIMethod<TProperty>(
+                var method = new APIMethod(
                     entityType: t,
                     methodAttribute: new MethodAttribute {
                         CoreMethod = CoreMethod.PropertyOperation,
@@ -597,12 +590,12 @@ namespace AgoRapide {
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
-                    routeSegments: new List<RouteSegmentClass<TProperty>> {
-                        new RouteSegmentClass<TProperty>(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass<TProperty>(nameof(CoreProperty.QueryId), M(CoreProperty.QueryId) , detailer),
-                        new RouteSegmentClass<TProperty>(nameof(CoreProperty.PropertyOperation), M(CoreProperty.PropertyOperation) , detailer)
+                    routeSegments: new List<RouteSegmentClass> {
+                        new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.QueryId), M(CoreProperty.QueryId) , detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.PropertyOperation), M(CoreProperty.PropertyOperation) , detailer)
                     },
-                    parameters: new List<TProperty> {
+                    parameters: new List<CoreProperty> {
                         M(CoreProperty.QueryId),
                         M(CoreProperty.PropertyOperation)
                     },
@@ -614,7 +607,7 @@ namespace AgoRapide {
             /// Creates <see cref="CoreMethod.History"/> like Person/{id}/History and Person/{id}/History
             var historyCreator = new Action<Type>(t => { // TODO: There appears to be too much duplicated code in the creators methods here
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.History + " attempt for " + t.ToStringDB());
-                var method = new APIMethod<TProperty>(
+                var method = new APIMethod(
                     entityType: t,
                     methodAttribute: new MethodAttribute {
                         CoreMethod = CoreMethod.History,
@@ -624,12 +617,12 @@ namespace AgoRapide {
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
-                    routeSegments: new List<RouteSegmentClass<TProperty>> {
-                        new RouteSegmentClass<TProperty>(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass<TProperty>(nameof(CoreProperty.IntegerQueryId), M(CoreProperty.IntegerQueryId) , detailer),
-                        new RouteSegmentClass<TProperty>(nameof(CoreMethod.History), CoreMethod.History.ToString() , detailer)
+                    routeSegments: new List<RouteSegmentClass> {
+                        new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.IntegerQueryId), M(CoreProperty.IntegerQueryId) , detailer),
+                        new RouteSegmentClass(nameof(CoreMethod.History), CoreMethod.History.ToString() , detailer)
                     },
-                    parameters: new List<TProperty> {
+                    parameters: new List<CoreProperty> {
                         M(CoreProperty.IntegerQueryId)
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.IntegerQueryId + "}/" + CoreMethod.History // Do not use M here!
@@ -638,12 +631,12 @@ namespace AgoRapide {
             });
 
             types.ForEach(t => {
-                InvalidTypeException.AssertAssignable(t, typeof(BaseEntityT<TProperty>), null);
+                InvalidTypeException.AssertAssignable(t, typeof(BaseEntityT), null);
                 var a = t.GetAgoRapideAttribute();
                 if (
                     !t.IsAbstract &&
-                    !typeof(BaseEntityT<TProperty>).Equals(t) &&
-                    !typeof(Property<TProperty>).IsAssignableFrom(t) && // "Independent" properties would be a meaningless concept
+                    !typeof(BaseEntityT).Equals(t) &&
+                    !typeof(Property).IsAssignableFrom(t) && // "Independent" properties would be a meaningless concept
                     a.AccessLevelWrite < AccessLevel.System) addEntityCreator(t);
                 if (a.AccessLevelRead < AccessLevel.System) entityIndexCreator(t);
                 if (a.AccessLevelRead < AccessLevel.System) historyCreator(t); // Must appear before addPropertyCreator
@@ -663,7 +656,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="method"></param>
         /// <param name="db"></param>
-        private static void FilterConnectWithDatabaseAndAddMethod(APIMethod<TProperty> method, APIMethodOrigin origin, bool requiresAuthorization, IDatabase<TProperty> db) {
+        private static void FilterConnectWithDatabaseAndAddMethod(APIMethod method, APIMethodOrigin origin, bool requiresAuthorization, IDatabase db) {
             if (method == null) throw new NullReferenceException(nameof(method));
             if (db == null) throw new NullReferenceException(nameof(db));
 
@@ -671,12 +664,12 @@ namespace AgoRapide {
                 IgnoredMethods.Add(method);
                 return;
             }
-            var cid = GetOrAdd<ClassAndMethod<TProperty>>(typeof(APIMethod<TProperty>), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id;
+            var cid = GetOrAdd<ClassAndMethod>(typeof(APIMethod), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id;
 
             if (origin == APIMethodOrigin.Autogenerated) { // Create an id that makes it easy to understand where the C# code for this method resides                
-                GetOrAdd(typeof(APIMethod<TProperty>), typeof(BaseController<TProperty>).ToStringVeryShort() + ".HandleCoreMethod" + method.A.A.CoreMethod + "_for_" + method.EntityType.ToStringVeryShort() + "_(" + origin + ")", db, enrichAndReturnThisObject: method);
+                GetOrAdd(typeof(APIMethod), typeof(BaseController).ToStringVeryShort() + ".HandleCoreMethod" + method.A.A.CoreMethod + "_for_" + method.EntityType.ToStringVeryShort() + "_(" + origin + ")", db, enrichAndReturnThisObject: method);
             } else {
-                GetOrAdd(typeof(APIMethod<TProperty>), method.Controller.ToStringVeryShort() + "." + method.ControllerMethod.Name, db, enrichAndReturnThisObject: method);
+                GetOrAdd(typeof(APIMethod), method.Controller.ToStringVeryShort() + "." + method.ControllerMethod.Name, db, enrichAndReturnThisObject: method);
             }
 
             // This is not possible due to the generics involved
@@ -708,7 +701,7 @@ namespace AgoRapide {
             var suggestedUrls = new List<string>();
             if (method.Parameters.Count == 0) {
                 suggestedUrls.Add(method.RouteTemplates[0]);
-            } else if (method.Parameters.All(p => p.Item2.A.SampleValues != null && p.Item2.A.SampleValues.Length > 0)) {
+            } else if (method.Parameters.All(p => p.a.A.SampleValues != null && p.a.A.SampleValues.Length > 0)) {
                 /// We have sample values for all parameters. Permutate between them
                 /// TODO: Make better code than this!
                 var t = method.RouteTemplates[0];
@@ -716,23 +709,23 @@ namespace AgoRapide {
                     suggestedUrls.Add(t);
                 } else {
                     var p = method.Parameters[0];
-                    p.Item2.A.SampleValues.ForEach(v0 => {
+                    p.a.A.SampleValues.ForEach(v0 => {
                         /// TODO: Make better code than this!
-                        var t0 = t.Replace("{" + p.Item2.PToString + "}", v0);
+                        var t0 = t.Replace("{" + p.a.PToString + "}", v0);
                         if (method.Parameters.Count <= 1) {
                             suggestedUrls.Add(t0);
                         } else {
                             p = method.Parameters[1];
-                            p.Item2.A.SampleValues.ForEach(v1 => {
+                            p.a.A.SampleValues.ForEach(v1 => {
                                 /// TODO: Make better code than this!
-                                var t1 = t0.Replace("{" + p.Item2.PToString + "}", v1);
+                                var t1 = t0.Replace("{" + p.a.PToString + "}", v1);
                                 if (method.Parameters.Count <= 2) {
                                     suggestedUrls.Add(t1);
                                 } else {
                                     p = method.Parameters[2];
-                                    p.Item2.A.SampleValues.ForEach(v2 => {
+                                    p.a.A.SampleValues.ForEach(v2 => {
                                         /// TODO: Make better code than this!
-                                        var t2 = t1.Replace("{" + p.Item2.PToString + "}", v2);
+                                        var t2 = t1.Replace("{" + p.a.PToString + "}", v2);
                                         if (method.Parameters.Count <= 3) {
                                             suggestedUrls.Add(t2);
                                         } else {
@@ -794,9 +787,9 @@ namespace AgoRapide {
             _allMethods.Add(method);
         }
 
-        public override string ToHTMLTableHeading(Request<TProperty> request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(CoreMethod) + "</th><th>" + nameof(EntityType) + "</th><th>" + nameof(CoreProperty.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
+        public override string ToHTMLTableHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(CoreMethod) + "</th><th>" + nameof(EntityType) + "</th><th>" + nameof(CoreProperty.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
 
-        public override string ToHTMLTableRow(Request<TProperty> request) => "<tr><td>" +
+        public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
             PV(M(CoreProperty.CoreMethod), CoreMethod.None).Use(c => c == CoreMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +

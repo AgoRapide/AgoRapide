@@ -17,7 +17,7 @@ namespace AgoRapide {
         Description = "Describes how access is granted within AgoRapide.",
         LongDescription =
             "Restricting access is the responsibility of " +
-            "-" + nameof(IDatabase<CoreProperty>.TryGetEntities) + "- and " +
+            "-" + nameof(IDatabase.TryGetEntities) + "- and " +
             "-" + nameof(Extensions.GetChildPropertiesForUser) + "-")]
     public enum AccessLocation {
 
@@ -26,7 +26,7 @@ namespace AgoRapide {
         [AgoRapide(
             Description = "Access through relation (A relation gives right to an involved entity.  Not implemented as of March 2017)",
             LongDescription = 
-                "Responsibility of -" + nameof(IDatabase<CoreProperty>.TryGetEntities) + "- (Not implemented as of March 2017)\r\n" +
+                "Responsibility of -" + nameof(IDatabase.TryGetEntities) + "- (Not implemented as of March 2017)\r\n" +
                 "(note how -" + nameof(Extensions.GetChildPropertiesForUser) + "- also partly implements -" + nameof(AccessLocation.Relation) + "-")]
         Relation,
 
@@ -42,7 +42,7 @@ namespace AgoRapide {
 
         [AgoRapide(Description =
             "For a TProperty / -" + nameof(CoreProperty) + "- (through -" + nameof(AgoRapideAttribute) + "- for that TProperty / -" + nameof(CoreProperty) + "-\r\n" +
-            "Typical example here would be -" + nameof(APIMethod<CoreProperty>) + "- with -" + nameof(AccessType.Read) + "- set to -" + nameof(AccessLevel.Anonymous) + "- and -" + nameof(AccessType.Write) + "- set to -" + nameof(AccessLevel.System) + "-.",
+            "Typical example here would be -" + nameof(APIMethod) + "- with -" + nameof(AccessType.Read) + "- set to -" + nameof(AccessLevel.Anonymous) + "- and -" + nameof(AccessType.Write) + "- set to -" + nameof(AccessLevel.System) + "-.",
             LongDescription = "Responsibility of -" + nameof(Extensions.GetChildPropertiesForUser) + "-.")]
         Property
     }

@@ -23,14 +23,14 @@ namespace AgoRapide {
         /// <summary>
         /// Will be used when the request URL does not end with <see cref="Configuration.HTMLPostfixIndicator"/> ("/HTML")
         /// 
-        /// See also <see cref="JSONView{TProperty}"/>,  <see cref="BaseEntityT{TProperty}.ToJSONEntity"/>
+        /// See also <see cref="JSONView"/>,  <see cref="BaseEntityT.ToJSONEntity"/>
         /// </summary>
         JSON,
 
         /// <summary>
         /// Will be used then the request URL ends with <see cref="Configuration.HTMLPostfixIndicator"/> ("/HTML")
         /// 
-        /// See also <see cref="HTMLView{TProperty}"/>, <see cref="BaseEntityT{TProperty}.ToHTMLTableHeading"/>, <see cref="BaseEntityT{TProperty}.ToHTMLTableRow"/>, <see cref="BaseEntityT{TProperty}.ToHTMLDetailed"/>
+        /// See also <see cref="HTMLView"/>, <see cref="BaseEntityT.ToHTMLTableHeading"/>, <see cref="BaseEntityT.ToHTMLTableRow"/>, <see cref="BaseEntityT.ToHTMLDetailed"/>
         /// </summary>
         HTML,
     }

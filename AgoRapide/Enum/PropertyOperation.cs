@@ -7,7 +7,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    [AgoRapide(Description = "Describes operations allowed on a -" + nameof(Property<CoreProperty>) + "-")]
+    [AgoRapide(Description = "Describes operations allowed on a -" + nameof(Property) + "-")]
     public enum PropertyOperation {
         None,
 
@@ -21,7 +21,7 @@ namespace AgoRapide {
         [AgoRapide(Description =
             "Indicates that the property is no longer valid (no longer current). " +
             "This is the closest you come to a \"delete\" operation in AgoRapide. " +
-            "If the property is a root-property (for a -" + nameof(BaseEntityT<CoreProperty>) + "- then that whole entity " +
+            "If the property is a root-property (for a -" + nameof(BaseEntityT) + "- then that whole entity " +
             "will be considered no longer valid / \"deleted\". " +
             "Sets -" + nameof(DBField.invalid) + "- to the current timestamp regardless of its current value. " +
             "Note that you can not undo a -" + nameof(SetInvalid) + "- operation by -" + nameof(SetValid) + "- " +

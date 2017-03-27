@@ -6,7 +6,7 @@ using AgoRapide.Database;
 namespace AgoRapide {
 
     /// <summary>
-    /// Usually contained as <see cref="CoreProperty.ResultCode"/> within <see cref="Result{TProperty}"/>
+    /// Usually contained as <see cref="CoreProperty.ResultCode"/> within <see cref="Result"/>
     /// 
     /// Ordering should be in increasing order of seriousness
     /// </summary>

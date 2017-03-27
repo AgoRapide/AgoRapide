@@ -9,28 +9,27 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
-    /// Extension on <see cref="BaseEntityT{TProperty}"/> with internal logging and counting of vital statistics.
+    /// Extension on <see cref="BaseEntityT"/> with internal logging and counting of vital statistics.
     /// Useful for:
-    /// 1) Long-lived classes like <see cref="ApplicationPart{TProperty}"/> where you want to record different kind of statistics for their use. 
-    /// 2) Classes for which it is desireable to communicate details about their contents like <see cref="Result{TProperty}"/>. 
+    /// 1) Long-lived classes like <see cref="ApplicationPart"/> where you want to record different kind of statistics for their use. 
+    /// 2) Classes for which it is desireable to communicate details about their contents like <see cref="Result"/>. 
     /// 
     /// Examples of inheriting classes in AgoRapide are: 
-    /// <see cref="Result{TProperty}"/>, 
-    /// <see cref="ApplicationPart{TProperty}"/>, 
-    /// <see cref="APIMethod{TProperty}"/>
+    /// <see cref="Result"/>, 
+    /// <see cref="ApplicationPart"/>, 
+    /// <see cref="APIMethod"/>
     /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
-    public abstract class BaseEntityTWithLogAndCount<TProperty> : BaseEntityT<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public abstract class BaseEntityTWithLogAndCount : BaseEntityT { 
         public StringBuilder LogData = new StringBuilder();
         /// <summary>
-        /// Note difference between <see cref="BaseCore.Log"/> and <see cref="BaseEntityTWithLogAndCount{TProperty}.LogInternal"/>
+        /// Note difference between <see cref="BaseCore.Log"/> and <see cref="BaseEntityTWithLogAndCount.LogInternal"/>
         /// The former communicates via <see cref="BaseCore.LogEvent"/> and is usually meant for ordinary server logging to disk or similar while
         /// the latter is used for more short-lived in-memory only logging where really detailed information is desired.
         /// </summary>
         /// <param name="text"></param>
         public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogData.AppendLine(DateTime.Now.ToString(DateTimeFormat.DateHourMinSecMs) + ": " + callerType.ToStringShort() + "." + caller + ": " + text);
 
-        public Dictionary<TProperty, long> Counts = new Dictionary<TProperty, long>();
+        public Dictionary<CoreProperty, long> Counts = new Dictionary<CoreProperty, long>();
         /// <summary>
         /// TODO: Consider removing Counts-dictionary altogether. 
         /// 
@@ -44,20 +43,20 @@ namespace AgoRapide {
         /// TODO: This could transfer <see cref="Counts"/> values to / from database automatically. 
         /// </summary>
         /// <param name="id"></param>
-        public void Count(TProperty id) => Counts[id] = Counts.TryGetValue(id, out var count) ? ++count : 1;
-        public void SetCount(TProperty id, long value) => Counts[id] = value;
-        public long GetCount(TProperty id) => TryGetCount(id, out var retval) ? retval : throw new CountNotFoundException(id);
-        public bool TryGetCount(TProperty id, out long count) => TryGetCount(id, out count);
+        public void Count(CoreProperty id) => Counts[id] = Counts.TryGetValue(id, out var count) ? ++count : 1;
+        public void SetCount(CoreProperty id, long value) => Counts[id] = value;
+        public long GetCount(CoreProperty id) => TryGetCount(id, out var retval) ? retval : throw new CountNotFoundException(id);
+        public bool TryGetCount(CoreProperty id, out long count) => TryGetCount(id, out count);
         public class CountNotFoundException : ApplicationException {
-            public CountNotFoundException(TProperty id) : base(id.ToString()) { }
+            public CountNotFoundException(CoreProperty id) : base(id.ToString()) { }
         }
 
         /// <summary>
-        /// Calls first <see cref="BaseEntityT{TProperty}.ToHTMLDetailed"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
+        /// Calls first <see cref="BaseEntityT.ToHTMLDetailed"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public override string ToHTMLDetailed(Request<TProperty> request) {
+        public override string ToHTMLDetailed(Request request) {
             var retval = new StringBuilder();
             retval.Append(base.ToHTMLDetailed(request));
             if (LogData.Length == 0) {
@@ -78,10 +77,10 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Calls first <see cref="BaseEntityT{TProperty}.ToJSONEntity"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
+        /// Calls first <see cref="BaseEntityT.ToJSONEntity"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
         /// </summary>
         /// <returns></returns>
-        public override JSONEntity0 ToJSONEntity(Request<TProperty> request) {
+        public override JSONEntity0 ToJSONEntity(Request request) {
             var retval = base.ToJSONEntity(request) as JSONEntity1 ?? throw new InvalidObjectTypeException(base.ToJSONEntity(request), typeof(JSONEntity1), ToString());
             if (LogData.Length == 0) {
                 // Do not bother with any of these
@@ -89,7 +88,7 @@ namespace AgoRapide {
                 var p = M(CoreProperty.Log);
                 var key = p.GetAgoRapideAttribute().PToString;
                 if (retval.Properties.TryGetValue(key, out var existing)) {
-                    throw new KeyAlreadyExistsException<TProperty>(p,
+                    throw new KeyAlreadyExistsException<CoreProperty>(p,
                         "Unable to add " + nameof(LogData) + "\r\n-------\r\n" + LogData.ToString() + "\r\n" +
                         "-------Because of existing property\r\n-------\r\n" +
                         ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + ". Details: " + ToString());
@@ -102,7 +101,7 @@ namespace AgoRapide {
                 Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
                     var key = c.Key.GetAgoRapideAttribute().PToString;
                     if (retval.Properties.TryGetValue(key, out var existing)) {
-                        throw new KeyAlreadyExistsException<TProperty>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.GetAgoRapideAttribute().PExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
+                        throw new KeyAlreadyExistsException<CoreProperty>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.GetAgoRapideAttribute().PExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
                     }
                     retval.Properties[key] = new JSONProperty0 { Value = c.Value.ToString() };
                 });
@@ -112,9 +111,9 @@ namespace AgoRapide {
     }
 
     ///// <summary>
-    ///// See <see cref="BaseEntityT{TProperty}.ToJSONEntity"/>
+    ///// See <see cref="BaseEntityT.ToJSONEntity"/>
     ///// 
-    ///// Simpler version of a <see cref="BaseEntityT{TProperty}"/>-class, more suited for transfer to client as JSON-data.
+    ///// Simpler version of a <see cref="BaseEntityT"/>-class, more suited for transfer to client as JSON-data.
     ///// 
     ///// Extend this class as needed. For examples see xxxx
     ///// </summary>

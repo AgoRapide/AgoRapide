@@ -10,24 +10,24 @@ namespace AgoRapide.API {
 
     /// <summary>
     /// Container class with information about a given REST API request. 
-    /// <see cref="Request{TProperty}"/> is a minimal version used when request from client was not fully understood 
+    /// <see cref="Request"/> is a minimal version used when request from client was not fully understood 
     /// (invalid parameters for instance or because some exceptions occurred). 
-    /// See also <see cref="ValidRequest{TProperty}"/>. 
+    /// See also <see cref="ValidRequest"/>. 
     /// </summary>
-    public class Request<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class Request {
 
         public System.Net.Http.HttpRequestMessage HttpRequestMessage { get; private set; }
-        public APIMethod<TProperty> Method { get; private set; }
+        public APIMethod Method { get; private set; }
 
         /// <summary>
         /// May be null (for instance for anonymous requests)
         /// </summary>
-        public BaseEntityT<TProperty> CurrentUser { get; set; }
+        public BaseEntityT CurrentUser { get; set; }
 
-        public Result<TProperty> Result { get; } = new Result<TProperty>();
+        public Result Result { get; } = new Result();
 
-        protected static CorePropertyMapper<TProperty> _cpm = new CorePropertyMapper<TProperty>();
-        protected static TProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
+        protected static CorePropertyMapper _cpm = new CorePropertyMapper();
+        protected static CoreProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
 
         public object GetOKResponseAsEntityId(Type entityType, long id) => GetOKResponseAsEntityId(entityType, id, message: null);
         /// <summary>
@@ -56,12 +56,12 @@ namespace AgoRapide.API {
 
         /// <summary>
         /// Calls either <see cref="GetOKResponseAsSingleEntity"/> or <see cref="GetOKResponseAsMultipleEntities"/> according to 
-        /// <see cref="QueryId{TProperty}.IsSingle"/>
+        /// <see cref="QueryId.IsSingle"/>
         /// </summary>
         /// <param name="id"></param>
         /// <param name="entities"></param>
         /// <returns></returns>
-        public object GetOKResponseAsSingleEntityOrMultipleEntities(QueryId<TProperty> id, List<BaseEntityT<TProperty>> entities) {
+        public object GetOKResponseAsSingleEntityOrMultipleEntities(QueryId id, List<BaseEntityT> entities) {
             if (id.IsSingle) {
                 if (entities.Count != 1) throw new InvalidCountException(nameof(id.IsSingle) + " && Count != 1 (" + entities.Count + ")");
                 return GetOKResponseAsSingleEntity(entities[0]);
@@ -70,13 +70,13 @@ namespace AgoRapide.API {
             }
         }
 
-        public object GetOKResponseAsSingleEntity(BaseEntityT<TProperty> entity) {
+        public object GetOKResponseAsSingleEntity(BaseEntityT entity) {
             Result.ResultCode = ResultCode.ok;
             Result.SingleEntityResult = entity ?? throw new ArgumentNullException(nameof(entity));
             return GetResponse();
         }
 
-        public object GetOKResponseAsMultipleEntities(List<BaseEntityT<TProperty>> entities) {
+        public object GetOKResponseAsMultipleEntities(List<BaseEntityT> entities) {
             Result.ResultCode = ResultCode.ok;
             Result.MultipleEntitiesResult = entities ?? throw new ArgumentNullException(nameof(entities));
             return GetResponse();
@@ -131,14 +131,14 @@ namespace AgoRapide.API {
         /// <see cref="GetOKResponseAsEntityId"/>, <see cref="GetAccessDeniedResponse"/>, <see cref="GetErrorResponse"/> or similar 
         /// which again will call this method. 
         /// 
-        /// Note how <see cref="Request{TProperty}.GetResponse"/> removes <see cref="CoreProperty.Log"/> from <see cref="ResultCode.ok"/> result if not <see cref="MethodAttribute.ShowDetailedResult"/>
+        /// Note how <see cref="Request.GetResponse"/> removes <see cref="CoreProperty.Log"/> from <see cref="ResultCode.ok"/> result if not <see cref="MethodAttribute.ShowDetailedResult"/>
         /// </summary>
         /// <returns></returns>
         public object GetResponse() {
             if (Result == null) throw new NullReferenceException(nameof(Result) + "\r\nDetails: " + ToString());
             switch (ResponseFormat) {
-                case ResponseFormat.HTML: return new HTMLView<TProperty>(this).GenerateResult();
-                case ResponseFormat.JSON: return new JSONView<TProperty>(this).GenerateResult();
+                case ResponseFormat.HTML: return new HTMLView(this).GenerateResult();
+                case ResponseFormat.JSON: return new JSONView(this).GenerateResult();
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         }
@@ -146,13 +146,13 @@ namespace AgoRapide.API {
         public override string ToString() => "Url: " + URL + ", Method: " + (Method?.ToString() ?? "[NULL]") + ", CurrentUser: " + (CurrentUser?.ToString() ?? "[NULL]");
 
         ///// <summary>
-        ///// Initializes minimum version of Request. Will be marked <see cref="Request{TProperty}.IsIncomplete"/>. 
+        ///// Initializes minimum version of Request. Will be marked <see cref="Request.IsIncomplete"/>. 
         ///// </summary>
         ///// <param name="httpRequestMessage"></param>
         //public Request(System.Net.Http.HttpRequestMessage httpRequestMessage) : this(httpRequestMessage, null) { }
 
         /// <summary>
-        /// Initializes minimum version of Request. Will be marked <see cref="Request{TProperty}.IsIncomplete"/>. 
+        /// Initializes minimum version of Request. Will be marked <see cref="Request.IsIncomplete"/>. 
         /// </summary>
         /// <param name="httpRequestMessage"></param>
         /// <param name="method"></param>
@@ -160,7 +160,7 @@ namespace AgoRapide.API {
         /// <param name="exceptionHasOccurred">
         /// <see cref="ExceptionHasOccurred"/>
         /// </param>
-        public Request(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod<TProperty> method, BaseEntityT<TProperty> currentUser, bool exceptionHasOccurred) {
+        public Request(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntityT currentUser, bool exceptionHasOccurred) {
             HttpRequestMessage = httpRequestMessage ?? throw new ArgumentNullException(nameof(httpRequestMessage));
             Method = method ?? throw new ArgumentNullException(nameof(method));
             CurrentUser = currentUser;
@@ -190,8 +190,8 @@ namespace AgoRapide.API {
         /// <summary>
         /// Signifies that as little as possible of consistency checking / assertions should be done when handling this request.
         /// 
-        /// TODO: <see cref="Request{TProperty}.ExceptionHasOccurred"/> should also be used in <see cref="Result{TProperty}"/> and
-        /// TODO: <see cref="HTMLView{TProperty}"/> / <see cref="JSONView{TProperty}"/>
+        /// TODO: <see cref="Request.ExceptionHasOccurred"/> should also be used in <see cref="Result"/> and
+        /// TODO: <see cref="HTMLView"/> / <see cref="JSONView"/>
         /// </summary>
         public bool ExceptionHasOccurred { get; private set; }
 
@@ -215,9 +215,9 @@ namespace AgoRapide.API {
         /// <param name="entityType"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreMethod.EntityIndex, entityType, new IntegerQueryId<TProperty>(id));
-        public string CreateAPICommand(BaseEntityT<TProperty> entity) => CreateAPICommand(entity.GetType(), entity.Id);
-        public string CreateAPICommand(CoreMethod coreMethod, Type type, params object[] parameters) => APIMethod<TProperty>.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
+        public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreMethod.EntityIndex, entityType, new IntegerQueryId(id));
+        public string CreateAPICommand(BaseEntityT entity) => CreateAPICommand(entity.GetType(), entity.Id);
+        public string CreateAPICommand(CoreMethod coreMethod, Type type, params object[] parameters) => APIMethod.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
 
         /// <summary>
         /// Creates API URL for <see cref="CoreMethod.EntityIndex"/> for <paramref name="entityType"/> and <paramref name="id"/>  like "https://AgoRapide.com/api/Person/42/HTML"
@@ -226,7 +226,7 @@ namespace AgoRapide.API {
         /// <param name="id"></param>
         /// <returns></returns>
         public string CreateAPIUrl(Type entityType, long id) => CreateAPIUrl(CreateAPICommand(entityType, id));
-        public string CreateAPIUrl(BaseEntityT<TProperty> entity) => CreateAPIUrl(CreateAPICommand(entity));
+        public string CreateAPIUrl(BaseEntityT entity) => CreateAPIUrl(CreateAPICommand(entity));
         public string CreateAPIUrl(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
         public string CreateAPIUrl(string apiCommand) => Util.Configuration.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
@@ -237,7 +237,7 @@ namespace AgoRapide.API {
         /// <param name="entity"></param>
         /// <returns></returns>
         public string CreateAPILink(BaseEntity entity) => CreateAPILink(entity, entity.Name);
-        public string CreateAPILink(BaseEntity entity, string linkText) => CreateAPILink(CoreMethod.EntityIndex, linkText, entity.GetType(), new IntegerQueryId<TProperty>(entity.Id));
+        public string CreateAPILink(BaseEntity entity, string linkText) => CreateAPILink(CoreMethod.EntityIndex, linkText, entity.GetType(), new IntegerQueryId(entity.Id));
         public string CreateAPILink(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(coreMethod, null, null, type, parameters);
         public string CreateAPILink(CoreMethod coreMethod, string linkText, Type type, params object[] parameters) => CreateAPILink(coreMethod, linkText, null, type, parameters);
         //public string CreateAPILink(CoreMethod coreMethod, Type type, string linkText, params object[] parameters) => CreateAPILink(CreateAPICommand(coreMethod, type, parameters), linkText, null);
@@ -256,7 +256,7 @@ namespace AgoRapide.API {
 
 
         /// <summary>
-        /// Matches <paramref name="request"/> with <see cref="APIMethod{TProperty}"/>
+        /// Matches <paramref name="request"/> with <see cref="APIMethod"/>
         /// 
         /// Returns either 
         /// <paramref name="exactMatch"/> or
@@ -274,17 +274,17 @@ namespace AgoRapide.API {
         ///       It is only validated that the parameters are given (they may even be empty))
         /// </param>
         /// <param name="candidateMatches">
-        /// Item1 is the candidate list of <see cref="APIMethod{TProperty}"/> for which the URL / list of parameters is incomplete. 
+        /// Item1 is the candidate list of <see cref="APIMethod"/> for which the URL / list of parameters is incomplete. 
         ///       Will always contain at least one method. 
         ///       Typically used to give a <see cref="ResultCode.missing_parameter_error"/>. 
         /// Item2 is "lastMatchingSegmentNo" (not relevant for <see cref="HTTPMethod.POST"/>)
-        ///       "lastMatchingSegmentNo" is a zero based count indicating last of <see cref="APIMethod{TProperty}.RouteSegments"/> that matched for <paramref name="candidateMatches"/>. 
-        ///       Indicates from where to construct information about missing parameter (used by <see cref="APIMethodCandidate{TProperty}"/> constructor)
+        ///       "lastMatchingSegmentNo" is a zero based count indicating last of <see cref="APIMethod.RouteSegments"/> that matched for <paramref name="candidateMatches"/>. 
+        ///       Indicates from where to construct information about missing parameter (used by <see cref="APIMethodCandidate"/> constructor)
         /// Item3 is debug-information. 
         ///       Its purpose is to help the client with understanding what data ended up at the server
         /// </param>
         /// <param name="maybeIntended">
-        /// Item1 is list of <see cref="APIMethod{TProperty}"/> which maybe was intended by caller. 
+        /// Item1 is list of <see cref="APIMethod"/> which maybe was intended by caller. 
         /// Item2 is debug-information. 
         ///       Its purpose is to help the client with understanding what data ended up at the server
         /// </param>
@@ -292,9 +292,9 @@ namespace AgoRapide.API {
         public static void GetMethodsMatchingRequest(
             System.Net.Http.HttpRequestMessage request,
             ResponseFormat responseFormat,
-            out Tuple<APIMethod<TProperty>, List<string>> exactMatch,
-            out Tuple<List<APIMethod<TProperty>>, int, string> candidateMatches,
-            out Tuple<List<APIMethod<TProperty>>, string> maybeIntended) {
+            out Tuple<APIMethod, List<string>> exactMatch,
+            out Tuple<List<APIMethod>, int, string> candidateMatches,
+            out Tuple<List<APIMethod>, string> maybeIntended) {
             var url = request.RequestUri.ToString();
             var urlSegments = url.Split('/').ToList();
             if (responseFormat == ResponseFormat.HTML) {
@@ -333,7 +333,7 @@ namespace AgoRapide.API {
                         nameof(postParameters) + ":\r\n" +
                         string.Join("\r\n", postParameters.Select(p => {
                             // TODO: Create some common method for 
-                            var e = Util.EnumTryParse<TProperty>(p.Item1, out var temp1) ? temp1 : (Util.EnumTryParse<CoreProperty>(p.Item1, out var temp2) ? M(temp2) : (TProperty)(object)(0));
+                            var e = Util.EnumTryParse<CoreProperty>(p.Item1, out var temp1) ? temp1 : (Util.EnumTryParse<CoreProperty>(p.Item1, out var temp2) ? M(temp2) : (CoreProperty)(object)(0));
                             var a = e.GetAgoRapideAttribute();
                             return p.Item1 + (((((int)(object)e)) == 0) ? (" [Not recognized]" + ")") : "") + " = " + (a.A.IsPassword ? "[WITHHELD]" : ("'" + p.Item2 + "'"));
                         })))
@@ -346,7 +346,7 @@ namespace AgoRapide.API {
             // TODO: Future version: If ends with one method for which all parameters are OK then that would be an autogenerated method. 
             // (since not then would have been picked up by the ordinary ASP .NET routing mechanism. 
 
-            var lastList = APIMethod<TProperty>.AllMethods.Where(m => {
+            var lastList = APIMethod.AllMethods.Where(m => {
                 switch (m.A.A.CoreMethod) {
                     case CoreMethod.GenericMethod:
                     case CoreMethod.RootIndex: return false;
@@ -366,12 +366,12 @@ namespace AgoRapide.API {
 
                 var strSegmentToLower = urlSegments.Count <= urlSegmentNo ? "" : urlSegments[urlSegmentNo].ToLower(); /// Do ToLower only once
                 // Log("Looking for method candidates, segment: " + strSegment);
-                bool increasePostParameterNo = false;
+                var increasePostParameterNo = false;
                 var newList = lastList.Where(m => {
                     if (m.RouteSegments.Count <= (urlSegmentNo + postParameterNo)) return false;
                     if (isPOST && m.RouteSegments[urlSegmentNo + postParameterNo].Parameter != null) { // Match against POST content, not against URL segment                        
                         if (postParameters.Count <= postParameterNo) return false;
-                        var r = /// Note how both name of parameter and parameter must match (or rather, only name of parameter because <see cref="RouteSegmentClass{TProperty}.MatchesURLSegment"/> will now always return true.
+                        var r = /// Note how both name of parameter and parameter must match (or rather, only name of parameter because <see cref="RouteSegmentClass.MatchesURLSegment"/> will now always return true.
                             m.RouteSegments[urlSegmentNo + postParameterNo].SegmentName.Equals(postParameters[postParameterNo].Item1) &&
                             m.RouteSegments[urlSegmentNo + postParameterNo].MatchesURLSegment(
                                 postParameters[postParameterNo].Item2,
@@ -390,7 +390,7 @@ namespace AgoRapide.API {
                 if (newList.Count == 0) {
                     exactMatch = null;
                     candidateMatches = null;
-                    maybeIntended = new Tuple<List<APIMethod<TProperty>>, string>(lastList, getDebugInformation());
+                    maybeIntended = new Tuple<List<APIMethod>, string>(lastList, getDebugInformation());
                     return;
                 }
                 lastList = newList;
@@ -404,7 +404,7 @@ namespace AgoRapide.API {
             if ((urlSegmentNo + postParameterNo) == 0) {
                 exactMatch = null;
                 candidateMatches = null;
-                maybeIntended = new Tuple<List<APIMethod<TProperty>>, string>(lastList, getDebugInformation());
+                maybeIntended = new Tuple<List<APIMethod>, string>(lastList, getDebugInformation());
                 return;
             }
 
@@ -413,7 +413,7 @@ namespace AgoRapide.API {
 
             // Returns parameters (either from urlSegments or from postParameters
             // TODO: Has potential for improvement
-            var getParameters = new Func<APIMethod<TProperty>, List<string>>(method => {
+            var getParameters = new Func<APIMethod, List<string>>(method => {
                 List<string> retval;
                 if (isPOST) { // Add from postParameters
                     retval = postParameters.Select(s => s.Item2).ToList();
@@ -433,11 +433,11 @@ namespace AgoRapide.API {
             switch (exactMatches.Count) {
                 case 0:
                     exactMatch = null;
-                    candidateMatches = new Tuple<List<APIMethod<TProperty>>, int, string>(lastList, urlSegmentNo - 1 + postParameterNo, getDebugInformation());
+                    candidateMatches = new Tuple<List<APIMethod>, int, string>(lastList, urlSegmentNo - 1 + postParameterNo, getDebugInformation());
                     maybeIntended = null;
                     return;
                 case 1:
-                    exactMatch = new Tuple<APIMethod<TProperty>, List<string>>(exactMatches[0], getParameters(exactMatches[0]));
+                    exactMatch = new Tuple<APIMethod, List<string>>(exactMatches[0], getParameters(exactMatches[0]));
                     candidateMatches = null;
                     maybeIntended = null;
                     return;
@@ -457,7 +457,7 @@ namespace AgoRapide.API {
                     /// (assumed there is only one such method)
                     var exactMatchesOrdered = exactMatches.OrderBy(m => m.Parameters.Count).ToList();
                     if (exactMatchesOrdered[0].Parameters.Count < exactMatchesOrdered[1].Parameters.Count) {
-                        exactMatch = new Tuple<APIMethod<TProperty>, List<string>>(exactMatches[0], getParameters(exactMatches[0]));
+                        exactMatch = new Tuple<APIMethod, List<string>>(exactMatches[0], getParameters(exactMatches[0]));
                         candidateMatches = null;
                         maybeIntended = null;
                         return;
@@ -478,13 +478,12 @@ namespace AgoRapide.API {
 
     /// <summary>
     /// Container class with information about a given REST API request. 
-    /// Populated by <see cref="BaseController{TProperty}.TryGetRequest"/>
-    /// See also <see cref="Request{TProperty}"/>. 
+    /// Populated by <see cref="BaseController.TryGetRequest"/>
+    /// See also <see cref="Request"/>. 
     /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
-    public class ValidRequest<TProperty> : Request<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class ValidRequest : Request { 
 
-        public Parameters<TProperty> Parameters { get; private set; }
+        public Parameters Parameters { get; private set; }
 
         /// <summary>
         /// 
@@ -494,6 +493,6 @@ namespace AgoRapide.API {
         /// <param name="currentUser"></param>
         /// <param name="parameters">
         /// </param>
-        public ValidRequest(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod<TProperty> method, BaseEntityT<TProperty> currentUser, Parameters<TProperty> parameters) : base(httpRequestMessage, method, currentUser, exceptionHasOccurred: false) => Parameters = parameters;
+        public ValidRequest(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntityT currentUser, Parameters parameters) : base(httpRequestMessage, method, currentUser, exceptionHasOccurred: false) => Parameters = parameters;
     }
 }

@@ -11,10 +11,10 @@ namespace AgoRapide.API {
     /// <summary>
     /// Generates <see cref="ResponseFormat.HTML"/>-view of results. 
     /// </summary>
-    public class HTMLView<TProperty> : BaseView<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable {
-        public HTMLView(Request<TProperty> request) : base(request) { }
+    public class HTMLView : BaseView { 
+        public HTMLView(Request request) : base(request) { }
         /// <summary>
-        /// Note use of <see cref="JSONView{TProperty}.GenerateEmergencyResult"/> in case of an exception occurring.
+        /// Note use of <see cref="JSONView.GenerateEmergencyResult"/> in case of an exception occurring.
         /// (In other words this method tries to always return some useful information)
         /// </summary>
         /// <returns></returns>
@@ -30,7 +30,7 @@ namespace AgoRapide.API {
                 html.Append(GetHTMLEnd());
 
                 // TODO: Add support for headers and location
-                System.Net.HttpStatusCode statusCode = System.Net.HttpStatusCode.OK;
+                var statusCode = System.Net.HttpStatusCode.OK;
                 string location = null;
                 Dictionary<string, string> headers = null;
                 if (!string.IsNullOrEmpty(location)) {
@@ -43,7 +43,7 @@ namespace AgoRapide.API {
                 return retval;
             } catch (Exception ex) {
                 Util.LogException(ex);
-                return JSONView<TProperty>.GenerateEmergencyResult(ResultCode.exception_error, "An exception of type " + ex.GetType() + " occurred in " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name + ". See logfile on server for details"); // Details: " + Util.GetExeptionDetails(ex)); // Careful, do not give out details now
+                return JSONView.GenerateEmergencyResult(ResultCode.exception_error, "An exception of type " + ex.GetType() + " occurred in " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name + ". See logfile on server for details"); // Details: " + Util.GetExeptionDetails(ex)); // Careful, do not give out details now
             }
         }
 
@@ -93,7 +93,7 @@ namespace AgoRapide.API {
             </script>" +
 
             // TODO: Make this static. 
-            "<script>\r\n" + /// TODO: Consider making any <see cref="APIMethod{TProperty}"/> create Javascript such as this automatically...
+            "<script>\r\n" + /// TODO: Consider making any <see cref="APIMethod"/> create Javascript such as this automatically...
             "function " + CoreMethod.UpdateProperty + "(keyHTML, entityType, entityId, keyDB) {\r\n" +
             "   var inputId = '#input_' + keyHTML;\r\n" +
             "   var errorId = '#error_' + keyHTML;\r\n" +
@@ -101,7 +101,7 @@ namespace AgoRapide.API {
             "\r\n" +
             "   $('#generalQueryResult').html('Saving...');\r\n" + // TODO: Find better name for #generalQueryResult
             "   $(inputId).css({\"background - color\":\"lightgray\"});\r\n" + // TODO: Add some CSS-class here, like "saveInProgress" or similar
-            "   com.AgoRapide.AgoRapide.call({\r\n" + /// TODO: Consider making any <see cref="APIMethod{TProperty}"/> create Javascript such as this automatically...
+            "   com.AgoRapide.AgoRapide.call({\r\n" + /// TODO: Consider making any <see cref="APIMethod"/> create Javascript such as this automatically...
             "     log: true,\r\n" +
             "     url: entityType + '/" + CoreMethod.UpdateProperty + "',\r\n" +
             "     type: '" + HTTPMethod.POST + "',\r\n" +
@@ -132,7 +132,7 @@ namespace AgoRapide.API {
                     CoreMethod.EntityIndex,
                     nameof(Request.CurrentUser) + ": " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
-                    new IntegerQueryId<TProperty>(Request.CurrentUser.Id)
+                    new IntegerQueryId(Request.CurrentUser.Id)
                     ) +
                 "</p>"
             ) +
@@ -143,8 +143,8 @@ namespace AgoRapide.API {
                 "<p>" + Request.CreateAPILink(
                     CoreMethod.PropertyOperation,
                     "End representation as " + Request.CurrentUser.Name,
-                    typeof(Property<TProperty>),
-                    new IntegerQueryId<TProperty>( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreProperty.EntityToRepresent"/> no longer exists for CurrentUser.
+                    typeof(Property),
+                    new IntegerQueryId( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreProperty.EntityToRepresent"/> no longer exists for CurrentUser.
                         (Request.CurrentUser.RepresentedByEntity.Properties.TryGetValue(M(CoreProperty.EntityToRepresent), out var p) ? p.Id : 0)),
                     PropertyOperation.SetInvalid
                     ) +
@@ -158,9 +158,9 @@ namespace AgoRapide.API {
                     CoreMethod.UpdateProperty,
                     "Logout as " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
-                    new IntegerQueryId<TProperty>(Request.CurrentUser.Id),
+                    new IntegerQueryId(Request.CurrentUser.Id),
                     M(CoreProperty.RejectCredentialsNextTime),
-                    true.ToString() /// Note how <see cref="APIMethod{TProperty}"/> only knows that <see cref="CoreProperty.Value"/> is a string at this stage
+                    true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreProperty.Value"/> is a string at this stage
                                     /// (<see cref = "CoreMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
                                     /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
                     ) +
@@ -176,7 +176,7 @@ namespace AgoRapide.API {
             "<p><a href=\"" + Request.JSONUrl + "\">JSON format for this request</a></p>\r\n<p>" +
             (Request.CurrentUser != null ? "" :
                 "You are not logged in. Access is limited to the following methods:<br>\r\n" +
-                    string.Join("<br>", APIMethod<TProperty>.AllMethods.Where(m => !m.RequiresAuthorization).Select(m => Request.CreateAPILink(m)))
+                    string.Join("<br>", APIMethod.AllMethods.Where(m => !m.RequiresAuthorization).Select(m => Request.CreateAPILink(m)))
             ) +
             "</body>\r\n" +
             "</html>\r\n";

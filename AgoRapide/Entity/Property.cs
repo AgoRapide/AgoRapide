@@ -11,20 +11,20 @@ namespace AgoRapide {
 
     /// <summary>
     /// You should normally not directly call initializations methods here (like <see cref="Create{T}(TProperty, T)"/>)  
-    /// but instead rely on <see cref="IDatabase{TProperty}"/> or <see cref="BaseEntityT{TProperty}.AddProperty"/>
+    /// but instead rely on <see cref="IDatabase"/> or <see cref="BaseEntityT.AddProperty"/>
     /// in order to ensure correct population of fields like <see cref="ParentId"/> and <see cref="Parent"/> 
-    /// and a proper call to <see cref="Property{TProperty}.Initialize"/>.
+    /// and a proper call to <see cref="Property.Initialize"/>.
     /// </summary>
     [AgoRapide(
-        Description = "Represents a single property of a -" + nameof(BaseEntityT<CoreProperty>) + "-.",
+        Description = "Represents a single property of a -" + nameof(BaseEntityT) + "-.",
         LongDescription =
-            "Note how -" + nameof(Property<CoreProperty>) + "- is itself also a -" + nameof(BaseEntityT<CoreProperty>) + "- and may therefore contain " +
-            "a collection of -" + nameof(Property<CoreProperty>) + "- itself, either because it \"is\" -" + nameof(AgoRapideAttribute.IsMany) + "- or " +
+            "Note how -" + nameof(Property) + "- is itself also a -" + nameof(BaseEntityT) + "- and may therefore contain " +
+            "a collection of -" + nameof(Property) + "- itself, either because it \"is\" -" + nameof(AgoRapideAttribute.IsMany) + "- or " +
             "because it just contains child-properties.",
         AccessLevelRead = AccessLevel.Relation,
         AccessLevelWrite = AccessLevel.Relation
     )]
-    public class Property<TProperty> : BaseEntityT<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class Property : BaseEntityT {
 
         /// <summary>
         /// Note that the alternative 
@@ -83,24 +83,22 @@ namespace AgoRapide {
 
 
         /// <summary>
-        /// Should only be used by an <see cref="IDatabase{TProperty}"/> implementation
+        /// Should only be used by an <see cref="IDatabase"/> implementation
         /// </summary>
         public Property() {
         }
 
         /// <summary>
-        /// Should only be used by an <see cref="IDatabase{TProperty}"/> implementation
+        /// Should only be used by an <see cref="IDatabase"/> implementation
         /// TODO: Why?
         /// 
         /// TODO: Is this only used by <see cref="CreateIsManyParent"/>? In that case we may make it private
         /// </summary>
-        public Property(TProperty keyT) {
-            _keyT = keyT;
-        }
-
+        public Property(CoreProperty keyT) => _keyT = keyT;
+        
         public bool IsIsManyParent { get; private set; }
-        public static Property<TProperty> CreateIsManyParent(TProperty key) => new Property<TProperty>(key) {
-            Properties = new Dictionary<TProperty, Property<TProperty>>(),
+        public static Property CreateIsManyParent(CoreProperty key) => new Property(key) {
+            Properties = new Dictionary<CoreProperty, Property>(),
             IsIsManyParent = true
         };
 
@@ -110,14 +108,14 @@ namespace AgoRapide {
 
         public int GetNextIsManyId() {
             AssertIsManyParent();
-            var id = 1; while (Properties.ContainsKey((TProperty)(object)(int.MaxValue - id))) {
+            var id = 1; while (Properties.ContainsKey((CoreProperty)(object)(int.MaxValue - id))) {
                 id++; if (id > 1000) throw new AgoRapideAttribute.IsManyException("id " + id + ", limit is (somewhat artificially) set to 1000. " + ToString());
             }
             return id;
         }
 
         /// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         /// 
         /// Note that does NOT call <see cref="Initialize"/> (since further setting av properties like <see cref="ParentId"/> 
         /// is most probably needed first)
@@ -126,21 +124,20 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static Property<TProperty> Create<T>(TProperty key, T value) {
+        public static Property Create<T>(CoreProperty key, T value) {
             if (value == null) throw new ArgumentNullException(nameof(value));
-            // return new Func<Property<TProperty>>(() => { // Lambda motivated by need for call to Initialize (see end of block)
             var t = typeof(T);
-            if (typeof(long).Equals(t)) return new Property<TProperty>(key, (long)(object)value);
+            if (typeof(long).Equals(t)) return new Property(key, (long)(object)value);
             if (typeof(int).Equals(t)) throw new TypeIntNotSupportedByAgoRapideException(nameof(value) + ": " + value);
-            if (typeof(double).Equals(t)) return new Property<TProperty>(key, (double)(object)value);
-            if (typeof(bool).Equals(t)) return new Property<TProperty>(key, (bool)(object)value);
-            if (typeof(DateTime).Equals(t)) return new Property<TProperty>(key, (DateTime)(object)value);
-            if (typeof(string).Equals(t)) return new Property<TProperty>(key, (string)(object)value);
+            if (typeof(double).Equals(t)) return new Property(key, (double)(object)value);
+            if (typeof(bool).Equals(t)) return new Property(key, (bool)(object)value);
+            if (typeof(DateTime).Equals(t)) return new Property(key, (DateTime)(object)value);
+            if (typeof(string).Equals(t)) return new Property(key, (string)(object)value);
 
             var attributes = key.GetAgoRapideAttribute();
             if (attributes.A.Type == null) throw new NullReferenceException(
                   "There is no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                  "defined for enum " + typeof(TProperty).ToString() + "." + key.ToString() + ". " +
+                  "defined for enum " + typeof(CoreProperty).ToString() + "." + key.ToString() + ". " +
                   "Unable to assert whether " + typeof(T) + " (or rather " + value.GetType().ToString() + ") is valid for this enum");
 
             // typeof(T) is really irrelevant now because it T is "thrown away" when creating property.
@@ -153,68 +150,68 @@ namespace AgoRapide {
             // Instead we can check for value.GetType instead
             InvalidTypeException.AssertAssignable(value.GetType(), attributes.A.Type, () =>
                 nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                "defined for enum " + typeof(TProperty).ToString() + "." + key.ToString() + ". " +
+                "defined for enum " + typeof(CoreProperty) + "." + key + ". " +
                 "!IsAssignableFrom " + value.GetType() + " " +
                 "(actual " + nameof(T) + " is " + typeof(T) + ")");
 
-            return new Property<TProperty>(key, (object)value); // (object) clarifies which constructor we call now
-                                                                // })().Initialize();
+            return new Property(key, (object)value); // (object) clarifies which constructor we call now
+                                                     // })().Initialize();
         }
 
         /// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         /// </summary>
         /// <param name="key"></param>
         /// <param name="objValue"></param>
-        public Property(TProperty key, object objValue) {
+        public Property(CoreProperty key, object objValue) {
             _keyT = key;
             _ADotTypeValue = objValue;
         }
 
         /// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         /// TODO: Make private anyway
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(TProperty key, long value) {
+        public Property(CoreProperty key, long value) {
             _keyT = key;
             LngValue = value;
         }
 
         /// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(TProperty key, double value) {
+        public Property(CoreProperty key, double value) {
             _keyT = key;
             DblValue = value;
         }
 
         /// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(TProperty key, bool value) {
+        public Property(CoreProperty key, bool value) {
             _keyT = key;
             BlnValue = value;
         }
 
         /// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(TProperty key, DateTime value) {
+        public Property(CoreProperty key, DateTime value) {
             _keyT = key;
             DtmValue = value;
         }
 
         // TOOD: Implement constructor for geo-value
         ///// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         ///// </summary>
         ///// <param name="key"></param>
         ///// <param name="value"></param>
@@ -225,11 +222,11 @@ namespace AgoRapide {
         //}
 
         /// <summary>
-        /// Use with caution. <see cref="BaseEntityT{TProperty}.AddProperty)"/> is preferred when adding property to entity
+        /// Use with caution. <see cref="BaseEntityT.AddProperty)"/> is preferred when adding property to entity
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(TProperty key, string value) {
+        public Property(CoreProperty key, string value) {
             _keyT = key;
             StrValue = value;
         }
@@ -256,7 +253,7 @@ namespace AgoRapide {
         /// Note that could theoretically be two choices for parent, either the parent entity or the entity root property 
         /// but having the latter as parent is deemed quite unnatural
         /// </summary>
-        public BaseEntityT<TProperty> Parent;
+        public BaseEntityT Parent;
 
         /// <summary>
         /// <see cref="DBField.fid"/>
@@ -271,9 +268,6 @@ namespace AgoRapide {
 
         public bool IsValid => true;
 
-        //protected static CorePropertyMapper<TProperty> _cpm = new CorePropertyMapper<TProperty>();
-        //protected static TProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
-
         private string _keyDB;
         /// <summary>
         /// Key as stored in database
@@ -285,17 +279,17 @@ namespace AgoRapide {
         public string KeyDB {
             get => _keyDB ?? (_keyDB = new Func<string>(() => {
                 if (_keyT == null) throw new NullReferenceException(nameof(_keyT) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                if (Enum.IsDefined(typeof(TProperty), _keyT)) {
+                if (Enum.IsDefined(typeof(CoreProperty), _keyT)) {
                     return _keyT.ToString();
                 } else {
                     // This is a silently mapped CoreProperty. Use the CoreProperty value instead since _keyT.ToString() will be an "integer".
-                    return _cpm.MapReverse((TProperty)_keyT).ToString();
+                    return _cpm.MapReverse((CoreProperty)_keyT).ToString();
                 }
             })());
             set => _keyDB = value;
         }
 
-        private TProperty? _keyT;
+        private CoreProperty? _keyT;
         /// <summary>
         /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
         /// 
@@ -310,22 +304,40 @@ namespace AgoRapide {
         /// Do not use <see cref="KeyT"/>.ToString() in your code, use instead <see cref="KeyDB"/> because for silently mapped 
         /// <see cref="CoreProperty"/>-values this will give you the <see cref="CoreProperty"/>-value ToString() instead of an "integer".
         /// </summary>
-        public TProperty KeyT =>
-            _keyT != null ? (TProperty)_keyT : (TProperty)(_keyT = new Func<TProperty>(() => {
+        public CoreProperty KeyT =>
+            _keyT != null ? (CoreProperty)_keyT : (CoreProperty)(_keyT = new Func<CoreProperty>(() => {
                 if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
                 /// TOOD: IS THAT STILL RELEVANT AFTER INTRODUCING IsMany-parents?
-                if (Util.EnumTryParse(KeyDB, out TProperty retval)) return retval;
-                if (Util.EnumTryParse(KeyDB, out CoreProperty corePropertyTemp)) return _cpm.Map(corePropertyTemp);
-                var t = KeyDB.Split('#');
-                if (t.Length != 2) return default(TProperty);
-                if (!Util.EnumTryParse(t[0], out retval)) {
-                    if (!Util.EnumTryParse(t[0], out corePropertyTemp)) return default(TProperty);
-                    retval = _cpm.Map(corePropertyTemp);
-                }
-                if (!int.TryParse(t[1], out var temp)) return default(TProperty);
-                _multipleIndex = temp;
-                return retval;
+
+                var retval = CorePropertyMapper.Map2(KeyDB);
+                _keyA = retval.a; // Set keyA 
+                return retval.cp;
+
+                // CREATE TryMap2 above! 
+                //if (Util.EnumTryParse(KeyDB, out CoreProperty retval)) return retval;
+                //if (Util.EnumTryParse(KeyDB, out CoreProperty corePropertyTemp)) return _cpm.Map(corePropertyTemp);
+                //var t = KeyDB.Split('#');
+                //if (t.Length != 2) return default(TProperty);
+                //if (!Util.EnumTryParse(t[0], out retval)) {
+                //    if (!Util.EnumTryParse(t[0], out corePropertyTemp)) return default(TProperty);
+                //    retval = _cpm.Map(corePropertyTemp);
+                //}
+                //if (!int.TryParse(t[1], out var temp)) return default(TProperty);
+                //_multipleIndex = temp;
+                //return retval;
             })());
+
+        private AgoRapideAttributeT _keyA;
+        /// <summary>
+        /// TODO: Note how call to KeyT will also set _keyA... Should be done much better.
+        /// </summary>
+        public AgoRapideAttributeT KeyA => _keyA ?? (_keyA = KeyT.GetAgoRapideAttribute()); 
+
+        //private AgoRapideAttributeT _keyAttribute;
+        ///// <summary>
+        ///// TODO: REPLACE WITH Attribute as found by <see cref="KeyT"/>
+        ///// </summary>
+        //public AgoRapideAttributeT KeyA => _keyAttribute ?? (_keyAttribute = KeyT.GetAgoRapideAttribute());
 
         /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
         private int? _multipleIndex;
@@ -360,7 +372,7 @@ namespace AgoRapide {
         private object _ADotTypeValue;
         /// <summary>
         /// Note how this throws an Exception if <see cref="_ADotTypeValue"/> is not set. 
-        /// Property should be used with caution. Usually used from <see cref="Parameters{TProperty}"/> when ... ????????? 
+        /// Property should be used with caution. Usually used from <see cref="Parameters"/> when ... ????????? 
         /// TODO: DOCUMENT BETTER! USE BETTER!
         /// 
         /// TODO: Make much better. Try to avoid if-else-if-else-if ... below.
@@ -415,7 +427,7 @@ namespace AgoRapide {
         /// TODO: DOCUMENT / DECIDE BETTER ABOUT HANDLING OF CONVERSION PROBLEMS (INVALID VALUES AND SO ON)
         /// 
         /// TODO: Add an error / explanation or some other kind of response out response and communicate that all the
-        /// TODO: way out to <see cref="BaseEntityT{TProperty}.TryGetPV{T}(TProperty, out T)"/> and so on.
+        /// TODO: way out to <see cref="BaseEntityT.TryGetPV{T}(TProperty, out T)"/> and so on.
         /// 
         /// TODO: Add corresponding lists of long/double/bool/Datetime/string and so on
         /// TODO: <see cref="AgoRapideAttribute.IsMany"/>-properties (#x-properties)
@@ -514,8 +526,8 @@ namespace AgoRapide {
                             "Unable to cast '" + StrValue + "' to " + t + ", " +
                             "ended up with " + result.Result.StrValue.GetType() + ".\r\n" +
                             (KeyA.ValidatorAndParser != null ?
-                                "Very unexpected since " + nameof(AgoRapideAttributeT<TProperty>.ValidatorAndParser) + " was set" :
-                                "Most probably because " + nameof(AgoRapideAttributeT<TProperty>.ValidatorAndParser) + " was not set"
+                                "Very unexpected since " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " was set" :
+                                "Most probably because " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " was not set"
                             ) + ".\r\n" +
                             "Details: " + ToString());
                     }
@@ -523,8 +535,8 @@ namespace AgoRapide {
                         "Unable to cast '" + StrValue + "' to " + t + ", " +
                         "ended up with " + result.Result.ADotTypeValue().GetType() + " (value: '" + result.Result.ADotTypeValue().ToString() + ").\r\n" +
                         (KeyA.ValidatorAndParser == null ?
-                            "Very unexpected since " + nameof(AgoRapideAttributeT<TProperty>.ValidatorAndParser) + " was not set" :
-                            "Most probably because " + nameof(AgoRapideAttributeT<TProperty>.ValidatorAndParser) + " returns the wrong type of object"
+                            "Very unexpected since " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " was not set" :
+                            "Most probably because " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " returns the wrong type of object"
                         ) + ".\r\n" +
                         "Details: " + ToString());
                     value = (T)(_ADotTypeValue = result.Result.ADotTypeValue()); return true;
@@ -548,15 +560,6 @@ namespace AgoRapide {
             // TODO: Decide how to implement different types. Exception or not?
         }
 
-        ///// <summary>
-        ///// TODO: CANDIDATE FOR MOVING OUT OF PROPERTY AND INTO BaseEntity class
-        ///// </summary>
-        ///// <param name="valueSetter"></param>
-        ///// <returns></returns>
-        //public Property<TProperty> SetValueThroughValueSetter(Action<Property<TProperty>> valueSetter) {
-        //    valueSetter(this);
-        //    return this;
-        //}
 
         // TODO: CONSIDER MAKING THESE VALUES PRIVATE!
         // TODO: AND ALWAYS FORCING READING AS VAs<long> and so on (TryGetVAs<long>)
@@ -604,9 +607,6 @@ namespace AgoRapide {
         /// </summary>
         public long? InvalidatorId { get; set; }
 
-        private AgoRapideAttributeT<TProperty> _keyAttribute;
-        public AgoRapideAttributeT<TProperty> KeyA => _keyAttribute ?? (_keyAttribute = KeyT.GetAgoRapideAttribute());
-
         private AgoRapideAttribute _valueAttribute;
         /// <summary>
         /// Returns attributes for the value itself. 
@@ -614,9 +614,9 @@ namespace AgoRapide {
         /// 
         /// Requester is supposed to never change the 
         /// 
-        /// Note that only a basic <see cref="AgoRapideAttribute"/>-object is returned, not an enriched <see cref="AgoRapideAttributeT{TProperty}"/>-object. 
+        /// Note that only a basic <see cref="AgoRapideAttribute"/>-object is returned, not an enriched <see cref="AgoRapideAttributeT"/>-object. 
         /// 
-        /// NOTE: There are some difficulties involved in getting a <see cref="AgoRapideAttributeT{TProperty}"/>-object because of the generics involved. 
+        /// NOTE: There are some difficulties involved in getting a <see cref="AgoRapideAttributeT"/>-object because of the generics involved. 
         /// We could use something like
         ///   if (aDotTypeValue.GetType().Equals(Typeof(APIMethodOrigin))) return V{ApiMethodOrigin}.GetAgoRapideAttribute() 
         ///   else if if (aDotTypeValue.GetType().Equals(... and so on
@@ -641,7 +641,7 @@ namespace AgoRapide {
         /// Returns itself for fluent purposes
         /// </summary>
         /// <returns></returns>
-        public Property<TProperty> Initialize() {
+        public Property Initialize() {
             new Action(() => {
                 // TODO: DECIDE WHAT TO USE. String representation found in Initialize or in TryGetV
                 if (LngValue != null) { Value = LngValue.ToString(); return; }
@@ -676,7 +676,7 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Note existence of both <see cref="Property{TProperty}.InvalidPropertyException"/> and <see cref="BaseEntityT{TProperty}.InvalidPropertyException{T}"/>
+        /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntityT.InvalidPropertyException{T}"/>
         /// </summary>
         private class InvalidPropertyException : ApplicationException {
             public InvalidPropertyException(string message) : base(message) { }
@@ -695,13 +695,13 @@ namespace AgoRapide {
             nameof(KeyA) + "." + nameof(KeyA.A) + "." +
             nameof(KeyA.A.Type) + ": " + (KeyA.A.Type?.ToString() ?? "[NULL]") + ". " + base.ToString();
 
-        public override string ToHTMLTableHeading(Request<TProperty> request) => HTMLTableHeading;
+        public override string ToHTMLTableHeading(Request request) => HTMLTableHeading;
         public const string HTMLTableHeading = "<tr><th>Key</th><th>Value</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
 
         /// <summary>
         /// Hack for transferring information from 
-        /// <see cref="BaseEntityT{TProperty}.CreateHTMLForExistingProperties"/> and 
-        /// <see cref="BaseEntityT{TProperty}.CreateHTMLForAddingProperties"/> to 
+        /// <see cref="BaseEntityT.CreateHTMLForExistingProperties"/> and 
+        /// <see cref="BaseEntityT.CreateHTMLForAddingProperties"/> to 
         /// <see cref="ToHTMLTableRow"/>. 
         /// Do not use except between these methods. 
         /// Hack implemented because of difficulty of adding parameter to <see cref="ToHTMLTableRow"/>. 
@@ -723,7 +723,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public override string ToHTMLTableRow(Request<TProperty> request) {
+        public override string ToHTMLTableRow(Request request) {
             if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => p.Value.ToHTMLTableRow(request)));
             return "<tr><td>" +
 
@@ -758,11 +758,11 @@ namespace AgoRapide {
                         (
                             // Ordinary textbox was presented. Add button.
 
-                            /// Note: Corresponding Javascript method being called here is currently generated in <see cref="HTMLView{TProperty}.GetHTMLStart"/>
+                            /// Note: Corresponding Javascript method being called here is currently generated in <see cref="HTMLView.GetHTMLStart"/>
 
                             /// TODO: An alternative to the above would be to 
-                            /// TODO: aonsider making <see cref="APIMethod{TProperty}"/> create Javascript such as this automatically...
-                            /// TODO: In other words, call the <see cref="APIMethod{TProperty}"/> for <see cref="CoreMethod.UpdateProperty"/> 
+                            /// TODO: aonsider making <see cref="APIMethod"/> create Javascript such as this automatically...
+                            /// TODO: In other words, call the <see cref="APIMethod"/> for <see cref="CoreMethod.UpdateProperty"/> 
                             /// TODO: in order to get the Javascript required here, instead of generating it as done immediately below:
                             "<input " +
                                 "type=\"button\" " +
@@ -777,7 +777,7 @@ namespace AgoRapide {
                         ) : (
 
                             // Create select with valid values.
-                            /// Note: Corresponding Javascript method being called here is currently generated in <see cref="HTMLView{TProperty}.GetHTMLStart"/>
+                            /// Note: Corresponding Javascript method being called here is currently generated in <see cref="HTMLView.GetHTMLStart"/>
                             "<select " +
                                 "id=\"input_" + KeyHTML + "\" " +
                                 "onchange = \"try { " +
@@ -787,13 +787,13 @@ namespace AgoRapide {
                                     "} return false;" +
                                 "\"" +
                             "/>" +
-                            /// TODO: Idea for <see cref="Property{TProperty}.ToHTMLTableRow(Request{TProperty})"/>
+                            /// TODO: Idea for <see cref="Property.ToHTMLTableRow(Request)"/>
                             /// TODO: SELECT values for choosing should also have PropertyOperation in them, se we can immediately
                             /// TODO: delete properties from the HTML admin interface.
                             /// TOOD: (but that would leave properties without <see cref="AgoRapideAttribute.ValidValues"/> without such...)
                             /// TODO: Maybe better to just leave as is...
-                            
-                            "<option value=\"\">[Choose " + Name.HTMLEncode() + "...]</option>\r\n" + 
+
+                            "<option value=\"\">[Choose " + Name.HTMLEncode() + "...]</option>\r\n" +
                             /// TODO: Add to <see cref="AgoRapideAttribute.ValidValues"/> a List of tuples with description for each value
                             /// TODO: (needed for HTML SELECT tags)
                             string.Join("\r\n", KeyA.A.ValidValues.Select(v => "<option value=\"" + v + "\">" + v.HTMLEncode() + "</option>")) +
@@ -812,7 +812,7 @@ namespace AgoRapide {
                 "</td></tr>\r\n\r\n";
         }
 
-        public override string ToHTMLDetailed(Request<TProperty> request) {
+        public override string ToHTMLDetailed(Request request) {
             var retval = new StringBuilder();
             retval.AppendLine("<table><tr><th>Field</th><th>Value</th></tr>");
             var adder = new Action<DBField, string>((field, value) => {
@@ -877,12 +877,12 @@ namespace AgoRapide {
             adderWithLink(DBField.iid, InvalidatorId);
             retval.AppendLine("</table>");
             var cmds = new List<string>();
-            request.CreateAPICommand(CoreMethod.History, GetType(), new IntegerQueryId<TProperty>(Id)).Use(cmd => {
+            request.CreateAPICommand(CoreMethod.History, GetType(), new IntegerQueryId(Id)).Use(cmd => {
                 retval.AppendLine("<p>" + request.CreateAPILink(cmd, "History") + "</p>");
                 cmds.Add(cmd);
             });
             Util.EnumGetValues<PropertyOperation>().ForEach(o => {
-                request.CreateAPICommand(CoreMethod.PropertyOperation, GetType(), new IntegerQueryId<TProperty>(Id), o).Use(cmd => {
+                request.CreateAPICommand(CoreMethod.PropertyOperation, GetType(), new IntegerQueryId(Id), o).Use(cmd => {
                     retval.AppendLine("<p>" + request.CreateAPILink(cmd, o.ToString()) + "</p>");
                     cmds.Add(cmd);
                 });
@@ -891,12 +891,12 @@ namespace AgoRapide {
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>
-        /// For example of override see <see cref="BaseEntityTWithLogAndCount{TProperty}.ToJSONEntity"/> or <see cref="Property{TProperty}.ToJSONEntity"/>
+        /// For example of override see <see cref="BaseEntityTWithLogAndCount.ToJSONEntity"/> or <see cref="Property.ToJSONEntity"/>
         /// 
         /// Do not use this method, use more strongly typed <see cref="ToJSONProperty"/> instead.
         /// </summary>
         /// <returns></returns>
-        public override JSONEntity0 ToJSONEntity(Request<TProperty> request) => ToJSONProperty();
+        public override JSONEntity0 ToJSONEntity(Request request) => ToJSONProperty();
 
         /// <summary>
         /// Should we have Request as parameter here, and do som <see cref="AccessLevel"/>-checking like for <see cref="ToJSONEntity"/>? 
@@ -953,12 +953,12 @@ namespace AgoRapide {
     /// </summary>
     public class JSONProperty0 : JSONEntity0 {
         /// <summary>
-        /// <see cref="Property{TProperty}.LngValue"/>
-        /// <see cref="Property{TProperty}.DblValue"/>
-        /// <see cref="Property{TProperty}.BlnValue"/>
-        /// <see cref="Property{TProperty}.DtmValue"/>
-        /// <see cref="Property{TProperty}.ADotTypeValue"/>
-        /// <see cref="Property{TProperty}.StrValue"/>
+        /// <see cref="Property.LngValue"/>
+        /// <see cref="Property.DblValue"/>
+        /// <see cref="Property.BlnValue"/>
+        /// <see cref="Property.DtmValue"/>
+        /// <see cref="Property.ADotTypeValue"/>
+        /// <see cref="Property.StrValue"/>
         /// </summary>
         public string Value { get; set; }
 
@@ -975,22 +975,22 @@ namespace AgoRapide {
         public long Id { get; set; }
         public DateTime? Created { get; set; }
         /// <summary>
-        /// <see cref="Property{TProperty}.CreatorId"/>
+        /// <see cref="Property.CreatorId"/>
         /// </summary>
         public long CreatorId { get; set; }
         /// <summary>
-        /// <see cref="Property{TProperty}.ParentId"/>
+        /// <see cref="Property.ParentId"/>
         /// </summary>
         public long ParentId { get; set; }
         /// <summary>
-        /// <see cref="Property{TProperty}.ForeignId"/>
+        /// <see cref="Property.ForeignId"/>
         /// </summary>
         public long ForeignId { get; set; }
         /// <summary>
         /// TODO: We should really consider if there is any point in this property, as it often shows up as
         /// key in containing JSON dictionary anyway.
         /// 
-        /// Is currently <see cref="AgoRapideAttributeT{TProperty}.PToString"/>. Maybe change to ToStringShort or similar.
+        /// Is currently <see cref="AgoRapideAttributeT.PToString"/>. Maybe change to ToStringShort or similar.
         /// </summary>
         public string Key { get; set; }
         public List<string> ValidValues;

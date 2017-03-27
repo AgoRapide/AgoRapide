@@ -10,29 +10,27 @@ namespace AgoRapide.API {
     /// <summary>
     /// Generates <see cref="ResponseFormat.JSON"/>-view of results.
     /// </summary>
-    public class JSONView<TProperty> : BaseView<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable {
-        public JSONView(Request<TProperty> request) : base(request) { }
+    public class JSONView : BaseView { 
+        public JSONView(Request request) : base(request) { }
 
         /// <summary>
         /// Only to be used in emergencies. Last resort for getting some useful information back to client in situations where
-        /// unable to generate a standard AgoRapide-response through the <see cref="Request{TProperty}.GetResponse"/>-mechanism.
+        /// unable to generate a standard AgoRapide-response through the <see cref="Request.GetResponse"/>-mechanism.
         /// </summary>
         /// <param name="resultCode"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public static object GenerateEmergencyResult(ResultCode resultCode, string message) {
-            return new System.Web.Mvc.JsonResult { // Without method we can not construct a Request object. Send emergency response as JSON only.
+        public static object GenerateEmergencyResult(ResultCode resultCode, string message) => 
+            new System.Web.Mvc.JsonResult { // Without method we can not construct a Request object. Send emergency response as JSON only.
                 Data = new {
                     ResultCode = ResultCode.exception_error.ToString(),
                     ResultCodeDescription = ResultCode.exception_error.GetAgoRapideAttribute().A.Description,
                     Message = System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + message
                 }
             };
-
-        }
-
+        
         /// <summary>
-        /// Note use of <see cref="JSONView{TProperty}.GenerateEmergencyResult"/> in case of an exception occurring. 
+        /// Note use of <see cref="JSONView.GenerateEmergencyResult"/> in case of an exception occurring. 
         /// (In other words this method tries to always return some useful information)
         /// </summary>
         /// <returns></returns>

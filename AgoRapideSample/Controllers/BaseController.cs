@@ -9,7 +9,7 @@ using AgoRapide.API;
 using AgoRapide.Database;
 
 namespace AgoRapideSample {
-    public abstract class BaseController : BaseController<P> {
+    public abstract class BaseController : AgoRapide.API.BaseController {
 
         //protected override string GetConnectionString() =>
         //    "Pooling=false;" +
@@ -25,8 +25,8 @@ namespace AgoRapideSample {
             HandledExceptionEvent += LogException;
         }
 
-        public static IDatabase<P> GetDatabase(Type ownersType) {
-            var retval = new PostgreSQLDatabase<P>(
+        public static IDatabase GetDatabase(Type ownersType) {
+            var retval = new PostgreSQLDatabase(
                 "Pooling=false;" +
                 "CommandTimeout=20;" + // 20 seconds. Corresponds to default value
                 "Server=127.0.0.1;" +
@@ -43,18 +43,15 @@ namespace AgoRapideSample {
 
         /// <summary>
         /// Type of <see cref="_db"/> could without any problem be set to 
-        /// <see cref="PostgreSQLDatabase{TProperty}"/> instead of 
-        /// <see cref="IDatabase{TProperty}"/>
+        /// <see cref="PostgreSQLDatabase"/> instead of 
+        /// <see cref="IDatabase"/>
         /// </summary>
-        protected IDatabase<P> _db;
-        protected override IDatabase<P> DB => _db ?? (_db = GetDatabase(GetType()));
+        protected IDatabase _db;
+        protected override IDatabase DB => _db ?? (_db = GetDatabase(GetType()));
 
         protected void DBDispose() {
             if (_db != null) _db.Dispose();
         }
-
-        //protected override string GetHTMLHeading(Request<P> request, string title, ResultCode status) => "<p>" + System.Reflection.MethodBase.GetCurrentMethod().Name + " has not been implemented</p>";
-        //protected override string GetHTMLFooter(Request<P> request) => "<p>" + System.Reflection.MethodBase.GetCurrentMethod().Name + " has not been implemented</p>";
 
         /// <summary>
         /// Insert your preferred logging mechanism in:

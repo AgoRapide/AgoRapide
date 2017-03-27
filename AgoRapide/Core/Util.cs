@@ -131,88 +131,79 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <typeparamref name="TProperty"/>
         /// See 
-        /// <see cref="BaseEntityT{TProperty}.PVM{T}"/>
-        /// <see cref="BaseEntityT{TProperty}.TryGetPVM{T}(out T)"/>
+        /// <see cref="BaseEntityT.PVM{T}"/>
+        /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
         /// </summary>
-        /// <typeparam name="TProperty"></typeparam>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static TProperty MapTToTProperty<T, TProperty>() where TProperty : struct, IFormattable, IConvertible, IComparable => TryMapTToTProperty<T, TProperty>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T, TProperty>(errorResponse);
+        public static CoreProperty MapTToTProperty<T>() => TryMapTToTProperty<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
 
         /// <summary>
         /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <typeparamref name="TProperty"/>
         /// See 
-        /// <see cref="BaseEntityT{TProperty}.PVM{T}"/>
-        /// <see cref="BaseEntityT{TProperty}.TryGetPVM{T}(out T)"/>
+        /// <see cref="BaseEntityT.PVM{T}"/>
+        /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
         /// </summary>
-        /// <typeparam name="TProperty"></typeparam>
         /// <typeparam name="T"></typeparam>
         /// <param name="tProperty"></param>
         /// <returns></returns>
-        public static bool TryMapTToTProperty<T, TProperty>(out TProperty tProperty) where TProperty : struct, IFormattable, IConvertible, IComparable => TryMapTToTProperty<T, TProperty>(out tProperty, out _);
+        public static bool TryMapTToTProperty<T>(out CoreProperty tProperty) => TryMapTToTProperty<T>(out tProperty, out _);
 
         /// <summary>
-        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <typeparamref name="TProperty"/>
+        /// TODO: ADJUST (MAR 2017) AFTER MAPPING _TO_ COREPROPERTY
+        /// 
+        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <see cref="CoreProperty"/>
         /// Note how result is cached. 
-        /// Now how also looks into <see cref="CoreProperty"/>-values silently mapped by <see cref="CorePropertyMapper{TProperty}"/>
-        /// <see cref="BaseEntityT{TProperty}.PVM{T}"/>
-        /// <see cref="BaseEntityT{TProperty}.TryGetPVM{T}(out T)"/>
+        /// <see cref="BaseEntityT.PVM{T}"/>
+        /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
         /// </summary>
-        /// <typeparam name="TProperty"></typeparam>
         /// <typeparam name="T"></typeparam>
         /// <param name="tProperty"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public static bool TryMapTToTProperty<T, TProperty>(out TProperty tProperty, out string errorResponse)
-            where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-            if (typeof(T).Equals(typeof(TProperty))) throw new InvalidTypeException(typeof(T),
-                "Attempt of mapping from " + typeof(T) + " to " + typeof(TProperty) + ". " +
+        public static bool TryMapTToTProperty<T>(out CoreProperty tProperty, out string errorResponse) { 
+            if (typeof(T).Equals(typeof(CoreProperty))) throw new InvalidTypeException(typeof(T),
+                "Attempt of mapping from " + typeof(T) + " to " + typeof(CoreProperty) + ". " +
                 "A common cause is mistakenly calling " +
-                nameof(BaseEntityT<TProperty>) + "." + nameof(BaseEntityT<TProperty>.PVM) + " / " + nameof(BaseEntityT<TProperty>) + "." + nameof(BaseEntityT<TProperty>.TryGetPVM) + " instead of " +
-                nameof(BaseEntityT<TProperty>) + "." + nameof(BaseEntityT<TProperty>.PV) + " / " + nameof(BaseEntityT<TProperty>) + "." + nameof(BaseEntityT<TProperty>.TryGetPV) + " " +
-                "(note for instance how the overload of " + nameof(BaseEntityT<TProperty>.PVM) + " with defaultValue-parameter " +
-                "looks very similar to " + nameof(BaseEntityT<TProperty>.PV) + " if you forget the explicit type parameter for the latter method)");
-            var mappingsForTProperty = tToTPropertyMappings.GetOrAdd(typeof(TProperty), type => new ConcurrentDictionary<Type, object>());
+                nameof(BaseEntityT) + "." + nameof(BaseEntityT.PVM) + " / " + nameof(BaseEntityT) + "." + nameof(BaseEntityT.TryGetPVM) + " instead of " +
+                nameof(BaseEntityT) + "." + nameof(BaseEntityT.PV) + " / " + nameof(BaseEntityT) + "." + nameof(BaseEntityT.TryGetPV) + " " +
+                "(note for instance how the overload of " + nameof(BaseEntityT.PVM) + " with defaultValue-parameter " +
+                "looks very similar to " + nameof(BaseEntityT.PV) + " if you forget the explicit type parameter for the latter method)");
+            var mappingsForTProperty = tToTPropertyMappings.GetOrAdd(typeof(CoreProperty), type => new ConcurrentDictionary<Type, object>());
             var mapping = mappingsForTProperty.GetOrAdd(typeof(T), type => {
-                var candidates = EnumGetValues<TProperty>().Where(p => p.GetAgoRapideAttribute().A.Type?.Equals(type) ?? false).ToList();
+                var candidates = EnumGetValues<CoreProperty>().Where(p => p.GetAgoRapideAttribute().A.Type?.Equals(type) ?? false).ToList();
                 switch (candidates.Count) {
                     case 0:
                         /// Search through <see cref="CoreProperty"/> because <see cref="EnumGetValues{T}"/> above did not include the silently mapped ones.
                         /// Mote how there is some duplicity in searching because all non-silently mapped <see cref="CoreProperty"/> values would
                         /// already have been checked above but since the whole thing is cached anyway it really does not matter. 
-                        var cpm = new CorePropertyMapper<TProperty>();
-                        var M = new Func<AgoRapide.CoreProperty, TProperty>(p => cpm.Map(p));
+                        var cpm = new CorePropertyMapper();
+                        var M = new Func<AgoRapide.CoreProperty, CoreProperty>(p => cpm.Map(p));
                         var corePropertyCandidates = EnumGetValues<CoreProperty>().Where(p => M(p).GetAgoRapideAttribute().A.Type?.Equals(type) ?? false).ToList();
                         switch (corePropertyCandidates.Count) {
-                            case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + " (not even from " + typeof(CoreProperty).ToStringShort() + ")";
-                            case 1: return new CorePropertyMapper<TProperty>().Map(corePropertyCandidates[0]);
+                            case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + " (not even from " + typeof(CoreProperty).ToStringShort() + ")";
+                            case 1: return new CorePropertyMapper().Map(corePropertyCandidates[0]);
                             default:
                                 return
-                           "Multiple mappings (from " + typeof(CoreProperty).ToStringShort() + ") exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
+                           "Multiple mappings (from " + typeof(CoreProperty).ToStringShort() + ") exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + ".\r\n" +
                            "The actual mappings found where: " + string.Join(", ", corePropertyCandidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c) + ".");
                         }
                     case 1: return candidates[0];
                     default:
                         return
-                   "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
-                   "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(TProperty).ToStringShort() + "." + c) + ".");
+                   "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + ".\r\n" +
+                   "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c) + ".");
                 }
             });
             if (mapping is string) {
-                tProperty = default(TProperty);
+                tProperty = default(CoreProperty);
                 errorResponse = (string)mapping;
                 return false;
             }
-            if (!(mapping is TProperty)) throw new InvalidObjectTypeException(mapping, typeof(TProperty));
-            tProperty = (TProperty)mapping;
+            if (!(mapping is CoreProperty)) throw new InvalidObjectTypeException(mapping, typeof(CoreProperty));
+            tProperty = (CoreProperty)mapping;
             errorResponse = null;
-            return true;
-
-            // Old method, much more primitive
-            //if (!typeof(T).IsEnum) throw new NotOfTypeEnumException<T>();
-            //if (!typeof(TProperty).IsEnum) throw new NotOfTypeEnumException<TProperty>();
-            //throw new NotImplementedException("Check AgoRapideAttribute.Type");
-            //return EnumTryParse(typeof(T).ToStringShort(), out TProperty retval) ? retval : throw new Exception("Unable to map from type " + typeof(T).ToString() + " to a valid value for enum " + typeof(TProperty) + " (Because Enum value " + (typeof(TProperty).ToString() + "." + typeof(T).ToStringShort()) + " does not exist");
+            return true;           
         }
 
         /// <summary>
@@ -437,7 +428,7 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// TODO: Move <see cref="EntityCache"/> into <see cref="AgoRapide.Database.IDatabase{TProperty}"/>?
+        /// TODO: Move <see cref="EntityCache"/> into <see cref="AgoRapide.Database.IDatabase"/>?
         /// 
         /// Contains cache for entities. 
         /// 
@@ -452,7 +443,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
         /// <summary>
-        /// TODO: Move <see cref="ResetEntityCache"/> into <see cref="AgoRapide.Database.IDatabase{TProperty}"/>?
+        /// TODO: Move <see cref="ResetEntityCache"/> into <see cref="AgoRapide.Database.IDatabase"/>?
         /// </summary>
         public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 
@@ -535,7 +526,7 @@ namespace AgoRapide.Core {
         public EmptyStringException(string message, Exception inner) : base(message, inner) { }
     }
 
-    public class InvalidMappingException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where TProperty : Enum"
+    public class InvalidMappingException<T> : ApplicationException { 
         public InvalidMappingException(string message) : base("Unable to map from " + typeof(T).ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
         public InvalidMappingException(T _enum, string message) : base("Unable to map from " + _enum.GetType() + "." + _enum.ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
     }
@@ -628,7 +619,7 @@ namespace AgoRapide.Core {
 
     /// <summary>
     /// As of March 2017 support of <see cref="int"/> has been deliberately left out of AgoRapide due to
-    /// conversion issues and use of <see cref="Property{TProperty}.ADotTypeValue"/>. 
+    /// conversion issues and use of <see cref="Property.ADotTypeValue"/>. 
     /// If it is desired in future to support <see cref="int"/> anyway then you may just look up 
     /// all uses <see cref="TypeIntNotSupportedByAgoRapideException"/> for 
     /// information about where to change the code. 

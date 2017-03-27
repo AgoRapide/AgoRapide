@@ -11,15 +11,14 @@ namespace AgoRapide {
     /// <summary>
     /// Never stored in database.
     /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
     [AgoRapide(Description = 
-        "Used by " + nameof(BaseController<CoreProperty>.AgoRapideGenericMethod) +" " +
+        "Used by " + nameof(BaseController.AgoRapideGenericMethod) +" " +
         "in order to present possible methods that the client intended to call.")]
-    public class APIMethodCandidate<TProperty> : BaseEntityT<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class APIMethodCandidate : BaseEntityT { 
 
-        public APIMethod<TProperty> Method { get; private set; }
+        public APIMethod Method { get; private set; }
         public int LastMatchingSegmentNo { get; private set; }
-        public RouteSegmentClass<TProperty> FirstNonMatchingSegment { get; private set; }
+        public RouteSegmentClass FirstNonMatchingSegment { get; private set; }
 
         public string SuggestedUrl => PV<string>(M(CoreProperty.SuggestedUrl));
 
@@ -29,7 +28,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="method"></param>
         /// <param name="lastMatchingSegmentNo">Counts from 0. May be -1</param>
-        public APIMethodCandidate(Request<TProperty> request, APIMethod<TProperty> method, int lastMatchingSegmentNo) {
+        public APIMethodCandidate(Request request, APIMethod method, int lastMatchingSegmentNo) {
             Method = method ?? throw new ArgumentNullException(nameof(method));
             LastMatchingSegmentNo = (lastMatchingSegmentNo >= -1 && lastMatchingSegmentNo < (method.RouteSegments.Count - 1)) ? lastMatchingSegmentNo : throw new ArgumentException(nameof(lastMatchingSegmentNo) + " (" + lastMatchingSegmentNo + ") does not fall within valid index value minus one for " + nameof(method) + "." + nameof(method.RouteSegments) + " (which has .Count = " + method.RouteSegments.Count + "), nor is it -1");
             FirstNonMatchingSegment = Method.RouteSegments[LastMatchingSegmentNo + 1];

@@ -202,8 +202,8 @@ AgoRapide populates object properties through a general Property collection elim
 ## Validating properties is a repetition:
 Validation (and cleaning up of user input) in AgoRapide is data driven and may be be injected at any stage, when parsing user input, when communicating with other systems or when reading from database. In general the validating logic is given as System.Attribute-properties for the corresponding enum describing a property meaning it is easily "within reach" everywhere in the code.
 
-## Doing unit tests, showing example methods, providing bulk API-interface and writing documentation and tool tips separately is a repetition:
-AgoRapide combines all these tasks into one, meaning that once you have written the unit test you have also documented the system and given real world examples for use. In addition, once a property is defined, its corresponding tool tip automatically shows up in the administrative HTML view.
+## Writing unit tests, examples, tool tips and documentation is a repetition:
+AgoRapide combines all these tasks into one. Once you have documented your enums then everything else follows automatically. 
 
 ## Branches is a repetition:
 (optional for you to apply). 
@@ -218,11 +218,11 @@ Note that this may be done even for individual entities, that is, you may have j
 ## Creating database, API and client UI is a repetition:
 With a single-table database (optional) your database schema will in practice never change. 
 
-For the client user interface (UI) there will (in the near future) be some auto-generated code libraries available (in Java and ObjectiveC). We are looking into the possibility of auto-generated code for appp views also (not currently supported). 
+For the client user interface (UI) there will (in the near future) be some auto-generated code libraries available (in Java and ObjectiveC). We are looking into the possibility of auto-generated code for app views also (not currently supported). 
 
 (even this section of course repeats the phrase "is a repetition" multiple times)
 
-# When is AgoRapide useful for your projects?
+# When is AgoRapide useful for my projects?
 
 AgoRapide is useful when you desire:
 
@@ -247,9 +247,9 @@ You do not need to implement specific accessors in your objects. Properties are 
 Changes in relations can likewise be adjusted through UPDATE statements. 
 
 ## Small budgets / short time to market.
-You do not have to budget separately for administrative tools / support department tools or similar.
+When using AgoRapide you get sooner to marked with a more solid product. 
 
-Unit tests, documentation, examples and bulk updates through API are all treated as a single concept and kept close to the actual C# code.
+You do not have to budget separately for administrative tools / support department tools or similar. Also the cost of documentation is greatly reduced with AgoRapide.
 
 ## Extensive logging (with actual data), exception handling and helpful _relevant_ links to documentation in error messages.
 
@@ -269,6 +269,8 @@ in C:\AgoRapide2\trunk\AgoRapideSample\Controllers\AnotherController.cs:line 35
 
 Note how actual data in both exception message and log greatly helps in pinpointing problem.
 
+(See also more links above under Code examples, for how missing parameters and invalid parameters are handled with helpful error messages). 
+
 ## A history of all changes to database
 AgoRapide does not even support the concept of deletion. 
 
@@ -282,7 +284,7 @@ AgoRapide is more C# centric than database centric in the sense that the databas
 The database engine, although still a relational one, is thereby utilized in quite a simple manner.
 
 # Has AgoRapide been used for real?
-A philosophy similar to AgoRapide has been used with success in projects where:
+A philosophy similar to AgoRapide has been used with success in multiple projects where:
 
 The entity model is relatively simple (10-20 types of entities). 
 
@@ -338,9 +340,14 @@ Support for "traditional" database tables (multiple tables instead of the curren
 # FAQ
 
 ## What do you  mean by HTML administrative view?
-A rudimentary interface useful for administrering your backend, API, and doing support. 
+A rudimentary interface useful for administrering your backend, API, and doing support for your customers. 
 
-The HTML interface is like a clone of the JSON interface with the addition of useful links and documentation. In practice it may eliminate the need for building a separate application for doing customer support (or for adding support department related functionality into your customer application).
+Example: [HTML interface](http://sample.agorapide.com/api/Car/1563/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/Car/1563)
+
+As you can see the HTML interface is like a clone of the JSON interface with the addition of useful links and documentation. 
+(the current functionality is quite limited but we assume that you get the idea. Similar philosophies has been used to a great extent with success in other applications)
+
+In practice the HTML view often eliminates completely the need for building a separate application for doing customer support (or correspondingly eliminating the need for adding support department related functionality into your customer application).
 
 ## Is AgoRapide a replacement of WebAPI?
 No, it is built on top of WebAPI. We use as much as possible of the standard functionality in WebAPI, especially the routing mechanism (not attribute based but classic routing). Also, the signature of your controller methods will be familiar. We are Not that fANCY.
@@ -348,7 +355,7 @@ No, it is built on top of WebAPI. We use as much as possible of the standard fun
 ## Is AgoRapide technically complicated? 
 We strive to keep the code as simple as possible. 
 
-For instance there is almost no use of reflection in the code. Use of generics is also kept to a minimum, with only a few generic types, like &lt;TProperty&gt; used throughout. 
+For instance there is almost no use of reflection in the code. Use of generics is also kept to a minimum, with only a few generic types, like &lt;TProperty&gt; used throughout (even this is on its way out as we are tweaking the internal mechanism of AgoRapide).
 
 ## Is AgoRapide easy to get started with?
 Yes. 
@@ -365,11 +372,15 @@ A particular useful feature is impersonating users through the "entity-to-repres
 In practice this means that your support department may see exactly the same data as your customer sees in your application, without the customer having to give away his / her / its password. 
 
 ## What is AgoRapide.com?
-AgoRapide.com is an earlier implementation of the same idea as the AgoRapide C# library. 
+Old [AgoRapide.com](http://AgoRapide.com) is our earlier implementation of the same idea as our new AgoRapide C# library. 
 
 AgoRapide.com uses a schema language (see [panSL.org](http://panSL.org)) from which a dynamic HTML interface is generated. 
 
 AgoRapide.com is also able to generate C# code. The properties as given in the schema language corresponds closely to the recommended &lt;TProperty&gt; implementation in AgoRapide in the sense that as much as possible of the application logic is stored there.
+
+But AgoRapide.com is much more limited since you would totally depend on our server and infrastructure. Neither can the autogenerated C# code from AgoRapide.com be modified and fed back in the schema generator. 
+
+With the new AgoRapide C# library you also have full control of both your code and of the library code (since the library is MIT licensed).
 
 ## How is the performance of the AgoRapide library? 
 AgoRapide delivers very good performance. 

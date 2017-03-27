@@ -16,7 +16,7 @@ namespace AgoRapide {
     /// 2) To characterize an API method. See <see cref="API.MethodAttribute"/>.
     ///    The current <see cref="Environment"/> has to be equivalent or lower in order for the method to be included in the API routing
     ///    
-    /// 3) To characterize an individual instance of an entity. See <see cref="BaseEntityT{TProperty}"/>. 
+    /// 3) To characterize an individual instance of an entity. See <see cref="BaseEntityT"/>. 
     ///    In this manner you may switch on functionality for specific customers only in for instance your
     ///    production environment
     ///    

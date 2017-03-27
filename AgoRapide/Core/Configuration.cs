@@ -11,7 +11,7 @@ namespace AgoRapide.Core {
     /// TODO: Consider turning this class into a BaseEntity with a Configuration-enum as properties
     /// TODO: Will probably be difficult because of the complexities involved
     /// TODO: However, we could do a simpler version, just create ConfigurationT in the same manner that we have
-    /// TODO: <see cref="MethodAttributeT{TProperty}"/>, that class again can then be presented to the "outside".
+    /// TODO: <see cref="MethodAttributeT"/>, that class again can then be presented to the "outside".
     /// 
     /// TODO: REMOVE USE OF RootPath now that documentation if offered through general API mechanism
     /// 
@@ -75,7 +75,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// The <see cref="SystemUser"/> is normally not stored in the database as there is no need for using it as 
         /// <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> since we use 
-        /// <see cref="ClassAndMethod{TProperty}"/> for that purpose. 
+        /// <see cref="ClassAndMethod"/> for that purpose. 
         /// 
         /// TODO: Explain why we create <see cref="AnonymousUser"/> in database but not <see cref="SystemUser"/>
         /// </summary>
@@ -95,9 +95,7 @@ namespace AgoRapide.Core {
         /// </summary>        
         public List<string> SuperfluousStackTraceStrings {
             get => _superfluousStackTraceStrings;
-            set {
-                _superfluousStackTraceStrings = value ?? throw new NullReferenceException(nameof(SuperfluousStackTraceStrings));
-            }
+            set => _superfluousStackTraceStrings = value ?? throw new NullReferenceException(nameof(SuperfluousStackTraceStrings));
         }
 
         /// <summary>

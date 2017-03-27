@@ -28,10 +28,10 @@ namespace AgoRapide.Core {
             "WHERE value IN ('A', 'B'" /// TODO: Add more common syntax errors and check that <see cref="TryParse"/> returns good error messages for each kind if syntax error
         }
     )]
-    public abstract class QueryId<TProperty> : ITypeDescriber where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public abstract class QueryId : ITypeDescriber {
 
         /// <summary>
-        /// Note that a <see cref="PropertyValueQueryId{TProperty}"/> may also be <see cref="IsSingle"/> (for <see cref="AgoRapideAttribute.IsUniqueInDatabase"/>)
+        /// Note that a <see cref="PropertyValueQueryId"/> may also be <see cref="IsSingle"/> (for <see cref="AgoRapideAttribute.IsUniqueInDatabase"/>)
         /// </summary>
         public bool IsSingle { get; protected set; }
         public void AssertIsSingle() {
@@ -73,22 +73,22 @@ namespace AgoRapide.Core {
         public List<Tuple<string, object>> SQLWhereStatementParameters { get; protected set; } = new List<Tuple<string, object>>();
         public string SQLOrderByStatement => ""; // Not yet implemented
 
-        public static QueryId<TProperty> Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidQueryIdException(nameof(value) + ": " + value + ", " + nameof(errorResponse) + ": " + errorResponse);
-        public static bool TryParse(string value, out QueryId<TProperty> id) => TryParse(value, out id, out var dummy);
-        public static bool TryParse(string value, out QueryId<TProperty> id, out string errorResponse) {
+        public static QueryId Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidQueryIdException(nameof(value) + ": " + value + ", " + nameof(errorResponse) + ": " + errorResponse);
+        public static bool TryParse(string value, out QueryId id) => TryParse(value, out id, out var dummy);
+        public static bool TryParse(string value, out QueryId id, out string errorResponse) {
             if (long.TryParse(value, out var lngId)) {
-                id = new IntegerQueryId<TProperty>(lngId);
+                id = new IntegerQueryId(lngId);
                 errorResponse = null;
                 return true;
             }
 
             if (value.ToLower().Equals("all")) {
-                id = new PropertyValueQueryId<TProperty>();
+                id = new PropertyValueQueryId();
                 errorResponse = null;
                 return true;
             }
 
-            errorResponse = "Invalid long integer (and parsing as " + nameof(PropertyValueQueryId<TProperty>) + " not yet implemented)";
+            errorResponse = "Invalid long integer (and parsing as " + nameof(PropertyValueQueryId) + " not yet implemented)";
             id = null;
             return false;
             // throw new NotImplementedException("General parsing. value: " + value);
@@ -97,19 +97,18 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
+        /// enumAttribute.Cleaner=
+        /// 
+        /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(AgoRapideAttributeT<TProperty> agoRapideAttribute) {
-            /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
-            /// enumAttribute.Cleaner=
-            /// 
-            /// TODO: IMPLEMENT CHAINING OF VALIDATION!
-            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult<TProperty>>(value => {
+        public static void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) =>
+            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    new ParseResult<TProperty>(new Property<TProperty>(agoRapideAttribute.P, retval), retval) :
-                    new ParseResult<TProperty>(errorResponse);
+                    new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
+                    new ParseResult(errorResponse);
             });
-        }
 
         public class InvalidQueryIdException : ApplicationException {
             public InvalidQueryIdException(string message) : base(message) { }
@@ -127,13 +126,12 @@ namespace AgoRapide.Core {
     }
 
     /// <summary>
-    /// The simplest form of <see cref="QueryId{TProperty}"/> designating only a single <see cref="DBField.id"/>-value.
+    /// The simplest form of <see cref="QueryId"/> designating only a single <see cref="DBField.id"/>-value.
     /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
     [AgoRapide( // Note how we would have gotten attributes for super class if not defined here
-        Description = "The simplest form of -" + nameof(QueryId<CoreProperty>) + "-, accepting only integer id's corresponding to -" + nameof(DBField.id) + "-",
+        Description = "The simplest form of -" + nameof(QueryId) + "-, accepting only integer id's corresponding to -" + nameof(DBField.id) + "-",
         SampleValues = new string[] { "42" })]
-    public class IntegerQueryId<TProperty> : QueryId<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+    public class IntegerQueryId : QueryId {
         public long Id { get; private set; }
         public override string ToString() => Id.ToString();
 
@@ -146,35 +144,32 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
+        /// TODO: enumAttribute.Cleaner=
+        /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeT<TProperty> agoRapideAttribute) {
-            /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
-            /// enumAttribute.Cleaner=
-            /// 
-            /// TODO: IMPLEMENT CHAINING OF VALIDATION!
-            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult<TProperty>>(value => {
+        public new static void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) =>
+            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    (retval is IntegerQueryId<TProperty> ? /// <see cref="QueryId{TProperty}.TryParse"/> returns <see cref="QueryId{TProperty}"/> only accept if <see cref="IntegerQueryId{TProperty}"/>
-                    new ParseResult<TProperty>(new Property<TProperty>(agoRapideAttribute.P, retval), retval) :
-                        new ParseResult<TProperty>("Not a valid " + typeof(IntegerQueryId<TProperty>).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
+                    (retval is IntegerQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="IntegerQueryId"/>
+                    new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
+                        new ParseResult("Not a valid " + typeof(IntegerQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
                         ) :
-                        new ParseResult<TProperty>(errorResponse);
+                        new ParseResult(errorResponse);
             });
-        }
     }
 
     /// <summary>
-    /// The general form of <see cref="QueryId{TProperty}"/>.
+    /// The general form of <see cref="QueryId"/>.
     /// 
     /// TODO: To be extended. Parsing for instance does not work for the moment.
     /// 
     /// Note how this class gets the attributes for the super class since no <see cref="AgoRapideAttribute"/> is defined here. 
     /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
-    public class PropertyValueQueryId<TProperty> : QueryId<TProperty> where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-        public List<TProperty> Properties { get; private set; }
-        public AgoRapideAttributeT<TProperty> A { get; private set; }
+    public class PropertyValueQueryId : QueryId {
+        public List<CoreProperty> Properties { get; private set; }
+        public AgoRapideAttributeT A { get; private set; }
         public Operator Operator { get; private set; }
         public object Value { get; private set; }
 
@@ -195,7 +190,7 @@ namespace AgoRapide.Core {
         //}
 
         /// <summary>
-        /// Constructor for "all" query (results in an empty <see cref="QueryId{TProperty}.SQLWhereStatement"/>
+        /// Constructor for "all" query (results in an empty <see cref="QueryId.SQLWhereStatement"/>
         /// </summary>
         public PropertyValueQueryId() {
             Properties = null;
@@ -205,22 +200,22 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId{TProperty}"/>.
+        /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId"/>.
         /// </summary>
         /// <param name="property"></param>
         /// <param name="_operator"></param>
         /// <param name="value"></param>
-        public PropertyValueQueryId(TProperty property, Operator _operator, object value) : this(new List<TProperty> { property }, _operator, value) { }
+        public PropertyValueQueryId(CoreProperty property, Operator _operator, object value) : this(new List<CoreProperty> { property }, _operator, value) { }
         /// <summary>
         /// Strongly typed constructor. 
         /// (usually used when query originates from "outside" of API)
         /// 
-        /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId{TProperty}"/>.
+        /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId"/>.
         /// </summary>
         /// <param name="property"></param>
         /// <param name="_operator"></param>
         /// <param name="value"></param>
-        public PropertyValueQueryId(List<TProperty> properties, Operator _operator, object value) {
+        public PropertyValueQueryId(List<CoreProperty> properties, Operator _operator, object value) {
             Properties = properties ?? throw new NullReferenceException(nameof(properties));
             if (Properties.Count == 0) throw new InvalidCountException(nameof(Properties) + ": " + Properties.Count);
             Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
@@ -229,7 +224,7 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// Builds <see cref="QueryId{TProperty}.SQLWhereStatement"/> (together with <see cref="QueryId{TProperty}.SQLWhereStatementParameters"/>) 
+        /// Builds <see cref="QueryId.SQLWhereStatement"/> (together with <see cref="QueryId.SQLWhereStatementParameters"/>) 
         /// based on <see cref="Property"/> <see cref="Operator"/>, <see cref="Value"/>. 
         /// 
         /// Note how <see cref="Value"/> may even be a list, in which case code like 
@@ -258,7 +253,7 @@ namespace AgoRapide.Core {
             /// We have to number parameters for instance for <see cref="Operator.IN"/> and for multiple <see cref="Properties"/>
             var parameterNo = 0;
 
-            var singlePropertySQLConstructor = new Func<TProperty, string>(Property => {
+            var singlePropertySQLConstructor = new Func<CoreProperty, string>(Property => {
                 var sql = new StringBuilder();
                 A = Property.GetAgoRapideAttribute();
                 var detailer = new Func<string>(() => A.PToString + " " + Operator + " " + Value + " (of type " + Value.GetType() + ")");
@@ -320,18 +315,26 @@ namespace AgoRapide.Core {
                     if (valueAs<bool>(DBField.blnv) != null) return;
                     if (valueAs<DateTime>(DBField.dtmv) != null) return;
                     {
-                        var _string = Value as string;
-                        if (_string != null) {
-                            Operator.AssertValidForType(typeof(string), detailer);
-                            parameterNo++;
-                            sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
-                            SQLWhereStatementParameters.Add(new Tuple<string, object>(DBField.strv + (parameterNo).ToString(), _string));
-                            return;
+                        switch (Value) {
+                            case string _string:
+                                Operator.AssertValidForType(typeof(string), detailer);
+                                parameterNo++;
+                                sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
+                                SQLWhereStatementParameters.Add(new Tuple<string, object>(DBField.strv + (parameterNo).ToString(), _string));
+                                return;
                         }
+                        //var _string = Value as string;
+                        //if (_string != null) {
+                        //    Operator.AssertValidForType(typeof(string), detailer);
+                        //    parameterNo++;
+                        //    sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
+                        //    SQLWhereStatementParameters.Add(new Tuple<string, object>(DBField.strv + (parameterNo).ToString(), _string));
+                        //    return;
+                        //}
                     }
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
-                        var a = new AgoRapideAttributeT<TProperty>(Value.GetAgoRapideAttribute());
+                        var a = new AgoRapideAttributeT(Value.GetAgoRapideAttribute());
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" + a.PToString + "'");
                     }
                     if (Value is ITypeDescriber) {
@@ -349,7 +352,7 @@ namespace AgoRapide.Core {
                     // TODO: Support for List<SomeEnum> is not yet implemented. 
                     // 
                     // This would be too naive:
-                    //   if (valueAsList<TProperty>(DBField.strv) != null) return;
+                    //   if (valueAsList<CoreProperty>(DBField.strv) != null) return;
                     // (among other, silently mapped properties would not be supported (The ToString value will be the int-value)).
                     // This just is something totally different (Enum is just an abstract class)
                     //   if (valueAsList<Enum>(DBField.strv) != null) return;
@@ -389,22 +392,20 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
+        /// TODO: enumAttribute.Cleaner=
+        /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeT<TProperty> agoRapideAttribute) {
-            /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
-            /// enumAttribute.Cleaner=
-            /// 
-            /// TODO: IMPLEMENT CHAINING OF VALIDATION!
-            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult<TProperty>>(value => {
+        public new static void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) =>
+            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    (retval is PropertyValueQueryId<TProperty> ? /// <see cref="QueryId{TProperty}.TryParse"/> returns <see cref="QueryId{TProperty}"/> only accept if <see cref="PropertyValueQueryId{TProperty}"/>
-                        new ParseResult<TProperty>(new Property<TProperty>(agoRapideAttribute.P, retval), retval) :
-                        new ParseResult<TProperty>("Not a valid " + typeof(PropertyValueQueryId<TProperty>).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
+                    (retval is PropertyValueQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="PropertyValueQueryId"/>
+                        new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
+                        new ParseResult("Not a valid " + typeof(PropertyValueQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
                         ) :
-                        new ParseResult<TProperty>(errorResponse);
+                        new ParseResult(errorResponse);
             });
-        }
     }
 
     /// <summary>
