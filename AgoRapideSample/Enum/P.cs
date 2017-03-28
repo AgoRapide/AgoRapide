@@ -75,7 +75,7 @@ namespace AgoRapideSample {
         #region CoreProperty 
         /// Refer to corresponding <see cref="CoreProperty"/> values for documentation.
         /// You only have to map those <see cref="CoreProperty"/> values for which you want to specify attributes.
-        /// The other <see cref="CoreProperty"/> will be "silently" mapped to P anyway through <see cref="CorePropertyMapper"/>
+        /// The other <see cref="CoreProperty"/> will be "silently" mapped to P anyway through <see cref="EnumMapper"/>
 
         [AgoRapide(Parents = new Type[] { typeof(Person) }, CoreProperty = CoreProperty.Username)] // TODO: Add email class like Type = typeof(EMail) with standardised AgoRapide interface.
         Email,
@@ -121,8 +121,8 @@ namespace AgoRapideSample {
     }
 
     public static class Extensions {
-        public static CPA M(this P p) => CorePropertyMapper.Map2(p);
-        public static CoreProperty CP(this P p) => CorePropertyMapper.Map2(p).cp;
+        public static CPA M(this P p) => EnumMapper.GetCPA(p);
+        public static CoreProperty CP(this P p) => EnumMapper.GetCPA(p).cp;
     }
 
     /// <summary>
@@ -134,7 +134,7 @@ namespace AgoRapideSample {
     /// TODO: (the enums again can be placed inside each entity class that we want to use)
     /// </summary>
     public class PUD : IGroupDescriber {
-        public void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) {
+        public void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) {
             agoRapideAttribute.AddParent(typeof(Person));
             agoRapideAttribute.A.AccessLevelRead = AccessLevel.Relation;
             agoRapideAttribute.A.AccessLevelWrite = AccessLevel.Relation;
@@ -182,22 +182,35 @@ namespace AgoRapideSample {
             return null;
         };
 
-        /// <summary>
-        /// This is the method that MUST be implemented
+        /// <see cref="EnrichAttribute"/> is the method that MUST be implemented
         /// 
         /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
         /// enumAttribute.Cleaner=
         /// 
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
+
+        /// <summary>
+        /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreProperty"/>)
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) =>
-            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value =>
-                TryParse(value, out var retval, out var errorResponse) ?
-                    new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
-                    new ParseResult(errorResponse)
-            );
+        public static void EnrichAttribute(AgoRapideAttributeT<P> agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => throw new NotImplementedException("We have a chicken-and-egg problem because of the need for P.CP() below which will call " + nameof(EnumMapper) + " again"));
+        // public static void EnrichAttribute(AgoRapideAttributeT<P> agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = GetValidatorAndParser(agoRapideAttribute.P.CP());
 
+        /// <summary>
+        /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreProperty"/>)
+        /// </summary>
+        /// <param name="agoRapideAttribute"></param>
+        public static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = GetValidatorAndParser(agoRapideAttribute.P);
+        /// <summary>
+        /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreProperty"/>)
+        /// </summary>
+        /// <param name="coreProperty"></param>
+        /// <returns></returns>
+        private static Func<string, ParseResult> GetValidatorAndParser(CoreProperty coreProperty) => new Func<string, ParseResult>(value =>
+                TryParse(value, out var retval, out var errorResponse) ?
+                    new ParseResult(new Property(coreProperty, retval), retval) :
+                    new ParseResult(errorResponse));
+                
         public class InvalidNorwegianPostalCodeException : ApplicationException {
             public InvalidNorwegianPostalCodeException(string message) : base(message) { }
             public InvalidNorwegianPostalCodeException(string message, Exception inner) : base(message, inner) { }

@@ -35,15 +35,14 @@ namespace AgoRapide {
         /// <param name="request"></param>
         private void AdjustAccordingToResultCodeAndMethod(Request request) {
             if (ResultCode == ResultCode.ok && !request.Method.A.A.ShowDetailedResult) {
-                if (Properties != null && Properties.ContainsKey(M(CoreProperty.Log))) Properties.Remove(M(CoreProperty.Log));
+                if (Properties != null && Properties.ContainsKey(CoreProperty.Log)) Properties.Remove(CoreProperty.Log);
             }
             if (ResultCode != ResultCode.ok) {
-                AddProperty(M(CoreProperty.ResultCodeDescription), ResultCode.GetAgoRapideAttribute().A.Description);
-                var p = M(CoreProperty.APIDocumentationUrl); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
-                if (!Properties.ContainsKey(p)) AddProperty(p, request.CreateAPIUrl(request.Method));
+                AddProperty(CoreProperty.ResultCodeDescription, ResultCode.GetAgoRapideAttribute().A.Description);
+                if (!Properties.ContainsKey(CoreProperty.APIDocumentationUrl)) AddProperty(CoreProperty.APIDocumentationUrl, request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
             }
             if (ResultCode == ResultCode.exception_error) {
-                AddProperty(M(CoreProperty.ExceptionDetailsUrl), request.CreateAPIUrl(Util.Configuration.ExceptionDetailsAPISyntax));
+                AddProperty(CoreProperty.ExceptionDetailsUrl, request.CreateAPIUrl(Util.Configuration.ExceptionDetailsAPISyntax));
             }
         }
 

@@ -10,7 +10,7 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
-    /// See <see cref="CorePropertyMapper"/>.
+    /// See <see cref="EnumMapper"/>.
     /// 
     /// <see cref="CoreProperty"/> represents core AgoRapide properties that must always be available in the client application. 
     /// 

@@ -145,7 +145,7 @@ namespace AgoRapide.API {
                     "End representation as " + Request.CurrentUser.Name,
                     typeof(Property),
                     new IntegerQueryId( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreProperty.EntityToRepresent"/> no longer exists for CurrentUser.
-                        (Request.CurrentUser.RepresentedByEntity.Properties.TryGetValue(M(CoreProperty.EntityToRepresent), out var p) ? p.Id : 0)),
+                        (Request.CurrentUser.RepresentedByEntity.Properties.TryGetValue(CoreProperty.EntityToRepresent, out var p) ? p.Id : 0)),
                     PropertyOperation.SetInvalid
                     ) +
                 "</p>"
@@ -159,7 +159,7 @@ namespace AgoRapide.API {
                     "Logout as " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
                     new IntegerQueryId(Request.CurrentUser.Id),
-                    M(CoreProperty.RejectCredentialsNextTime),
+                    CoreProperty.RejectCredentialsNextTime,
                     true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreProperty.Value"/> is a string at this stage
                                     /// (<see cref = "CoreMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
                                     /// TODO: CONSIDER MAKING THIS EVEN SMARTER!

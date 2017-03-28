@@ -40,10 +40,10 @@ namespace AgoRapide.Core {
         /// This method will be called before any initializing is done in <see cref="AgoRapideAttributeT"/>. 
         /// 
         /// The implementation may change both the properties of 
-        /// <see cref="AgoRapideAttributeT"/> and the properties of its member class 
-        /// <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT.A"/>)
+        /// <see cref="AgoRapideAttributeT{CoreProperty}"/> and the properties of its member class 
+        /// <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT{CoreProperty}.A"/>)
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute);
+        void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute);
     }
 }

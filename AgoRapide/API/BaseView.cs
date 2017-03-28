@@ -9,8 +9,5 @@ namespace AgoRapide.API {
         protected Request Request;
         public BaseView(Request request) => Request = request ?? throw new ArgumentNullException(nameof(request));
         public abstract object GenerateResult();
-
-        protected static CorePropertyMapper _cpm = new CorePropertyMapper();
-        protected static CoreProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
     }
 }

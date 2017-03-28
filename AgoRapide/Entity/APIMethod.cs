@@ -43,7 +43,7 @@ namespace AgoRapide {
         /// TODO: MOVE THIS INTO MethodAttribute-class.
         /// </summary>
         public APIMethodOrigin Origin => PVM<APIMethodOrigin>();
-        public string Implementator => PV<string>(M(CoreProperty.Implementator));
+        public string Implementator => PV<string>(CoreProperty.Implementator);
 
         /// <summary>
         /// Corresponds to  IHttpRoute.MapHttpRoute.defaults.Controller (although that one is without 'Controller' i the name).
@@ -69,7 +69,7 @@ namespace AgoRapide {
         /// </summary>
         public List<HTTPMethod> HttpMethods { get; private set; }
 
-        public bool RequiresAuthorization => PV<bool>(M(CoreProperty.RequiresAuthorization));
+        public bool RequiresAuthorization => PV<bool>(CoreProperty.RequiresAuthorization);
 
         /// <summary>
         /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. Object meant to be discarded immediately
@@ -182,7 +182,7 @@ namespace AgoRapide {
                     EntityType = s.Type;
                 } else if (s.Parameter != null) {
                     var p = (CoreProperty)s.Parameter;
-                    var ea = p.GetAgoRapideAttribute();
+                    var ea = s.ParameterA;
                     if (ea.A.Parents != null && EntityType != null && !ea.IsParentFor(EntityType)) throw new MethodInitialisationException(
                             "Incompatible types given for " +
                             ea.GetType().ToString() + "-segment (" + EntityType + ") and " +
@@ -198,7 +198,7 @@ namespace AgoRapide {
                     if (!restParameters.TryGetValue(ea.PToString, out _)) throw new MethodInitialisationException(
                         "Corresponding parameter " + ea.PExplained + " for RouteSegment " +
                         "is missing (or wrongly named) for method " + ControllerMethod.Name + ".\r\n" +
-                        "Is one of the following mis-named: " + restParameters.KeysAsString() + "?" +
+                        "Is one of the following mis-named: " + restParameters.KeysAsString() + "\r\n?\r\n" +
                         detailer2());
                     if (Parameters.Any(t => t.cp.Equals(p))) throw new MethodInitialisationException("Duplicate parameter " + typeof(CoreProperty).ToString() + "." + p.ToString() + " given" + detailer2());
                     Parameters.Add(new CPA { cp = p, a = ea });
@@ -287,7 +287,7 @@ namespace AgoRapide {
         /// </summary>
         /// <returns></returns>
         public override string ToString() =>
-            (Properties != null && Properties.ContainsKey(M(CoreProperty.APIMethodOrigin)) ? (Origin.ToString() + ", ") : "") +
+            (Properties != null && Properties.ContainsKey(CoreProperty.APIMethodOrigin) ? (Origin.ToString() + ", ") : "") +
             (RouteTemplates != null && RouteTemplates.Count > 0 ? (RouteTemplates[0] + ", ") : "") +
             (Controller != null ? (Controller.ToStringShort() + ".") : "") +
             (ControllerMethod != null ? (ControllerMethod.Name + ", ") : "") +
@@ -534,9 +534,9 @@ namespace AgoRapide {
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
                     routeSegments: new List<RouteSegmentClass> {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass(CoreProperty.QueryId.ToString(), M(CoreProperty.QueryId) , detailer)
+                        new RouteSegmentClass(CoreProperty.QueryId.ToString(), CoreProperty.QueryId , detailer)
                     },
-                    parameters: new List<CoreProperty> { M(CoreProperty.QueryId) },
+                    parameters: new List<CoreProperty> { CoreProperty.QueryId },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.QueryId + "}" // Do not use M here!
                     );
                 // TODO: Create a configuration parameter deciding whether API-documentation should be available without authorization.
@@ -561,15 +561,15 @@ namespace AgoRapide {
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
                     routeSegments: new List<RouteSegmentClass> {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass(nameof(CoreProperty.QueryId), M(CoreProperty.QueryId) , detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.QueryId), CoreProperty.QueryId , detailer),
                         new RouteSegmentClass(CoreMethod.UpdateProperty.ToString(), CoreMethod.UpdateProperty.ToString(), detailer),
-                        new RouteSegmentClass(nameof(CoreProperty.Key), M(CoreProperty.Key) , detailer),
-                        new RouteSegmentClass(nameof(CoreProperty.Value), M(CoreProperty.Value) , detailer)
+                        new RouteSegmentClass(nameof(CoreProperty.Key), CoreProperty.Key , detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.Value), CoreProperty.Value , detailer)
                     },
                     parameters: new List<CoreProperty> {
-                        M(CoreProperty.QueryId),
-                        M(CoreProperty.Key),
-                        M(CoreProperty.Value)
+                        CoreProperty.QueryId,
+                        CoreProperty.Key,
+                        CoreProperty.Value
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.QueryId + "}/" + CoreMethod.UpdateProperty.ToString() + "/{" + CoreProperty.Key + "}/{" + CoreProperty.Value + "}" // Do not use M here!
                 );
@@ -592,12 +592,12 @@ namespace AgoRapide {
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
                     routeSegments: new List<RouteSegmentClass> {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass(nameof(CoreProperty.QueryId), M(CoreProperty.QueryId) , detailer),
-                        new RouteSegmentClass(nameof(CoreProperty.PropertyOperation), M(CoreProperty.PropertyOperation) , detailer)
+                        new RouteSegmentClass(nameof(CoreProperty.QueryId), CoreProperty.QueryId , detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.PropertyOperation), CoreProperty.PropertyOperation , detailer)
                     },
                     parameters: new List<CoreProperty> {
-                        M(CoreProperty.QueryId),
-                        M(CoreProperty.PropertyOperation)
+                        CoreProperty.QueryId,
+                        CoreProperty.PropertyOperation
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.QueryId + "}/{" + CoreProperty.PropertyOperation + "}" // Do not use M here!
                 );
@@ -619,11 +619,11 @@ namespace AgoRapide {
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
                     routeSegments: new List<RouteSegmentClass> {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass(nameof(CoreProperty.IntegerQueryId), M(CoreProperty.IntegerQueryId) , detailer),
+                        new RouteSegmentClass(nameof(CoreProperty.IntegerQueryId), CoreProperty.IntegerQueryId , detailer),
                         new RouteSegmentClass(nameof(CoreMethod.History), CoreMethod.History.ToString() , detailer)
                     },
                     parameters: new List<CoreProperty> {
-                        M(CoreProperty.IntegerQueryId)
+                        CoreProperty.IntegerQueryId
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.IntegerQueryId + "}/" + CoreMethod.History // Do not use M here!
                     );
@@ -677,7 +677,7 @@ namespace AgoRapide {
             // But this works:
             void updater<T>(CoreProperty key, T value)
             { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
-                db.UpdateProperty(cid, method, M(key), value, result: null);
+                db.UpdateProperty(cid, method, key, value, result: null);
             }
 
             switch (method.A.A.CoreMethod) {
@@ -764,13 +764,13 @@ namespace AgoRapide {
                         /// TODO: This is very similar to <see cref="AgoRapideAttribute.EnrichFrom"/> 
                         /// TODO: We should use some of the same mechanism there.
                         var coreA = method.A.A.CoreMethod.GetAgoRapideAttribute();
-                        if (p.KeyT.Equals(M(CoreProperty.Description)) && !string.IsNullOrEmpty(coreA.A.Description)) { // TODO: Do this in a more streamlined manner!
+                        if (p.KeyT.Equals(CoreProperty.Description) && !string.IsNullOrEmpty(coreA.A.Description)) { // TODO: Do this in a more streamlined manner!
                             if (string.IsNullOrEmpty(value)) {
                                 value = coreA.A.Description;
                             } else {
                                 value += (value.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(coreA.A.Description) + ": " + coreA.A.Description;
                             }
-                        } else if (p.KeyT.Equals(M(CoreProperty.LongDescription)) && !string.IsNullOrEmpty(coreA.A.LongDescription)) { // TODO: Do this in a more streamlined manner!
+                        } else if (p.KeyT.Equals(CoreProperty.LongDescription) && !string.IsNullOrEmpty(coreA.A.LongDescription)) { // TODO: Do this in a more streamlined manner!
                             if (string.IsNullOrEmpty(value)) {
                                 value = coreA.A.LongDescription;
                             } else {
@@ -791,9 +791,9 @@ namespace AgoRapide {
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
-            PV(M(CoreProperty.CoreMethod), CoreMethod.None).Use(c => c == CoreMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
+            PV(CoreProperty.CoreMethod, CoreMethod.None).Use(c => c == CoreMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
-            PV(M(CoreProperty.Description), "[NO DESCRIPTION AVAILABLE]").HTMLEncodeAndEnrich(request) + "</td><td>" +
+            PV(CoreProperty.Description, "[NO DESCRIPTION AVAILABLE]").HTMLEncodeAndEnrich(request) + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {

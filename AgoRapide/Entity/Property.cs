@@ -95,7 +95,7 @@ namespace AgoRapide {
         /// TODO: Is this only used by <see cref="CreateIsManyParent"/>? In that case we may make it private
         /// </summary>
         public Property(CoreProperty keyT) => _keyT = keyT;
-        
+
         public bool IsIsManyParent { get; private set; }
         public static Property CreateIsManyParent(CoreProperty key) => new Property(key) {
             Properties = new Dictionary<CoreProperty, Property>(),
@@ -279,12 +279,10 @@ namespace AgoRapide {
         public string KeyDB {
             get => _keyDB ?? (_keyDB = new Func<string>(() => {
                 if (_keyT == null) throw new NullReferenceException(nameof(_keyT) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                if (Enum.IsDefined(typeof(CoreProperty), _keyT)) {
-                    return _keyT.ToString();
-                } else {
-                    // This is a silently mapped CoreProperty. Use the CoreProperty value instead since _keyT.ToString() will be an "integer".
-                    return _cpm.MapReverse((CoreProperty)_keyT).ToString();
-                }
+                var cpa = EnumMapper.GetCPAOrDefault((CoreProperty)_keyT);
+                if (cpa.cp == CoreProperty.None) throw new InvalidEnumException(cpa.cp, "Was mapped from " + _keyT.ToString() + ".\r\nDetails: " + ToString());
+                if (cpa.a.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(cpa.a.A.IsMany) + ".\r\nDetails: " + ToString());
+                return cpa.cp.ToString();
             })());
             set => _keyDB = value;
         }
@@ -300,44 +298,30 @@ namespace AgoRapide {
         /// Note for <see cref="AgoRapideAttribute.IsMany"/>-properties neither <see cref="KeyT"/> nor <see cref="KeyDB"/> 
         /// will correspond to what is stored in <see cref="DBField.key"/>. <see cref="DBField.key"/> will be something like 
         /// "member#3" which will be split into a <see cref="AgoRapideAttribute.IsMany"/>-parent as "member" and child as 3.
-        /// 
-        /// Do not use <see cref="KeyT"/>.ToString() in your code, use instead <see cref="KeyDB"/> because for silently mapped 
-        /// <see cref="CoreProperty"/>-values this will give you the <see cref="CoreProperty"/>-value ToString() instead of an "integer".
         /// </summary>
         public CoreProperty KeyT =>
             _keyT != null ? (CoreProperty)_keyT : (CoreProperty)(_keyT = new Func<CoreProperty>(() => {
                 if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                /// TOOD: IS THAT STILL RELEVANT AFTER INTRODUCING IsMany-parents?
-
-                var retval = CorePropertyMapper.Map2(KeyDB);
-                _keyA = retval.a; // Set keyA 
+                var retval = EnumMapper.GetCPAOrDefault(KeyDB);
+                if (retval.cp == CoreProperty.None) {
+                    var t = KeyDB.Split('#');
+                    if (t.Length != 2) throw new InvalidEnumException(typeof(CoreProperty), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+                    retval = EnumMapper.GetCPAOrDefault(t[0]);
+                    if (retval.cp == CoreProperty.None) throw new InvalidEnumException(typeof(CoreProperty), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+                    if (!retval.a.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
+                    // TODO: Use better Exception class here
+                    if (!int.TryParse(t[1], out var temp)) throw new InvalidCountException("Invalid int '" + t[1] + " for " + KeyDB + ".\r\nDetails: " + ToString());
+                    _multipleIndex = temp;
+                }
+                _keyA = retval.a; // Set keyA                 
                 return retval.cp;
-
-                // CREATE TryMap2 above! 
-                //if (Util.EnumTryParse(KeyDB, out CoreProperty retval)) return retval;
-                //if (Util.EnumTryParse(KeyDB, out CoreProperty corePropertyTemp)) return _cpm.Map(corePropertyTemp);
-                //var t = KeyDB.Split('#');
-                //if (t.Length != 2) return default(TProperty);
-                //if (!Util.EnumTryParse(t[0], out retval)) {
-                //    if (!Util.EnumTryParse(t[0], out corePropertyTemp)) return default(TProperty);
-                //    retval = _cpm.Map(corePropertyTemp);
-                //}
-                //if (!int.TryParse(t[1], out var temp)) return default(TProperty);
-                //_multipleIndex = temp;
-                //return retval;
             })());
 
-        private AgoRapideAttributeT _keyA;
+        private AgoRapideAttributeT<CoreProperty> _keyA;
         /// <summary>
         /// TODO: Note how call to KeyT will also set _keyA... Should be done much better.
         /// </summary>
-        public AgoRapideAttributeT KeyA => _keyA ?? (_keyA = KeyT.GetAgoRapideAttribute()); 
-
-        //private AgoRapideAttributeT _keyAttribute;
-        ///// <summary>
-        ///// TODO: REPLACE WITH Attribute as found by <see cref="KeyT"/>
-        ///// </summary>
-        //public AgoRapideAttributeT KeyA => _keyAttribute ?? (_keyAttribute = KeyT.GetAgoRapideAttribute());
+        public AgoRapideAttributeT<CoreProperty> KeyA => _keyA ?? (_keyA = KeyT.GetAgoRapideAttribute());
 
         /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
         private int? _multipleIndex;
@@ -526,8 +510,8 @@ namespace AgoRapide {
                             "Unable to cast '" + StrValue + "' to " + t + ", " +
                             "ended up with " + result.Result.StrValue.GetType() + ".\r\n" +
                             (KeyA.ValidatorAndParser != null ?
-                                "Very unexpected since " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " was set" :
-                                "Most probably because " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " was not set"
+                                "Very unexpected since " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " was set" :
+                                "Most probably because " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " was not set"
                             ) + ".\r\n" +
                             "Details: " + ToString());
                     }
@@ -535,8 +519,8 @@ namespace AgoRapide {
                         "Unable to cast '" + StrValue + "' to " + t + ", " +
                         "ended up with " + result.Result.ADotTypeValue().GetType() + " (value: '" + result.Result.ADotTypeValue().ToString() + ").\r\n" +
                         (KeyA.ValidatorAndParser == null ?
-                            "Very unexpected since " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " was not set" :
-                            "Most probably because " + nameof(AgoRapideAttributeT.ValidatorAndParser) + " returns the wrong type of object"
+                            "Very unexpected since " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " was not set" :
+                            "Most probably because " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " returns the wrong type of object"
                         ) + ".\r\n" +
                         "Details: " + ToString());
                     value = (T)(_ADotTypeValue = result.Result.ADotTypeValue()); return true;
@@ -887,7 +871,7 @@ namespace AgoRapide {
                     cmds.Add(cmd);
                 });
             });
-            request.Result.AddProperty(M(CoreProperty.SuggestedUrl), string.Join("\r\n", cmds.Select(cmd => request.CreateAPIUrl(cmd))));
+            request.Result.AddProperty(CoreProperty.SuggestedUrl, string.Join("\r\n", cmds.Select(cmd => request.CreateAPIUrl(cmd))));
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>

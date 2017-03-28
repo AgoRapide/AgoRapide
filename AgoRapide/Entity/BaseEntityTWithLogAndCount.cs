@@ -85,7 +85,7 @@ namespace AgoRapide {
             if (LogData.Length == 0) {
                 // Do not bother with any of these
             } else {
-                var p = M(CoreProperty.Log);
+                var p = CoreProperty.Log;
                 var key = p.GetAgoRapideAttribute().PToString;
                 if (retval.Properties.TryGetValue(key, out var existing)) {
                     throw new KeyAlreadyExistsException<CoreProperty>(p,

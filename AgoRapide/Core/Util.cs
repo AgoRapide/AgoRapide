@@ -42,7 +42,13 @@ namespace AgoRapide.Core {
         public static List<T> EnumGetValues<T>() where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
             EnumGetValues<T>(exclude: (T)(object)0);
 
-        public static List<T> EnumGetValues<T>(T exclude) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="exclude"></param>
+        /// <returns></returns>
+        public static List<T> EnumGetValues<T>(T exclude) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"                        
             var type = typeof(T);
             if (!type.IsEnum) throw new NotOfTypeEnumException(type);
             var retval = new List<T>();
@@ -136,7 +142,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static CoreProperty MapTToTProperty<T>() => TryMapTToTProperty<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
+        public static CoreProperty MapTToCoreProperty<T>() => TryMapTToTProperty<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
 
         /// <summary>
         /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <typeparamref name="TProperty"/>
@@ -152,8 +158,9 @@ namespace AgoRapide.Core {
         /// <summary>
         /// TODO: ADJUST (MAR 2017) AFTER MAPPING _TO_ COREPROPERTY
         /// 
-        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <see cref="CoreProperty"/>
-        /// Note how result is cached. 
+        /// Maps <typeparamref name="T"/> to a corresponding value for <see cref="CoreProperty"/> based on <see cref="AgoRapideAttribute.Type"/>. 
+        /// Example: Enum-"class" <see cref="CoreMethod"/> is linked to enum value <see cref="CoreProperty.CoreMethod"/>
+        /// 
         /// <see cref="BaseEntityT.PVM{T}"/>
         /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
         /// </summary>
@@ -161,7 +168,7 @@ namespace AgoRapide.Core {
         /// <param name="tProperty"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public static bool TryMapTToTProperty<T>(out CoreProperty tProperty, out string errorResponse) { 
+        public static bool TryMapTToTProperty<T>(out CoreProperty tProperty, out string errorResponse) {
             if (typeof(T).Equals(typeof(CoreProperty))) throw new InvalidTypeException(typeof(T),
                 "Attempt of mapping from " + typeof(T) + " to " + typeof(CoreProperty) + ". " +
                 "A common cause is mistakenly calling " +
@@ -171,28 +178,16 @@ namespace AgoRapide.Core {
                 "looks very similar to " + nameof(BaseEntityT.PV) + " if you forget the explicit type parameter for the latter method)");
             var mappingsForTProperty = tToTPropertyMappings.GetOrAdd(typeof(CoreProperty), type => new ConcurrentDictionary<Type, object>());
             var mapping = mappingsForTProperty.GetOrAdd(typeof(T), type => {
-                var candidates = EnumGetValues<CoreProperty>().Where(p => p.GetAgoRapideAttribute().A.Type?.Equals(type) ?? false).ToList();
+                /// NOTE: Note how <see cref="EnumMapper.AllCoreProperty"/> itself is cached but that should not matter
+                /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
+                var candidates = EnumMapper.AllCoreProperty.Where(cpa => cpa.a.A.Type?.Equals(type) ?? false).ToList();
                 switch (candidates.Count) {
-                    case 0:
-                        /// Search through <see cref="CoreProperty"/> because <see cref="EnumGetValues{T}"/> above did not include the silently mapped ones.
-                        /// Mote how there is some duplicity in searching because all non-silently mapped <see cref="CoreProperty"/> values would
-                        /// already have been checked above but since the whole thing is cached anyway it really does not matter. 
-                        var cpm = new CorePropertyMapper();
-                        var M = new Func<AgoRapide.CoreProperty, CoreProperty>(p => cpm.Map(p));
-                        var corePropertyCandidates = EnumGetValues<CoreProperty>().Where(p => M(p).GetAgoRapideAttribute().A.Type?.Equals(type) ?? false).ToList();
-                        switch (corePropertyCandidates.Count) {
-                            case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + " (not even from " + typeof(CoreProperty).ToStringShort() + ")";
-                            case 1: return new CorePropertyMapper().Map(corePropertyCandidates[0]);
-                            default:
-                                return
-                           "Multiple mappings (from " + typeof(CoreProperty).ToStringShort() + ") exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + ".\r\n" +
-                           "The actual mappings found where: " + string.Join(", ", corePropertyCandidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c) + ".");
-                        }
-                    case 1: return candidates[0];
+                    case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + " (not even from " + typeof(CoreProperty).ToStringShort() + ")";
+                    case 1: return candidates[0].cp;
                     default:
                         return
                    "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + ".\r\n" +
-                   "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c) + ".");
+                   "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c.cp) + ".");
                 }
             });
             if (mapping is string) {
@@ -203,7 +198,7 @@ namespace AgoRapide.Core {
             if (!(mapping is CoreProperty)) throw new InvalidObjectTypeException(mapping, typeof(CoreProperty));
             tProperty = (CoreProperty)mapping;
             errorResponse = null;
-            return true;           
+            return true;
         }
 
         /// <summary>
@@ -526,7 +521,11 @@ namespace AgoRapide.Core {
         public EmptyStringException(string message, Exception inner) : base(message, inner) { }
     }
 
-    public class InvalidMappingException<T> : ApplicationException { 
+    public class InvalidMappingException : ApplicationException {
+        public InvalidMappingException(string message) : base(message) { }
+    }
+
+    public class InvalidMappingException<T> : ApplicationException {
         public InvalidMappingException(string message) : base("Unable to map from " + typeof(T).ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
         public InvalidMappingException(T _enum, string message) : base("Unable to map from " + _enum.GetType() + "." + _enum.ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
     }
@@ -569,6 +568,7 @@ namespace AgoRapide.Core {
         public InvalidEnumException(object _enum) : base(GetMessage(_enum, null)) { }
         public InvalidEnumException(object _enum, string message) : base(GetMessage(_enum, message)) { }
         public InvalidEnumException(Type type, string _string) : base("Unable to parse '" + _string + "' as " + type) { }
+        public InvalidEnumException(Type type, string _string, string details) : base("Unable to parse '" + _string + "' as " + type + ".\r\nDetails: " + details) { }
     }
 
     public class InvalidEnumException<T> : ApplicationException {
@@ -576,7 +576,7 @@ namespace AgoRapide.Core {
     }
 
     public class InvalidObjectTypeException : ApplicationException {
-        private static string GetMessage(object _object, string message) => "Invalid / unknown type of object (" + _object.GetType().ToString() + "). Object: '" + _object.ToString() + "'." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message + ")"));
+        private static string GetMessage(object _object, string message) => "Invalid / unknown type of object (" + _object.GetType().ToString() + "). Object: '" + _object.ToString() + "'." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
         public InvalidObjectTypeException(object _object) : base(GetMessage(_object, null)) { }
         public InvalidObjectTypeException(object _object, Type typeExpected) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead")) { }
         public InvalidObjectTypeException(object _object, Type typeExpected, string message) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead.\r\nDetails: " + message)) { }

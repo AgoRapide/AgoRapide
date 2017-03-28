@@ -46,11 +46,12 @@ namespace AgoRapide.API {
         /// </summary>
         public Type Type { get; private set; }
 
+        /// TODO: For <see cref="RouteSegmentClass"/>, put Parameter and ParameterA into a <see cref="CPA"/> class instead
         /// <summary>
         /// Typical example would be <see cref="CoreProperty.QueryId"/> like api/Person/{QueryId}
         /// </summary>
         public CoreProperty? Parameter { get; private set; }
-        public AgoRapideAttributeT ParameterA { get; private set; }
+        public AgoRapideAttributeT<CoreProperty> ParameterA { get; private set; }
 
         /// <summary>
         /// Typical example would be Add like api/Person/Add
@@ -81,9 +82,12 @@ namespace AgoRapide.API {
                 return;
             }
 
-            if (segment is CoreProperty) {
-                Parameter = (CoreProperty)segment;
-                ParameterA = ((CoreProperty)Parameter).GetAgoRapideAttribute();
+            if (segment.GetType().IsEnum) {                 
+                // TODO: Verify that this actually works
+                // TODO: And document better overriding of properties now
+                var cpa = segment is CoreProperty ? EnumMapper.GetCPA((CoreProperty)segment) : EnumMapper.GetCPA(segment.ToString());
+                Parameter = cpa.cp;
+                ParameterA = cpa.a;
                 SampleValues = new Func<List<string>>(() => {
                     if (ParameterA.A.SampleValues == null || ParameterA.A.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + ParameterA.PExplained  };
                     return ParameterA.A.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
@@ -166,8 +170,5 @@ namespace AgoRapide.API {
                 typeof(CoreProperty).ToString() + ", " +
                 typeof(string).ToString() + ". This does not correspond to the following: " + message) { }
         }
-
-        protected static CorePropertyMapper _cpm = new CorePropertyMapper();
-        protected static CoreProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
     }
 }

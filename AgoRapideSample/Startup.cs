@@ -74,9 +74,6 @@ namespace AgoRapideSample {
                 );
 
                 Log("");
-                var dummy = new AgoRapide.CorePropertyMapper(); // This will often fail for new projects. Therefore done as early as possible.
-
-                //  var type = typeof(HomeController);
                 var environment = GetEnvironment();
 
                 // TODO: We expect to be able to do this:
@@ -112,22 +109,31 @@ namespace AgoRapideSample {
                     // ...
                 };
 
+                void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.EnumMapper.MapEnum<T>(s => Log(nameof(AgoRapide.EnumMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
+                mapper1<AgoRapide.CoreProperty>();
+                mapper1<P>();
+                // Add here other enum's which you want to use as entity-properties.
+
                 Log("Going through all " + typeof(P) + " attributes in order to expose any issues at once");
                 AgoRapide.Core.Util.EnumGetValues<P>().ForEach(p => AgoRapide.Core.Extensions.GetAgoRapideAttribute(p));
+                // Add here any kind of enums that you use
+
                 Log("\r\n\r\n" +
-                    "Mapping all " + typeof(AgoRapide.CoreProperty) + " to " + typeof(P) + " in order to expose any issues at once\r\n" +
-                    "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreProperty>().Max()) + 1) + " and onwards for all " + typeof(AgoRapide.CoreProperty) + " not explicitly mapped to a " + typeof(P) + ")\r\n\r\n" +
-                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreProperty>().Select(p => nameof(AgoRapide.CoreProperty) + "." + p + " => " + p.ToString())) + "\r\n");
+                    "Mapping all " + typeof(P) + " to " + typeof(AgoRapide.CoreProperty) + " in order to expose any issues at once\r\n" +
+                    "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreProperty>().Max()) + 1) + " and onwards for all " + typeof(P) + " not explicitly mapped to a " + typeof(AgoRapide.CoreProperty) + ")\r\n\r\n" +
+                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetCPA(p).cp)) + "\r\n");
+
+                string mapper2<T>() => typeof(T) + " => " + typeof(P) + "." + AgoRapide.Core.Util.MapTToCoreProperty<T>() + "\r\n";
                 Log("\r\n\r\n" +
-                    "Testing mappings for various types to P via " + nameof(AgoRapide.Core.Util.MapTToTProperty) + " that are known to exist (in order to expose any issues at once)\r\n\r\n" +
-                    typeof(AgoRapide.ResultCode) + " => " + typeof(P) + "." + AgoRapide.Core.Util.MapTToTProperty<AgoRapide.ResultCode>() + "\r\n" +
-                    typeof(AgoRapide.APIMethodOrigin) + " => " + typeof(P) + "." + AgoRapide.Core.Util.MapTToTProperty<AgoRapide.APIMethodOrigin>() + "\r\n");
+                    "Testing mappings for various types to " + nameof(AgoRapide.CoreProperty) + " via " + nameof(AgoRapide.Core.Util.MapTToCoreProperty) + " that are known to exist (in order to expose any issues at once)\r\n\r\n" +
+                    mapper2<AgoRapide.ResultCode>() +
+                    mapper2<AgoRapide.APIMethodOrigin>()
+                /// TODO: Add to this list all enum-"classes" that should have a mapping to <see cref="AgoRapide.CoreProperty"/>
+                );
                 Log("Miscellaneous testing");
                 if (!AgoRapide.Core.Extensions.GetAgoRapideAttribute(P.Password).A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.AgoRapideAttribute) + "." + nameof(AgoRapide.Core.AgoRapideAttribute.IsPassword));
 
-                // TODO: FIX THIS:
-                // Log(typeof(AgoRapide.APIMethodOrigin) + " => " + typeof(P) + "." + AgoRapide.Core.Util.MapTToTProperty<AgoRapide.APIMethodOrigin, P>());
-                Log("(Add more items above in Startup.cs as you develop your application)");
+                Log("(See corresponding code in Startup.cs for above. Add for more types as you develop your application)");
 
                 Log("SQL_CREATE_TABLE\r\n\r\n" + AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE + "\r\n");
                 var db = BaseController.GetDatabase(GetType());
@@ -144,11 +150,10 @@ namespace AgoRapideSample {
                 AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.EnumClass>(db, text => Log("(by " + typeof(AgoRapide.ApplicationPart) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
                 Log("Calling " + nameof(AgoRapide.EnumClass) + "." + nameof(AgoRapide.EnumClass.RegisterCoreEnumClasses));
-                AgoRapide.EnumClass.RegisterCoreEnumClasses(db, s => Log(nameof(AgoRapide.EnumClass.RegisterCoreEnumClasses) + ": " + s));
-                Log("Calling " + nameof(AgoRapide.EnumClass) + "." + nameof(AgoRapide.EnumClass.RegisterEnumClass) + "<" + typeof(P) + ">");
-                AgoRapide.EnumClass.RegisterEnumClass<P>(db,s => Log(nameof(AgoRapide.EnumClass.RegisterEnumClass) + ": " + s));
+                AgoRapide.EnumClass.RegisterCoreEnumClasses(db);
+                Log("Calling " + nameof(AgoRapide.EnumClass) + "." + nameof(AgoRapide.EnumClass.RegisterEnumClass));
+                AgoRapide.EnumClass.RegisterEnumClass<P>(db);
                 // Add here other enum's for which you want documentation (including automatic linking).
-                // TODO: ADD WITH GENERIC METHOD!
 
                 // ---------------------
 
@@ -352,7 +357,7 @@ namespace AgoRapideSample {
 
         public class ResultWithChallenge : System.Web.Http.IHttpActionResult {
             private readonly System.Web.Http.IHttpActionResult next;
-            public ResultWithChallenge(System.Web.Http.IHttpActionResult next) => this.next = next;            
+            public ResultWithChallenge(System.Web.Http.IHttpActionResult next) => this.next = next;
             public async System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> ExecuteAsync(System.Threading.CancellationToken cancellationToken) {
                 var response = await next.ExecuteAsync(cancellationToken);
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) {

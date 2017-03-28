@@ -15,12 +15,12 @@ namespace AgoRapide {
     )]
     public class EnumClass : ApplicationPart {
 
-        public static void RegisterCoreEnumClasses(IDatabase db, Action<string> noticeLogger) {
+        public static void RegisterCoreEnumClasses(IDatabase db) {
             void Register<T>() where T : struct, IFormattable, IConvertible, IComparable
             { // What we really would want is "where T : Enum"
-                RegisterEnumClass<T>(db, noticeLogger);
+                RegisterEnumClass<T>(db);
             }
-            Register<CoreProperty>(); /// Note how later calls to <see cref="RegisterEnumClass{T}"/> with equivalant names will override properties found now
+            Register<CoreProperty>(); 
             Register<AccessLevel>();
             Register<APIMethodOrigin>();
             Register<CoreMethod>();
@@ -35,18 +35,16 @@ namespace AgoRapide {
 
         /// <summary>
         /// TODO: COMPLETE THIS!
-        /// 
-        /// TODO: USE THIS FOR POPULATING COREPROPERTYMAPPER
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="enumClass"></param>
         /// <param name="db"></param>
-        /// <param name="noticeLogger">Used for logging notices about mapping process.</param>
-        public static void RegisterEnumClass<T>(IDatabase db, Action<string> noticeLogger) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public static void RegisterEnumClass<T>(IDatabase db) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             var cid = GetOrAdd<EnumClass>(typeof(EnumClass), System.Reflection.MethodBase.GetCurrentMethod().Name, db);
-            CorePropertyMapper.RegisterEnum<T>(s => noticeLogger(s));
             var ec = GetOrAdd<EnumClass>(typeof(T), "", db);
             Util.EnumGetValues<T>().ForEach(e => {
+                /// TODO: COMPLETE THIS! 
+                /// TODO: Get information from <see cref="EnumMapper"/> for instance
                 // db.UpdateProperty()
                 // ec.AddProperty(M(CoreProperty.EnumValue), "");
             });

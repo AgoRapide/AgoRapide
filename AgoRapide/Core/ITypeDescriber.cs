@@ -9,11 +9,14 @@ namespace AgoRapide.Core {
     /// <summary>
     /// Dummy interface indicating that implementing class has a static method 
     /// EnrichAttribute available with the same signature as <see cref="IGroupDescriber.EnrichAttribute"/>
+    /// TODO:
+    /// TODO: Document how to handle use of {P} as generic type argument. Signature will NOT be the same
+    /// TODO:
     /// 
     /// Enables adding of validating and parsing information to <see cref="AgoRapideAttributeT"/> 
     /// by specifying a type implementing this interface in <see cref="AgoRapideAttribute.Type"/>. 
     /// (In other words, the type implementing this interface is by 
-    /// this principle able to describe itself to AgoRapide).    
+    /// this principle able to describe itself to AgoRapide).
     /// 
     /// <see cref="AgoRapideAttributeT"/>-properties like 
     /// <see cref="AgoRapideAttributeT.Cleaner"/>,

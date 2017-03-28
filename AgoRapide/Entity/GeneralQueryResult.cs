@@ -17,7 +17,7 @@ namespace AgoRapide {
         public override string ToHTMLTableHeading(Request request) => "<tr><th>Result</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
-            "<a href=\"" + PV<string>(M(CoreProperty.SuggestedUrl)) + "\">" + PV<string>(M(CoreProperty.Description)).HTMLEncode() + "</a>" +
+            "<a href=\"" + PV<string>(CoreProperty.SuggestedUrl) + "\">" + PV<string>(CoreProperty.Description).HTMLEncode() + "</a>" +
             "</tr>\r\n";
 
     }

@@ -31,7 +31,7 @@ namespace AgoRapide {
         /// </summary>
         public BaseEntityT RepresentedByEntity { get; set; }
 
-        public override string Name => PV(M(CoreProperty.Name), Id.ToString());
+        public override string Name => PV(CoreProperty.Name, Id.ToString());
 
         /// <summary>
         /// <see cref="RootProperty"/>.Id is same as (<see cref="BaseEntity.Id"/>. 
@@ -94,7 +94,7 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public T PVM<T>() => PV<T>(Util.MapTToTProperty<T>()); // What we really would want is "where T : Enum"
+        public T PVM<T>() => PV<T>(Util.MapTToCoreProperty<T>()); // What we really would want is "where T : Enum"
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -109,7 +109,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public T PVM<T>(T defaultValue) => PV(Util.MapTToTProperty<T>(), defaultValue); // What we really would want is "where T : Enum"
+        public T PVM<T>(T defaultValue) => PV(Util.MapTToCoreProperty<T>(), defaultValue); // What we really would want is "where T : Enum"
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, throws exception if fails
@@ -140,7 +140,7 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public bool TryGetPVM<T>(out T t) => TryGetPV(Util.MapTToTProperty<T>(), out t); // What we really would want is "where T : Enum"
+        public bool TryGetPVM<T>(out T t) => TryGetPV(Util.MapTToCoreProperty<T>(), out t); // What we really would want is "where T : Enum"
 
         /// <summary>
         /// Returns FALSE if p does not exist at all
@@ -189,7 +189,7 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
-        public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToTProperty<T>(), value);
+        public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreProperty<T>(), value);
 
         public void AddProperty<T>(CoreProperty key, T value) {
             if (value == null) throw new ArgumentNullException(nameof(value));
@@ -332,9 +332,6 @@ namespace AgoRapide {
             }
             return retval.ToString();
         }
-
-        protected static CorePropertyMapper _cpm = new CorePropertyMapper();
-        protected static CoreProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
 
         /// <summary>
         /// For example of override see <see cref="BaseEntityTWithLogAndCount.ToJSONEntity"/> or <see cref="Property.ToJSONEntity"/>

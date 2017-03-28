@@ -16,13 +16,13 @@ namespace AgoRapide.API {
 
         public MethodAttributeT(MethodAttribute methodAttribute) {
             A = methodAttribute ?? throw new ArgumentNullException(nameof(methodAttribute));
-            AddProperty(M(CoreProperty.CoreMethod), A.CoreMethod);
-            // AddProperty(M(CoreProperty.RouteTemplate), A.RouteTemplate); // Leave this to ApiMethod instead
-            AddProperty(M(CoreProperty.AccessLevelUse), A.AccessLevelUse);
-            AddProperty(M(CoreProperty.Environment), A.Environment);
-            AddProperty(M(CoreProperty.Description), A.Description + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
-            AddProperty(M(CoreProperty.LongDescription), A.LongDescription + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
-            AddProperty(M(CoreProperty.ShowDetailedResult), A.ShowDetailedResult);
+            AddProperty(CoreProperty.CoreMethod, A.CoreMethod);
+            // AddProperty(CoreProperty.RouteTemplate), A.RouteTemplate); // Leave this to ApiMethod instead
+            AddProperty(CoreProperty.AccessLevelUse, A.AccessLevelUse);
+            AddProperty(CoreProperty.Environment, A.Environment);
+            AddProperty(CoreProperty.Description, A.Description + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            AddProperty(CoreProperty.LongDescription, A.LongDescription + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            AddProperty(CoreProperty.ShowDetailedResult, A.ShowDetailedResult);
         }
     }
 }

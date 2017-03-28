@@ -253,15 +253,15 @@ namespace AgoRapide.Database {
         public UniquenessException(string message, Exception inner) : base(message, inner) { }
     }
 
-    public class InvalidPasswordException<TProperty> : ApplicationException where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-        public InvalidPasswordException(TProperty property) : this(property, null, null) { }
-        public InvalidPasswordException(TProperty property, string message) : this(property, message, null) { }
-        public InvalidPasswordException(TProperty property, string message, Exception inner) : base(property.GetAgoRapideAttribute().PExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
+    public class InvalidPasswordException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public InvalidPasswordException(T property) : this(property, null, null) { }
+        public InvalidPasswordException(T property, string message) : this(property, message, null) { }
+        public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetAgoRapideAttribute().PExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
     }
 
     /// <summary>
     /// TODO: Most probably we can get away with this method by instead just silently mapping unknown string
-    /// TODO: values to <see cref="CoreProperty"/> in <see cref="CorePropertyMapper"/>
+    /// TODO: values to <see cref="CoreProperty"/> in <see cref="EnumMapper"/>
     /// </summary>
     public class InvalidPropertyKeyException : ApplicationException { 
         public InvalidPropertyKeyException() : base() { }

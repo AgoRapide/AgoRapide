@@ -20,7 +20,7 @@ namespace AgoRapide {
         public int LastMatchingSegmentNo { get; private set; }
         public RouteSegmentClass FirstNonMatchingSegment { get; private set; }
 
-        public string SuggestedUrl => PV<string>(M(CoreProperty.SuggestedUrl));
+        public string SuggestedUrl => PV<string>(CoreProperty.SuggestedUrl);
 
         public override string Name => Method.Name;
 
@@ -32,7 +32,7 @@ namespace AgoRapide {
             Method = method ?? throw new ArgumentNullException(nameof(method));
             LastMatchingSegmentNo = (lastMatchingSegmentNo >= -1 && lastMatchingSegmentNo < (method.RouteSegments.Count - 1)) ? lastMatchingSegmentNo : throw new ArgumentException(nameof(lastMatchingSegmentNo) + " (" + lastMatchingSegmentNo + ") does not fall within valid index value minus one for " + nameof(method) + "." + nameof(method.RouteSegments) + " (which has .Count = " + method.RouteSegments.Count + "), nor is it -1");
             FirstNonMatchingSegment = Method.RouteSegments[LastMatchingSegmentNo + 1];
-            AddProperty(M(CoreProperty.SuggestedUrl), request.JSONUrl + "/" + FirstNonMatchingSegment.SampleValues[0] + (request.ResponseFormat==ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator  : ""));
+            AddProperty(CoreProperty.SuggestedUrl, request.JSONUrl + "/" + FirstNonMatchingSegment.SampleValues[0] + (request.ResponseFormat==ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator  : ""));
         }
     }
 }

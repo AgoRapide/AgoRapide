@@ -53,19 +53,14 @@ namespace AgoRapide.Core {
         /// </summary>
         public bool IsDefault { get; private set; }
 
+        private object _property;
         /// <summary>
         /// The actual property (actual enum-value) which we are an attribute for.
         /// 
         /// Only relevant when attribute for an enum-value. 
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
-        /// 
-        /// Not to be set "manually". Set by <see cref="GetAgoRapideAttribute"/>
-        /// Will always be set if originates from <see cref="Extensions.GetAgoRapideAttribute{T}"/>
-        /// 
-        /// Normally you would use the strongly typed <see cref="AgoRapideAttributeT.P"/> instead of <see cref="AgoRapideAttribute.Property"/>
-        /// Note that <see cref="Property"/> may be of type <see cref="AgoRapide.CoreProperty"/> for silently mapped values. 
         /// </summary>
-        public object Property { get; private set; }
+        public object Property => _property ?? throw new NullReferenceException(nameof(_property) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// The actual class that we are an attribute for. 
@@ -384,7 +379,7 @@ namespace AgoRapide.Core {
             public NoAttributesDefinedException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public override string ToString() => ("Enum: " + Property == null ? "[NULL]" : Property.ToString()) + "\r\nDescription:\r\n" + Description + "\r\nLongDescription:\r\n" + LongDescription;
+        public override string ToString() => "Enum: " + (_property?.ToString() ?? "[NULL]") + "\r\nDescription:\r\n" + Description + "\r\nLongDescription:\r\n" + LongDescription;
 
         // public DData.Unit Unit { get; set; }
 
@@ -454,7 +449,7 @@ namespace AgoRapide.Core {
                         throw new AgoRapideAttributeException(nameof(attributes) + ".Length > 1 (" + attributes.Length + ") for " + type.ToStringVeryShort() + "." + _enum.ToString());
                 }
             })();
-            retval.Property = _enum;
+            retval._property = _enum;
             if (string.IsNullOrEmpty(retval.Description)) {  // You may set Description through either [Description("...")] or Description = "..."
                 retval.Description = new Func<string>(() => { // So if not found as Description = "...", try as [Description("...")] instead
                     var attributes = field.GetCustomAttributes(typeof(DescriptionAttribute), true);
@@ -476,6 +471,7 @@ namespace AgoRapide.Core {
         /// 
         /// Note how:
         /// 1) Boolean values are only transferred if they are TRUE at <paramref name="other"/>-end.
+        ///    TODO: Consider introducing a bool-enum with fields None, Yes and No.
         /// 2) Enum values are only transferred if they are not default at this end.
         /// 3) Other value types are typically not transferred
         /// </summary>

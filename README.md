@@ -105,7 +105,7 @@ Note suggestion of sample values.
 
 [Call method normally](http://sample.agorapide.com/api/DemoDoubler/42/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/DemoDoubler/42)
 
-[Call method provocate exception](http://sample.agorapide.com/api/DemoDoubler/7777777777777777777/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/)DemoDoubler/7777777777777777777)>
+[Call method provocate exception](http://sample.agorapide.com/api/DemoDoubler/7777777777777777777/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/DemoDoubler/7777777777777777777)
 
 Note balance between security (holding back information) and user friendliness (giving out information). Some exception information is given but not everything.
 
@@ -276,7 +276,9 @@ AgoRapide does not even support the concept of deletion.
 
 Properties are only added to the database, with older properties marked as invalid. 
 
-The entity (the user) doing the change is also logged telling you who changed what data. See methods like Property/{IntegerQueryId}/History.
+The entity (the user) doing the change is also logged telling you who changed what data. 
+
+See methods like [Property/{IntegerQueryId}/History](http://sample.agorapide.com/api/APIMethod/1360/HTML) and [example](http://sample.agorapide.com/api/Property/1744/History/HTML)
 
 ## A C# centric approach. 
 AgoRapide is more C# centric than database centric in the sense that the database schema is in reality stored as C# code. Auto generated libraries are then used as basis for access through other programming environment (like Java, Swift, ObjectiveC and so on). 
@@ -325,7 +327,7 @@ TODO: As of March 2017 we have not worked out how to automate this yet. Contribu
 
 AgoRapide and AgoRapideSample as Nuget packages.
 
-Doing security more "right" while the library is still quite small and easy to understand.
+Doing security more "right" while the library is still quite small and easy to change.
 
 Support for OAuth 2.0 in AgoRapideSample. 
 
@@ -335,14 +337,14 @@ Unit testing (data driven based on existing annotations).
 
 Support for other database engines than PostgreSQL.
 
-Support for "traditional" database tables (multiple tables instead of the current single table approach). 
+Inbuilt support for "traditional" database tables (multiple tables instead of the current single table approach). 
 
 # FAQ
 
 ## What do you  mean by HTML administrative view?
 A rudimentary interface useful for administrering your backend, API, and doing support for your customers. 
 
-Example: [HTML interface](http://sample.agorapide.com/api/Car/1563/HTML)&nbsp;&nbsp;[(as JSON)](http://sample.agorapide.com/api/Car/1563)
+Example: [HTML interface](http://sample.agorapide.com/api/Car/1563/HTML)&nbsp;&nbsp;[(correspondig data as JSON)](http://sample.agorapide.com/api/Car/1563)
 
 As you can see the HTML interface is like a clone of the JSON interface with the addition of useful links and documentation. 
 (the current functionality is quite limited but we assume that you get the idea. Similar philosophies has been used to a great extent with success in other applications)

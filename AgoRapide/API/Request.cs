@@ -26,9 +26,6 @@ namespace AgoRapide.API {
 
         public Result Result { get; } = new Result();
 
-        protected static CorePropertyMapper _cpm = new CorePropertyMapper();
-        protected static CoreProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
-
         public object GetOKResponseAsEntityId(Type entityType, long id) => GetOKResponseAsEntityId(entityType, id, message: null);
         /// <summary>
         /// </summary>
@@ -41,16 +38,16 @@ namespace AgoRapide.API {
             message += "Id: " + id;
             if (!string.IsNullOrEmpty(Method.A.A.Description)) message += ". The following was executed: " + Method.A.A.Description;
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(M(CoreProperty.DBId), id);
-            Result.AddProperty(M(CoreProperty.SuggestedUrl), CreateAPIUrl(entityType, id));
-            Result.AddProperty(M(CoreProperty.Message), message);
+            Result.AddProperty(CoreProperty.DBId, id);
+            Result.AddProperty(CoreProperty.SuggestedUrl, CreateAPIUrl(entityType, id));
+            Result.AddProperty(CoreProperty.Message, message);
             return GetResponse();
         }
 
         public object GetOKResponseAsText(string text, string additionalMessage) {
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(M(CoreProperty.Value), text); // TODO: USE BETTER CoreProperty than this!
-            Result.AddProperty(M(CoreProperty.Message), additionalMessage);
+            Result.AddProperty(CoreProperty.Value, text); // TODO: USE BETTER CoreProperty than this!
+            Result.AddProperty(CoreProperty.Message, additionalMessage);
             return GetResponse();
         }
 
@@ -101,7 +98,7 @@ namespace AgoRapide.API {
             //message += nameof(AgoRapideAttribute.Description) + ": " + resultCode.GetAgoRapideAttribute().A.Description;
 
             Result.ResultCode = resultCode;
-            if (!string.IsNullOrEmpty(message)) Result.AddProperty(M(CoreProperty.Message), message);
+            if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreProperty.Message, message);
             return GetResponse();
         }
 
@@ -118,7 +115,7 @@ namespace AgoRapide.API {
             }
             message += ". Last .NET method involved: " + caller; // TODO: Better text here! TODO: Add type / class within which caller resides!
             Result.ResultCode = ResultCode.access_error;
-            Result.AddProperty(M(CoreProperty.Message), message);
+            Result.AddProperty(CoreProperty.Message, message);
             return GetResponse();
         }
 
@@ -332,10 +329,8 @@ namespace AgoRapide.API {
                     (!isPOST ? "" : (
                         nameof(postParameters) + ":\r\n" +
                         string.Join("\r\n", postParameters.Select(p => {
-                            // TODO: Create some common method for 
-                            var e = Util.EnumTryParse<CoreProperty>(p.Item1, out var temp1) ? temp1 : (Util.EnumTryParse<CoreProperty>(p.Item1, out var temp2) ? M(temp2) : (CoreProperty)(object)(0));
-                            var a = e.GetAgoRapideAttribute();
-                            return p.Item1 + (((((int)(object)e)) == 0) ? (" [Not recognized]" + ")") : "") + " = " + (a.A.IsPassword ? "[WITHHELD]" : ("'" + p.Item2 + "'"));
+                            var cpa = EnumMapper.GetCPAOrDefault(p.Item1);
+                            return p.Item1 + (cpa.cp == CoreProperty.None ? (" [Not recognized]" + ")") : "") + " = " + (cpa.a.A.IsPassword ? "[WITHHELD]" : ("'" + p.Item2 + "'"));
                         })))
                     )
             );
@@ -481,7 +476,7 @@ namespace AgoRapide.API {
     /// Populated by <see cref="BaseController.TryGetRequest"/>
     /// See also <see cref="Request"/>. 
     /// </summary>
-    public class ValidRequest : Request { 
+    public class ValidRequest : Request {
 
         public Parameters Parameters { get; private set; }
 

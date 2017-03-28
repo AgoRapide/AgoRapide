@@ -96,7 +96,7 @@
     <Compile Include="Core\AgoRapideAttribute.cs" />
     <Compile Include="Core\AgoRapideAttributeT.cs" />
     <Compile Include="Core\BaseCore.cs" />
-    <Compile Include="Core\CorePropertyMapper.cs" />
+    <Compile Include="Core\EnumMapper.cs" />
     <Compile Include="Core\IGroupDescriber.cs" />
     <Compile Include="Core\ITypeDescriber.cs" />
     <Compile Include="Core\QueryId.cs" />

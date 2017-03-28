@@ -103,7 +103,7 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) =>
+        public static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
@@ -149,7 +149,7 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) =>
+        public new static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is IntegerQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="IntegerQueryId"/>
@@ -169,7 +169,7 @@ namespace AgoRapide.Core {
     /// </summary>
     public class PropertyValueQueryId : QueryId {
         public List<CoreProperty> Properties { get; private set; }
-        public AgoRapideAttributeT A { get; private set; }
+        public AgoRapideAttributeT<CoreProperty> A { get; private set; }
         public Operator Operator { get; private set; }
         public object Value { get; private set; }
 
@@ -334,7 +334,7 @@ namespace AgoRapide.Core {
                     }
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
-                        var a = new AgoRapideAttributeT(Value.GetAgoRapideAttribute());
+                        var a = new AgoRapideAttributeT<CoreProperty>(Value.GetAgoRapideAttribute(), null); // TODO: Verify that null is cor
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" + a.PToString + "'");
                     }
                     if (Value is ITypeDescriber) {
@@ -397,7 +397,7 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeT agoRapideAttribute) =>
+        public new static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is PropertyValueQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="PropertyValueQueryId"/>

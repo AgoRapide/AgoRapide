@@ -223,7 +223,7 @@ namespace AgoRapide.Database {
                 entity = null;
                 return false;
             }
-            if (!root.KeyT.Equals(M(CoreProperty.Type))) {
+            if (!root.KeyT.Equals(CoreProperty.Type)) {
                 if (requiredType.Equals(typeof(BaseEntityT))) {
                     // OK, return what we have got. 
 
@@ -231,7 +231,7 @@ namespace AgoRapide.Database {
                     entity = root;
                     return true;
                 }
-                throw new InvalidEnumException(root.KeyT, "Expected " + M(CoreProperty.Type).GetAgoRapideAttribute().PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                throw new InvalidEnumException(root.KeyT, "Expected " + CoreProperty.Type.GetAgoRapideAttribute().PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
@@ -256,8 +256,8 @@ namespace AgoRapide.Database {
             retval.Created = root.Created;
             retval.Properties = GetChildProperties(root);
             retval.Properties.Values.ForEach(p => p.Parent = retval);
-            retval.Properties.AddValue(M(CoreProperty.RootProperty), root);
-            retval.AddProperty(M(CoreProperty.DBId), id);
+            retval.Properties.AddValue(CoreProperty.RootProperty, root);
+            retval.AddProperty(CoreProperty.DBId, id);
             // We can not use the short representation because Property will (if asked like V<Type> or similar), try
             // to reconstruct the actual type.
             // retval.AddProperty(M(CoreProperty.Type), retval.GetType().ToStringShort());
@@ -329,7 +329,7 @@ namespace AgoRapide.Database {
                     break;
                 default: throw new InvalidEnumException(operation);
             }
-            result?.Count(M(CoreProperty.PAffectedCount));
+            result?.Count(CoreProperty.PAffectedCount);
         }
 
         public List<long> GetRootPropertyIds(Type type) {
@@ -373,7 +373,7 @@ namespace AgoRapide.Database {
             Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
             InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntityT), detailer: null);
             var retval = new Result();
-            var pid = CreateProperty(cid, null, null, M(CoreProperty.Type), entityType, result);
+            var pid = CreateProperty(cid, null, null, CoreProperty.Type, entityType, result);
             if (properties != null) {
                 foreach (var v in properties) {
                     CreateProperty(cid, pid, null, v.Item1, v.Item2, result);
@@ -472,9 +472,9 @@ namespace AgoRapide.Database {
             if (string.IsNullOrEmpty(password)) return false;
             username = username.ToLower();
             Log("username: " + username);
-            var cmd = new Npgsql.NpgsqlCommand("SELECT pid FROM p WHERE " + DBField.key + " = '" + M(CoreProperty.Username) + "' AND " + DBField.strv + " = :" + M(CoreProperty.Username) + " AND " + DBField.invalid + " IS NULL", _cn1);
-            cmd.Parameters.Add(new Npgsql.NpgsqlParameter(M(CoreProperty.Username).ToString(), NpgsqlTypes.NpgsqlDbType.Text));
-            cmd.Parameters[0].Value = username;
+            var cmd = new Npgsql.NpgsqlCommand("SELECT pid FROM p WHERE " + DBField.key + " = '" + CoreProperty.Username + "' AND " + DBField.strv + " = :" + CoreProperty.Username + " AND " + DBField.invalid + " IS NULL", _cn1);
+            cmd.Parameters.Add(new Npgsql.NpgsqlParameter(CoreProperty.Username.ToString(), NpgsqlTypes.NpgsqlDbType.Text) { Value = username });
+            // cmd.Parameters[0].Value = username;
             if (!TryExecuteScalarLong(cmd, out var entityId)) return false;
             if (entityId == 0) return false; // Not really necessary check
 
@@ -483,42 +483,41 @@ namespace AgoRapide.Database {
             // the returned object available for such purposes.
             if (!TryGetEntityById(entityId, useCache: false, requiredType: null, entity: out currentUser)) return false;
 
-            if (currentUser.PV<string>(M(CoreProperty.Username), "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 
+            if (currentUser.PV<string>(CoreProperty.Username, "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 
                 Log(
                     "It looks like " + typeof(CoreProperty) + "." + CoreProperty.Username + " " +
                     "was just changed for entity " + currentUser.Id + " " +
                     "resulting in more than one current property in database. " +
                     "Returning FALSE now " +
-                    "since the last one (the one now current) (" + currentUser.PV(M(CoreProperty.Username), "") + ") " +
+                    "since the last one (the one now current) (" + currentUser.PV(CoreProperty.Username, "") + ") " +
                     "does not correspond to the one given (" + username + ")");
                 return false;
             }
-            var p = M(CoreProperty.Password);
-            if (!currentUser.TryGetPV<string>(p, out var correctPasswordHashedWithSalt) || string.IsNullOrEmpty(correctPasswordHashedWithSalt)) {
+            if (!currentUser.TryGetPV<string>(CoreProperty.Password, out var correctPasswordHashedWithSalt) || string.IsNullOrEmpty(correctPasswordHashedWithSalt)) {
                 Log("Password not set for " + currentUser.ToString());
                 return false;
             }
-            if (password.Equals(correctPasswordHashedWithSalt)) throw new InvalidPasswordException<CoreProperty>(p, nameof(password) + ".Equals(" + nameof(correctPasswordHashedWithSalt) + "). Either 1) Password was not correct stored in database (check that " + nameof(CreateProperty) + " really salts and hashes passwords), or 2) The caller actually supplied an already salted and hashed password.");
+            if (password.Equals(correctPasswordHashedWithSalt)) throw new InvalidPasswordException<CoreProperty>(CoreProperty.Password, nameof(password) + ".Equals(" + nameof(correctPasswordHashedWithSalt) + "). Either 1) Password was not correct stored in database (check that " + nameof(CreateProperty) + " really salts and hashes passwords), or 2) The caller actually supplied an already salted and hashed password.");
 
             var passwordHashedWithSalt = Util.GeneratePasswordHashWithSalt(currentUser.Id, password);
             if (correctPasswordHashedWithSalt != passwordHashedWithSalt) {
                 // A bit expensive to store in database, but useful information. 
                 // Note how the NUMBER of failed attempts are not logged since only the (last) valid-date in the database is stored for repeated failures. 
                 // Note that if you are concerned about hacking / DDOS scenarios or similar you should definitely implement a more robust authentication mechanism.
-                UpdateProperty(GetId(), currentUser, M(CoreProperty.AuthResult), value: false, result: null);
+                UpdateProperty(GetId(), currentUser, CoreProperty.AuthResult, value: false, result: null);
                 return false;
             }
 
-            if (currentUser.PV(M(CoreProperty.RejectCredentialsNextTime), defaultValue: false)) {
+            if (currentUser.PV(CoreProperty.RejectCredentialsNextTime, defaultValue: false)) {
                 // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-                UpdateProperty(GetId(), currentUser, M(CoreProperty.RejectCredentialsNextTime), value: false, result: null);
+                UpdateProperty(GetId(), currentUser, CoreProperty.RejectCredentialsNextTime, value: false, result: null);
                 return false;
             }
 
             Log("Returning TRUE");
             // Note how the NUMBER of successful attempts are not logged since only the (last) valid-date in the database is stored for repeated successes. 
             // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-            UpdateProperty(GetId(), currentUser, M(CoreProperty.AuthResult), value: true, result: null);
+            UpdateProperty(GetId(), currentUser, CoreProperty.AuthResult, value: true, result: null);
 
             SwitchIfHasEntityToRepresent(ref currentUser);
             return true;
@@ -529,14 +528,13 @@ namespace AgoRapide.Database {
         }
         public bool TryAssertUniqueness(CoreProperty key, object value, out Property existingProperty, out string errorResponse) {
             Log(nameof(key) + ": " + key + ", " + nameof(value) + ": " + value);
-            var a = key.GetAgoRapideAttribute().A;
-            a.AssertIsUniqueInDatabase();
+            var a = key.GetAgoRapideAttribute();
+            a.A.AssertIsUniqueInDatabase();
 
             // TODO: DUPLICATED CODE!
             var defaultKeyToString = key.ToString();
-            // TODO: Use TryMapReverse.
             // TODO: Add support for IsMany. Make possible to store key as #1, #2 and so on in database.
-            var keyAsString = Enum.IsDefined(typeof(CoreProperty), key) ? defaultKeyToString : _cpm.MapReverse(key).ToString();
+            var keyAsString = a.PToString;
 
             Npgsql.NpgsqlCommand cmd;
             switch (value) {
@@ -548,7 +546,7 @@ namespace AgoRapide.Database {
                     cmd.Parameters[0].Value = strValue; break;
                 case bool blnValue:
                     cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.key + " = '" + keyAsString + "' AND " + DBField.blnv + " = " + (blnValue ? "TRUE" : "FALSE") + " AND " + DBField.invalid + " IS NULL", _cn1); break;
-                default: throw new InvalidObjectTypeException(value, nameof(a.IsUniqueInDatabase) + " only implemented for string and bool");
+                default: throw new InvalidObjectTypeException(value, nameof(a.A.IsUniqueInDatabase) + " only implemented for string and bool");
             }
             var existing = ReadAllPropertyValues(cmd);
             switch (existing.Count) {
@@ -558,11 +556,11 @@ namespace AgoRapide.Database {
                     return true;
                 case 1:
                     existingProperty = existing[0];
-                    errorResponse = nameof(a.IsUniqueInDatabase) + " property " + keyAsString + " = '" + value + "' already exists in database. You must chose a different value for " + keyAsString + ".";
+                    errorResponse = nameof(a.A.IsUniqueInDatabase) + " property " + keyAsString + " = '" + value + "' already exists in database. You must chose a different value for " + keyAsString + ".";
                     return false;
                 default:
                     throw new UniquenessException(
-                        "Found " + existing.Count + " existing properties for " + nameof(a.IsUniqueInDatabase) + " property " + keyAsString + " = '" + value + "'\r\n" +
+                        "Found " + existing.Count + " existing properties for " + nameof(a.A.IsUniqueInDatabase) + " property " + keyAsString + " = '" + value + "'\r\n" +
                         "Expected at most only one existing property.\r\n" +
                         "Resolution: Delete from database all but one of the existing properties with the following SQL expression:\r\n" +
                         "  DELETE FROM p WHERE id IN (" + string.Join(", ", existing.Select(p => p.Id)) + ")\r\n" +
@@ -573,16 +571,14 @@ namespace AgoRapide.Database {
 
         public long CreateProperty(long? cid, long? pid, long? fid, CoreProperty key, object value, Result result) {
             // See logging further below
-            var a = key.GetAgoRapideAttribute().A;
-
+            var a = key.GetAgoRapideAttribute();
             // TODO: DUPLICATED CODE!
             var defaultKeyToString = key.ToString();
-            // TODO: Use TryMapReverse.
             // TODO: Add support for IsMany. Make possible to store key as #1, #2 and so on in database.
-            var keyAsString = Enum.IsDefined(typeof(CoreProperty), key) ? defaultKeyToString : _cpm.MapReverse(key).ToString();
+            var keyAsString = a.PToString;
 
             Npgsql.NpgsqlCommand cmd;
-            if (a.IsUniqueInDatabase) {
+            if (a.A.IsUniqueInDatabase) {
                 AssertUniqueness(key, value);
             }
             var idStrings = new Func<Tuple<string, string, string>>(() => {
@@ -637,7 +633,7 @@ namespace AgoRapide.Database {
 
             Log(idStrings.Item1 +
                 ", " + nameof(key) + ": " + keyAsString + (keyAsString.Equals(defaultKeyToString) ? "" : (" (" + nameof(CoreProperty) + " silently mapped as " + defaultKeyToString + ")")) +
-                ", " + nameof(value) + ": " + (a.IsPassword ? "[WITHHELD]" : value.ToString()), result);
+                ", " + nameof(value) + ": " + (a.A.IsPassword ? "[WITHHELD]" : value.ToString()), result);
             var type = value.GetType();
 
             // TODO: Idea for performance improvement. We could read some sequence values in a separate
@@ -677,7 +673,7 @@ namespace AgoRapide.Database {
             if (valueStrings.Item2.StartsWith(":")) {
                 if (valueStrings.Item3 == null) throw new NullReferenceException(nameof(valueStrings) + "." + nameof(valueStrings.Item3) + ". Must be set when " + nameof(valueStrings) + "." + nameof(valueStrings.Item2) + ".StartsWith(\":\") (" + valueStrings.Item2 + ")");
                 cmd.Parameters.Add(new Npgsql.NpgsqlParameter(valueStrings.Item2, valueStrings.Item3));
-                if (a.IsPassword) { // salt and hash
+                if (a.A.IsPassword) { // salt and hash
                     if (pid == null) throw new ArgumentNullException(nameof(pid) + " must be set for " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.IsPassword));
                     if (!(value is string)) throw new InvalidObjectTypeException(value, typeof(string), "Only string is allowed for " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.IsPassword));
                     value = Util.GeneratePasswordHashWithSalt((long)pid, (string)value);
@@ -685,12 +681,12 @@ namespace AgoRapide.Database {
                 cmd.Parameters[0].Value = value;
             } else {
                 if (valueStrings.Item3 != null) throw new NotNullReferenceException(nameof(valueStrings) + "." + nameof(valueStrings.Item3) + ". Must not be set when !" + nameof(valueStrings) + "." + nameof(valueStrings.Item2) + ".StartsWith(\":\") (" + valueStrings.Item2 + ")");
-                if (a.IsPassword) throw new Exception(nameof(AgoRapideAttribute) + "." + nameof(a.IsPassword) + " only valid for strings, not " + value.GetType());
+                if (a.A.IsPassword) throw new Exception(nameof(AgoRapideAttribute) + "." + nameof(a.A.IsPassword) + " only valid for strings, not " + value.GetType());
             }
             var propertiesAffected = ExecuteNonQuery(cmd, expectedRows: 1, doLogging: false);
-            result?.SetCount(M(CoreProperty.PAffectedCount), propertiesAffected);
-            result?.Count(M(CoreProperty.PCreatedCount));
-            result?.Count(M(CoreProperty.PTotalCount));
+            result?.SetCount(CoreProperty.PAffectedCount, propertiesAffected);
+            result?.Count(CoreProperty.PCreatedCount);
+            result?.Count(CoreProperty.PTotalCount);
 
             return id;
         }
@@ -707,14 +703,14 @@ namespace AgoRapide.Database {
                 if (existingValue.Equals(value)) {
                     // Note how this is not logged
                     OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
-                    result?.Count(M(CoreProperty.PUnchangedCount));
+                    result?.Count(CoreProperty.PUnchangedCount);
                 } else { // Vanlig variant
                          // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
                          // TODO: At least for presenting DateTime-objects and double in a preferred manner
                     Log(detailer() + ". Property changed from '" + existingValue + "' to '" + value + "'", result);
                     var id = creator();
                     var changedProperty = GetPropertyById(id);
-                    result?.Count(M(CoreProperty.PChangedCount));
+                    result?.Count(CoreProperty.PChangedCount);
                     entity.Properties[key] = changedProperty;
                 }
             } else {
@@ -724,7 +720,7 @@ namespace AgoRapide.Database {
                 var id = creator();
                 var newProperty = GetPropertyById(id);
                 // result?.Count(M(CoreProperty.properties_created_count)); Counted by CreateProperty
-                result?.Count(M(CoreProperty.PTotalCount));
+                result?.Count(CoreProperty.PTotalCount);
                 entity.Properties[key] = newProperty;
             }
         }
@@ -735,13 +731,13 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entity"></param>
         public void SwitchIfHasEntityToRepresent(ref BaseEntityT entity) {
-            if (entity.TryGetPV(M(CoreProperty.EntityToRepresent), out long representedEntityId)) {
+            if (entity.TryGetPV(CoreProperty.EntityToRepresent, out long representedEntityId)) {
                 Log("entityId: " + entity.Id + ", switching to " + representedEntityId);
                 var representedByEntity = entity;
                 var entityToRepresent = GetEntityById<BaseEntityT>(representedEntityId);
                 // TODO: Should we add checks for AccessRights here? 
                 /// See comments for <see cref="CoreProperty.EntityToRepresent"/>
-                entityToRepresent.AddProperty(M(CoreProperty.RepresentedByEntity), representedByEntity.Id);
+                entityToRepresent.AddProperty(CoreProperty.RepresentedByEntity, representedByEntity.Id);
                 entityToRepresent.RepresentedByEntity = representedByEntity;
                 entity = entityToRepresent;
             }
@@ -876,7 +872,7 @@ namespace AgoRapide.Database {
                 var noLongerCurrent = new List<Tuple<Property, byte>>();
                 while (r.Read()) {
                     var p = ReadOneProperty(r);
-                    if (p.KeyT.Equals(default(CoreProperty))) throw new InvalidPropertyKeyException(p.KeyDB, p.Id);
+                    if (p.KeyT.Equals(CoreProperty.None)) throw new InvalidPropertyKeyException(p.KeyDB, p.Id);
                     if (p.MultipleIndex != null) {
                         var isManyParent = dict.GetOrAddIsManyParent(p.KeyT);
                         if (isManyParent.Properties.TryGetValue((CoreProperty)(object)p.MultipleIndex, out var toBeOverwritten)) {
@@ -1075,8 +1071,6 @@ OWNER TO agorapide;
         /// <param name="caller"></param>
         /// <returns></returns>
         protected long GetId([System.Runtime.CompilerServices.CallerMemberName] string caller = "") => ApplicationPart.GetOrAdd<ClassAndMethod>(GetType(), caller, this).Id;
-        protected static CorePropertyMapper _cpm = new CorePropertyMapper();
-        protected static CoreProperty M(CoreProperty coreProperty) => _cpm.Map(coreProperty);
         /// <summary>
         /// </summary>
         /// <param name="text"></param>
