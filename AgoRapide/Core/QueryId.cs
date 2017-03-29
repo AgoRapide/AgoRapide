@@ -103,10 +103,10 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) =>
+        public static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
+                    new ParseResult(new Property(agoRapideAttribute, retval), retval) :
                     new ParseResult(errorResponse);
             });
 
@@ -149,11 +149,11 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) =>
+        public new static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is IntegerQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="IntegerQueryId"/>
-                    new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
+                    new ParseResult(new Property(agoRapideAttribute, retval), retval) :
                         new ParseResult("Not a valid " + typeof(IntegerQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
                         ) :
                         new ParseResult(errorResponse);
@@ -168,8 +168,11 @@ namespace AgoRapide.Core {
     /// Note how this class gets the attributes for the super class since no <see cref="AgoRapideAttribute"/> is defined here. 
     /// </summary>
     public class PropertyValueQueryId : QueryId {
-        public List<CoreProperty> Properties { get; private set; }
-        public AgoRapideAttributeT<CoreProperty> A { get; private set; }
+        public List<AgoRapideAttributeEnriched> Properties { get; private set; }
+        /// <summary>
+        /// TODO: Check initialization of this
+        /// </summary>
+        public AgoRapideAttributeEnriched A { get; private set; }
         public Operator Operator { get; private set; }
         public object Value { get; private set; }
 
@@ -205,7 +208,7 @@ namespace AgoRapide.Core {
         /// <param name="property"></param>
         /// <param name="_operator"></param>
         /// <param name="value"></param>
-        public PropertyValueQueryId(CoreProperty property, Operator _operator, object value) : this(new List<CoreProperty> { property }, _operator, value) { }
+        public PropertyValueQueryId(AgoRapideAttributeEnriched property, Operator _operator, object value) : this(new List<AgoRapideAttributeEnriched> { property }, _operator, value) { }
         /// <summary>
         /// Strongly typed constructor. 
         /// (usually used when query originates from "outside" of API)
@@ -215,7 +218,7 @@ namespace AgoRapide.Core {
         /// <param name="property"></param>
         /// <param name="_operator"></param>
         /// <param name="value"></param>
-        public PropertyValueQueryId(List<CoreProperty> properties, Operator _operator, object value) {
+        public PropertyValueQueryId(List<AgoRapideAttributeEnriched> properties, Operator _operator, object value) {
             Properties = properties ?? throw new NullReferenceException(nameof(properties));
             if (Properties.Count == 0) throw new InvalidCountException(nameof(Properties) + ": " + Properties.Count);
             Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
@@ -235,7 +238,7 @@ namespace AgoRapide.Core {
         /// </summary>
         private void Initialize() {
 
-            if (Properties != null && Properties.Count == 1 && Properties[0].GetAgoRapideAttribute().A.IsUniqueInDatabase) {
+            if (Properties != null && Properties.Count == 1 && Properties[0].A.IsUniqueInDatabase) { /// TODO: Can we use <see cref="A"/> directly here?
                 IsSingle = true;
                 IsMultiple = false;
             } else {
@@ -253,12 +256,11 @@ namespace AgoRapide.Core {
             /// We have to number parameters for instance for <see cref="Operator.IN"/> and for multiple <see cref="Properties"/>
             var parameterNo = 0;
 
-            var singlePropertySQLConstructor = new Func<CoreProperty, string>(Property => {
+            var singlePropertySQLConstructor = new Func<AgoRapideAttributeEnriched, string>(A => {
                 var sql = new StringBuilder();
-                A = Property.GetAgoRapideAttribute();
                 var detailer = new Func<string>(() => A.PToString + " " + Operator + " " + Value + " (of type " + Value.GetType() + ")");
 
-                if (((int)(object)(Property)) == 0) throw new InvalidEnumException(Property, detailer.Result("Details: "));
+                if (((int)(object)(A.CoreProperty)) == 0) throw new InvalidEnumException(A.CoreProperty, detailer.Result("Details: "));
 
                 sql.Append(DBField.key + " = '" + A.PToString + "' AND ");
 
@@ -334,7 +336,7 @@ namespace AgoRapide.Core {
                     }
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
-                        var a = new AgoRapideAttributeT<CoreProperty>(Value.GetAgoRapideAttribute(), null); // TODO: Verify that null is cor
+                        var a = new AgoRapideAttributeEnrichedT<CoreProperty>(Value.GetAgoRapideAttribute(), null); // TODO: Verify that null is cor
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" + a.PToString + "'");
                     }
                     if (Value is ITypeDescriber) {
@@ -397,11 +399,11 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) =>
+        public new static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is PropertyValueQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="PropertyValueQueryId"/>
-                        new ParseResult(new Property(agoRapideAttribute.P, retval), retval) :
+                        new ParseResult(new Property(agoRapideAttribute, retval), retval) :
                         new ParseResult("Not a valid " + typeof(PropertyValueQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
                         ) :
                         new ParseResult(errorResponse);

@@ -84,6 +84,8 @@ namespace AgoRapide {
 
         /// <summary>
         /// Should only be used by an <see cref="IDatabase"/> implementation
+        /// 
+        /// TODO: REMOVE. Demand <see cref="AgoRapideAttributeEnriched"/> in all cases.
         /// </summary>
         public Property() {
         }
@@ -94,10 +96,19 @@ namespace AgoRapide {
         /// 
         /// TODO: Is this only used by <see cref="CreateIsManyParent"/>? In that case we may make it private
         /// </summary>
-        public Property(CoreProperty keyT) => _keyT = keyT;
+        public Property(AgoRapideAttributeEnriched a) => _a = a;
 
+        /// <summary>
+        /// TODO: REMOVE THIS. <see cref="A"/> gives the same information (A.a.IsMany)
+        /// </summary>
         public bool IsIsManyParent { get; private set; }
-        public static Property CreateIsManyParent(CoreProperty key) => new Property(key) {
+
+        /// <summary>
+        /// Creates a new Property which will function as a parent for <see cref="AgoRapideAttribute.IsMany"/> properties.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public static Property CreateIsManyParent(AgoRapideAttributeEnriched a) => new Property(a) {
             Properties = new Dictionary<CoreProperty, Property>(),
             IsIsManyParent = true
         };
@@ -124,21 +135,20 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static Property Create<T>(CoreProperty key, T value) {
+        public static Property Create<T>(AgoRapideAttributeEnriched a, T value) {
             if (value == null) throw new ArgumentNullException(nameof(value));
             var t = typeof(T);
-            if (typeof(long).Equals(t)) return new Property(key, (long)(object)value);
+            if (typeof(long).Equals(t)) return new Property(a, (long)(object)value);
             if (typeof(int).Equals(t)) throw new TypeIntNotSupportedByAgoRapideException(nameof(value) + ": " + value);
-            if (typeof(double).Equals(t)) return new Property(key, (double)(object)value);
-            if (typeof(bool).Equals(t)) return new Property(key, (bool)(object)value);
-            if (typeof(DateTime).Equals(t)) return new Property(key, (DateTime)(object)value);
-            if (typeof(string).Equals(t)) return new Property(key, (string)(object)value);
+            if (typeof(double).Equals(t)) return new Property(a, (double)(object)value);
+            if (typeof(bool).Equals(t)) return new Property(a, (bool)(object)value);
+            if (typeof(DateTime).Equals(t)) return new Property(a, (DateTime)(object)value);
+            if (typeof(string).Equals(t)) return new Property(a, (string)(object)value);
 
-            var attributes = key.GetAgoRapideAttribute();
-            if (attributes.A.Type == null) throw new NullReferenceException(
+            if (a.A.Type == null) throw new NullReferenceException(
                   "There is no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                  "defined for enum " + typeof(CoreProperty).ToString() + "." + key.ToString() + ". " +
-                  "Unable to assert whether " + typeof(T) + " (or rather " + value.GetType().ToString() + ") is valid for this enum");
+                  "defined for enum " + typeof(CoreProperty).ToString() + "." + a.CoreProperty + ". " +
+                  "Unable to assert whether " + typeof(T) + " (or rather " + value.GetType() + ") is valid for this enum");
 
             // typeof(T) is really irrelevant now because it T is "thrown away" when creating property.
             //if (!attributes.A.Type.IsAssignableFrom(typeof(T))) throw new InvalidTypeException(
@@ -148,13 +158,13 @@ namespace AgoRapide {
             //    "(actual type for parameter " + nameof(value) + " is " + value.GetType() + ")");
 
             // Instead we can check for value.GetType instead
-            InvalidTypeException.AssertAssignable(value.GetType(), attributes.A.Type, () =>
+            InvalidTypeException.AssertAssignable(value.GetType(), a.A.Type, () =>
                 nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                "defined for enum " + typeof(CoreProperty) + "." + key + ". " +
+                "defined for enum " + typeof(CoreProperty) + "." + a.CoreProperty + ". " +
                 "!IsAssignableFrom " + value.GetType() + " " +
                 "(actual " + nameof(T) + " is " + typeof(T) + ")");
 
-            return new Property(key, (object)value); // (object) clarifies which constructor we call now
+            return new Property(a, (object)value); // (object) clarifies which constructor we call now
                                                      // })().Initialize();
         }
 
@@ -163,8 +173,8 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="objValue"></param>
-        public Property(CoreProperty key, object objValue) {
-            _keyT = key;
+        public Property(AgoRapideAttributeEnriched a, object objValue) {
+            _a = a;
             _ADotTypeValue = objValue;
         }
 
@@ -174,8 +184,8 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(CoreProperty key, long value) {
-            _keyT = key;
+        public Property(AgoRapideAttributeEnriched a, long value) {
+            _a = a;
             LngValue = value;
         }
 
@@ -184,8 +194,8 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(CoreProperty key, double value) {
-            _keyT = key;
+        public Property(AgoRapideAttributeEnriched a, double value) {
+            _a = a;
             DblValue = value;
         }
 
@@ -194,8 +204,8 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(CoreProperty key, bool value) {
-            _keyT = key;
+        public Property(AgoRapideAttributeEnriched a, bool value) {
+            _a = a;
             BlnValue = value;
         }
 
@@ -204,8 +214,8 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(CoreProperty key, DateTime value) {
-            _keyT = key;
+        public Property(AgoRapideAttributeEnriched a, DateTime value) {
+            _a = a;
             DtmValue = value;
         }
 
@@ -215,10 +225,10 @@ namespace AgoRapide {
         ///// </summary>
         ///// <param name="key"></param>
         ///// <param name="value"></param>
-        //public Property(TProperty key, string value) {
-        //    _keyT = key;
+        //public Property(AgoRapideAttributeEnriched a, ??? value) {
+        //    _a = a;
         //    GeoValue = value;
-        //    Initialize();
+
         //}
 
         /// <summary>
@@ -226,8 +236,8 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(CoreProperty key, string value) {
-            _keyT = key;
+        public Property(AgoRapideAttributeEnriched a, string value) {
+            _a = a;
             StrValue = value;
         }
 
@@ -317,11 +327,29 @@ namespace AgoRapide {
                 return retval.cp;
             })());
 
-        private AgoRapideAttributeT<CoreProperty> _keyA;
+        private AgoRapideAttributeEnriched _a;
+        public AgoRapideAttributeEnriched A =>
+            _a != null ? _a : _a = new Func<AgoRapideAttributeEnriched>(() => {
+                if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
+                var retval = EnumMapper.GetCPAOrDefault(KeyDB);
+                if (retval.cp == CoreProperty.None) {
+                    var t = KeyDB.Split('#');
+                    if (t.Length != 2) throw new InvalidEnumException(typeof(CoreProperty), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+                    retval = EnumMapper.GetCPAOrDefault(t[0]);
+                    if (retval.cp == CoreProperty.None) throw new InvalidEnumException(typeof(CoreProperty), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+                    if (!retval.a.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
+                    // TODO: Use better Exception class here
+                    if (!int.TryParse(t[1], out var temp)) throw new InvalidCountException("Invalid int '" + t[1] + " for " + KeyDB + ".\r\nDetails: " + ToString());
+                    _multipleIndex = temp;
+                }
+                return retval.a;
+            })();
+
+        private AgoRapideAttributeEnriched _keyA;
         /// <summary>
         /// TODO: Note how call to KeyT will also set _keyA... Should be done much better.
         /// </summary>
-        public AgoRapideAttributeT<CoreProperty> KeyA => _keyA ?? (_keyA = KeyT.GetAgoRapideAttribute());
+        public AgoRapideAttributeEnriched KeyA => _keyA ?? (_keyA = KeyT.GetAgoRapideAttribute());
 
         /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
         private int? _multipleIndex;
@@ -510,8 +538,8 @@ namespace AgoRapide {
                             "Unable to cast '" + StrValue + "' to " + t + ", " +
                             "ended up with " + result.Result.StrValue.GetType() + ".\r\n" +
                             (KeyA.ValidatorAndParser != null ?
-                                "Very unexpected since " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " was set" :
-                                "Most probably because " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " was not set"
+                                "Very unexpected since " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was set" :
+                                "Most probably because " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was not set"
                             ) + ".\r\n" +
                             "Details: " + ToString());
                     }
@@ -519,8 +547,8 @@ namespace AgoRapide {
                         "Unable to cast '" + StrValue + "' to " + t + ", " +
                         "ended up with " + result.Result.ADotTypeValue().GetType() + " (value: '" + result.Result.ADotTypeValue().ToString() + ").\r\n" +
                         (KeyA.ValidatorAndParser == null ?
-                            "Very unexpected since " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " was not set" :
-                            "Most probably because " + nameof(AgoRapideAttributeT<CoreProperty>.ValidatorAndParser) + " returns the wrong type of object"
+                            "Very unexpected since " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was not set" :
+                            "Most probably because " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " returns the wrong type of object"
                         ) + ".\r\n" +
                         "Details: " + ToString());
                     value = (T)(_ADotTypeValue = result.Result.ADotTypeValue()); return true;
@@ -871,7 +899,7 @@ namespace AgoRapide {
                     cmds.Add(cmd);
                 });
             });
-            request.Result.AddProperty(CoreProperty.SuggestedUrl, string.Join("\r\n", cmds.Select(cmd => request.CreateAPIUrl(cmd))));
+            request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.CreateAPIUrl(cmd))));
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>
@@ -895,7 +923,7 @@ namespace AgoRapide {
                     if (Properties != null) {
                         p.Properties = new Dictionary<string, JSONProperty0>();
                         Properties.ForEach(i => {
-                            p.Properties.Add(i.Key.GetAgoRapideAttribute().PToString, i.Value.ToJSONProperty());
+                            p.Properties.Add(i.Value.A.PToString, i.Value.ToJSONProperty());
                         });
                     }
                 });
@@ -917,7 +945,7 @@ namespace AgoRapide {
                     Created = Created,
                     CreatorId = CreatorId,
                     ParentId = ParentId,
-                    Key = KeyT.GetAgoRapideAttribute().PToString,
+                    Key = A.PToString,
                     Value = V<string>(),
                     Valid = Valid,
                     ValidatorId = ValidatorId,
@@ -974,7 +1002,7 @@ namespace AgoRapide {
         /// TODO: We should really consider if there is any point in this property, as it often shows up as
         /// key in containing JSON dictionary anyway.
         /// 
-        /// Is currently <see cref="AgoRapideAttributeT.PToString"/>. Maybe change to ToStringShort or similar.
+        /// Is currently <see cref="AgoRapideAttributeEnrichedT.PToString"/>. Maybe change to ToStringShort or similar.
         /// </summary>
         public string Key { get; set; }
         public List<string> ValidValues;

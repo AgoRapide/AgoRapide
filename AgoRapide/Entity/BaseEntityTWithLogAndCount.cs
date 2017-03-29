@@ -70,7 +70,7 @@ namespace AgoRapide {
             } else {
                 retval.AppendLine("<h1>" + nameof(Counts) + "</h1>");
                 retval.AppendLine("<table><tr><th>Key</th><th>Value</th></tr>");
-                retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => " <tr><td>" + e.Key.GetAgoRapideAttribute().PToString + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n")));
+                retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => " <tr><td>" + e.Key.A().PToString + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n")));
                 retval.AppendLine("</table>");
             }
             return retval.ToString();
@@ -86,7 +86,7 @@ namespace AgoRapide {
                 // Do not bother with any of these
             } else {
                 var p = CoreProperty.Log;
-                var key = p.GetAgoRapideAttribute().PToString;
+                var key = p.A().PToString;
                 if (retval.Properties.TryGetValue(key, out var existing)) {
                     throw new KeyAlreadyExistsException<CoreProperty>(p,
                         "Unable to add " + nameof(LogData) + "\r\n-------\r\n" + LogData.ToString() + "\r\n" +
@@ -99,7 +99,7 @@ namespace AgoRapide {
                 // Do not bother with any of these
             } else {
                 Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
-                    var key = c.Key.GetAgoRapideAttribute().PToString;
+                    var key = c.Key.A().PToString;
                     if (retval.Properties.TryGetValue(key, out var existing)) {
                         throw new KeyAlreadyExistsException<CoreProperty>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.GetAgoRapideAttribute().PExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
                     }

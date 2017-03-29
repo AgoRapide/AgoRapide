@@ -121,8 +121,20 @@ namespace AgoRapideSample {
     }
 
     public static class Extensions {
-        public static CPA M(this P p) => EnumMapper.GetCPA(p);
-        public static CoreProperty CP(this P p) => EnumMapper.GetCPA(p).cp;
+        public static AgoRapideAttributeEnriched A(this P p) => EnumMapper.GetCPA(p).a;
+        ///// <summary>
+        ///// TODO: REMOVE THIS, NO LONGER NEEDED
+        ///// </summary>
+        ///// <param name="p"></param>
+        ///// <returns></returns>
+        //public static CPA M(this P p) => EnumMapper.GetCPA(p);
+
+        ///// <summary>
+        ///// TODO: REMOVE THIS, NO LONGER NEEDED
+        ///// </summary>
+        ///// <param name="p"></param>
+        ///// <returns></returns>
+        //public static CoreProperty CP(this P p) => EnumMapper.GetCPA(p).cp;
     }
 
     /// <summary>
@@ -134,7 +146,7 @@ namespace AgoRapideSample {
     /// TODO: (the enums again can be placed inside each entity class that we want to use)
     /// </summary>
     public class PUD : IGroupDescriber {
-        public void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) {
+        public void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) {
             agoRapideAttribute.AddParent(typeof(Person));
             agoRapideAttribute.A.AccessLevelRead = AccessLevel.Relation;
             agoRapideAttribute.A.AccessLevelWrite = AccessLevel.Relation;
@@ -193,23 +205,20 @@ namespace AgoRapideSample {
         /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreProperty"/>)
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(AgoRapideAttributeT<P> agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => throw new NotImplementedException("We have a chicken-and-egg problem because of the need for P.CP() below which will call " + nameof(EnumMapper) + " again"));
-        // public static void EnrichAttribute(AgoRapideAttributeT<P> agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = GetValidatorAndParser(agoRapideAttribute.P.CP());
-
-        /// <summary>
-        /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreProperty"/>)
-        /// </summary>
-        /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = GetValidatorAndParser(agoRapideAttribute.P);
-        /// <summary>
-        /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreProperty"/>)
-        /// </summary>
-        /// <param name="coreProperty"></param>
-        /// <returns></returns>
-        private static Func<string, ParseResult> GetValidatorAndParser(CoreProperty coreProperty) => new Func<string, ParseResult>(value =>
+        public static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value =>
                 TryParse(value, out var retval, out var errorResponse) ?
-                    new ParseResult(new Property(coreProperty, retval), retval) :
+                    new ParseResult(new Property(agoRapideAttribute, retval), retval) :
                     new ParseResult(errorResponse));
+
+        ///// <summary>
+        ///// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreProperty"/>)
+        ///// </summary>
+        ///// <param name="coreProperty"></param>
+        ///// <returns></returns>
+        //private static Func<string, ParseResult> GetValidatorAndParser(CoreProperty coreProperty) => new Func<string, ParseResult>(value =>
+        //        TryParse(value, out var retval, out var errorResponse) ?
+        //            new ParseResult(new Property(coreProperty, retval), retval) :
+        //            new ParseResult(errorResponse));
                 
         public class InvalidNorwegianPostalCodeException : ApplicationException {
             public InvalidNorwegianPostalCodeException(string message) : base(message) { }

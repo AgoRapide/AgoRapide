@@ -22,11 +22,11 @@ namespace AgoRapideSample {
         /// </summary>
         public override string Name {
             get {
-                if (TryGetPV(CoreProperty.Name, out string retval)) return retval;
-                var firstName = PV(P.FirstName.CP(), "");
-                var lastName = PV(P.LastName.CP(), "");
+                if (TryGetPV(CoreProperty.Name.A(), out string retval)) return retval;
+                var firstName = PV(P.FirstName.A(), "");
+                var lastName = PV(P.LastName.A(), "");
                 if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName)) {
-                    return PV(P.Email.CP(), Id.ToString()); // Use Id if everything else fails.
+                    return PV(P.Email.A(), Id.ToString()); // Use Id if everything else fails.
                 }
                 if (string.IsNullOrEmpty(firstName)) return lastName;
                 if (string.IsNullOrEmpty(lastName)) return firstName;
@@ -34,6 +34,6 @@ namespace AgoRapideSample {
             }
         }
         
-        public override AccessLevel AccessLevelGiven => PV(P.AccessLevelGiven.CP(), defaultValue: AccessLevel.Relation); 
+        public override AccessLevel AccessLevelGiven => PV(P.AccessLevelGiven.A(), defaultValue: AccessLevel.Relation); 
     }
 }

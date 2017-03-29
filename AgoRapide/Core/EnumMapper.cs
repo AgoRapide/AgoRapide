@@ -60,13 +60,13 @@ namespace AgoRapide {
             fromEnumMaps.Add(typeof(T), Util.EnumGetValues<T>().ToDictionary(e => (int)(object)e, e => {
                 var coreProperty = e is CoreProperty ? (CoreProperty)(object)e : (CoreProperty)GetNextCorePropertyId();
                 var aTemp = e.GetAgoRapideAttribute();
-                var a = aTemp as AgoRapideAttributeT<CoreProperty> ?? new AgoRapideAttributeT<CoreProperty>(aTemp.A, coreProperty);
+                var a = aTemp as AgoRapideAttributeEnrichedT<CoreProperty> ?? new AgoRapideAttributeEnrichedT<CoreProperty>(aTemp.A, coreProperty);
                 var retval = new CPA { cp = coreProperty, a = a };
                 if (fromStringMaps.TryGetValue(e.ToString(), out var existing)) noticeLogger(
                     "NOTICE: Duplicate '" + e.ToString() + "'.\r\n" +
-                    nameof(existing) + ": " + existing.cp.ToString() + "\r\n" + /// TODO: Change to <see cref="AgoRapideAttributeT.PToString"/>
+                    nameof(existing) + ": " + existing.cp.ToString() + "\r\n" + /// TODO: Change to <see cref="AgoRapideAttributeEnrichedT.PToString"/>
                     "will be replaced by\r\n" +
-                    nameof(retval) + ": " + retval.cp.ToString() + "\r\n" + /// TODO: Change to <see cref="AgoRapideAttributeT.PToString"/>
+                    nameof(retval) + ": " + retval.cp.ToString() + "\r\n" + /// TODO: Change to <see cref="AgoRapideAttributeEnrichedT.PToString"/>
                     "This is quite normal as long as calls to " + nameof(MapEnum) + " " +
                     "are made in order of increasing distance from core AgoRapide-library " +
                     "giving final application code override authority over library definitions");
@@ -156,10 +156,12 @@ namespace AgoRapide {
     /// <summary>
     /// Simple container class for <see cref="CoreProperty"/> and <see cref="AgoRapideAttributeT"/>
     /// TODO: Make immutable
+    /// 
+    /// TODO: Consider just removing altogether.
     /// </summary>
     public class CPA {
         public CoreProperty cp;
-        public AgoRapideAttributeT<CoreProperty> a;
+        public AgoRapideAttributeEnriched a;
 
         public static CPA Default = new CPA { cp = CoreProperty.None, a = CoreProperty.None.GetAgoRapideAttribute() };
     }

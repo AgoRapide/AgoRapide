@@ -257,7 +257,7 @@ namespace AgoRapide.Database {
             retval.Properties = GetChildProperties(root);
             retval.Properties.Values.ForEach(p => p.Parent = retval);
             retval.Properties.AddValue(CoreProperty.RootProperty, root);
-            retval.AddProperty(CoreProperty.DBId, id);
+            retval.AddProperty(CoreProperty.DBId.GetAgoRapideAttribute(), id);
             // We can not use the short representation because Property will (if asked like V<Type> or similar), try
             // to reconstruct the actual type.
             // retval.AddProperty(M(CoreProperty.Type), retval.GetType().ToStringShort());
@@ -364,16 +364,16 @@ namespace AgoRapide.Database {
             return retval;
         }
 
-        public long CreateEntity<T>(long cid, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties: (IEnumerable<Tuple<CoreProperty, object>>)null, result: result);
-        public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable<Tuple<CoreProperty, object>>)null, result: result);
-        public long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => new Tuple<CoreProperty, object>(p.KeyT, p.ADotTypeValue())), result);
-        public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => new Tuple<CoreProperty, object>(p.KeyT, p.ADotTypeValue())), result);
-        public long CreateEntity<T>(long cid, IEnumerable<Tuple<CoreProperty, object>> properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties, result);
-        public long CreateEntity(long cid, Type entityType, IEnumerable<Tuple<CoreProperty, object>> properties, Result result) {
+        public long CreateEntity<T>(long cid, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties: (IEnumerable<Tuple<AgoRapideAttributeEnriched, object>>)null, result: result);
+        public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable < Tuple<AgoRapideAttributeEnriched, object>>)null, result: result);
+        public long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.A, p.ADotTypeValue())), result);
+        public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.A, p.ADotTypeValue())), result);
+        public long CreateEntity<T>(long cid, IEnumerable<Tuple<AgoRapideAttributeEnriched, object>> properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties, result);
+        public long CreateEntity(long cid, Type entityType, IEnumerable<Tuple<AgoRapideAttributeEnriched, object>> properties, Result result) {
             Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
             InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntityT), detailer: null);
             var retval = new Result();
-            var pid = CreateProperty(cid, null, null, CoreProperty.Type, entityType, result);
+            var pid = CreateProperty(cid, null, null, CoreProperty.Type.A(), entityType, result);
             if (properties != null) {
                 foreach (var v in properties) {
                     CreateProperty(cid, pid, null, v.Item1, v.Item2, result);
@@ -483,17 +483,17 @@ namespace AgoRapide.Database {
             // the returned object available for such purposes.
             if (!TryGetEntityById(entityId, useCache: false, requiredType: null, entity: out currentUser)) return false;
 
-            if (currentUser.PV<string>(CoreProperty.Username, "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 
+            if (currentUser.PV<string>(CoreProperty.Username.A(), "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 
                 Log(
-                    "It looks like " + typeof(CoreProperty) + "." + CoreProperty.Username + " " +
+                    "It looks like " + CoreProperty.Username.A().PExplained + " " +
                     "was just changed for entity " + currentUser.Id + " " +
                     "resulting in more than one current property in database. " +
                     "Returning FALSE now " +
-                    "since the last one (the one now current) (" + currentUser.PV(CoreProperty.Username, "") + ") " +
+                    "since the last one (the one now current) (" + currentUser.PV(CoreProperty.Username.A(), "") + ") " +
                     "does not correspond to the one given (" + username + ")");
                 return false;
             }
-            if (!currentUser.TryGetPV<string>(CoreProperty.Password, out var correctPasswordHashedWithSalt) || string.IsNullOrEmpty(correctPasswordHashedWithSalt)) {
+            if (!currentUser.TryGetPV<string>(CoreProperty.Password.A(), out var correctPasswordHashedWithSalt) || string.IsNullOrEmpty(correctPasswordHashedWithSalt)) {
                 Log("Password not set for " + currentUser.ToString());
                 return false;
             }
@@ -504,31 +504,31 @@ namespace AgoRapide.Database {
                 // A bit expensive to store in database, but useful information. 
                 // Note how the NUMBER of failed attempts are not logged since only the (last) valid-date in the database is stored for repeated failures. 
                 // Note that if you are concerned about hacking / DDOS scenarios or similar you should definitely implement a more robust authentication mechanism.
-                UpdateProperty(GetId(), currentUser, CoreProperty.AuthResult, value: false, result: null);
+                UpdateProperty(GetId(), currentUser, CoreProperty.AuthResult.A(), value: false, result: null);
                 return false;
             }
 
-            if (currentUser.PV(CoreProperty.RejectCredentialsNextTime, defaultValue: false)) {
+            if (currentUser.PV(CoreProperty.RejectCredentialsNextTime.A(), defaultValue: false)) {
                 // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-                UpdateProperty(GetId(), currentUser, CoreProperty.RejectCredentialsNextTime, value: false, result: null);
+                UpdateProperty(GetId(), currentUser, CoreProperty.RejectCredentialsNextTime.A(), value: false, result: null);
                 return false;
             }
 
             Log("Returning TRUE");
             // Note how the NUMBER of successful attempts are not logged since only the (last) valid-date in the database is stored for repeated successes. 
             // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-            UpdateProperty(GetId(), currentUser, CoreProperty.AuthResult, value: true, result: null);
+            UpdateProperty(GetId(), currentUser, CoreProperty.AuthResult.A(), value: true, result: null);
 
             SwitchIfHasEntityToRepresent(ref currentUser);
             return true;
         }
 
-        public void AssertUniqueness(CoreProperty key, object value) {
+        public void AssertUniqueness(AgoRapideAttributeEnriched key, object value) {
             if (!TryAssertUniqueness(key, value, out var existing, out var errorResponse)) throw new UniquenessException(errorResponse + "\r\nDetails: " + existing.ToString());
         }
-        public bool TryAssertUniqueness(CoreProperty key, object value, out Property existingProperty, out string errorResponse) {
+        public bool TryAssertUniqueness(AgoRapideAttributeEnriched a, object value, out Property existingProperty, out string errorResponse) {
+            var key = a.CoreProperty;
             Log(nameof(key) + ": " + key + ", " + nameof(value) + ": " + value);
-            var a = key.GetAgoRapideAttribute();
             a.A.AssertIsUniqueInDatabase();
 
             // TODO: DUPLICATED CODE!
@@ -569,9 +569,9 @@ namespace AgoRapide.Database {
             }
         }
 
-        public long CreateProperty(long? cid, long? pid, long? fid, CoreProperty key, object value, Result result) {
+        public long CreateProperty(long? cid, long? pid, long? fid, AgoRapideAttributeEnriched a, object value, Result result) {
             // See logging further below
-            var a = key.GetAgoRapideAttribute();
+            var key = a.CoreProperty;
             // TODO: DUPLICATED CODE!
             var defaultKeyToString = key.ToString();
             // TODO: Add support for IsMany. Make possible to store key as #1, #2 and so on in database.
@@ -579,7 +579,7 @@ namespace AgoRapide.Database {
 
             Npgsql.NpgsqlCommand cmd;
             if (a.A.IsUniqueInDatabase) {
-                AssertUniqueness(key, value);
+                AssertUniqueness(a, value);
             }
             var idStrings = new Func<Tuple<string, string, string>>(() => {
                 if (cid == null && pid == null && fid == null) {
@@ -691,12 +691,13 @@ namespace AgoRapide.Database {
             return id;
         }
 
-        public void UpdateProperty<T>(long cid, BaseEntityT entity, CoreProperty key, T value, Result result) {
+        public void UpdateProperty<T>(long cid, BaseEntityT entity, AgoRapideAttributeEnriched a, T value, Result result) {
             // Note how we only log when property is created or updated
+            var key = a.CoreProperty;
             var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
             if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
 
-            var creator = new Func<long>(() => CreateProperty(cid, entity.Id, null, key, value, result));
+            var creator = new Func<long>(() => CreateProperty(cid, entity.Id, null, a, value, result));
 
             if (entity.Properties.TryGetValue(key, out var existingProperty)) {
                 var existingValue = existingProperty.V<T>();
@@ -731,13 +732,13 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entity"></param>
         public void SwitchIfHasEntityToRepresent(ref BaseEntityT entity) {
-            if (entity.TryGetPV(CoreProperty.EntityToRepresent, out long representedEntityId)) {
+            if (entity.TryGetPV(CoreProperty.EntityToRepresent.A(), out long representedEntityId)) {
                 Log("entityId: " + entity.Id + ", switching to " + representedEntityId);
                 var representedByEntity = entity;
                 var entityToRepresent = GetEntityById<BaseEntityT>(representedEntityId);
                 // TODO: Should we add checks for AccessRights here? 
                 /// See comments for <see cref="CoreProperty.EntityToRepresent"/>
-                entityToRepresent.AddProperty(CoreProperty.RepresentedByEntity, representedByEntity.Id);
+                entityToRepresent.AddProperty(CoreProperty.RepresentedByEntity.A(), representedByEntity.Id);
                 entityToRepresent.RepresentedByEntity = representedByEntity;
                 entity = entityToRepresent;
             }
@@ -874,7 +875,7 @@ namespace AgoRapide.Database {
                     var p = ReadOneProperty(r);
                     if (p.KeyT.Equals(CoreProperty.None)) throw new InvalidPropertyKeyException(p.KeyDB, p.Id);
                     if (p.MultipleIndex != null) {
-                        var isManyParent = dict.GetOrAddIsManyParent(p.KeyT);
+                        var isManyParent = dict.GetOrAddIsManyParent(p.A);
                         if (isManyParent.Properties.TryGetValue((CoreProperty)(object)p.MultipleIndex, out var toBeOverwritten)) {
                             noLongerCurrent.Add(new Tuple<Property, byte>(toBeOverwritten, 1)); // #1 when calling GetId
                         }

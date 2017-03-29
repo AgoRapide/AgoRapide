@@ -51,7 +51,7 @@ namespace AgoRapide.API {
         /// Typical example would be <see cref="CoreProperty.QueryId"/> like api/Person/{QueryId}
         /// </summary>
         public CoreProperty? Parameter { get; private set; }
-        public AgoRapideAttributeT<CoreProperty> ParameterA { get; private set; }
+        public AgoRapideAttributeEnriched ParameterA { get; private set; }
 
         /// <summary>
         /// Typical example would be Add like api/Person/Add

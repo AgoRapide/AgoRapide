@@ -38,16 +38,16 @@ namespace AgoRapide.API {
             message += "Id: " + id;
             if (!string.IsNullOrEmpty(Method.A.A.Description)) message += ". The following was executed: " + Method.A.A.Description;
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(CoreProperty.DBId, id);
-            Result.AddProperty(CoreProperty.SuggestedUrl, CreateAPIUrl(entityType, id));
-            Result.AddProperty(CoreProperty.Message, message);
+            Result.AddProperty(CoreProperty.DBId.A(), id);
+            Result.AddProperty(CoreProperty.SuggestedUrl.A(), CreateAPIUrl(entityType, id));
+            Result.AddProperty(CoreProperty.Message.A(), message);
             return GetResponse();
         }
 
         public object GetOKResponseAsText(string text, string additionalMessage) {
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(CoreProperty.Value, text); // TODO: USE BETTER CoreProperty than this!
-            Result.AddProperty(CoreProperty.Message, additionalMessage);
+            Result.AddProperty(CoreProperty.Value.A(), text); // TODO: USE BETTER CoreProperty than this!
+            Result.AddProperty(CoreProperty.Message.A(), additionalMessage);
             return GetResponse();
         }
 
@@ -98,7 +98,7 @@ namespace AgoRapide.API {
             //message += nameof(AgoRapideAttribute.Description) + ": " + resultCode.GetAgoRapideAttribute().A.Description;
 
             Result.ResultCode = resultCode;
-            if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreProperty.Message, message);
+            if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreProperty.Message.A(), message);
             return GetResponse();
         }
 
@@ -115,7 +115,7 @@ namespace AgoRapide.API {
             }
             message += ". Last .NET method involved: " + caller; // TODO: Better text here! TODO: Add type / class within which caller resides!
             Result.ResultCode = ResultCode.access_error;
-            Result.AddProperty(CoreProperty.Message, message);
+            Result.AddProperty(CoreProperty.Message.A(), message);
             return GetResponse();
         }
 

@@ -32,7 +32,7 @@ namespace AgoRapide {
         /// <param name="logger"></param>
         public static void GetFromDatabase<T>(IDatabase db, Action<string> logger) where T : ApplicationPart, new() =>
             db.GetAllEntities<T>().ForEach(ap => {
-                var key = ap.PV<string>(CoreProperty.Key);
+                var key = ap.PV<string>(CoreProperty.Key.A());
                 if (!AllApplicationParts.TryAdd(key, ap)) {
                     // This is a known weakness as of Jan 2017 since creation of ApplicationPart is not thread safe regarding database operations
                     logger("Duplicate " + ap.GetType() + " found (" + key + "), suggestion: Keep " + AllApplicationParts[key].Id + " but delete " + ap.Id + " (since that is the one being ignored now)");
@@ -89,14 +89,14 @@ namespace AgoRapide {
                         GetOrAdd<ClassAndMethod>(typeof(ApplicationPart), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id,
                     pid: null,
                     fid: null,
-                    key: CoreProperty.Type,
+                    key: CoreProperty.Type.A(),
                     value: typeof(T).ToStringDB(),
                     result: null);
-                db.CreateProperty(id, id, null, CoreProperty.Name, key, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
-                db.CreateProperty(id, id, null, CoreProperty.Key, key, null);
+                db.CreateProperty(id, id, null, CoreProperty.Name.A(), key, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
+                db.CreateProperty(id, id, null, CoreProperty.Key.A(), key, null);
                 var a = type.GetAgoRapideAttribute();
-                db.CreateProperty(id, id, null, CoreProperty.AccessLevelRead, a.AccessLevelRead, null);
-                db.CreateProperty(id, id, null, CoreProperty.AccessLevelWrite, a.AccessLevelWrite, null);
+                db.CreateProperty(id, id, null, CoreProperty.AccessLevelRead.A(), a.AccessLevelRead, null);
+                db.CreateProperty(id, id, null, CoreProperty.AccessLevelWrite.A(), a.AccessLevelWrite, null);
                 return db.GetEntityById<T>(id);
             });
             if (!(retvalTemp is T)) throw new InvalidObjectTypeException(retvalTemp, typeof(T), nameof(key) + ": " + key + ", " + nameof(retvalTemp) + ": " + retvalTemp.ToString());

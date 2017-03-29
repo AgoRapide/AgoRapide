@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 // Due to some perceived confusion about origin of some methods, we deliberately omit some using-statements here
-// and instead use the full namespace (and likewise call all extension methods "manually").
+// and instead use the full namespace (likewise extension methods are called "manually").
 
 /// <summary>
 /// This file (Startup.cs) contains the logic for startup and authentication.
@@ -88,8 +88,6 @@ namespace AgoRapideSample {
                 Log("rootPath: " + rootPath);
 
                 Log("environment: " + environment.Item2);
-                var systemUser = new Person();
-                systemUser.AddProperty(AgoRapide.CoreProperty.AccessLevelGiven, AgoRapide.AccessLevel.System);
 
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl and rootPath
                 AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(
@@ -98,7 +96,6 @@ namespace AgoRapideSample {
                 ) {
                     // Change to different version of JQuery by adding this line:
                     // ScriptRelativePaths = new List<string> { "Scripts/AgoRapide-0.1.js", "Scripts/jquery-3.1.1.min.js" },
-                    SystemUser = systemUser,
                     Environment = environment.Item2,
                     SuperfluousStackTraceStrings = new List<string>() {
                         @"c:\git\AgoRapide",
@@ -113,6 +110,10 @@ namespace AgoRapideSample {
                 mapper1<AgoRapide.CoreProperty>();
                 mapper1<P>();
                 // Add here other enum's which you want to use as entity-properties.
+
+                var systemUser = new Person();
+                systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.AccessLevelGiven), AgoRapide.AccessLevel.System);
+                AgoRapide.Core.Util.Configuration.SystemUser = systemUser;
 
                 Log("Going through all " + typeof(P) + " attributes in order to expose any issues at once");
                 AgoRapide.Core.Util.EnumGetValues<P>().ForEach(p => AgoRapide.Core.Extensions.GetAgoRapideAttribute(p));
@@ -142,7 +143,7 @@ namespace AgoRapideSample {
                 AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.ClassAndMethod>(db, text => Log("(by " + typeof(AgoRapide.ApplicationPart) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
                 var startupAsApplicationPart = AgoRapide.ApplicationPart.GetOrAdd<AgoRapide.ClassAndMethod>(GetType(), System.Reflection.MethodBase.GetCurrentMethod().Name, db);
-                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.CoreProperty.Log, value: "Initiating startup", result: null);
+                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.Log), value: "Initiating startup", result: null);
 
                 // ---------------------
 
@@ -158,19 +159,17 @@ namespace AgoRapideSample {
                 // ---------------------
 
                 Log("Looking for " + AgoRapide.CoreProperty.IsAnonymous + " persons");
-                var queryId = new AgoRapide.Core.PropertyValueQueryId(AgoRapide.CoreProperty.IsAnonymous, AgoRapide.Core.Operator.EQ, true);
+                var queryId = new AgoRapide.Core.PropertyValueQueryId(AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.IsAnonymous), AgoRapide.Core.Operator.EQ, true);
                 if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
                     Log(AgoRapide.CoreProperty.IsAnonymous + " person not found, creating one");
                     AgoRapide.Core.Util.Configuration.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(
                         cid: startupAsApplicationPart.Id,
-                        properties: new List<Tuple<AgoRapide.CoreProperty, object>> {
-                                //new Tuple<P, object>(P.FirstName, "anonymous"),
-                                //new Tuple<P, object>(P.Last, "anonymous"),
-                                new Tuple<AgoRapide.CoreProperty, object>(AgoRapide.CoreProperty.Name, "anonymous"),
-                                new Tuple<AgoRapide.CoreProperty, object>(AgoRapide.CoreProperty.IsAnonymous, true),
-                                new Tuple<AgoRapide.CoreProperty, object>(AgoRapide.CoreProperty.AccessLevelRead, AgoRapide.AccessLevel.Anonymous),
-                                new Tuple<AgoRapide.CoreProperty, object>(AgoRapide.CoreProperty.AccessLevelWrite, AgoRapide.AccessLevel.System)
-                        },
+                        properties: new Dictionary<AgoRapide.CoreProperty, object> {
+                            { AgoRapide.CoreProperty.Name, "anonymous" },
+                            { AgoRapide.CoreProperty.IsAnonymous, true },
+                            { AgoRapide.CoreProperty.AccessLevelRead, AgoRapide.AccessLevel.Anonymous },
+                            { AgoRapide.CoreProperty.AccessLevelWrite, AgoRapide.AccessLevel.System }
+                        }.Select(e => new Tuple<AgoRapide.Core.AgoRapideAttributeEnriched, object>(AgoRapide.Core.Extensions.A(e.Key), e.Value)).ToList(),
                         result: null));
                 } else {
                     AgoRapide.Core.Util.Configuration.AnonymousUser = anonymousUser;
@@ -226,7 +225,7 @@ namespace AgoRapideSample {
                 Log("Calling Owin.WebApiAppBuilderExtensions.UseWebApi");
                 Owin.WebApiAppBuilderExtensions.UseWebApi(appBuilder, httpConfiguration);
 
-                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.CoreProperty.Log, value: "Completed startup", result: null);
+                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.Log), value: "Completed startup", result: null);
                 Log("Completed");
             } catch (Exception ex) {
                 /// Insert your preferred logging mechanism in:

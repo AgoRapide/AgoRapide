@@ -43,7 +43,7 @@ namespace AgoRapide {
         /// TODO: MOVE THIS INTO MethodAttribute-class.
         /// </summary>
         public APIMethodOrigin Origin => PVM<APIMethodOrigin>();
-        public string Implementator => PV<string>(CoreProperty.Implementator);
+        public string Implementator => PV<string>(CoreProperty.Implementator.A());
 
         /// <summary>
         /// Corresponds to  IHttpRoute.MapHttpRoute.defaults.Controller (although that one is without 'Controller' i the name).
@@ -69,7 +69,7 @@ namespace AgoRapide {
         /// </summary>
         public List<HTTPMethod> HttpMethods { get; private set; }
 
-        public bool RequiresAuthorization => PV<bool>(CoreProperty.RequiresAuthorization);
+        public bool RequiresAuthorization => PV<bool>(CoreProperty.RequiresAuthorization.A());
 
         /// <summary>
         /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. Object meant to be discarded immediately
@@ -264,7 +264,7 @@ namespace AgoRapide {
         public List<string> RouteTemplates { get; private set; }
 
         /// <summary>
-        /// Inserts each <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeT.ConvertObjectToString"/>
+        /// Inserts each <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeEnrichedT.ConvertObjectToString"/>
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
@@ -677,7 +677,7 @@ namespace AgoRapide {
             // But this works:
             void updater<T>(CoreProperty key, T value)
             { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
-                db.UpdateProperty(cid, method, key, value, result: null);
+                db.UpdateProperty(cid, method, key.A(), value, result: null);
             }
 
             switch (method.A.A.CoreMethod) {
@@ -755,7 +755,7 @@ namespace AgoRapide {
                 if (p.KeyA.A.Type == null) {
                     throw new NullReferenceException("p.KeyA.A.Type, details: " + p.ToString());
                 } else if (p.KeyA.A.Type.Equals(typeof(bool))) {
-                    db.UpdateProperty(cid, method, p.KeyT, p.V<bool>(), result: null);
+                    db.UpdateProperty(cid, method, p.A, p.V<bool>(), result: null);
                     // TODO: Maybe replace this check with extension-method IsStoredAsStringInDatabase or similar...
                 } else if (p.KeyA.A.Type.Equals(typeof(Type)) || p.KeyA.A.Type.IsEnum || p.KeyA.A.Type.Equals(typeof(string))) {
                     var value = p.V<string>();
@@ -778,7 +778,7 @@ namespace AgoRapide {
                             }
                         }
                     }
-                    db.UpdateProperty(cid, method, p.KeyT, value, result: null);
+                    db.UpdateProperty(cid, method, p.A, value, result: null);
                 } else {
                     throw new InvalidTypeException(p.KeyA.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
                 }
@@ -791,9 +791,9 @@ namespace AgoRapide {
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
-            PV(CoreProperty.CoreMethod, CoreMethod.None).Use(c => c == CoreMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
+            PV(CoreProperty.CoreMethod.A(), CoreMethod.None).Use(c => c == CoreMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
-            PV(CoreProperty.Description, "[NO DESCRIPTION AVAILABLE]").HTMLEncodeAndEnrich(request) + "</td><td>" +
+            PV(CoreProperty.Description.A(), "[NO DESCRIPTION AVAILABLE]").HTMLEncodeAndEnrich(request) + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {

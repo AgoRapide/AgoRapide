@@ -199,6 +199,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public string CSSClass { get; set; }
 
+        private bool _isMany;
         /// <summary>
         /// Signifies properties that there may be several of active at a given time (multiple current) for 
         /// a given <see cref="BaseEntityT"/>.
@@ -210,8 +211,15 @@ namespace AgoRapide.Core {
         /// In the database they are stored with index #1, #2 and so on 
         /// appended to actual TProperty enum value 
         /// for instance like phone_number#1, phone_number#2 and so on.
+        /// </summary>        
+        public bool IsMany { get => _isMany; set { _isMany = value; _isManyIsSet = true; } }
+        /// <summary>
+        /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
         /// </summary>
-        public bool IsMany { get; set; }
+        private bool _isManyIsSet = false;
+        private bool IsManyIsSet => _isManyIsSet;
+
+        // public bool SetIsMany { set => IsMany = value; get => IsMany ?? throw new NullReferenceException(nameof(IsMany)); }
 
         public void AssertIsMany() {
             if (!true.Equals(IsMany)) throw new IsManyException(ToString());
@@ -280,38 +288,38 @@ namespace AgoRapide.Core {
         /// <summary>
         /// TODO: Implement so that may also be given for Type string (string will be converted to int, and checked for value. Useful for postal codes)
         /// 
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public double MinValueDbl { get; set; }
         /// <summary>
         /// TODO: Implement so that may also be given for Type string (string will be converted to int, and checked for value. Useful for postal codes)
         /// 
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public double MaxValueDbl { get; set; }
 
         /// <summary>
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public DateTime MinValueDtm { get; set; }
         /// <summary>
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public DateTime MaxValueDtm { get; set; }
 
         /// <summary>
         /// Only relevant for Type string
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public long MinLength { get; set; }
         /// <summary>
         /// Only relevant for Type string
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public long MaxLength { get; set; }
 
         /// <summary>
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public string RegExpValidator { get; set; }
 
@@ -415,6 +423,12 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
+        /// TOOD: ------------
+        /// TODO: Do we want to limit this to enums? 
+        /// TODO: See assert
+        /// TODO: NotOfTypeEnumException.AssertEnum(type);
+        /// TOOD: ------------
+        /// 
         /// Returns <see cref="AgoRapideAttribute"/> for given <paramref name="_enum"/>-value.
         /// 
         /// Note that separate instances with <see cref="IsDefault"/> = True will be created 
@@ -423,19 +437,13 @@ namespace AgoRapide.Core {
         /// Usually called from <see cref="Extensions.GetAgoRapideAttribute{T}(T)"/> / <see cref="Extensions.GetAgoRapideAttribute(object)"/>. 
         /// </summary>
         /// <param name="_enum"></param>
-        /// <param name="corePropertyAttributeGetter">
-        /// Indicates corresponding <see cref="CoreProperty"/>-attribute to use if <paramref name="_enum"/> is not defined. 
-        /// May return null, but in that case an exception will be thrown if <paramref name="_enum"/> is not defined
-        /// </param>
         /// <returns></returns>
-        public static AgoRapideAttribute GetAgoRapideAttribute(object _enum, Func<AgoRapideAttribute> corePropertyAttributeGetter) {
+        public static AgoRapideAttribute GetAgoRapideAttribute(object _enum) {
             // TODO: Consider moving more of this code into AgoRapideAttribute-class
             var type = _enum.GetType();
-            var field = type.GetField(_enum.ToString());
-            if (field == null) {
-                if (corePropertyAttributeGetter == null) throw new NullReferenceException(nameof(corePropertyAttributeGetter));
-                return corePropertyAttributeGetter() ?? throw new NullReferenceException(nameof(corePropertyAttributeGetter) + "(): Cause: " + type.ToStringShort() + "." + _enum.ToString() + " is most probably not defined. Note that you can not call this method with " + nameof(_enum) + " as a \"silently-mapped\" " + nameof(CoreProperty));
-            }
+            NotOfTypeEnumException.AssertEnum(type); // TODO: Necessary? Most possibly YES!
+            var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type.ToStringShort() + "." + _enum.ToString() + " is most probably not defined.");
+            
             var retval = new Func<AgoRapideAttribute>(() => {
                 var attributes = field.GetCustomAttributes(typeof(AgoRapideAttribute), true);
                 switch (attributes.Length) {
@@ -517,6 +525,8 @@ namespace AgoRapide.Core {
 
             // Value types are more difficult to enrich 
 
+            /// TODO: See prototype solution with <see cref="IsManyIsSet"/>
+            /// TODO:
             // -----------------
             // We would have liked to use nullable versions but they are not "valid attribute parameter type"
             // In order words, something like this is not possible:
@@ -533,6 +543,8 @@ namespace AgoRapide.Core {
 
             // Note how boolean values are only transferred if they are TRUE.
 
+            /// TODO: See prototype solution with <see cref="IsManyIsSet"/>
+            /// TODO:
             /// TODO: For <see cref="AgoRapideAttribute"/> we could use a boolean-enum of None, True and False. 
             /// TODO: for bool attributes since bool? is not allowed. 
             /// TODO: THIS COULD SOLVE THE DILEMMA OF OVERWRITING FALSE WITH TRUE IN <see cref="AgoRapideAttribute.EnrichFrom"/>
@@ -542,6 +554,8 @@ namespace AgoRapide.Core {
 
             // if (other.IsDefault) SetAsDefault(); // Removed 8 Mar 2017
 
+            /// TODO: See prototype solution with <see cref="IsManyIsSet"/>
+            /// TODO:
             if (other.IsObligatory) IsObligatory = other.IsObligatory;
             if (other.IsStrict) IsStrict = other.IsStrict;
             if (other.IsUniqueInDatabase) IsUniqueInDatabase = other.IsUniqueInDatabase;

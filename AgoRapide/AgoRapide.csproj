@@ -94,11 +94,13 @@
     <Compile Include="API\BaseView.cs" />
     <Compile Include="API\RouteSegmentClass.cs" />
     <Compile Include="Core\AgoRapideAttribute.cs" />
-    <Compile Include="Core\AgoRapideAttributeT.cs" />
+    <Compile Include="Core\AgoRapideAttributeEnriched.cs" />
+    <Compile Include="Core\AgoRapideAttributeEnrichedT.cs" />
     <Compile Include="Core\BaseCore.cs" />
     <Compile Include="Core\EnumMapper.cs" />
     <Compile Include="Core\IGroupDescriber.cs" />
     <Compile Include="Core\ITypeDescriber.cs" />
+    <Compile Include="Core\ParseResult.cs" />
     <Compile Include="Core\QueryId.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Configuration.cs" />

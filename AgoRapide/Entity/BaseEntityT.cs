@@ -31,7 +31,7 @@ namespace AgoRapide {
         /// </summary>
         public BaseEntityT RepresentedByEntity { get; set; }
 
-        public override string Name => PV(CoreProperty.Name, Id.ToString());
+        public override string Name => PV(CoreProperty.Name.A(), Id.ToString());
 
         /// <summary>
         /// <see cref="RootProperty"/>.Id is same as (<see cref="BaseEntity.Id"/>. 
@@ -117,7 +117,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="p"></param>
         /// <returns></returns>
-        public T PV<T>(CoreProperty p) => TryGetPV(p, out T retval) ? retval : throw new InvalidPropertyException<T>(p, PExplained(p));
+        public T PV<T>(AgoRapideAttributeEnriched p) => TryGetPV(p, out T retval) ? retval : throw new InvalidPropertyException<T>(p.CoreProperty, PExplained(p));
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
@@ -126,7 +126,7 @@ namespace AgoRapide {
         /// <param name="p"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public T PV<T>(CoreProperty p, T defaultValue) => TryGetPV(p, out T retval) ? retval : defaultValue;
+        public T PV<T>(AgoRapideAttributeEnriched p, T defaultValue) => TryGetPV(p, out T retval) ? retval : defaultValue;
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -150,13 +150,13 @@ namespace AgoRapide {
         /// <param name="p"></param>
         /// <param name="pAsT"></param>
         /// <returns></returns>
-        public bool TryGetPV<T>(CoreProperty p, out T pAsT) {
+        public bool TryGetPV<T>(AgoRapideAttributeEnriched p, out T pAsT) {
             // TODO: Decide whether to do this:
             // TODO: if (Properties == null) throw new NullReferenceException(nameof(Properties) + ". Details: " + ToString());
             // TODO: or this:
             if (Properties == null) { pAsT = default(T); return false; }
 
-            if (!Properties.TryGetValue(p, out var property)) { pAsT = default(T); return false; }
+            if (!Properties.TryGetValue(p.CoreProperty, out var property)) { pAsT = default(T); return false; }
             // Type checking here was considered Jan 2017 but left out. Instead we leave it to property to
             // convert as needed (double to int for instance or DateTime to string)
             // var type = typeof(T);
@@ -175,7 +175,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public string PExplained(CoreProperty p) => Properties.TryGetValue(p, out var retval) ? retval.ToString() : "[NOT_FOUND]";
+        public string PExplained(AgoRapideAttributeEnriched p) => Properties.TryGetValue(p.CoreProperty, out var retval) ? retval.ToString() : "[NOT_FOUND]";
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -191,15 +191,15 @@ namespace AgoRapide {
         /// <param name="value"></param>
         public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreProperty<T>(), value);
 
-        public void AddProperty<T>(CoreProperty key, T value) {
+        public void AddProperty<T>(AgoRapideAttributeEnriched a, T value) {
             if (value == null) throw new ArgumentNullException(nameof(value));
-            var property = Property.Create(key, value);
+            var property = Property.Create(a, value);
             property.ParentId = Id;
             property.Parent = this;
             property.Initialize();
             // TODO: Decide if this is as wanted. Maybe structure better how Properties is initialized
             if (Properties == null) Properties = new Dictionary<CoreProperty, Property>();
-            Properties.AddValue2(key, property);
+            Properties.AddValue2(a.CoreProperty, property);
         }
 
         /// <summary>
@@ -320,7 +320,7 @@ namespace AgoRapide {
                     retval.AppendLine("<h2>Properties you may add</h2>");
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
                     retval.AppendLine(string.Join("", notExisting.Select(p => {
-                        return new Property(p.Key) {
+                        return new Property(p.Value) {
                             IsTemplateOnly = true, /// Important in order for <see cref="Property.V{T}"/> and <see cref="Property.ValueA"/> or similar not to be called
                             Parent = this, /// TODO: Make a separate property class for PropertyTemplate instead of using <see cref="Property.IsTemplateOnly"/>
                             ParentId = Id, /// TODO: Make a separate property class for PropertyTemplate instead of using <see cref="Property.IsTemplateOnly"/>

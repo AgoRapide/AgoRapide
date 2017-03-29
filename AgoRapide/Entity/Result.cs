@@ -38,11 +38,11 @@ namespace AgoRapide {
                 if (Properties != null && Properties.ContainsKey(CoreProperty.Log)) Properties.Remove(CoreProperty.Log);
             }
             if (ResultCode != ResultCode.ok) {
-                AddProperty(CoreProperty.ResultCodeDescription, ResultCode.GetAgoRapideAttribute().A.Description);
-                if (!Properties.ContainsKey(CoreProperty.APIDocumentationUrl)) AddProperty(CoreProperty.APIDocumentationUrl, request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
+                AddProperty(CoreProperty.ResultCodeDescription.A(), ResultCode.GetAgoRapideAttribute().A.Description);
+                if (!Properties.ContainsKey(CoreProperty.APIDocumentationUrl)) AddProperty(CoreProperty.APIDocumentationUrl.A(), request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
             }
             if (ResultCode == ResultCode.exception_error) {
-                AddProperty(CoreProperty.ExceptionDetailsUrl, request.CreateAPIUrl(Util.Configuration.ExceptionDetailsAPISyntax));
+                AddProperty(CoreProperty.ExceptionDetailsUrl.A(), request.CreateAPIUrl(Util.Configuration.ExceptionDetailsAPISyntax));
             }
         }
 

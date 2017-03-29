@@ -32,7 +32,7 @@ namespace AgoRapide.Core {
     /// The former is specified through <see cref="AgoRapideAttribute.Type"/> describing an actual class (usually used for a single TProperty), 
     /// while the latter is specified through <see cref="AgoRapideAttribute.Group"/> describing common attributes for a group of properties. 
     /// (although technically they both do the one and same kind of operations, enriching <see cref="AgoRapideAttributeT"/> 
-    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT.A"/>)
+    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeEnrichedT.A"/>)
     /// </summary>
     public interface IGroupDescriber {
 
@@ -40,10 +40,10 @@ namespace AgoRapide.Core {
         /// This method will be called before any initializing is done in <see cref="AgoRapideAttributeT"/>. 
         /// 
         /// The implementation may change both the properties of 
-        /// <see cref="AgoRapideAttributeT{CoreProperty}"/> and the properties of its member class 
-        /// <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeT{CoreProperty}.A"/>)
+        /// <see cref="AgoRapideAttributeEnriched"/> and the properties of its member class 
+        /// <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeEnriched.A"/>)
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        void EnrichAttribute(AgoRapideAttributeT<CoreProperty> agoRapideAttribute);
+        void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute);
     }
 }

@@ -75,8 +75,8 @@ namespace AgoRapide.API {
                 if (!url.ToLower().Contains(prefix)) {
                     var suggestedUrl = Util.Configuration.RootUrl + Util.Configuration.ApiPrefix;
                     request.Result.ResultCode = ResultCode.client_error;
-                    request.Result.AddProperty(CoreProperty.Message, "Did you remember '" + Util.Configuration.ApiPrefix + "' in your URL?" + tip);
-                    request.Result.AddProperty(CoreProperty.SuggestedUrl, suggestedUrl);
+                    request.Result.AddProperty(CoreProperty.Message.A(), "Did you remember '" + Util.Configuration.ApiPrefix + "' in your URL?" + tip);
+                    request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), suggestedUrl);
                     return request.GetResponse();
                 }
             }
@@ -119,7 +119,7 @@ namespace AgoRapide.API {
                             request.Result.ResultCode = ResultCode.missing_parameter_error;
                             request.Result.SingleEntityResult = retval;
                             var s = retval.FirstNonMatchingSegment;
-                            request.Result.AddProperty(CoreProperty.Message,
+                            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(),
                                 "It looks like you tried to access method\r\n" + candidateMatches.Item1[0].ToString() + "\r\n" +
                                 (s.Parameter == null ?
                                     "but " + s.SegmentName + " is missing from your URL.\r\n" :
@@ -128,7 +128,7 @@ namespace AgoRapide.API {
                                     ("Unable to suggest a value for you for this missing parameter" + ((s.ParameterA?.A.IsPassword ?? false) ? " since it is a password (you must come up with a value by yourself)" : "")) :
                                     "Try to add '" + s.SampleValues[0] + "' to your URL") +
                                 tip);
-                            request.Result.AddProperty(CoreProperty.SuggestedUrl, retval.PV<string>(CoreProperty.SuggestedUrl));
+                            request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), retval.PV<string>(CoreProperty.SuggestedUrl.A()));
                             return request.GetResponse();
                         }
                     default: {
@@ -136,7 +136,7 @@ namespace AgoRapide.API {
                             var retval = candidateMatches.Item1.Select(m => new APIMethodCandidate(request, m, candidateMatches.Item2)).Take(10).ToList();
                             request.Result.ResultCode = ResultCode.missing_parameter_error;
                             request.Result.MultipleEntitiesResult = retval.Select(r => (BaseEntityT)r).ToList();
-                            request.Result.AddProperty(CoreProperty.Message,
+                            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(),
                                 "Your query URL is incomplete.\r\n" +
                                 "Details:\r\n" + candidateMatches.Item3 + "\r\n" +
                                 "-----------\r\n" +
@@ -144,14 +144,14 @@ namespace AgoRapide.API {
                                 string.Join("\r\n", retval.Select(c => c.Method.ToString())) + "\r\n?" +
                                 "-----------\r\n" +
                                 tip);
-                            request.Result.AddProperty(CoreProperty.SuggestedUrl, string.Join("\r\n", retval.Select(c => c.SuggestedUrl)));
+                            request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), string.Join("\r\n", retval.Select(c => c.SuggestedUrl)));
                             return request.GetResponse();
                         }
                 }
             } else if (maybeIntended != null) {
                 if (maybeIntended.Item1.Count == 0) throw new InvalidCountException(nameof(maybeIntended) + ".Count: " + maybeIntended.Item1.Count);
                 request.Result.ResultCode = ResultCode.client_error;
-                request.Result.AddProperty(CoreProperty.Message,
+                request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(),
                     "Your query URL was not understood at all.\r\n" +
                     "Details:\r\n" + maybeIntended.Item2 + "\r\n" +
                     "-----------\r\n" +
@@ -165,8 +165,8 @@ namespace AgoRapide.API {
                 // var docUrl = request.CreateAPIUrl("") does not work (will give us /api//HTML for example)
                 // Therefore we must create the URL manually now:
                 var docUrl = Util.Configuration.RootUrl + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicatorWithoutLeadingSlash : "");
-                request.Result.AddProperty(CoreProperty.SuggestedUrl, docUrl);
-                request.Result.AddProperty(CoreProperty.APIDocumentationUrl, docUrl);
+                request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), docUrl);
+                request.Result.AddProperty(CoreProperty.APIDocumentationUrl.GetAgoRapideAttribute(), docUrl);
                 return request.GetResponse();
             } else {
                 throw new NullReferenceException("None of " + nameof(exactMatch) + ", " + nameof(candidateMatches) + " or " + nameof(maybeIntended) + " was set");
@@ -179,7 +179,7 @@ namespace AgoRapide.API {
             method.A.A.AssertCoreMethod(CoreMethod.AddEntity);
             if (!TryGetRequest(p1, p2, p3, p4, p5, method, out var request, out var errorResponse)) return errorResponse;
             foreach (var p in request.Parameters.Properties.Values.Where(p => p.KeyA.A.IsUniqueInDatabase)) {
-                if (!DB.TryAssertUniqueness(p.KeyT, p.ADotTypeValue(), out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
+                if (!DB.TryAssertUniqueness(p.A, p.ADotTypeValue(), out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
             }
             return request.GetOKResponseAsEntityId(method.EntityType, DB.CreateEntity(request.CurrentUser.Id, method.EntityType, request.Parameters, request.Result));
         }
@@ -207,8 +207,8 @@ namespace AgoRapide.API {
             method.A.A.AssertCoreMethod(CoreMethod.UpdateProperty);
             if (!TryGetRequest(id, key, value, method, out var request, out var errorResponse)) return errorResponse;
             var queryId = request.Parameters.PVM<QueryId>();
-            var tPropertyKey = request.Parameters.PV<CoreProperty>(CoreProperty.Key);
-            var strValue = request.Parameters.PV<string>(CoreProperty.Value);
+            var tPropertyKey = request.Parameters.PV<CoreProperty>(CoreProperty.Key.A());
+            var strValue = request.Parameters.PV<string>(CoreProperty.Value.A());
             /// Validate value. Note how TryGetRequest was only able to validate value as string 
             /// because <see cref="CoreMethod.UpdateProperty"/> does not know anything about which values are valid for which keys.
             /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
@@ -217,15 +217,15 @@ namespace AgoRapide.API {
             var objValue = parseResult.Result.ADotTypeValue();
 
             if (tPropertyKey.GetAgoRapideAttribute().A.IsUniqueInDatabase) {
-                if (!DB.TryAssertUniqueness(tPropertyKey, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
+                if (!DB.TryAssertUniqueness(a, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
             }
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
-            entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, tPropertyKey, objValue, request.Result));
+            entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, a, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl, request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
-            request.Result.AddProperty(CoreProperty.Message, nameof(entities) + ".Count: " + entities.Count);
+            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(), nameof(entities) + ".Count: " + entities.Count);
             return request.GetResponse();
         }
 
@@ -238,9 +238,9 @@ namespace AgoRapide.API {
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl, request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
-            request.Result.AddProperty(CoreProperty.Message, nameof(properties) + ".Count: " + properties.Count);
+            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(), nameof(properties) + ".Count: " + properties.Count);
             return request.GetResponse();
         }
 
@@ -470,10 +470,10 @@ namespace AgoRapide.API {
                 retval = DB.GetEntityById<BaseEntityT>(entityId);
                 DB.SwitchIfHasEntityToRepresent(ref retval);
             }
-            if (retval.AccessLevelGiven < method.PV<AccessLevel>(CoreProperty.AccessLevelUse)) {
+            if (retval.AccessLevelGiven < method.PV<AccessLevel>(CoreProperty.AccessLevelUse.A())) {
                 accessDeniedResponse = null;
                 var request = new Request(Request, method, retval, exceptionHasOccurred: false);
-                accessDeniedResponse = request.GetAccessDeniedResponse(nameof(currentUser) + "." + nameof(retval.AccessLevelGiven) + ") (" + retval.AccessLevelGiven + ") is less than method." + nameof(CoreProperty.AccessLevelUse) + " (" + method.PV<AccessLevel>(CoreProperty.AccessLevelUse) + ")");
+                accessDeniedResponse = request.GetAccessDeniedResponse(nameof(currentUser) + "." + nameof(retval.AccessLevelGiven) + ") (" + retval.AccessLevelGiven + ") is less than method." + nameof(CoreProperty.AccessLevelUse) + " (" + method.PV<AccessLevel>(CoreProperty.AccessLevelUse.A()) + ")");
                 currentUser = null;
                 return false;
             }
