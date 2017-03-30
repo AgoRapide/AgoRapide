@@ -256,7 +256,7 @@ namespace AgoRapide.Database {
     public class InvalidPasswordException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
         public InvalidPasswordException(T property) : this(property, null, null) { }
         public InvalidPasswordException(T property, string message) : this(property, message, null) { }
-        public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetAgoRapideAttribute().PExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
+        public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetAgoRapideAttributeT().PExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
     }
 
     /// <summary>

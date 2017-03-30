@@ -94,7 +94,6 @@ namespace AgoRapide.API {
                 case ResultCode.access_error: throw new InvalidEnumException(resultCode, "Use method " + nameof(GetAccessDeniedResponse) + " instead");
                 default: break; // OK;
             }
-            //if (!string.IsNullOrEmpty(message)) message += ". ";
             //message += nameof(AgoRapideAttribute.Description) + ": " + resultCode.GetAgoRapideAttribute().A.Description;
 
             Result.ResultCode = resultCode;
@@ -330,7 +329,7 @@ namespace AgoRapide.API {
                         nameof(postParameters) + ":\r\n" +
                         string.Join("\r\n", postParameters.Select(p => {
                             var cpa = EnumMapper.GetCPAOrDefault(p.Item1);
-                            return p.Item1 + (cpa.cp == CoreProperty.None ? (" [Not recognized]" + ")") : "") + " = " + (cpa.a.A.IsPassword ? "[WITHHELD]" : ("'" + p.Item2 + "'"));
+                            return p.Item1 + (cpa.CoreProperty == CoreProperty.None ? (" [Not recognized]" + ")") : "") + " = " + (cpa.A.IsPassword ? "[WITHHELD]" : ("'" + p.Item2 + "'"));
                         })))
                     )
             );

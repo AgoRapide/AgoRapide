@@ -223,7 +223,7 @@ namespace AgoRapide.Database {
                 entity = null;
                 return false;
             }
-            if (!root.KeyT.Equals(CoreProperty.Type)) {
+            if (!root.Key.CoreProperty.Equals(CoreProperty.Type)) {
                 if (requiredType.Equals(typeof(BaseEntityT))) {
                     // OK, return what we have got. 
 
@@ -231,7 +231,7 @@ namespace AgoRapide.Database {
                     entity = root;
                     return true;
                 }
-                throw new InvalidEnumException(root.KeyT, "Expected " + CoreProperty.Type.GetAgoRapideAttribute().PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                throw new InvalidEnumException(root.Key.CoreProperty, "Expected " + EnumMapper.GetCPA(CoreProperty.Type).PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
@@ -257,7 +257,7 @@ namespace AgoRapide.Database {
             retval.Properties = GetChildProperties(root);
             retval.Properties.Values.ForEach(p => p.Parent = retval);
             retval.Properties.AddValue(CoreProperty.RootProperty, root);
-            retval.AddProperty(CoreProperty.DBId.GetAgoRapideAttribute(), id);
+            retval.AddProperty(CoreProperty.DBId.A(), id);
             // We can not use the short representation because Property will (if asked like V<Type> or similar), try
             // to reconstruct the actual type.
             // retval.AddProperty(M(CoreProperty.Type), retval.GetType().ToStringShort());
@@ -322,7 +322,7 @@ namespace AgoRapide.Database {
                         // (It would be naive to assume that we can only remove the property itself)
                         if (Util.EntityCache.TryRemove(property.ParentId, out var entity)) {
                             switch (entity) { // And also remove from parent's property collection in case object exists somewhere (as a singleton class or similar)
-                                case BaseEntityT e2: if (e2.Properties != null && e2.Properties.ContainsKey(property.KeyT)) e2.Properties.Remove(property.KeyT); break;
+                                case BaseEntityT e2: if (e2.Properties != null && e2.Properties.ContainsKey(property.Key.CoreProperty)) e2.Properties.Remove(property.Key.CoreProperty); break;
                             }
                         }
                     }
@@ -366,8 +366,8 @@ namespace AgoRapide.Database {
 
         public long CreateEntity<T>(long cid, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties: (IEnumerable<Tuple<AgoRapideAttributeEnriched, object>>)null, result: result);
         public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable < Tuple<AgoRapideAttributeEnriched, object>>)null, result: result);
-        public long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.A, p.ADotTypeValue())), result);
-        public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.A, p.ADotTypeValue())), result);
+        public long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.Key, p.ADotTypeValue())), result);
+        public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.Key, p.ADotTypeValue())), result);
         public long CreateEntity<T>(long cid, IEnumerable<Tuple<AgoRapideAttributeEnriched, object>> properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties, result);
         public long CreateEntity(long cid, Type entityType, IEnumerable<Tuple<AgoRapideAttributeEnriched, object>> properties, Result result) {
             Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
@@ -755,9 +755,9 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public Dictionary<CoreProperty, Property> GetChildProperties(Property parentProperty) {
             Log(nameof(parentProperty.Id) + ": " + parentProperty.Id);
-            if (!true.Equals(parentProperty.KeyA.A.CanHaveChildren)) throw new Exception(
-                "!" + nameof(parentProperty) + "." + nameof(parentProperty.KeyA) + "." + nameof(parentProperty.KeyA.A) + "." + nameof(parentProperty.KeyA.A.CanHaveChildren) + " (" + parentProperty.ToString() + ". " +
-                "Explanation: You are not allowed to operate with child properties for " + parentProperty.KeyA.PExplained + " because there is no [" + nameof(AgoRapideAttribute) + "(" + nameof(AgoRapideAttribute.CanHaveChildren) + " = true)] defined for this enum value");
+            if (!true.Equals(parentProperty.Key.A.CanHaveChildren)) throw new Exception(
+                "!" + nameof(parentProperty) + "." + nameof(parentProperty.Key) + "." + nameof(parentProperty.Key.A) + "." + nameof(parentProperty.Key.A.CanHaveChildren) + " (" + parentProperty.ToString() + ". " +
+                "Explanation: You are not allowed to operate with child properties for " + parentProperty.Key.PExplained + " because there is no [" + nameof(AgoRapideAttribute) + "(" + nameof(AgoRapideAttribute.CanHaveChildren) + " = true)] defined for this enum value");
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE\r\n" +
                 // TODO: CHECK IF THIS IS STILL THE CORRECT METHOD
                 "(\r\n" +
@@ -873,18 +873,18 @@ namespace AgoRapide.Database {
                 var noLongerCurrent = new List<Tuple<Property, byte>>();
                 while (r.Read()) {
                     var p = ReadOneProperty(r);
-                    if (p.KeyT.Equals(CoreProperty.None)) throw new InvalidPropertyKeyException(p.KeyDB, p.Id);
+                    if (p.Key.CoreProperty.Equals(CoreProperty.None)) throw new InvalidPropertyKeyException(p.KeyDB, p.Id);
                     if (p.MultipleIndex != null) {
-                        var isManyParent = dict.GetOrAddIsManyParent(p.A);
+                        var isManyParent = dict.GetOrAddIsManyParent(p.Key);
                         if (isManyParent.Properties.TryGetValue((CoreProperty)(object)p.MultipleIndex, out var toBeOverwritten)) {
                             noLongerCurrent.Add(new Tuple<Property, byte>(toBeOverwritten, 1)); // #1 when calling GetId
                         }
                         isManyParent.Properties[(CoreProperty)(object)(int.MaxValue - p.MultipleIndex)] = p;
                     } else {
-                        if (dict.TryGetValue(p.KeyT, out var toBeOverwritten)) {
+                        if (dict.TryGetValue(p.Key.CoreProperty, out var toBeOverwritten)) {
                             noLongerCurrent.Add(new Tuple<Property, byte>(toBeOverwritten, 2)); // #2 when calling GetId
                         }
-                        dict[p.KeyT] = p;
+                        dict[p.Key.CoreProperty] = p;
                     }
                 }
                 r.Close();
@@ -961,7 +961,7 @@ namespace AgoRapide.Database {
             return "CREATE TABLE p\r\n(\r\n" +
             string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => {
                 return "  " + f.ToString() + " " + new Func<string>(() => {
-                    var a = f.GetAgoRapideAttribute();
+                    var a = f.GetAgoRapideAttributeT();
                     var postfix = new Func<string>(() => {
                         switch (f) {
                             case DBField.id:
@@ -990,8 +990,8 @@ ALTER TABLE p
 
 COMMENT ON TABLE p IS 'Main property table'; 
 " +
-            string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => f.GetAgoRapideAttribute()).Select(f =>
-                "COMMENT ON COLUMN p." + f.P.ToString() + " IS '" + makeSQLSafe(f.A.Description) + (string.IsNullOrEmpty(f.A.LongDescription) ? "" : (" // " + nameof(f.A.LongDescription) + ": " + f.A.LongDescription)) + "';")) +
+            string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => f.GetAgoRapideAttributeT()).Select(f =>
+                "COMMENT ON COLUMN p." + f.A.Property.ToString() + " IS '" + makeSQLSafe(f.A.Description) + (string.IsNullOrEmpty(f.A.LongDescription) ? "" : (" // " + nameof(f.A.LongDescription) + ": " + f.A.LongDescription)) + "';")) +
 
         // TODO: As of Jan 2017 we have troubles with newlines in the CREATE SEQUENCE below with the Visual Studio RC 2017 editor.
         @"

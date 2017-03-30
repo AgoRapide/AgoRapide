@@ -109,30 +109,31 @@ namespace AgoRapideSample {
                 void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.EnumMapper.MapEnum<T>(s => Log(nameof(AgoRapide.EnumMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
                 mapper1<AgoRapide.CoreProperty>();
                 mapper1<P>();
-                // Add here other enum's which you want to use as entity-properties.
+                // Add here other enum's which you want to use as entity-properties (so called entity property enums). Add at bottom of list, that is
+                // in order of going outwards from inner AgoRapide library towards your final application
+                AgoRapide.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.EnumMapper.MapEnumFinalize) + ": " + s));
 
                 var systemUser = new Person();
                 systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.AccessLevelGiven), AgoRapide.AccessLevel.System);
                 AgoRapide.Core.Util.Configuration.SystemUser = systemUser;
 
                 Log("Going through all " + typeof(P) + " attributes in order to expose any issues at once");
-                AgoRapide.Core.Util.EnumGetValues<P>().ForEach(p => AgoRapide.Core.Extensions.GetAgoRapideAttribute(p));
+                AgoRapide.Core.Util.EnumGetValues<P>().ForEach(p => AgoRapide.Core.Extensions.GetAgoRapideAttributeT(p));
                 // Add here any kind of enums that you use
 
                 Log("\r\n\r\n" +
                     "Mapping all " + typeof(P) + " to " + typeof(AgoRapide.CoreProperty) + " in order to expose any issues at once\r\n" +
                     "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreProperty>().Max()) + 1) + " and onwards for all " + typeof(P) + " not explicitly mapped to a " + typeof(AgoRapide.CoreProperty) + ")\r\n\r\n" +
-                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetCPA(p).cp)) + "\r\n");
+                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetCPA(p).CoreProperty)) + "\r\n");
 
-                string mapper2<T>() => typeof(T) + " => " + typeof(P) + "." + AgoRapide.Core.Util.MapTToCoreProperty<T>() + "\r\n";
+                string mapper2<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreProperty<T>().PExplained + "\r\n";
                 Log("\r\n\r\n" +
-                    "Testing mappings for various types to " + nameof(AgoRapide.CoreProperty) + " via " + nameof(AgoRapide.Core.Util.MapTToCoreProperty) + " that are known to exist (in order to expose any issues at once)\r\n\r\n" +
-                    mapper2<AgoRapide.ResultCode>() +
-                    mapper2<AgoRapide.APIMethodOrigin>()
-                /// TODO: Add to this list all enum-"classes" that should have a mapping to <see cref="AgoRapide.CoreProperty"/>
+                    "Testing " + nameof(AgoRapide.Core.Util.MapTToCoreProperty) + " for a few enums\r\n\r\n" +
+                    mapper2<AgoRapide.ResultCode>() + /// Maps to <see cref="AgoRapide.CoreProperty.ResultCode"/>
+                    mapper2<AgoRapide.APIMethodOrigin>()  /// Maps to <see cref="AgoRapide.CoreProperty.APIMethodOrigin"/>
                 );
                 Log("Miscellaneous testing");
-                if (!AgoRapide.Core.Extensions.GetAgoRapideAttribute(P.Password).A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.AgoRapideAttribute) + "." + nameof(AgoRapide.Core.AgoRapideAttribute.IsPassword));
+                if (!AgoRapide.Core.Extensions.GetAgoRapideAttributeT(P.Password).A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.AgoRapideAttribute) + "." + nameof(AgoRapide.Core.AgoRapideAttribute.IsPassword));
 
                 Log("(See corresponding code in Startup.cs for above. Add for more types as you develop your application)");
 

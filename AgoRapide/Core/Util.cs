@@ -181,14 +181,14 @@ namespace AgoRapide.Core {
                 GetOrAdd(typeof(T), type => {
                     /// NOTE: Note how <see cref="EnumMapper.AllCoreProperty"/> itself is cached but that should not matter
                     /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
-                    var candidates = EnumMapper.AllCoreProperty.Where(cpa => cpa.a.A.Type?.Equals(type) ?? false).ToList();
+                    var candidates = EnumMapper.AllCoreProperty.Where(cpa => cpa.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
                         case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + " (not even from " + typeof(CoreProperty).ToStringShort() + ")";
-                        case 1: return candidates[0].a;
+                        case 1: return candidates[0];
                         default:
                             return
                        "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + ".\r\n" +
-                       "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c.a.CoreProperty) + ".");
+                       "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c.CoreProperty) + ".");
                     }
             });
             if (mapping is string) {
@@ -543,9 +543,9 @@ namespace AgoRapide.Core {
         public KeyAlreadyExistsException(string message) : base(message) { }
     }
 
-    public class KeyAlreadyExistsException<TProperty> : ApplicationException where TProperty : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-        public KeyAlreadyExistsException(TProperty key) : this(key, null) { }
-        public KeyAlreadyExistsException(TProperty key, string message) : base("The key " + key.GetAgoRapideAttribute().PExplained + " already exists" + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message))) { }
+    public class KeyAlreadyExistsException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public KeyAlreadyExistsException(T key) : this(key, null) { }
+        public KeyAlreadyExistsException(T key, string message) : base("The key " + key.GetAgoRapideAttributeT().PExplained + " already exists" + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message))) { }
     }
 
     public class SingleObjectNotFoundOrMultipleFoundException : ApplicationException {

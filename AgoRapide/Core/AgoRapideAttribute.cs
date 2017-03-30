@@ -17,7 +17,7 @@ namespace AgoRapide.Core {
     /// Use for describing either
     /// 
     /// 1) (most common) actual enum values.
-    ///    Usually accessed through <see cref="Extensions.GetAgoRapideAttribute{T}(T)"/> which returns the more refined class
+    ///    Usually accessed through <see cref="Extensions.GetAgoRapideAttributeT{T}(T)"/> which returns the more refined class
     ///    <see cref="AgoRapideAttributeT"/>-class which again contains this class as a member.
     ///    
     ///    Values are populated directly from the C# code using <see cref="System.ComponentModel"/> like
@@ -62,6 +62,10 @@ namespace AgoRapide.Core {
         /// </summary>
         public object Property => _property ?? throw new NullReferenceException(nameof(_property) + ".\r\nDetails: " + ToString());
 
+        public void AssertProperty() {
+            if (Property == null) throw new NullReferenceException(nameof(Property) + " for " + ToString());
+        }
+
         /// <summary>
         /// The actual class that we are an attribute for. 
         /// 
@@ -69,18 +73,15 @@ namespace AgoRapide.Core {
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
         /// </summary>
         public Type Class { get; private set; }
-
-        ///// <summary>
-        ///// Property is read only so you do not inadverdently set it through [PropertyAttribute(Property = "...")] 
-        ///// </summary>
-        ///// <param name="_enum"></param>
-        //public void SetProperty(object _enum) => Property = _enum;
-
-        public void AssertProperty() {
-            if (Property == null) throw new NullReferenceException(nameof(Property) + " for " + ToString());
-        }
-
-        public CoreProperty CoreProperty { get; set; }
+        
+        /// <summary>
+        /// The underlying (more closer to the core AgoRapide library) property that <see cref="AgoRapideAttributeEnriched.Initialize"/> will inherit values from. 
+        /// 
+        /// At the same time attributes for that property will be overriden by this <see cref=""/>
+        /// 
+        /// The value will often correspond to some <see cref="CoreProperty"/>. 
+        /// </summary>
+        public string InheritAndEnrichFromProperty { get; set; }
 
         /// <summary>
         ///  
@@ -266,60 +267,41 @@ namespace AgoRapide.Core {
         /// </summary>
         public Type[] Parents { get; set; }
 
-        //private Type _parent = null;
-        ///// <summary>
-        ///// The Parent entity type for which the Property is used (for which the Property is a member property)
-        ///// Note how throws NullReferenceException if not set.
-        ///// Could have been called Entity
-        ///// </summary>
-        //public Type Parent {
-        //    get {
-        //        if (_parent == null) throw new NullReferenceException(
-        //             nameof(_parent) + " == null for " + ToString() + ". " +
-        //            "Probable cause: For some P you miss a [Attributes(_parent = typeof(xxx))]) statement. " +
-        //            "Note that this exception should never occur because all enums should have been checked at application startup (CheckEnum). " +
-        //            "You should ensure that that method really run first when application is started.");
-        //        return _parent;
-        //    }
-        //    set => _parent = value;
-        //}
-        //public bool ParentIsNotSet => _parent == null;
-
         /// <summary>
         /// TODO: Implement so that may also be given for Type string (string will be converted to int, and checked for value. Useful for postal codes)
         /// 
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public double MinValueDbl { get; set; }
         /// <summary>
         /// TODO: Implement so that may also be given for Type string (string will be converted to int, and checked for value. Useful for postal codes)
         /// 
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public double MaxValueDbl { get; set; }
 
         /// <summary>
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public DateTime MinValueDtm { get; set; }
         /// <summary>
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public DateTime MaxValueDtm { get; set; }
 
         /// <summary>
         /// Only relevant for Type string
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public long MinLength { get; set; }
         /// <summary>
         /// Only relevant for Type string
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public long MaxLength { get; set; }
 
         /// <summary>
-        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> as of March 2017
+        /// TODO: Not implemented in <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> as of March 2017
         /// </summary>
         public string RegExpValidator { get; set; }
 
@@ -434,7 +416,7 @@ namespace AgoRapide.Core {
         /// Note that separate instances with <see cref="IsDefault"/> = True will be created 
         /// for every enum for which no <see cref="AgoRapideAttribute"/> is defined.             
         /// 
-        /// Usually called from <see cref="Extensions.GetAgoRapideAttribute{T}(T)"/> / <see cref="Extensions.GetAgoRapideAttribute(object)"/>. 
+        /// Usually called from <see cref="Extensions.GetAgoRapideAttributeT{T}(T)"/> / <see cref="Extensions.GetAgoRapideAttribute(object)"/>. 
         /// </summary>
         /// <param name="_enum"></param>
         /// <returns></returns>
@@ -468,27 +450,27 @@ namespace AgoRapide.Core {
                     }
                 })();
             }
-            if (_enum is CoreProperty) retval.CoreProperty = (CoreProperty)_enum; // Necessary for silently mapped TProperty attributes as they "get" this attribute (retval)
             return retval;
         }
 
         /// <summary>
-        /// Enriches non-set properties of this attribute class with properties from other attribute class
+        /// Only to be used by <see cref="AgoRapideAttributeEnriched.Initialize"/>
         /// 
-        /// Used in order to transfer attributes from <see cref="CoreProperty"/> to <see cref="TProperty"/>.
+        /// . TODO: Make private or similar.
+        /// 
+        /// Enriches non-set properties of this attribute class with properties from other attribute class
         /// 
         /// Note how:
         /// 1) Boolean values are only transferred if they are TRUE at <paramref name="other"/>-end.
-        ///    TODO: Consider introducing a bool-enum with fields None, Yes and No.
+        ///    TODO: See <see cref="IsManyIsSet"/> for how to correct on this.
         /// 2) Enum values are only transferred if they are not default at this end.
         /// 3) Other value types are typically not transferred
+        ///    TODO: See <see cref="IsManyIsSet"/> for how to correct on this.
         /// </summary>
         /// <param name="other">
-        /// Typically attributes for a <see cref="CoreProperty"/>
         /// </param>
         public void EnrichFrom(AgoRapideAttribute other) {
-
-            // TODO: Ensure that all properties are included here (Jan 2017)
+            // TODO: Constantly ensure that all properties are included here (Jan 2017)
             if (Type == null) Type = other.Type;
 
             if (Parents == null) {

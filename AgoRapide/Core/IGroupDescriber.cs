@@ -32,7 +32,7 @@ namespace AgoRapide.Core {
     /// The former is specified through <see cref="AgoRapideAttribute.Type"/> describing an actual class (usually used for a single TProperty), 
     /// while the latter is specified through <see cref="AgoRapideAttribute.Group"/> describing common attributes for a group of properties. 
     /// (although technically they both do the one and same kind of operations, enriching <see cref="AgoRapideAttributeT"/> 
-    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeEnrichedT.A"/>)
+    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeEnriched.A"/>)
     /// </summary>
     public interface IGroupDescriber {
 

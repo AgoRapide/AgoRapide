@@ -96,10 +96,10 @@ namespace AgoRapide {
         /// 
         /// TODO: Is this only used by <see cref="CreateIsManyParent"/>? In that case we may make it private
         /// </summary>
-        public Property(AgoRapideAttributeEnriched a) => _a = a;
+        public Property(AgoRapideAttributeEnriched a) => _key = a;
 
         /// <summary>
-        /// TODO: REMOVE THIS. <see cref="A"/> gives the same information (A.a.IsMany)
+        /// TODO: REMOVE THIS. <see cref="Key"/> gives the same information (A.a.IsMany)
         /// </summary>
         public bool IsIsManyParent { get; private set; }
 
@@ -174,7 +174,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="objValue"></param>
         public Property(AgoRapideAttributeEnriched a, object objValue) {
-            _a = a;
+            _key = a;
             _ADotTypeValue = objValue;
         }
 
@@ -185,7 +185,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         public Property(AgoRapideAttributeEnriched a, long value) {
-            _a = a;
+            _key = a;
             LngValue = value;
         }
 
@@ -195,7 +195,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         public Property(AgoRapideAttributeEnriched a, double value) {
-            _a = a;
+            _key = a;
             DblValue = value;
         }
 
@@ -205,7 +205,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         public Property(AgoRapideAttributeEnriched a, bool value) {
-            _a = a;
+            _key = a;
             BlnValue = value;
         }
 
@@ -215,7 +215,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         public Property(AgoRapideAttributeEnriched a, DateTime value) {
-            _a = a;
+            _key = a;
             DtmValue = value;
         }
 
@@ -237,7 +237,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         public Property(AgoRapideAttributeEnriched a, string value) {
-            _a = a;
+            _key = a;
             StrValue = value;
         }
 
@@ -288,68 +288,31 @@ namespace AgoRapide {
         /// </summary>
         public string KeyDB {
             get => _keyDB ?? (_keyDB = new Func<string>(() => {
-                if (_keyT == null) throw new NullReferenceException(nameof(_keyT) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                var cpa = EnumMapper.GetCPAOrDefault((CoreProperty)_keyT);
-                if (cpa.cp == CoreProperty.None) throw new InvalidEnumException(cpa.cp, "Was mapped from " + _keyT.ToString() + ".\r\nDetails: " + ToString());
-                if (cpa.a.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(cpa.a.A.IsMany) + ".\r\nDetails: " + ToString());
-                return cpa.cp.ToString();
+                if (Key == null) throw new NullReferenceException(nameof(Key) + ". Either " + nameof(Key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
+                if (Key.CoreProperty== CoreProperty.None) throw new InvalidEnumException(Key.CoreProperty, "Details: " + ToString());
+                if (Key.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + ".\r\nDetails: " + ToString());
+                return Key.PToString;
             })());
             set => _keyDB = value;
         }
 
-        private CoreProperty? _keyT;
-        /// <summary>
-        /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
-        /// 
-        /// Will return integer 0 value (corresponding to .None) if valid value not found
-        /// (properties may very well have a Key that is not defined as TProperty)
-        /// TOOD: IS THAT STILL TRUE? Feb 2017.
-        /// 
-        /// Note for <see cref="AgoRapideAttribute.IsMany"/>-properties neither <see cref="KeyT"/> nor <see cref="KeyDB"/> 
-        /// will correspond to what is stored in <see cref="DBField.key"/>. <see cref="DBField.key"/> will be something like 
-        /// "member#3" which will be split into a <see cref="AgoRapideAttribute.IsMany"/>-parent as "member" and child as 3.
-        /// </summary>
-        public CoreProperty KeyT =>
-            _keyT != null ? (CoreProperty)_keyT : (CoreProperty)(_keyT = new Func<CoreProperty>(() => {
-                if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
+        private AgoRapideAttributeEnriched _key;
+        public AgoRapideAttributeEnriched Key =>
+            _key != null ? _key : _key = new Func<AgoRapideAttributeEnriched>(() => {
+                if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
                 var retval = EnumMapper.GetCPAOrDefault(KeyDB);
-                if (retval.cp == CoreProperty.None) {
+                if (retval.CoreProperty == CoreProperty.None) {
                     var t = KeyDB.Split('#');
                     if (t.Length != 2) throw new InvalidEnumException(typeof(CoreProperty), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
                     retval = EnumMapper.GetCPAOrDefault(t[0]);
-                    if (retval.cp == CoreProperty.None) throw new InvalidEnumException(typeof(CoreProperty), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
-                    if (!retval.a.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
+                    if (retval.CoreProperty == CoreProperty.None) throw new InvalidEnumException(typeof(CoreProperty), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+                    if (!retval.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
                     // TODO: Use better Exception class here
                     if (!int.TryParse(t[1], out var temp)) throw new InvalidCountException("Invalid int '" + t[1] + " for " + KeyDB + ".\r\nDetails: " + ToString());
                     _multipleIndex = temp;
                 }
-                _keyA = retval.a; // Set keyA                 
-                return retval.cp;
-            })());
-
-        private AgoRapideAttributeEnriched _a;
-        public AgoRapideAttributeEnriched A =>
-            _a != null ? _a : _a = new Func<AgoRapideAttributeEnriched>(() => {
-                if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_keyT) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                var retval = EnumMapper.GetCPAOrDefault(KeyDB);
-                if (retval.cp == CoreProperty.None) {
-                    var t = KeyDB.Split('#');
-                    if (t.Length != 2) throw new InvalidEnumException(typeof(CoreProperty), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
-                    retval = EnumMapper.GetCPAOrDefault(t[0]);
-                    if (retval.cp == CoreProperty.None) throw new InvalidEnumException(typeof(CoreProperty), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
-                    if (!retval.a.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
-                    // TODO: Use better Exception class here
-                    if (!int.TryParse(t[1], out var temp)) throw new InvalidCountException("Invalid int '" + t[1] + " for " + KeyDB + ".\r\nDetails: " + ToString());
-                    _multipleIndex = temp;
-                }
-                return retval.a;
+                return retval;
             })();
-
-        private AgoRapideAttributeEnriched _keyA;
-        /// <summary>
-        /// TODO: Note how call to KeyT will also set _keyA... Should be done much better.
-        /// </summary>
-        public AgoRapideAttributeEnriched KeyA => _keyA ?? (_keyA = KeyT.GetAgoRapideAttribute());
 
         /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
         private int? _multipleIndex;
@@ -360,9 +323,11 @@ namespace AgoRapide {
         /// </summary>
         public int? MultipleIndex {
             get {
-                if (_keyT == null) {
-                    var dummy = KeyT; // This will also initialize _multipleIndex
+                if (Key == null) {
+                    var dummy = Key; // This will also initialize _multipleIndex
                 }
+                if (Key.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + "\r\nDetails: " + ToString());
+                /// TODO: Not good enough for instance if <see cref="Key"/> was set directly from outside
                 return _multipleIndex;
             }
         }
@@ -392,47 +357,47 @@ namespace AgoRapide {
         /// </summary>
         public object ADotTypeValue() => TryGetADotTypeValue(out var retval) ? retval : throw new NullReferenceException(nameof(_ADotTypeValue) + ": This property is usually set from this constructor: public Property(TProperty keyT, object objValue). Details: " + ToString());
         public bool TryGetADotTypeValue(out object aDotTypeValue) {
-            if (KeyA.A.Type == null) {
+            if (Key.A.Type == null) {
                 if (_ADotTypeValue == null) {
                     // TODO: This is NOT preferred! We are assuming string as default type
                     aDotTypeValue = V<string>(); // This will also set _ADotTypeValue for next call
                 } else {
                     aDotTypeValue = _ADotTypeValue; // TODO: This is NOT preferred! We are just accepting whatever we already have. Clean up this!
                 }
-            } else if (_ADotTypeValue != null && _ADotTypeValue.GetType().Equals(KeyA.A.Type)) {
+            } else if (_ADotTypeValue != null && _ADotTypeValue.GetType().Equals(Key.A.Type)) {
                 // This is quite OK
                 aDotTypeValue = _ADotTypeValue;
-            } else if (KeyA.A.Type.Equals(typeof(long))) {
+            } else if (Key.A.Type.Equals(typeof(long))) {
                 aDotTypeValue = V<long>();
-            } else if (KeyA.A.Type.Equals(typeof(double))) {
+            } else if (Key.A.Type.Equals(typeof(double))) {
                 aDotTypeValue = V<double>();
-            } else if (KeyA.A.Type.Equals(typeof(bool))) {
+            } else if (Key.A.Type.Equals(typeof(bool))) {
                 aDotTypeValue = V<bool>();
-            } else if (KeyA.A.Type.Equals(typeof(DateTime))) {
+            } else if (Key.A.Type.Equals(typeof(DateTime))) {
                 aDotTypeValue = V<DateTime>();
-            } else if (KeyA.A.Type.Equals(typeof(string))) {
+            } else if (Key.A.Type.Equals(typeof(string))) {
                 aDotTypeValue = V<string>();
-            } else if (KeyA.A.Type.Equals(typeof(Type))) {
+            } else if (Key.A.Type.Equals(typeof(Type))) {
                 aDotTypeValue = V<Type>();
-            } else if (KeyA.A.Type.Equals(typeof(Uri))) {
+            } else if (Key.A.Type.Equals(typeof(Uri))) {
                 aDotTypeValue = V<Uri>();
-            } else if (KeyA.A.Type.IsEnum) {
+            } else if (Key.A.Type.IsEnum) {
                 /// TODO: We should be able to call <see cref="V{T}"/> here also...
                 /// Do not use Util.EnumParse, we want a more detailed exception message
                 /// aDotTypeValue = Util.EnumParse(KeyA.A.Type, V<string>());
                 /// Or rather, do not do this either:
                 // aDotTypeValue = Util.EnumTryParse(KeyA.A.Type, V<string>(), out var temp) ? temp : throw new InvalidPropertyException("Unable to parse '" + V<string>() + "' as " + KeyA.A.Type + ". Details: " + ToString());
                 /// But this:
-                aDotTypeValue = Util.EnumTryParse(KeyA.A.Type, V<string>(), out var temp) ? temp : null; // Just give up if fails
-            } else if (typeof(ITypeDescriber).IsAssignableFrom(KeyA.A.Type)) {
-                aDotTypeValue = KeyA.TryValidateAndParse(V<string>(), out var temp) ? temp.ObjResult : null;
+                aDotTypeValue = Util.EnumTryParse(Key.A.Type, V<string>(), out var temp) ? temp : null; // Just give up if fails
+            } else if (typeof(ITypeDescriber).IsAssignableFrom(Key.A.Type)) {
+                aDotTypeValue = Key.TryValidateAndParse(V<string>(), out var temp) ? temp.ObjResult : null;
             } else {
-                throw new InvalidTypeException(KeyA.A.Type, "Not implemented. Details: " + ToString());
+                throw new InvalidTypeException(Key.A.Type, "Not implemented. Details: " + ToString());
             }
             return aDotTypeValue != null;
         }
 
-        public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + Value + "' to " + typeof(T).ToString() + ", A.Type: " + (KeyA.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
+        public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + Value + "' to " + typeof(T).ToString() + ", A.Type: " + (Key.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
         /// <summary>
         /// Result will be cached if T stays the same between each call
         /// 
@@ -528,7 +493,7 @@ namespace AgoRapide {
             if (StrValue != null) {
                 // TODO: Try to MAKE A.TryValidateAndParse GENERIC in order for it to return a more strongly typed result.
                 // TODO: Use that again to change its result-mechanism, not returning a property.
-                if (KeyA.TryValidateAndParse(StrValue, out var result)) {
+                if (Key.TryValidateAndParse(StrValue, out var result)) {
                     /// Note that TryValidateAndParse returns TRUE if no ValidatorAndParser is available
                     /// TODO: This is not good enough. FALSE would be a better result (unless TProperty is string)
                     /// TODO: because result.Result will now be set to a String value
@@ -537,7 +502,7 @@ namespace AgoRapide {
                         throw new InvalidPropertyException(
                             "Unable to cast '" + StrValue + "' to " + t + ", " +
                             "ended up with " + result.Result.StrValue.GetType() + ".\r\n" +
-                            (KeyA.ValidatorAndParser != null ?
+                            (Key.ValidatorAndParser != null ?
                                 "Very unexpected since " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was set" :
                                 "Most probably because " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was not set"
                             ) + ".\r\n" +
@@ -546,7 +511,7 @@ namespace AgoRapide {
                     if (!(result.Result.ADotTypeValue() is T)) throw new InvalidPropertyException(
                         "Unable to cast '" + StrValue + "' to " + t + ", " +
                         "ended up with " + result.Result.ADotTypeValue().GetType() + " (value: '" + result.Result.ADotTypeValue().ToString() + ").\r\n" +
-                        (KeyA.ValidatorAndParser == null ?
+                        (Key.ValidatorAndParser == null ?
                             "Very unexpected since " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was not set" :
                             "Most probably because " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " returns the wrong type of object"
                         ) + ".\r\n" +
@@ -567,7 +532,7 @@ namespace AgoRapide {
             //        throw new NotImplementedException("T: " + typeof(T).ToString() + ", A.A.Type: " + A.A.Type?.ToString() ?? "[NULL]");
             //    }
             //}
-            throw new NotImplementedException("T: " + typeof(T).ToString() + ", A.Type: " + (KeyA.A.Type?.ToString() ?? "[NULL]") + ". Details:" + ToString());
+            throw new NotImplementedException("T: " + typeof(T).ToString() + ", A.Type: " + (Key.A.Type?.ToString() ?? "[NULL]") + ". Details:" + ToString());
 
             // TODO: Decide how to implement different types. Exception or not?
         }
@@ -659,12 +624,12 @@ namespace AgoRapide {
                 if (LngValue != null) { Value = LngValue.ToString(); return; }
                 if (DblValue != null) { Value = ((double)DblValue).ToString2(); return; }
                 if (BlnValue != null) { Value = ((bool)BlnValue).ToString(); return; }
-                if (DtmValue != null) { Value = ((DateTime)DtmValue).ToString(KeyA.A.DateTimeFormat); return; }
+                if (DtmValue != null) { Value = ((DateTime)DtmValue).ToString(Key.A.DateTimeFormat); return; }
                 if (StrValue != null) { Value = StrValue; return; }
                 if (_ADotTypeValue != null) { Value = _ADotTypeValue.ToString(); return; } // TODO: Better ToString here!
-                if (true.Equals(KeyA.A.IsStrict)) {
+                if (true.Equals(Key.A.IsStrict)) {
                     // TODO: Try to MAKE A.TryValidateAndParse GENERIC in order for it to return a more strongly typed result.
-                    if (!KeyA.TryValidateAndParse(Value, out var parseResult)) throw new InvalidPropertyException(parseResult.ErrorResponse + ". Details: " + ToString());
+                    if (!Key.TryValidateAndParse(Value, out var parseResult)) throw new InvalidPropertyException(parseResult.ErrorResponse + ". Details: " + ToString());
                     // TODO: This is difficult. Result._ADotTypeValue is most probably not set
                     _ADotTypeValue = parseResult.Result._ADotTypeValue;
                     // TODOk: FIX!!!
@@ -676,7 +641,7 @@ namespace AgoRapide {
                 // TODO: REPLACE WITH KIND OF "NO KNOWN TYPE OF PROPERTY VALUE FOUND"
                 throw new InvalidPropertyException("Unable to find string value for " + ToString());
             })();
-            if (KeyA.ValidatorAndParser != null) {
+            if (Key.ValidatorAndParser != null) {
                 // We could consider running the validator now if it was not already run, 
                 // but it would be quite meaningless
                 // if it is a standard TryParse for Long for instance, because LngValue is already set
@@ -694,18 +659,24 @@ namespace AgoRapide {
             public InvalidPropertyException(string message) : base(message) { }
         }
 
+        /// <summary>
+        /// Note: This method must be absolutely failsafe since it provides debug information.
+        /// Note: Make sure it never introduces any recursivity or chance for exceptions being thrown.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString() =>
             nameof(ParentId) + ": " + ParentId + ", " +
-            nameof(KeyDB) + ": " + KeyDB + ", " +
-            nameof(Value) + ": " + Value + ", " +
+            nameof(KeyDB) + ": " + (_keyDB ?? "[NULL]") + ", " +
+            nameof(Key.CoreProperty) + ": " + (Key?.PExplained ?? "[NULL]") + ", " +
+            nameof(Value) + ": " + (Value ?? "[NULL]") + ", " +
             nameof(LngValue) + ": " + (LngValue?.ToString() ?? "[NULL]") + ", " +
             nameof(DblValue) + ": " + (DblValue?.ToString() ?? "[NULL]") + ", " +
             nameof(BlnValue) + ": " + (BlnValue?.ToString() ?? "[NULL]") + ", " +
             nameof(DtmValue) + ": " + (DtmValue?.ToString() ?? "[NULL]") + ", " +
             nameof(GeoValue) + ": " + (GeoValue?.ToString() ?? "[NULL]") + ", " +
-            nameof(StrValue) + ": " + (StrValue ?? "[NULL]") + ", " +
-            nameof(KeyA) + "." + nameof(KeyA.A) + "." +
-            nameof(KeyA.A.Type) + ": " + (KeyA.A.Type?.ToString() ?? "[NULL]") + ". " + base.ToString();
+            nameof(StrValue) + ": " + (StrValue ?? "[NULL]") + 
+            (_key == null ? "" : (", " + nameof(Key) + "." + nameof(Key.A) + "." + nameof(Key.A.Type) + ": " + (_key.A.Type?.ToString() ?? "[NULL]"))) + ". " 
+            + base.ToString();
 
         public override string ToHTMLTableHeading(Request request) => HTMLTableHeading;
         public const string HTMLTableHeading = "<tr><th>Key</th><th>Value</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
@@ -740,21 +711,21 @@ namespace AgoRapide {
             return "<tr><td>" +
 
                 // Key
-                (string.IsNullOrEmpty(KeyA.A.Description) ? "" : "<span title=\"" + KeyA.A.Description.HTMLEncode() + "\">") +
+                (string.IsNullOrEmpty(Key.A.Description) ? "" : "<span title=\"" + Key.A.Description.HTMLEncode() + "\">") +
                 (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) +
-                (string.IsNullOrEmpty(KeyA.A.Description) ? "" : " (+)</span>") +
+                (string.IsNullOrEmpty(Key.A.Description) ? "" : " (+)</span>") +
                 "</td><td>" +
 
                 // Value
                 (IsTemplateOnly || string.IsNullOrEmpty(ValueA.Description) ? "" : "<span title=\"" + ValueA.Description.HTMLEncode() + "\">") +
-                ((!IsChangeableByCurrentUser || KeyA.A.ValidValues != null) ?
+                ((!IsChangeableByCurrentUser || Key.A.ValidValues != null) ?
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
-                    (KeyA.A.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : V<string>().HTMLEncodeAndEnrich(request))) :
+                    (Key.A.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : V<string>().HTMLEncodeAndEnrich(request))) :
                     (
                         "<input " + // TODO: Vary size according to attribute.
                             "id=\"input_" + KeyHTML + "\"" +
-                            (!KeyA.A.IsPassword ? "" : " type=\"password\"") +
-                            " value=\"" + (IsTemplateOnly || KeyA.A.IsPassword ? "" : V<string>().HTMLEncode()) + "\"" +
+                            (!Key.A.IsPassword ? "" : " type=\"password\"") +
+                            " value=\"" + (IsTemplateOnly || Key.A.IsPassword ? "" : V<string>().HTMLEncode()) + "\"" +
                         "/>" +
                         "<label " +
                             "id=\"error_" + KeyHTML + "\"" +
@@ -766,7 +737,7 @@ namespace AgoRapide {
                 "</td><td>" +
 
                 (!IsChangeableByCurrentUser ? "&nbsp;" :
-                    (KeyA.A.ValidValues == null ?
+                    (Key.A.ValidValues == null ?
                         (
                             // Ordinary textbox was presented. Add button.
 
@@ -808,7 +779,7 @@ namespace AgoRapide {
                             "<option value=\"\">[Choose " + Name.HTMLEncode() + "...]</option>\r\n" +
                             /// TODO: Add to <see cref="AgoRapideAttribute.ValidValues"/> a List of tuples with description for each value
                             /// TODO: (needed for HTML SELECT tags)
-                            string.Join("\r\n", KeyA.A.ValidValues.Select(v => "<option value=\"" + v + "\">" + v.HTMLEncode() + "</option>")) +
+                            string.Join("\r\n", Key.A.ValidValues.Select(v => "<option value=\"" + v + "\">" + v.HTMLEncode() + "</option>")) +
                             "</select>"
                         )
                     )
@@ -828,10 +799,10 @@ namespace AgoRapide {
             var retval = new StringBuilder();
             retval.AppendLine("<table><tr><th>Field</th><th>Value</th></tr>");
             var adder = new Action<DBField, string>((field, value) => {
-                var A = field.GetAgoRapideAttribute();
+                var A = field.GetAgoRapideAttributeT();
                 var includeDescription = new Func<string>(() => {
                     switch (field) {
-                        case DBField.key: if (!string.IsNullOrEmpty(KeyA.A.Description)) return KeyA.A.Description.HTMLEncode(); return null;
+                        case DBField.key: if (!string.IsNullOrEmpty(A.A.Description)) return A.A.Description.HTMLEncode(); return null;
                         case DBField.strv: if (!string.IsNullOrEmpty(ValueA.Description)) return ValueA.Description.HTMLEncode(); return null;
                         default: return null;
                     }
@@ -848,7 +819,7 @@ namespace AgoRapide {
                     "</td></tr>");
             });
             var adderWithLink = new Action<DBField, long?>((field, value) => {
-                var A = field.GetAgoRapideAttribute();
+                var A = field.GetAgoRapideAttributeT();
                 retval.AppendLine("<tr><td>" +
                     (string.IsNullOrEmpty(A.A.Description) ? "" : "<span title=\"" + A.A.Description.HTMLEncode() + "\">") +
                     field.ToString() +
@@ -923,7 +894,7 @@ namespace AgoRapide {
                     if (Properties != null) {
                         p.Properties = new Dictionary<string, JSONProperty0>();
                         Properties.ForEach(i => {
-                            p.Properties.Add(i.Value.A.PToString, i.Value.ToJSONProperty());
+                            p.Properties.Add(i.Value.Key.PToString, i.Value.ToJSONProperty());
                         });
                     }
                 });
@@ -945,7 +916,7 @@ namespace AgoRapide {
                     Created = Created,
                     CreatorId = CreatorId,
                     ParentId = ParentId,
-                    Key = A.PToString,
+                    Key = Key.PToString,
                     Value = V<string>(),
                     Valid = Valid,
                     ValidatorId = ValidatorId,
@@ -1002,7 +973,7 @@ namespace AgoRapide {
         /// TODO: We should really consider if there is any point in this property, as it often shows up as
         /// key in containing JSON dictionary anyway.
         /// 
-        /// Is currently <see cref="AgoRapideAttributeEnrichedT.PToString"/>. Maybe change to ToStringShort or similar.
+        /// Is currently <see cref="AgoRapideAttributeEnriched.PToString"/>. Maybe change to ToStringShort or similar.
         /// </summary>
         public string Key { get; set; }
         public List<string> ValidValues;

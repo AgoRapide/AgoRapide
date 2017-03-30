@@ -119,16 +119,16 @@ namespace AgoRapide.API {
                             request.Result.ResultCode = ResultCode.missing_parameter_error;
                             request.Result.SingleEntityResult = retval;
                             var s = retval.FirstNonMatchingSegment;
-                            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(),
+                            request.Result.AddProperty(CoreProperty.Message.A(),
                                 "It looks like you tried to access method\r\n" + candidateMatches.Item1[0].ToString() + "\r\n" +
                                 (s.Parameter == null ?
                                     "but " + s.SegmentName + " is missing from your URL.\r\n" :
-                                    "but parameter {" + s.ParameterA.PToString + "} is missing from your URL\r\n") +
+                                    "but parameter {" + s.Parameter.PToString + "} is missing from your URL\r\n") +
                                 (string.IsNullOrEmpty(s.SampleValues[0]) ?
-                                    ("Unable to suggest a value for you for this missing parameter" + ((s.ParameterA?.A.IsPassword ?? false) ? " since it is a password (you must come up with a value by yourself)" : "")) :
+                                    ("Unable to suggest a value for you for this missing parameter" + ((s.Parameter?.A.IsPassword ?? false) ? " since it is a password (you must come up with a value by yourself)" : "")) :
                                     "Try to add '" + s.SampleValues[0] + "' to your URL") +
                                 tip);
-                            request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), retval.PV<string>(CoreProperty.SuggestedUrl.A()));
+                            request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), retval.PV<string>(CoreProperty.SuggestedUrl.A()));
                             return request.GetResponse();
                         }
                     default: {
@@ -136,7 +136,7 @@ namespace AgoRapide.API {
                             var retval = candidateMatches.Item1.Select(m => new APIMethodCandidate(request, m, candidateMatches.Item2)).Take(10).ToList();
                             request.Result.ResultCode = ResultCode.missing_parameter_error;
                             request.Result.MultipleEntitiesResult = retval.Select(r => (BaseEntityT)r).ToList();
-                            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(),
+                            request.Result.AddProperty(CoreProperty.Message.A(),
                                 "Your query URL is incomplete.\r\n" +
                                 "Details:\r\n" + candidateMatches.Item3 + "\r\n" +
                                 "-----------\r\n" +
@@ -144,14 +144,14 @@ namespace AgoRapide.API {
                                 string.Join("\r\n", retval.Select(c => c.Method.ToString())) + "\r\n?" +
                                 "-----------\r\n" +
                                 tip);
-                            request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), string.Join("\r\n", retval.Select(c => c.SuggestedUrl)));
+                            request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), string.Join("\r\n", retval.Select(c => c.SuggestedUrl)));
                             return request.GetResponse();
                         }
                 }
             } else if (maybeIntended != null) {
                 if (maybeIntended.Item1.Count == 0) throw new InvalidCountException(nameof(maybeIntended) + ".Count: " + maybeIntended.Item1.Count);
                 request.Result.ResultCode = ResultCode.client_error;
-                request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(),
+                request.Result.AddProperty(CoreProperty.Message.A(),
                     "Your query URL was not understood at all.\r\n" +
                     "Details:\r\n" + maybeIntended.Item2 + "\r\n" +
                     "-----------\r\n" +
@@ -165,8 +165,8 @@ namespace AgoRapide.API {
                 // var docUrl = request.CreateAPIUrl("") does not work (will give us /api//HTML for example)
                 // Therefore we must create the URL manually now:
                 var docUrl = Util.Configuration.RootUrl + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicatorWithoutLeadingSlash : "");
-                request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), docUrl);
-                request.Result.AddProperty(CoreProperty.APIDocumentationUrl.GetAgoRapideAttribute(), docUrl);
+                request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), docUrl);
+                request.Result.AddProperty(CoreProperty.APIDocumentationUrl.A(), docUrl);
                 return request.GetResponse();
             } else {
                 throw new NullReferenceException("None of " + nameof(exactMatch) + ", " + nameof(candidateMatches) + " or " + nameof(maybeIntended) + " was set");
@@ -178,8 +178,8 @@ namespace AgoRapide.API {
             Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(p1) + ": " + p1 + ", " + nameof(p2) + ": " + p2 + ", " + nameof(p3) + ": " + p3 + ", " + nameof(p4) + ": " + p4 + ", " + nameof(p5) + ": " + p5);
             method.A.A.AssertCoreMethod(CoreMethod.AddEntity);
             if (!TryGetRequest(p1, p2, p3, p4, p5, method, out var request, out var errorResponse)) return errorResponse;
-            foreach (var p in request.Parameters.Properties.Values.Where(p => p.KeyA.A.IsUniqueInDatabase)) {
-                if (!DB.TryAssertUniqueness(p.A, p.ADotTypeValue(), out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
+            foreach (var p in request.Parameters.Properties.Values.Where(p => p.Key.A.IsUniqueInDatabase)) {
+                if (!DB.TryAssertUniqueness(p.Key, p.ADotTypeValue(), out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
             }
             return request.GetOKResponseAsEntityId(method.EntityType, DB.CreateEntity(request.CurrentUser.Id, method.EntityType, request.Parameters, request.Result));
         }
@@ -212,20 +212,20 @@ namespace AgoRapide.API {
             /// Validate value. Note how TryGetRequest was only able to validate value as string 
             /// because <see cref="CoreMethod.UpdateProperty"/> does not know anything about which values are valid for which keys.
             /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
-            var a = tPropertyKey.GetAgoRapideAttribute();
+            var a = tPropertyKey.A();
             if (!a.TryValidateAndParse(strValue, out var parseResult)) return request.GetErrorResponse(ResultCode.invalid_parameter_error, parseResult.ErrorResponse);
             var objValue = parseResult.Result.ADotTypeValue();
 
-            if (tPropertyKey.GetAgoRapideAttribute().A.IsUniqueInDatabase) {
+            if (tPropertyKey.A().A.IsUniqueInDatabase) {
                 if (!DB.TryAssertUniqueness(a, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(new Tuple<ResultCode, string>(ResultCode.data_error, strErrorResponse));
             }
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, a, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
-            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(), nameof(entities) + ".Count: " + entities.Count);
+            request.Result.AddProperty(CoreProperty.Message.A(), nameof(entities) + ".Count: " + entities.Count);
             return request.GetResponse();
         }
 
@@ -238,9 +238,9 @@ namespace AgoRapide.API {
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl.GetAgoRapideAttribute(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
-            request.Result.AddProperty(CoreProperty.Message.GetAgoRapideAttribute(), nameof(properties) + ".Count: " + properties.Count);
+            request.Result.AddProperty(CoreProperty.Message.A(), nameof(properties) + ".Count: " + properties.Count);
             return request.GetResponse();
         }
 
@@ -384,29 +384,30 @@ namespace AgoRapide.API {
                     if (parameter != null) throw new SuperfluousParameterException("Parameter " + index + " (which was given with value '" + parameter + "') is superfluous to " + nameof(method) + " (" + method.Name + ") which has only " + method.Parameters.Count + " parameters defined");
                     return true;
                 }
-                var p = method.Parameters[index - 1].cp; // TODO: Use better names (cp maybe? and a maybe?)
-                var ea = method.Parameters[index - 1].a;
-                if (parameter == null) parameter = ea.A.DefaultValue;
+                //var p = method.Parameters[index - 1].cp; // TODO: Use better names (cp maybe? and a maybe?)
+                //var ea = method.Parameters[index - 1].a;
+                var par = method.Parameters[index - 1];
+                if (parameter == null) parameter = par.A.DefaultValue;
                 if (parameter == null) { // Missing parameter and no default available
                     errorResponseTemp = new Request(Request, method, currentUser, exceptionHasOccurred: false).GetErrorResponse(
                         ResultCode.missing_parameter_error,
-                        "Parameter " + index + " (" + ea.PToString + ") is missing and there was no " + nameof(AgoRapideAttribute) + "." + nameof(ea.A.DefaultValue) + " defined.\r\n" +
-                        (ea.A.ValidValues != null && ea.A.ValidValues.Length > 0 ? ("\r\n" + nameof(ea.A.ValidValues) + ":\r\n" + string.Join(", ", ea.A.ValidValues)) :
-                        (ea.A.SampleValues != null && ea.A.SampleValues.Length > 0 ? ("\r\n" + nameof(ea.A.SampleValues) + ":\r\n" + string.Join(", ", ea.A.SampleValues)) : "")));
+                        "Parameter " + index + " (" + par.PToString + ") is missing and there was no " + nameof(AgoRapideAttribute) + "." + nameof(par.A.DefaultValue) + " defined.\r\n" +
+                        (par.A.ValidValues != null && par.A.ValidValues.Length > 0 ? ("\r\n" + nameof(par.A.ValidValues) + ":\r\n" + string.Join(", ", par.A.ValidValues)) :
+                        (par.A.SampleValues != null && par.A.SampleValues.Length > 0 ? ("\r\n" + nameof(par.A.SampleValues) + ":\r\n" + string.Join(", ", par.A.SampleValues)) : "")));
                     return false;
                 }
 
-                if (!ea.TryCleanAndValidateAndParse(parameter, out var parseResult)) {
+                if (!par.TryCleanAndValidateAndParse(parameter, out var parseResult)) {
                     errorResponseTemp = new Request(Request, method, currentUser, exceptionHasOccurred: false).GetErrorResponse(
                         ResultCode.invalid_parameter_error,
-                        "Parameter " + index + " (" + ea.PToString + ") is invalid.\r\n" +
+                        "Parameter " + index + " (" + par.PToString + ") is invalid.\r\n" +
                         "Details: " + parseResult.ErrorResponse + ". " +
-                        (ea.A.ValidValues != null && ea.A.ValidValues.Length > 0 ? ("\r\n" + nameof(ea.A.ValidValues) + ":\r\n" + string.Join(", ", ea.A.ValidValues)) :
-                        (ea.A.SampleValues != null && ea.A.SampleValues.Length > 0 ? ("\r\n" + nameof(ea.A.SampleValues) + ":\r\n" + string.Join(", ", ea.A.SampleValues)) : "")));
+                        (par.A.ValidValues != null && par.A.ValidValues.Length > 0 ? ("\r\n" + nameof(par.A.ValidValues) + ":\r\n" + string.Join(", ", par.A.ValidValues)) :
+                        (par.A.SampleValues != null && par.A.SampleValues.Length > 0 ? ("\r\n" + nameof(par.A.SampleValues) + ":\r\n" + string.Join(", ", par.A.SampleValues)) : "")));
                     return false;
                 }
-                parameters.AddValue2(p, parseResult.Result);
-                Log("Parameter " + ea.PToString + ": " + parameter);
+                parameters.AddValue2(par.CoreProperty, parseResult.Result);
+                Log("Parameter " + par.PToString + ": " + parameter);
                 return true;
             });
 

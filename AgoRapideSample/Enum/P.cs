@@ -77,25 +77,25 @@ namespace AgoRapideSample {
         /// You only have to map those <see cref="CoreProperty"/> values for which you want to specify attributes.
         /// The other <see cref="CoreProperty"/> will be "silently" mapped to P anyway through <see cref="EnumMapper"/>
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, CoreProperty = CoreProperty.Username)] // TODO: Add email class like Type = typeof(EMail) with standardised AgoRapide interface.
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.Username))] // TODO: Add email class like Type = typeof(EMail) with standardised AgoRapide interface.
         Email,
 
-        [AgoRapide(Group = typeof(PUD), CoreProperty = CoreProperty.Password)]
+        [AgoRapide(Group = typeof(PUD), InheritAndEnrichFromProperty = nameof(CoreProperty.Password))]
         Password,
 
-        [AgoRapide(Group = typeof(PUD), CoreProperty = CoreProperty.EntityToRepresent)]
+        [AgoRapide(Group = typeof(PUD), InheritAndEnrichFromProperty = nameof(CoreProperty.EntityToRepresent))]
         EntityToRepresent,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, CoreProperty = CoreProperty.AccessLevelGiven)]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.AccessLevelGiven))]
         AccessLevelGiven,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, CoreProperty = CoreProperty.RepresentedByEntity)]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.RepresentedByEntity))]
         RepresentedByEntity,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, CoreProperty = CoreProperty.RejectCredentialsNextTime)]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.RejectCredentialsNextTime))]
         RejectCredentialsNextTime,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, CoreProperty = CoreProperty.AuthResult)]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.AuthResult))]
         AuthResult,
 
         [AgoRapide(
@@ -121,7 +121,7 @@ namespace AgoRapideSample {
     }
 
     public static class Extensions {
-        public static AgoRapideAttributeEnriched A(this P p) => EnumMapper.GetCPA(p).a;
+        public static AgoRapideAttributeEnriched A(this P p) => EnumMapper.GetCPA(p);
         ///// <summary>
         ///// TODO: REMOVE THIS, NO LONGER NEEDED
         ///// </summary>

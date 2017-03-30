@@ -336,8 +336,11 @@ namespace AgoRapide.Core {
                     }
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
-                        var a = new AgoRapideAttributeEnrichedT<CoreProperty>(Value.GetAgoRapideAttribute(), null); // TODO: Verify that null is cor
-                        sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" + a.PToString + "'");
+                        //var a = new AgoRapideAttributeEnrichedT<CoreProperty>(Value.GetAgoRapideAttribute(), null); // TODO: Verify that null is cor
+                        //sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" + a.PToString + "'");                        
+                        sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" +
+                            (EnumMapper.TryGetCPA(Value.ToString(), out var cpa) ? cpa.PToString : Value.ToString()) +
+                            "'"); 
                     }
                     if (Value is ITypeDescriber) {
                         Operator.AssertValidForType(typeof(string), detailer);

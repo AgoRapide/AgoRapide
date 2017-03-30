@@ -59,7 +59,7 @@ namespace AgoRapide.Core {
         /// <param name="value"></param>
         /// <param name="details"></param>
         public static void AddValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> details) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetAgoRapideAttribute().PExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + details.Result(", Details: "));
+            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetAgoRapideAttributeT().PExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + details.Result(", Details: "));
             dictionary.Add(key, value);
         }
 
@@ -114,7 +114,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Gives better error messages when reading value from directory if key does not exist
         /// 
-        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/>
+        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -130,11 +130,31 @@ namespace AgoRapide.Core {
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\nDetails: "));
         }
 
+        public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) => GetValue(dictionary, key, null);
+        /// <summary>
+        /// Gives better error messages when reading value from directory if key does not exist
+        /// 
+        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <param name="key"></param>
+        /// <param name="detailer">
+        /// May be null
+        /// Used to give details in case of an exception being thrown
+        /// </param>
+        /// <returns></returns>
+        public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) {
+            if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\nDetails: "));
+        }
+
         public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null); // What we really would want is "where T : Enum"
         /// <summary>
         /// Gives better error messages when reading value from directory if key does not exist
         /// 
-        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/>
+        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -150,6 +170,27 @@ namespace AgoRapide.Core {
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\nDetails: "));
         }
 
+        public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null);  // What we really would want is "where T : Enum"
+        /// <summary>
+        /// Gives better error messages when reading value from directory if key does not exist
+        /// 
+        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <param name="key"></param>
+        /// <param name="detailer">
+        /// May be null
+        /// Used to give details in case of an exception being thrown
+        /// </param>
+        /// <returns></returns>
+        public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\nDetails: "));
+        }
+
+
         public static string ListAsString<T>(this List<T> list) {
             if (list.Count > 100) return nameof(list) + ".Count: " + list.Count;
             return nameof(list) + ": " + string.Join(", ", list.Select(i => i.ToString()));
@@ -158,7 +199,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Gives a compressed overview of keys in a dictionary. Helpful for building exception messages. 
         /// 
-        /// Note how <see cref="KeysAsString2"/> is more preferable than <see cref="KeysAsString"/>
+        /// Note how <see cref="KeysAsString2"/> is more preferable than <see cref="KeysAsString"/> due to restrictions on <typeparamref name="TKey"/>
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -170,11 +211,25 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
+        /// Gives a compressed overview of keys in a dictionary. Helpful for building exception messages. 
+        /// 
+        /// Note how <see cref="KeysAsString2"/> is more preferable than <see cref="KeysAsString"/> due to restrictions on <typeparamref name="TKey"/>
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <returns></returns>
+        public static string KeysAsString<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary) {
+            if (dictionary.Count > 100) return "Keys.Count: " + dictionary.Keys.Count;
+            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys);
+        }
+
+        /// <summary>
         /// TODO: This does not work as intended after mapping TO <see cref="CoreProperty"/> in Mar 2017.
         /// 
         /// Gives a compressed overview of keys in a dictionary. Helpful for building exception messages. 
         /// 
-        /// Note how <see cref="KeysAsString2"/> is more preferable than <see cref="KeysAsString"/>
+        /// Note how <see cref="KeysAsString2"/> is more preferable than <see cref="KeysAsString"/> due to restrictions on <typeparamref name="TKey"/>
         /// 
         /// Use this instead of <see cref="KeysAsString"/> whenever possible in order to get silently mapped <see cref="CoreProperty"/>-values better presented. 
         /// </summary>
@@ -185,7 +240,26 @@ namespace AgoRapide.Core {
         public static string KeysAsString2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary.Count > 100) return "Keys.Count: " + dictionary.Keys.Count;
             if (!typeof(TKey).IsEnum) return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.ToString()));
-            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.GetAgoRapideAttribute().PExplained));
+            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.GetAgoRapideAttributeT().PExplained));
+        }
+
+        /// <summary>
+        /// TODO: This does not work as intended after mapping TO <see cref="CoreProperty"/> in Mar 2017.
+        /// 
+        /// Gives a compressed overview of keys in a dictionary. Helpful for building exception messages. 
+        /// 
+        /// Note how <see cref="KeysAsString2"/> is more preferable than <see cref="KeysAsString"/> due to restrictions on <typeparamref name="TKey"/>
+        /// 
+        /// Use this instead of <see cref="KeysAsString"/> whenever possible in order to get silently mapped <see cref="CoreProperty"/>-values better presented. 
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <returns></returns>
+        public static string KeysAsString2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            if (dictionary.Count > 100) return "Keys.Count: " + dictionary.Keys.Count;
+            if (!typeof(TKey).IsEnum) return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.ToString()));
+            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.GetAgoRapideAttributeT().PExplained));
         }
 
         /// <summary>
@@ -469,7 +543,7 @@ namespace AgoRapide.Core {
         /// <param name="type"></param>
         /// <returns></returns>
         public static Dictionary<CoreProperty, AgoRapideAttributeEnriched> GetChildProperties(this Type type) =>
-             _allChildProperties.GetOrAdd(type, t => EnumMapper.AllCoreProperty.Where(cpa => cpa.a.IsParentFor(type)).ToDictionary(cpa => cpa.cp, cpa => cpa.a));
+             _allChildProperties.GetOrAdd(type, t => EnumMapper.AllCoreProperty.Where(cpa => cpa.IsParentFor(type)).ToDictionary(cpa => cpa.CoreProperty, cpa => cpa));
         //    var r = new Dictionary<CoreProperty, AgoRapideAttributeT>();
         //    Util.EnumGetValues<CoreProperty>().ForEach(e => {
         //        var a = e.GetAgoRapideAttribute();
@@ -500,15 +574,15 @@ namespace AgoRapide.Core {
 
         private static ConcurrentDictionary<Type, ConcurrentDictionary<string, AgoRapideAttribute>> allAgoRapideAttributeForEnum = new ConcurrentDictionary<Type, ConcurrentDictionary<string, AgoRapideAttribute>>();
         /// <summary>
+        /// Only used by <see cref="Property.ValueA"/>
+        /// 
         /// Returns <see cref="AgoRapideAttribute"/> for <paramref name="_enum"/>.
         /// 
-        /// Note that this method gets ONLY the <see cref="AgoRapideAttribute"/> (instead of the enriched <see cref="AgoRapideAttributeT"/>)
-        /// for an individual <paramref name="_enum"/>. This is only relevant when you do not posess the generic parameter necessary for 
-        /// calling <see cref="GetAgoRapideAttribute{T}"/> extension method. 
-        /// In other words, do not use this method but use the more sophisticated method<see cref="GetAgoRapideAttribute{T}"/> if possible.
+        /// Note that this method gets ONLY the <see cref="AgoRapideAttribute"/> (instead of the enriched <see cref="AgoRapideAttributeEnriched"/>)
+        /// for an individual <paramref name="_enum"/>. This is only relevant when you do not possess the generic parameter necessary for 
+        /// calling <see cref="Extensions.GetAgoRapideAttributeT"/>.
+        /// In other words, normally do not use this method but use the more sophisticated method <see cref="Extensions.GetAgoRapideAttributeT"/> whenever possible.
         /// (since that method again returns a much more sophisticated object back)
-        /// 
-        /// Note use of caching
         /// </summary>
         /// <param name="_enum"></param>
         /// <returns></returns>
@@ -524,23 +598,38 @@ namespace AgoRapide.Core {
         /// TODO: Consider using ordinary dictionary and demand all enums to be registered at application startup.
         /// TODO: OR: 
         /// </summary>
-        private static ConcurrentDictionary<Type, Dictionary<int, object>> allAgoRapideAttributeTForEnum = new ConcurrentDictionary<Type, Dictionary<int, object>>();
+        private static ConcurrentDictionary<Type, Dictionary<int, AgoRapideAttributeEnriched>> allAgoRapideAttributeTForEnum = new ConcurrentDictionary<Type, Dictionary<int, AgoRapideAttributeEnriched>>();
+        public static AgoRapideAttributeEnriched GetAgoRapideAttributeT<T>(this T _enum) where T : struct, IFormattable, IConvertible, IComparable => GetAgoRapideAttributeT(_enum, null);
         /// <summary>
         /// Note use of caching
+        /// 
+        /// Note how we do not return a <see cref="AgoRapideAttributeEnrichedT{T}"/> object because of <see cref="ReplaceAgoRapideAttribute{T}"/> 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="_enum"></param>
+        /// <param name="coreProperty">Signifies that this is an entity property enum</param>
         /// <returns></returns>
-        public static AgoRapideAttributeEnrichedT<T> GetAgoRapideAttribute<T>(this T _enum) where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
-            (AgoRapideAttributeEnrichedT<T>)allAgoRapideAttributeTForEnum.
+        public static AgoRapideAttributeEnriched GetAgoRapideAttributeT<T>(this T _enum, CoreProperty? coreProperty) where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
+            // (AgoRapideAttributeEnrichedT<T>)allAgoRapideAttributeTForEnum.
+            allAgoRapideAttributeTForEnum.
                 GetOrAdd(typeof(T), dummy => {
                     NotOfTypeEnumException.AssertEnum(typeof(T));
-                    return Util.EnumGetValues<T>(exclude: (T)(object)-1). // Note how we also want the .None value (therefore exclude -1 below)
-                        ToDictionary(e => (int)(object)e, e => (object)(new AgoRapideAttributeEnrichedT<T>(AgoRapideAttribute.GetAgoRapideAttribute(e), null)));
+                    return Util.EnumGetValues(exclude: (T)(object)-1). // Note how we also want the .None value (therefore exclude -1 below)
+                        ToDictionary(e => (int)(object)e, e => (AgoRapideAttributeEnriched)(new AgoRapideAttributeEnrichedT<T>(AgoRapideAttribute.GetAgoRapideAttribute(e), coreProperty)));
                 }).
                 GetValue2((int)(object)_enum, () => "Hint: Is " + _enum + " a valid value for " + typeof(T) + "?");
 
-        public static AgoRapideAttributeEnriched A(this CoreProperty coreProperty) => EnumMapper.GetCPA(coreProperty).a;
+        /// <summary>
+        /// Only to be called at application startup from <see cref="EnumMapper."/>. 
+        /// Replaces found dictionary with one that contains overridden values (if any)
+        /// </summary>
+        /// <param name="attributes"></param>
+        public static void ReplaceAgoRapideAttribute(Type type, Dictionary<int, AgoRapideAttributeEnriched> attributes) {
+            if (!allAgoRapideAttributeForEnum.ContainsKey(type)) throw new KeyNotFoundException(type + " not found in " + nameof(allAgoRapideAttributeForEnum)); 
+            allAgoRapideAttributeTForEnum[type] = attributes;
+        }
+
+        public static AgoRapideAttributeEnriched A(this CoreProperty coreProperty) => EnumMapper.GetCPA(coreProperty);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {

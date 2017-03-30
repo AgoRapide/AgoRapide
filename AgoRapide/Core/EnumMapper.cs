@@ -19,7 +19,7 @@ namespace AgoRapide {
         /// Key is enum type which is mapped from. Value is dictionary with values for each enum-value again. 
         /// Note how adding to this dictionary is supposed to be always done by a single thread through <see cref="MapEnum{T}"/>. 
         /// </summary>
-        private static Dictionary<Type, Dictionary<int, CPA>> fromEnumMaps = new Dictionary<Type, Dictionary<int, CPA>>();
+        private static Dictionary<Type, Dictionary<int, AgoRapideAttributeEnriched>> fromEnumMaps = new Dictionary<Type, Dictionary<int, AgoRapideAttributeEnriched>>();
 
         /// <summary>
         /// TODO: Define atomic increasing of this value.
@@ -32,8 +32,20 @@ namespace AgoRapide {
         /// Populated through <see cref="MapEnum{T}"/>. 
         /// Used at ordinary reading from database. 
         /// </summary>
-        private static ConcurrentDictionary<string, CPA> fromStringMaps = new ConcurrentDictionary<string, CPA>();
+        private static ConcurrentDictionary<string, AgoRapideAttributeEnriched> fromStringMaps = new ConcurrentDictionary<string, AgoRapideAttributeEnriched>();
 
+        /// <summary>
+        /// The order in which <see cref="MapEnum"/> is being called. 
+        /// </summary>
+        private static List<Type> mapOrders = new List<Type>();
+
+        //public static void AssertNoPreviousInitializationOfAttributeIfEntityPropertyEnum<T>(T _enum) {
+        //    if (!mapOrders.Contains(typeof(T))) return; 
+        //    if (from)
+        //}
+
+        // private static HashSet<Type> mappedEnums = new HashSet<Type>();
+        private static Dictionary<Type, List<string>> overriddenAttributes = new Dictionary<Type, List<string>>();
         /// <summary>
         /// TODO: Rename into something else. MapEnum for instance.
         /// 
@@ -43,57 +55,83 @@ namespace AgoRapide {
         /// 
         /// TODO: EXPAND ON THIS EXPLANATION:
         /// Note how name collisions against <see cref="fromStringMaps"/> are simply ignored. 
-        /// Client is expected to call <see cref="MapEnum{T}"/> starting with the innermost library, like RegisterEnum{CoreProperty} 
+        /// Client is expected to call <see cref="MapEnum{T}"/> starting with the innermost library, like <see cref="MapEnum"/> for <see cref="CoreProperty"/>
         /// and then moving outwards towards the final application layer. 
-        /// This results naturally in the final application being able to override settings done by the core library.
+        /// This results in the final application being able to override settings done by the core library.
+        /// End with a call to <see cref="MapEnumFinalize"/>. 
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="noticeLogger">Used for logging notices about mapping process.</param>
+        /// <param name="noticeLogger">
+        /// Used for logging notices about mapping process.
+        /// TODO: What about simply returning a string for logging instead?
+        /// </param>
         public static void MapEnum<T>(Action<string> noticeLogger) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-            if (fromEnumMaps.ContainsKey(typeof(T))) {
+            if (overriddenAttributes.ContainsKey(typeof(T))) {
                 noticeLogger( // TODO: Consider eliminating this possibility through smarter implementation and instead throwing exception now
                 "NOTICE: Duplicate calls made to " + nameof(MapEnum) + " for " + typeof(T) + ". " +
                 "This is quite normal if for instance multiple assemblies calls " + nameof(MapEnum) + " for " + nameof(CoreProperty));
                 return;
             }
-            _allCoreProperty = null;
-            fromEnumMaps.Add(typeof(T), Util.EnumGetValues<T>().ToDictionary(e => (int)(object)e, e => {
+            _allCoreProperty = null; // TODO: REMOVE USE OF THIS!
+            overriddenAttributes[typeof(T)] = new List<string>();
+            // fromEnumMaps.Add(typeof(T), Util.EnumGetValues<T>().ToDictionary(e => (int)(object)e, e => {
+            Util.EnumGetValues<T>().ToDictionary(e => (int)(object)e, e => {
                 var coreProperty = e is CoreProperty ? (CoreProperty)(object)e : (CoreProperty)GetNextCorePropertyId();
-                var aTemp = e.GetAgoRapideAttribute();
-                var a = aTemp as AgoRapideAttributeEnrichedT<CoreProperty> ?? new AgoRapideAttributeEnrichedT<CoreProperty>(aTemp.A, coreProperty);
-                var retval = new CPA { cp = coreProperty, a = a };
-                if (fromStringMaps.TryGetValue(e.ToString(), out var existing)) noticeLogger(
-                    "NOTICE: Duplicate '" + e.ToString() + "'.\r\n" +
-                    nameof(existing) + ": " + existing.cp.ToString() + "\r\n" + /// TODO: Change to <see cref="AgoRapideAttributeEnrichedT.PToString"/>
-                    "will be replaced by\r\n" +
-                    nameof(retval) + ": " + retval.cp.ToString() + "\r\n" + /// TODO: Change to <see cref="AgoRapideAttributeEnrichedT.PToString"/>
-                    "This is quite normal as long as calls to " + nameof(MapEnum) + " " +
-                    "are made in order of increasing distance from core AgoRapide-library " +
-                    "giving final application code override authority over library definitions");
+                var retval = e.GetAgoRapideAttributeT(coreProperty);
+                if (fromStringMaps.TryGetValue(e.ToString(), out var existing)) {
+                    overriddenAttributes.GetValue(existing.A.Property.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
+                        existing.A.Property.GetType().ToStringShort() + "." + existing.A.Property + " replaced by " + typeof(T).ToStringShort() + "." + e);
+                }
                 fromStringMaps[e.ToString()] = retval; // TODO: Consider handling name collisions differently here... 
                 return retval;
-            }));
+            });
+            mapOrders.Add(typeof(T));
         }
+
+        /// <summary>
+        /// To be called once at application initialization.
+        /// 
+        /// Note how subsequent calls to <see cref="Extensions.GetAgoRapideAttributeT"/> will then always return the overridden values if any.
+        /// </summary>
+        public static void MapEnumFinalize(Action<string> noticeLogger) =>
+            mapOrders.ForEach(o => {
+                var overridden = overriddenAttributes.GetValue(o);
+                noticeLogger(
+                    "Replacements for " + o.ToStringShort() + ":\r\n" +
+                    (overridden.Count == 0 ? "[NONE]" : string.Join("\r\n", overriddenAttributes.GetValue(o)))
+                );
+                Extensions.ReplaceAgoRapideAttribute(o, fromEnumMaps.GetValue(o).ToDictionary(e => e.Key, e =>
+                /// TODO: We must also replace for "manually" given <see cref="CoreProperty"/>
+                    fromStringMaps.GetValue(e.Value.A.Property.ToString(), () => nameof(o) + ": " + o)
+                ));
+            });
 
         /// <summary>
         /// Note how this is reset whenever <see cref="fromEnumMaps"/> is added to
         /// </summary>
-        private static List<CPA> _allCoreProperty;
+        private static List<AgoRapideAttributeEnriched> _allCoreProperty;
         /// <summary>
         /// Returns all <see cref="CoreProperty"/> including additional ones mapped from other enums. 
+        /// TODO: TRY TO REMOVE USE OF THIS!
         /// </summary>
-        public static List<CPA> AllCoreProperty => _allCoreProperty ?? (_allCoreProperty = fromEnumMaps.TryGetValue(typeof(CoreProperty), out var retval) ? retval.Values.ToList() : throw new InvalidMappingException("Most probably because no corresponding call was made to " + nameof(MapEnum)));
+        public static List<AgoRapideAttributeEnriched> AllCoreProperty => _allCoreProperty ?? (_allCoreProperty = fromEnumMaps.TryGetValue(typeof(CoreProperty), out var retval) ? retval.Values.ToList() : throw new InvalidMappingException("Most probably because no corresponding call was made to " + nameof(MapEnum)));
         /// <summary>
         /// Preferred method when <paramref name="_enum"/> is known in the C# code
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="_enum"></param>
         /// <returns></returns>
-        public static CPA GetCPA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+        public static AgoRapideAttributeEnriched GetCPA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
             TryGetCPA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
 
-        public static CPA GetCPAOrDefault<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
-            TryGetCPA(_enum, out var retval) ? retval : CPA.Default;
+        /// <summary>
+        /// TODO: REMOVE THIS METHOD!
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="_enum"></param>
+        /// <returns></returns>
+        public static AgoRapideAttributeEnriched GetCPAOrDefault<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+            TryGetCPA(_enum, out var retval) ? retval : throw new NullReferenceException("Unable to return default, concept does not exist");
 
         /// <summary>
         /// Note how <see cref="InvalidMappingException{T}"/> is being thrown if no corresponding call was made to <see cref="MapEnum"/>.
@@ -102,10 +140,10 @@ namespace AgoRapide {
         /// <param name="_enum"></param>
         /// <param name="cpa"></param>
         /// <returns></returns>
-        public static bool TryGetCPA<T>(T _enum, out CPA cpa) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+        public static bool TryGetCPA<T>(T _enum, out AgoRapideAttributeEnriched cpa) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
             fromEnumMaps.TryGetValue(typeof(T), out var dict) ?
                 dict.TryGetValue((int)(object)_enum, out cpa) :
-                throw new InvalidMappingException<T>(_enum, 
+                throw new InvalidMappingException<T>(_enum,
                     "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
                     "(Hint: this is usually done in Startup.cs.)");
 
@@ -117,18 +155,25 @@ namespace AgoRapide {
         /// <param name="_enum"></param>
         /// <param name="cpa"></param>
         /// <returns></returns>
-        public static bool TryGetCPAAsObject(object _enum, out CPA cpa) {
+        public static bool TryGetCPAAsObject(object _enum, out AgoRapideAttributeEnriched cpa) {
             if (!(_enum?.GetType() ?? throw new NullReferenceException(nameof(_enum))).IsEnum) throw new InvalidObjectTypeException(_enum, "Expected " + nameof(Type.IsEnum));
             return fromEnumMaps.TryGetValue(_enum.GetType(), out var dict) ?
                 dict.TryGetValue((int)_enum, out cpa) :
                 throw new InvalidMappingException(
                     "Unable to map from " + _enum.GetType() + "." + _enum + ".\r\n" +
-                    "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + _enum.GetType() + ".\r\n" +                
+                    "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + _enum.GetType() + ".\r\n" +
                     "(Hint: this is usually done in Startup.cs)");
         }
-        public static CPA GetCPAOrDefault(string _enum) => fromStringMaps.TryGetValue(_enum, out var temp) ? temp : CPA.Default;
-        public static CPA GetCPA(string _enum) => GetCPA(_enum, null);
         /// <summary>
+        /// TODO: REMOVE THIS METHOD!
+        /// </summary>
+        /// <param name="_enum"></param>
+        /// <returns></returns>
+        public static AgoRapideAttributeEnriched GetCPAOrDefault(string _enum) => fromStringMaps.TryGetValue(_enum, out var retval) ? retval : throw new NullReferenceException("Unable to return default, concept does not exist");
+        public static AgoRapideAttributeEnriched GetCPA(string _enum) => fromStringMaps.GetValue(_enum);
+        /// <summary>
+        /// Method that will always "succeed" in the sense that unknown values of <paramref name="_enum"/> will just be added. 
+        /// 
         /// Preferred method when <paramref name="_enum"/> is not known in the C# code. 
         /// 
         /// Also to be used for hierarchically organise enums.
@@ -140,8 +185,9 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="_enum"></param>
         /// <returns></returns>
-        public static CPA GetCPA(string _enum, IDatabase db) =>
+        public static AgoRapideAttributeEnriched GetCPA(string _enum, IDatabase db) =>
             fromStringMaps.GetOrAdd(_enum, e => {
+                if (db == null) throw new NullReferenceException(nameof(db));
                 throw new NotImplementedException(
                     "Set _allCoreProperty = null;" +
                     "TODO: Reuse " + nameof(EnumClass) + ". " +
@@ -150,19 +196,19 @@ namespace AgoRapide {
                     "Also implement support for hierarchically organised enums where AgoRapideAttribute reflects all hierarchical levels");
             });
 
-        public static bool TryGetCPA(string _enum, out CPA cpa) => fromStringMaps.TryGetValue(_enum, out cpa);
+        public static bool TryGetCPA(string _enum, out AgoRapideAttributeEnriched cpa) => fromStringMaps.TryGetValue(_enum, out cpa);
     }
 
-    /// <summary>
-    /// Simple container class for <see cref="CoreProperty"/> and <see cref="AgoRapideAttributeT"/>
-    /// TODO: Make immutable
-    /// 
-    /// TODO: Consider just removing altogether.
-    /// </summary>
-    public class CPA {
-        public CoreProperty cp;
-        public AgoRapideAttributeEnriched a;
+    ///// <summary>
+    ///// Simple container class for <see cref="CoreProperty"/> and <see cref="AgoRapideAttributeT"/>
+    ///// TODO: Make immutable
+    ///// 
+    ///// TODO: Consider just removing altogether.
+    ///// </summary>
+    //public class CPA {
+    //    public CoreProperty cp;
+    //    public AgoRapideAttributeEnriched a;
 
-        public static CPA Default = new CPA { cp = CoreProperty.None, a = CoreProperty.None.GetAgoRapideAttribute() };
-    }
+    //    public static CPA Default = new CPA { cp = CoreProperty.None, a = CoreProperty.None.GetAgoRapideAttributeT() };
+    //}
 }

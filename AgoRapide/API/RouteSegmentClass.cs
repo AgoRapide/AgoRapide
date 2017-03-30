@@ -46,12 +46,10 @@ namespace AgoRapide.API {
         /// </summary>
         public Type Type { get; private set; }
 
-        /// TODO: For <see cref="RouteSegmentClass"/>, put Parameter and ParameterA into a <see cref="CPA"/> class instead
         /// <summary>
         /// Typical example would be <see cref="CoreProperty.QueryId"/> like api/Person/{QueryId}
         /// </summary>
-        public CoreProperty? Parameter { get; private set; }
-        public AgoRapideAttributeEnriched ParameterA { get; private set; }
+        public AgoRapideAttributeEnriched Parameter { get; private set; }
 
         /// <summary>
         /// Typical example would be Add like api/Person/Add
@@ -82,15 +80,14 @@ namespace AgoRapide.API {
                 return;
             }
 
-            if (segment.GetType().IsEnum) {                 
-                // TODO: Verify that this actually works
-                // TODO: And document better overriding of properties now
-                var cpa = segment is CoreProperty ? EnumMapper.GetCPA((CoreProperty)segment) : EnumMapper.GetCPA(segment.ToString());
-                Parameter = cpa.cp;
-                ParameterA = cpa.a;
+            if (segment.GetType().IsEnum) {
+
+                /// TODO: Clean up this. What kind of enum can segment be now? Any enum or only an entity property enum like <see cref="CoreProperty"/> or P?
+                Parameter = EnumMapper.GetCPA(segment.ToString()) ?? throw new NullReferenceException(nameof(segment) + ". " + nameof(EnumMapper.GetCPA) + " failed");
+
                 SampleValues = new Func<List<string>>(() => {
-                    if (ParameterA.A.SampleValues == null || ParameterA.A.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + ParameterA.PExplained  };
-                    return ParameterA.A.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
+                    if (Parameter.A.SampleValues == null || Parameter.A.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + Parameter.PExplained  };
+                    return Parameter.A.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
                 })();
                 PropertyToStringToLower = Parameter.ToString().ToLower();
                 return;

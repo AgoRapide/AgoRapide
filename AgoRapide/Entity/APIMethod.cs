@@ -85,13 +85,13 @@ namespace AgoRapide {
         /// <param name="httpMethods"></param>
         /// <param name="routeSegments"></param>
         /// <param name="routeTemplate"></param>
-        public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<CoreProperty> parameters, string routeTemplate) {
-            EntityType = entityType;
-            A = new MethodAttributeT(methodAttribute);
-            HttpMethods = httpMethods;
-            RouteSegments = routeSegments;
-            Parameters = parameters.Select(p => new CPA { cp = p, a = p.GetAgoRapideAttribute() }).ToList();
-            RouteTemplates = new List<string> { routeTemplate };
+        public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<AgoRapideAttributeEnriched> parameters, string routeTemplate) {
+            EntityType = entityType ?? throw new NullReferenceException(nameof(entityType));
+            A = new MethodAttributeT(methodAttribute) ?? throw new NullReferenceException(nameof(methodAttribute));
+            HttpMethods = httpMethods ?? throw new NullReferenceException(nameof(httpMethods));
+            RouteSegments = routeSegments ?? throw new NullReferenceException(nameof(routeSegments));
+            Parameters = parameters ?? throw new NullReferenceException(nameof(parameters));
+            RouteTemplates = new List<string> { routeTemplate ?? throw new NullReferenceException(nameof(routeTemplate)) };
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace AgoRapide {
                 throw new NotImplementedException(nameof(MethodAttribute) + "." + nameof(MethodAttribute.RouteTemplate) + ", " + detailer1());
             }
 
-            Parameters = new List<CPA>();
+            Parameters = new List<AgoRapideAttributeEnriched>();
 
             if (RouteSegments.Count == 0) {
                 switch (A.A.CoreMethod) {
@@ -181,29 +181,27 @@ namespace AgoRapide {
                         detailer2());
                     EntityType = s.Type;
                 } else if (s.Parameter != null) {
-                    var p = (CoreProperty)s.Parameter;
-                    var ea = s.ParameterA;
-                    if (ea.A.Parents != null && EntityType != null && !ea.IsParentFor(EntityType)) throw new MethodInitialisationException(
+                    if (s.Parameter.A.Parents != null && EntityType != null && !s.Parameter.IsParentFor(EntityType)) throw new MethodInitialisationException(
                             "Incompatible types given for " +
-                            ea.GetType().ToString() + "-segment (" + EntityType + ") and " +
-                            typeof(CoreProperty).ToString() + "." + p.ToString() + " (" + ea.A.Parents.ToString() + ")\r\n" +
-                            "You can not have " + typeof(CoreProperty).ToString() + "." + p.ToString() + " " +
+                            s.Parameter.GetType().ToString() + "-segment (" + EntityType + ") and " +
+                            typeof(CoreProperty).ToString() + "." + s.Parameter.CoreProperty.ToString() + " (" + s.Parameter.A.Parents + ")\r\n" +
+                            "You can not have " + typeof(CoreProperty).ToString() + "." + s.Parameter.CoreProperty + " " +
                             "as parameter for operations involving entities of type " + EntityType + " " +
-                            "because !" + nameof(ea.IsParentFor) + "(" + EntityType + ")" + detailer2());
+                            "because !" + nameof(s.Parameter.IsParentFor) + "(" + EntityType + ")" + detailer2());
 
                     if (restParameters.Count == 0) throw new MethodInitialisationException(
                         "Too few parameters defined in source code.\r\n" +
-                        "Corresponding parameter " + ea.PExplained + " for RouteSegment " +
+                        "Corresponding parameter " + s.Parameter.PExplained + " for RouteSegment " +
                         "is missing for method " + ControllerMethod.Name + detailer2());
-                    if (!restParameters.TryGetValue(ea.PToString, out _)) throw new MethodInitialisationException(
-                        "Corresponding parameter " + ea.PExplained + " for RouteSegment " +
+                    if (!restParameters.TryGetValue(s.Parameter.PToString, out _)) throw new MethodInitialisationException(
+                        "Corresponding parameter " + s.Parameter.PExplained + " for RouteSegment " +
                         "is missing (or wrongly named) for method " + ControllerMethod.Name + ".\r\n" +
                         "Is one of the following mis-named: " + restParameters.KeysAsString() + "\r\n?\r\n" +
                         detailer2());
-                    if (Parameters.Any(t => t.cp.Equals(p))) throw new MethodInitialisationException("Duplicate parameter " + typeof(CoreProperty).ToString() + "." + p.ToString() + " given" + detailer2());
-                    Parameters.Add(new CPA { cp = p, a = ea });
-                    restParameters.Remove(ea.PToString);
-                    routeTemplate.Append("/{" + ea.PToString + "}");
+                    if (Parameters.Any(t => t.CoreProperty.Equals(s.Parameter.CoreProperty))) throw new MethodInitialisationException("Duplicate parameter " + typeof(CoreProperty).ToString() + "." + s.Parameter.CoreProperty + " given" + detailer2());
+                    Parameters.Add(s.Parameter);
+                    restParameters.Remove(s.Parameter.PToString);
+                    routeTemplate.Append("/{" + s.Parameter.PToString + "}");
                     // break;
                     // case RouteSegment es:
                 } else if (s.String != null) {
@@ -264,7 +262,7 @@ namespace AgoRapide {
         public List<string> RouteTemplates { get; private set; }
 
         /// <summary>
-        /// Inserts each <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeEnrichedT.ConvertObjectToString"/>
+        /// Inserts each <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeEnriched.ConvertObjectToString"/>
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
@@ -273,8 +271,8 @@ namespace AgoRapide {
             var retval = RouteTemplates[0];
             for (var i = 0; i < parameters.Length; i++) {
                 if (Parameters.Count <= i) return retval;
-                var key = "{" + Parameters[i].a.PToString + "}";
-                var next = retval.Replace(key, Parameters[i].a.ConvertObjectToString(parameters[i]));
+                var key = "{" + Parameters[i].PToString + "}";
+                var next = retval.Replace(key, Parameters[i].ConvertObjectToString(parameters[i]));
                 if (next.Equals(retval)) throw new MethodInitialisationException(key + " not found for " + ToString());
                 retval = next;
             }
@@ -347,7 +345,7 @@ namespace AgoRapide {
 
         public Type EntityType { get; private set; }
 
-        public List<CPA> Parameters { get; private set; }
+        public List<AgoRapideAttributeEnriched> Parameters { get; private set; }
 
         /// <summary>
         /// Set by <see cref="CreateSemiAutogeneratedMethods"/>
@@ -508,7 +506,7 @@ namespace AgoRapide {
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
                     routeSegments: routeSegments,
-                    parameters: obligatoryParameters.Select(p => p.Key).ToList(),
+                    parameters: obligatoryParameters.Values.ToList(),
                     routeTemplate: t.ToStringVeryShort() + "/Add" + string.Join("", obligatoryParameters.Select(p => "/{" + p.Value.PToString + "}"))
                     );
                 //if (obligatoryParameters.Count==1) {
@@ -536,7 +534,7 @@ namespace AgoRapide {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
                         new RouteSegmentClass(CoreProperty.QueryId.ToString(), CoreProperty.QueryId , detailer)
                     },
-                    parameters: new List<CoreProperty> { CoreProperty.QueryId },
+                    parameters: new List<AgoRapideAttributeEnriched> { CoreProperty.QueryId.A() },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.QueryId + "}" // Do not use M here!
                     );
                 // TODO: Create a configuration parameter deciding whether API-documentation should be available without authorization.
@@ -566,13 +564,13 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreProperty.Key), CoreProperty.Key , detailer),
                         new RouteSegmentClass(nameof(CoreProperty.Value), CoreProperty.Value , detailer)
                     },
-                    parameters: new List<CoreProperty> {
-                        CoreProperty.QueryId,
-                        CoreProperty.Key,
-                        CoreProperty.Value
+                    parameters: new List<AgoRapideAttributeEnriched> {
+                        CoreProperty.QueryId.A(),
+                        CoreProperty.Key.A(),
+                        CoreProperty.Value.A()
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.QueryId + "}/" + CoreMethod.UpdateProperty.ToString() + "/{" + CoreProperty.Key + "}/{" + CoreProperty.Value + "}" // Do not use M here!
-                );
+                    );
                 connector(method, true);
             });
 
@@ -595,9 +593,9 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreProperty.QueryId), CoreProperty.QueryId , detailer),
                         new RouteSegmentClass(nameof(CoreProperty.PropertyOperation), CoreProperty.PropertyOperation , detailer)
                     },
-                    parameters: new List<CoreProperty> {
-                        CoreProperty.QueryId,
-                        CoreProperty.PropertyOperation
+                    parameters: new List<AgoRapideAttributeEnriched> {
+                        CoreProperty.QueryId.A(),
+                        CoreProperty.PropertyOperation.A()
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.QueryId + "}/{" + CoreProperty.PropertyOperation + "}" // Do not use M here!
                 );
@@ -622,8 +620,8 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreProperty.IntegerQueryId), CoreProperty.IntegerQueryId , detailer),
                         new RouteSegmentClass(nameof(CoreMethod.History), CoreMethod.History.ToString() , detailer)
                     },
-                    parameters: new List<CoreProperty> {
-                        CoreProperty.IntegerQueryId
+                    parameters: new List<AgoRapideAttributeEnriched> {
+                        CoreProperty.IntegerQueryId.A()
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreProperty.IntegerQueryId + "}/" + CoreMethod.History // Do not use M here!
                     );
@@ -701,7 +699,7 @@ namespace AgoRapide {
             var suggestedUrls = new List<string>();
             if (method.Parameters.Count == 0) {
                 suggestedUrls.Add(method.RouteTemplates[0]);
-            } else if (method.Parameters.All(p => p.a.A.SampleValues != null && p.a.A.SampleValues.Length > 0)) {
+            } else if (method.Parameters.All(p => p.A.SampleValues != null && p.A.SampleValues.Length > 0)) {
                 /// We have sample values for all parameters. Permutate between them
                 /// TODO: Make better code than this!
                 var t = method.RouteTemplates[0];
@@ -709,23 +707,23 @@ namespace AgoRapide {
                     suggestedUrls.Add(t);
                 } else {
                     var p = method.Parameters[0];
-                    p.a.A.SampleValues.ForEach(v0 => {
+                    p.A.SampleValues.ForEach(v0 => {
                         /// TODO: Make better code than this!
-                        var t0 = t.Replace("{" + p.a.PToString + "}", v0);
+                        var t0 = t.Replace("{" + p.PToString + "}", v0);
                         if (method.Parameters.Count <= 1) {
                             suggestedUrls.Add(t0);
                         } else {
                             p = method.Parameters[1];
-                            p.a.A.SampleValues.ForEach(v1 => {
+                            p.A.SampleValues.ForEach(v1 => {
                                 /// TODO: Make better code than this!
-                                var t1 = t0.Replace("{" + p.a.PToString + "}", v1);
+                                var t1 = t0.Replace("{" + p.PToString + "}", v1);
                                 if (method.Parameters.Count <= 2) {
                                     suggestedUrls.Add(t1);
                                 } else {
                                     p = method.Parameters[2];
-                                    p.a.A.SampleValues.ForEach(v2 => {
+                                    p.A.SampleValues.ForEach(v2 => {
                                         /// TODO: Make better code than this!
-                                        var t2 = t1.Replace("{" + p.a.PToString + "}", v2);
+                                        var t2 = t1.Replace("{" + p.PToString + "}", v2);
                                         if (method.Parameters.Count <= 3) {
                                             suggestedUrls.Add(t2);
                                         } else {
@@ -752,25 +750,25 @@ namespace AgoRapide {
             // TODO: Implement some kind of copying of properties in order to avoid this!
             // TODO: (or rather, solve the general problem of using generics with properties)
             method.A.Properties.Values.ForEach(p => {
-                if (p.KeyA.A.Type == null) {
+                if (p.Key.A.Type == null) {
                     throw new NullReferenceException("p.KeyA.A.Type, details: " + p.ToString());
-                } else if (p.KeyA.A.Type.Equals(typeof(bool))) {
-                    db.UpdateProperty(cid, method, p.A, p.V<bool>(), result: null);
+                } else if (p.Key.A.Type.Equals(typeof(bool))) {
+                    db.UpdateProperty(cid, method, p.Key, p.V<bool>(), result: null);
                     // TODO: Maybe replace this check with extension-method IsStoredAsStringInDatabase or similar...
-                } else if (p.KeyA.A.Type.Equals(typeof(Type)) || p.KeyA.A.Type.IsEnum || p.KeyA.A.Type.Equals(typeof(string))) {
+                } else if (p.Key.A.Type.Equals(typeof(Type)) || p.Key.A.Type.IsEnum || p.Key.A.Type.Equals(typeof(string))) {
                     var value = p.V<string>();
                     if (method.A.A.CoreMethod != CoreMethod.None) {
                         /// Add information about CoreMethod
                         /// TODO: This is very similar to <see cref="AgoRapideAttribute.EnrichFrom"/> 
                         /// TODO: We should use some of the same mechanism there.
-                        var coreA = method.A.A.CoreMethod.GetAgoRapideAttribute();
-                        if (p.KeyT.Equals(CoreProperty.Description) && !string.IsNullOrEmpty(coreA.A.Description)) { // TODO: Do this in a more streamlined manner!
+                        var coreA = method.A.A.CoreMethod.GetAgoRapideAttributeT();
+                        if (p.Key.CoreProperty.Equals(CoreProperty.Description) && !string.IsNullOrEmpty(coreA.A.Description)) { // TODO: Do this in a more streamlined manner!
                             if (string.IsNullOrEmpty(value)) {
                                 value = coreA.A.Description;
                             } else {
                                 value += (value.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(coreA.A.Description) + ": " + coreA.A.Description;
                             }
-                        } else if (p.KeyT.Equals(CoreProperty.LongDescription) && !string.IsNullOrEmpty(coreA.A.LongDescription)) { // TODO: Do this in a more streamlined manner!
+                        } else if (p.Key.Equals(CoreProperty.LongDescription) && !string.IsNullOrEmpty(coreA.A.LongDescription)) { // TODO: Do this in a more streamlined manner!
                             if (string.IsNullOrEmpty(value)) {
                                 value = coreA.A.LongDescription;
                             } else {
@@ -778,9 +776,9 @@ namespace AgoRapide {
                             }
                         }
                     }
-                    db.UpdateProperty(cid, method, p.A, value, result: null);
+                    db.UpdateProperty(cid, method, p.Key, value, result: null);
                 } else {
-                    throw new InvalidTypeException(p.KeyA.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
+                    throw new InvalidTypeException(p.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
                 }
 
             });

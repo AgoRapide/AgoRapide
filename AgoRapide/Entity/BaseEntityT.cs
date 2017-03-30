@@ -262,8 +262,8 @@ namespace AgoRapide {
                     // retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableHeading(request));
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
                     // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
-                    retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.KeyA.A.PriorityOrder).Select(p => {
-                        p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.KeyT); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
+                    retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.A.PriorityOrder).Select(p => {
+                        p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.CoreProperty); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                         return p.ToHTMLTableRow(request);
                     })));
                     retval.AppendLine("</table>");
@@ -342,7 +342,7 @@ namespace AgoRapide {
             if (Properties != null) {
                 retval.Properties = new Dictionary<string, JSONProperty0>();
                 GetExistingProperties(request.CurrentUser, AccessType.Read).ForEach(i => {
-                    retval.Properties.Add(i.Value.KeyA.PToString, i.Value.ToJSONProperty());
+                    retval.Properties.Add(i.Value.Key.PToString, i.Value.ToJSONProperty());
                 });
                 // Note that we do not bother with Type when Properties is not set
                 if (!retval.Properties.ContainsKey(nameof(CoreProperty.Type))) retval.Properties.Add(nameof(CoreProperty.Type), new JSONProperty0 { Value = GetType().ToStringShort() });

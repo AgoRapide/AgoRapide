@@ -19,8 +19,8 @@ namespace AgoRapide.Core {
     /// this principle able to describe itself to AgoRapide).
     /// 
     /// <see cref="AgoRapideAttributeT"/>-properties like 
-    /// <see cref="AgoRapideAttributeEnrichedT.Cleaner"/>,
-    /// <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/>
+    /// <see cref="AgoRapideAttributeEnriched.Cleaner"/>,
+    /// <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/>
     /// can be set ONLY through this "interface" 
     /// 
     /// <see cref="AgoRapideAttribute"/>-properties like 
@@ -39,14 +39,14 @@ namespace AgoRapide.Core {
     /// class for what is essential a static one-off operation done at application initialization)
     /// 
     /// The implementing class should also override <see cref="object.ToString"/> to a value that is understood by 
-    /// the <see cref="AgoRapideAttributeEnrichedT.ValidatorAndParser"/> used. 
+    /// the <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> used. 
     /// This result of ToString is also what will be used by <see cref="IDatabase.CreateProperty"/>
     /// 
     /// <see cref="ITypeDescriber"/> is not to be confused with <see cref="IGroupDescriber"/>. 
     /// The former is specified through <see cref="AgoRapideAttribute.Type"/> describing an actual class (usually used for a single TProperty), 
     /// while the latter is specified through <see cref="AgoRapideAttribute.Group"/> describing common attributes for a group of properties. 
     /// (although technically they both do the one and same kind of operations, enriching <see cref="AgoRapideAttributeT"/> 
-    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeEnrichedT.A"/>)
+    /// and its member class <see cref="AgoRapideAttribute"/> (<see cref="AgoRapideAttributeEnriched.A"/>)
     /// </summary>
     public interface ITypeDescriber {
         // Implement public static method in your class.
