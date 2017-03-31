@@ -365,7 +365,7 @@ namespace AgoRapide.Database {
         }
 
         public long CreateEntity<T>(long cid, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties: (IEnumerable<Tuple<AgoRapideAttributeEnriched, object>>)null, result: result);
-        public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable < Tuple<AgoRapideAttributeEnriched, object>>)null, result: result);
+        public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable<Tuple<AgoRapideAttributeEnriched, object>>)null, result: result);
         public long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.Key, p.ADotTypeValue())), result);
         public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => new Tuple<AgoRapideAttributeEnriched, object>(p.Key, p.ADotTypeValue())), result);
         public long CreateEntity<T>(long cid, IEnumerable<Tuple<AgoRapideAttributeEnriched, object>> properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties, result);
@@ -468,11 +468,11 @@ namespace AgoRapide.Database {
             // Log(nameof(email) + ": " + email + ", " + nameof(password) + ": " + (string.IsNullOrEmpty(password) ? "[NULL_OR_EMPTY]" : " [SET]"));
 
             currentUser = null;
-            if (string.IsNullOrEmpty(username)) return false;
-            if (string.IsNullOrEmpty(password)) return false;
+            if (string.IsNullOrEmpty(username) || username.Length > 100) return false;
+            if (string.IsNullOrEmpty(password) || password.Length > 100) return false;
             username = username.ToLower();
-            Log("username: " + username);
-            var cmd = new Npgsql.NpgsqlCommand("SELECT pid FROM p WHERE " + DBField.key + " = '" + CoreProperty.Username + "' AND " + DBField.strv + " = :" + CoreProperty.Username + " AND " + DBField.invalid + " IS NULL", _cn1);
+            Log("Searching " + CoreProperty.Username.A().PToString + " = '" + username + "'");
+            var cmd = new Npgsql.NpgsqlCommand("SELECT pid FROM p WHERE " + DBField.key + " = '" + CoreProperty.Username.A().PToString + "' AND " + DBField.strv + " = :" + CoreProperty.Username + " AND " + DBField.invalid + " IS NULL", _cn1);
             cmd.Parameters.Add(new Npgsql.NpgsqlParameter(CoreProperty.Username.ToString(), NpgsqlTypes.NpgsqlDbType.Text) { Value = username });
             // cmd.Parameters[0].Value = username;
             if (!TryExecuteScalarLong(cmd, out var entityId)) return false;
@@ -481,6 +481,9 @@ namespace AgoRapide.Database {
             // Note that although it is expensive to read the whole entity now, a practical AgoRapide implementation would
             // probably need the whole object anyway for later purposes, and a typical Authentication mechanism could make
             // the returned object available for such purposes.
+            // (check for instance code in Startup.cs, BasicAuthenticationAttribute.AuthenticateAsync
+            //    context.Request.Properties["AgoRapideCurrentUser"] = currentUser
+            // )
             if (!TryGetEntityById(entityId, useCache: false, requiredType: null, entity: out currentUser)) return false;
 
             if (currentUser.PV<string>(CoreProperty.Username.A(), "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 

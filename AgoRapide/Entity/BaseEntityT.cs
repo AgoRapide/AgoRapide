@@ -227,7 +227,7 @@ namespace AgoRapide {
             if (result != null && result.ResultCode == ResultCode.ok) {
                 // Do not show type or name because it will only be confusing
             } else {
-                var description = GetType().GetAgoRapideAttribute().Description;
+                var description = GetType().GetAgoRapideAttributeForClass().Description;
                 retval.AppendLine("<h1>Type: " +
                     (string.IsNullOrEmpty(description) ? "" : "<span title=\"" + description.HTMLEncode() + "\">") +
                     GetType().ToStringVeryShort().HTMLEncode() +
@@ -290,7 +290,7 @@ namespace AgoRapide {
                 } else {
 
                     /// In all other cases, give hint about access
-                    var a = GetType().GetAgoRapideAttribute();
+                    var a = GetType().GetAgoRapideAttributeForClass();
                     var childProperties = GetType().GetChildProperties();
 
                     // TODO: Create general mechanism for adding links to HTML text like this (links are indicated with starting -'s and trailing -'s.)

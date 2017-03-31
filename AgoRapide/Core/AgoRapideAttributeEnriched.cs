@@ -29,7 +29,7 @@ namespace AgoRapide.Core {
     /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
     /// </summary>
     public abstract class AgoRapideAttributeEnriched {
-        
+
         public AgoRapideAttribute A { get; protected set; }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public CoreProperty CoreProperty => _coreProperty ?? throw new NullReferenceException(
             nameof(CoreProperty) + ". " +
-            "This property is only set for entity property enums through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" + 
+            "This property is only set for entity property enums through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" +
             "For other enums it is irrelevant (illegal) to ask for " + nameof(CoreProperty) + ".\r\n" +
             "Details:\r\n" + A.ToString());
 
@@ -179,18 +179,23 @@ namespace AgoRapide.Core {
             }
             return retval;
         }
-        
+
         public void Initialize() {
 
             PToString = A.Property.ToString();
             PExplained = A.Property.GetType().ToStringVeryShort() + "." + PToString;
-            if (_coreProperty != null && !A.Property.GetType().Equals(typeof(CoreProperty))) PExplained += " (" + nameof(CoreProperty) + ": " + _coreProperty.ToString() + ")";
+            // TODO: Clean up code for documentation here.
+            if (_coreProperty != null && A.InheritAndEnrichFromProperty == null && !A.Property.GetType().Equals(typeof(CoreProperty))) {
+                PExplained += " (" + nameof(CoreProperty) + ": " + _coreProperty.ToString() + ")";
+            }
 
             /// Enrichment 1, explicit given
             /// -----------------------------------------
-            if (!string.IsNullOrEmpty(A.InheritAndEnrichFromProperty)) {
+            if (A.InheritAndEnrichFromProperty != null) {
+                NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
                 if (A.Property.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.Property) + " (" + A.Property + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
-                var cpa = EnumMapper.GetCPA(A.InheritAndEnrichFromProperty);
+                var cpa = EnumMapper.GetCPA(A.InheritAndEnrichFromProperty.ToString());
+                _coreProperty = cpa.CoreProperty;
                 A.EnrichFrom(cpa.A);
                 PExplained += " <- " + cpa.PExplained;
             }
@@ -202,7 +207,7 @@ namespace AgoRapide.Core {
             if (A.Type == null) {
                 // Nothing to enrich from 
             } else {
-                A.Type.GetAgoRapideAttribute().Use(a => {
+                A.Type.GetAgoRapideAttributeForClass().Use(a => {
                     if (a.IsDefault) return; // Nothing interesting / nothing of value
                     A.EnrichFrom(a); /// Some of the properties for <see cref="AgoRapideAttribute"/> are not relevant in this case, like <see cref="IsMany"/>
                     PExplained += " (also enriched from type " + A.Type.ToStringShort() + ")";
@@ -250,7 +255,7 @@ namespace AgoRapide.Core {
             /// -----------------------------------------
             if (A.ValidValues == null && A.Type != null) {
                 if (A.Type.IsEnum) {
-                    A.ValidValues = Util.EnumGetValues(A.Type).ToArray();
+                    A.ValidValues = Util.EnumGetNames(A.Type).ToArray();
                     if (A.SampleValues != null) {
                         throw new AgoRapideAttributeException(
                             "It is illegal (unnecessary) to combine " + nameof(A.SampleValues) + " with Type.IsEnum (" + A.Type.ToStringShort() + ") " +
@@ -316,12 +321,12 @@ namespace AgoRapide.Core {
                             "Validator for " + PExplained + " is not implemented because no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " was given.\r\n" +
                             "Details: " + A.ToString());
                     };
-                //} else if (CoreProperty == CoreProperty.None) {
-                //    ValidatorAndParser = value => {
-                //        throw new NotImplementedException(
-                //            "Validator for " + PExplained + " is not implemented because no " + nameof(CoreProperty) + " was given (" + PExplained + " is assumed irrelevant as entity property enum).\r\n" +
-                //            "Details: " + A.ToString());
-                //    };
+                    //} else if (CoreProperty == CoreProperty.None) {
+                    //    ValidatorAndParser = value => {
+                    //        throw new NotImplementedException(
+                    //            "Validator for " + PExplained + " is not implemented because no " + nameof(CoreProperty) + " was given (" + PExplained + " is assumed irrelevant as entity property enum).\r\n" +
+                    //            "Details: " + A.ToString());
+                    //    };
                 } else {
                     if (A.Type.Equals(typeof(string))) {
                         ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? new ParseResult(new Property(this, value), value) : new ParseResult("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");

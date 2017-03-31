@@ -207,7 +207,7 @@ namespace AgoRapide {
                 } else if (s.String != null) {
                     routeTemplate.Append("/" + s.String);
                 } else {
-                    throw new RouteSegmentClass.InvalidRouteSegmentClass("Did not recognize any of the supposed required types" + detailer2());
+                    throw new RouteSegmentClass.InvalidRouteSegmentClassException("Did not recognize any of the supposed required types" + detailer2());
                 }
             });
             if (restParameters.Count > 0) throw new MethodInitialisationException("The following parameters does not have corresponding [" + A.GetType().ToString() + "(Sx = " + typeof(CoreProperty).ToString() + ".yyy)] initialisations: " + string.Join(", ", restParameters.Keys) + detailer1);
@@ -494,14 +494,14 @@ namespace AgoRapide {
                     new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
                     new RouteSegmentClass("Add", "Add", detailer),
                 };
-                obligatoryParameters.ForEach(p => routeSegments.Add(new RouteSegmentClass(p.Value.PToString, p.Key, detailer)));
+                obligatoryParameters.ForEach(p => routeSegments.Add(new RouteSegmentClass(p.Value.PToString, p.Value, detailer)));
                 var method = new APIMethod(
                     entityType: t,
                     methodAttribute: new MethodAttribute {
                         CoreMethod = CoreMethod.AddEntity,
                         Description =
                             "Adds an entity of type " + t.ToStringShort() + ".",
-                        AccessLevelUse = t.GetAgoRapideAttribute().AccessLevelWrite // Use of method equals writing of entity (creation)
+                        AccessLevelUse = t.GetAgoRapideAttributeForClass().AccessLevelWrite // Use of method equals writing of entity (creation)
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
@@ -526,7 +526,7 @@ namespace AgoRapide {
                         Description =
                             "Shows entities of type " + t.ToStringShort() + " as identified by {" + CoreProperty.QueryId + "}.\r\n" +
                             "Usually {" + CoreProperty.QueryId + "} will be an integer but note how even multiple entities may be identified.",
-                        AccessLevelUse = t.GetAgoRapideAttribute().AccessLevelRead // Use of method equals reading of entity
+                        AccessLevelUse = t.GetAgoRapideAttributeForClass().AccessLevelRead // Use of method equals reading of entity
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
@@ -553,7 +553,7 @@ namespace AgoRapide {
                         Description =
                             "Adds property for entities of type " + t.ToStringShort() + " as identified by {" + CoreProperty.QueryId + "}.\r\n" +
                             "Usually {" + CoreProperty.QueryId + "} will be an integer but note how even multiple entities may be identified.",
-                        AccessLevelUse = t.GetAgoRapideAttribute().AccessLevelWrite // Use of method equals writing to entity
+                        AccessLevelUse = t.GetAgoRapideAttributeForClass().AccessLevelWrite // Use of method equals writing to entity
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
@@ -584,7 +584,7 @@ namespace AgoRapide {
                         Description =
                             "Operates on property as identified by {" + CoreProperty.QueryId + "} with {" + nameof(PropertyOperation) + "} one of " + string.Join(", ", Util.EnumGetValues<PropertyOperation>()) + ".\r\n" +
                             "Usually {" + CoreProperty.QueryId + "} will be an integer but note how even multiple entities may be identified.",
-                        AccessLevelUse = t.GetAgoRapideAttribute().AccessLevelWrite // Use of method equals writing to entity
+                        AccessLevelUse = t.GetAgoRapideAttributeForClass().AccessLevelWrite // Use of method equals writing to entity
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
@@ -611,7 +611,7 @@ namespace AgoRapide {
                         CoreMethod = CoreMethod.History,
                         Description =
                             "Shows history for entity identified by {" + CoreProperty.IntegerQueryId + "}.",
-                        AccessLevelUse = t.GetAgoRapideAttribute().AccessLevelRead // Use of method equals writing to entity
+                        AccessLevelUse = t.GetAgoRapideAttributeForClass().AccessLevelRead // Use of method equals writing to entity
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
@@ -630,7 +630,7 @@ namespace AgoRapide {
 
             types.ForEach(t => {
                 InvalidTypeException.AssertAssignable(t, typeof(BaseEntityT), null);
-                var a = t.GetAgoRapideAttribute();
+                var a = t.GetAgoRapideAttributeForClass();
                 if (
                     !t.IsAbstract &&
                     !typeof(BaseEntityT).Equals(t) &&

@@ -603,7 +603,7 @@ namespace AgoRapide {
         /// </summary>
         public AgoRapideAttribute ValueA => _valueAttribute ?? (_valueAttribute = TryGetADotTypeValue(out var aDotTypeValue) ?
             (aDotTypeValue.GetType().IsEnum ? aDotTypeValue.GetAgoRapideAttribute() :
-            (typeof(Type).IsAssignableFrom(aDotTypeValue.GetType()) ? ((Type)aDotTypeValue).GetAgoRapideAttribute() :
+            (typeof(Type).IsAssignableFrom(aDotTypeValue.GetType()) ? ((Type)aDotTypeValue).GetAgoRapideAttributeForClass() :
             DefaultAgoRapideAttribute)) :
             DefaultAgoRapideAttribute);
 

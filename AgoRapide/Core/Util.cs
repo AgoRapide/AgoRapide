@@ -28,36 +28,51 @@ namespace AgoRapide.Core {
             rootUrl: "[RootUrlNotSetInAgoRapideConfiguration]"
         );
 
+        private static ConcurrentDictionary<Type, List<string>> _enumNamesCache = new ConcurrentDictionary<Type, List<string>>();
         /// <summary>
         /// Note that .None will not be returned.
-        /// You probably do not need this method. Most probably you need the generic Enum.GetValues
+        /// You probably do not need this method. Most probably you need the generic <see cref="EnumGetValues{T}"/>
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static List<string> EnumGetValues(Type type) {
-            if (!type.IsEnum) throw new NotOfTypeEnumException(type);
+        public static List<string> EnumGetNames(Type type) => _enumNamesCache.GetOrAdd(type, t => {
+            NotOfTypeEnumException.AssertEnum(t);
             return Enum.GetNames(type).Where(s => !"None".Equals(s)).ToList();
-        }
+        });
+
+        private static ConcurrentDictionary<Type, List<object>> _enumValuesCache = new ConcurrentDictionary<Type, List<object>>();
+        public static List<object> EnumGetValues(Type type) => _enumValuesCache.GetOrAdd(type, t => {
+            NotOfTypeEnumException.AssertEnum(t);
+            var retval = new List<object>();
+            foreach (var o in Enum.GetValues(type)) {
+                if (!"None".Equals(o.ToString())) retval.Add(o);
+            }
+            return retval;
+        });
 
         public static List<T> EnumGetValues<T>() where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
             EnumGetValues<T>(exclude: (T)(object)0);
 
+        private static ConcurrentDictionary<Type, object> _enumValuesTCache = new ConcurrentDictionary<Type, object>();
         /// <summary>
         /// 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="exclude"></param>
         /// <returns></returns>
-        public static List<T> EnumGetValues<T>(T exclude) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"                        
-            var type = typeof(T);
-            NotOfTypeEnumException.AssertEnum(type);
-            var retval = new List<T>();
+        public static List<T> EnumGetValues<T>(T exclude) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            var temp = _enumValuesTCache.GetOrAdd(typeof(T), t => {
+                var type = typeof(T);
+                NotOfTypeEnumException.AssertEnum(type);
+                var retval = new List<T>();
 
-            foreach (var value in Enum.GetValues(type)) {
-                if (value.Equals(exclude)) continue;
-                retval.Add((T)value);
-            }
-            return retval;
+                foreach (var value in Enum.GetValues(type)) {
+                    if (value.Equals(exclude)) continue;
+                    retval.Add((T)value);
+                }
+                return retval;
+            });
+            return temp as List<T> ?? throw new InvalidObjectTypeException(temp, typeof(List<T>));
         }
 
         public static T EnumParse<T>(string _string) where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
@@ -81,23 +96,6 @@ namespace AgoRapide.Core {
             if (((int)(object)result) == 0) return false;
             return true;
         }
-
-        ///// <summary>
-        ///// Same as <see cref="EnumTryParse{T}(string, out T)"/> except with less restrictions for T
-        ///// TODO: Consider removing
-        ///// </summary>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="_string"></param>
-        ///// <param name="result"></param>
-        ///// <returns></returns>
-        //public static bool EnumTryParse2<T>(string _string, out T result) where T : struct {
-        //    if (!typeof(T).IsEnum) throw new NotOfTypeEnumException<T>();
-        //    result = default(T);
-        //    if (!Enum.TryParse(_string, out result)) return false;
-        //    if (!Enum.IsDefined(typeof(T), result)) return false;
-        //    if (((int)(object)result) == 0) return false;
-        //    return true;
-        //}
 
         /// <summary>
         /// See also generic version <see cref="EnumParse{T}"/> which most often is more practical
@@ -133,7 +131,7 @@ namespace AgoRapide.Core {
         /// like 
         /// typeof(Money) pointing to P.Money)                        OR typeof(Money) pointing to "No mapping exists from Money to P"
         /// </summary>
-        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>> tToTPropertyMappings = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>>();
+        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>> _tToCorePropertyCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>>();
         /// <summary>
         /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <typeparamref name="TProperty"/>
         /// See 
@@ -176,21 +174,21 @@ namespace AgoRapide.Core {
                 nameof(BaseEntityT) + "." + nameof(BaseEntityT.PV) + " / " + nameof(BaseEntityT) + "." + nameof(BaseEntityT.TryGetPV) + " " +
                 "(note for instance how the overload of " + nameof(BaseEntityT.PVM) + " with defaultValue-parameter " +
                 "looks very similar to " + nameof(BaseEntityT.PV) + " if you forget the explicit type parameter for the latter method)");
-            var mapping = tToTPropertyMappings.
+            var mapping = _tToCorePropertyCache.
                 GetOrAdd(typeof(CoreProperty), type => new ConcurrentDictionary<Type, object>()).
                 GetOrAdd(typeof(T), type => {
                     /// NOTE: Note how <see cref="EnumMapper.AllCoreProperty"/> itself is cached but that should not matter
                     /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
                     var candidates = EnumMapper.AllCoreProperty.Where(cpa => cpa.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
-                        case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + " (not even from " + typeof(CoreProperty).ToStringShort() + ")";
+                        case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort();
                         case 1: return candidates[0];
                         default:
                             return
                        "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + ".\r\n" +
                        "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c.CoreProperty) + ".");
                     }
-            });
+                });
             if (mapping is string) {
                 tProperty = null;
                 errorResponse = (string)mapping;
@@ -541,6 +539,8 @@ namespace AgoRapide.Core {
 
     public class KeyAlreadyExistsException : ApplicationException {
         public KeyAlreadyExistsException(string message) : base(message) { }
+        public KeyAlreadyExistsException(object key, string collectionName) : base("The key '" + key + "' already exists in collection " + collectionName) { }
+        public KeyAlreadyExistsException(object key, string collectionName, string details) : base("The key '" + key + "' already exists in collection " + collectionName + ".\r\nDetails: " + details) { }
     }
 
     public class KeyAlreadyExistsException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
@@ -643,7 +643,11 @@ namespace AgoRapide.Core {
         public static void AssertEnum(Type type) {
             if (!type.IsEnum) throw new NotOfTypeEnumException(type);
         }
+        public static void AssertEnum(Type type, Func<string> detailer) {
+            if (!type.IsEnum) throw new NotOfTypeEnumException(type, detailer());
+        }
         public NotOfTypeEnumException(Type type) : base("Expected Type.IsEnum but got type " + type.ToString()) { }
+        public NotOfTypeEnumException(Type type, string details) : base("Expected Type.IsEnum but got type " + type.ToString() + ".\r\nDetails: " + details) { }
     }
 
     public class NotOfTypeEnumException<T> : ApplicationException {

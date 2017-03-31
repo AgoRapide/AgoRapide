@@ -30,7 +30,7 @@ namespace AgoRapide.Core {
     /// 2) (less common) enum-"classes". 
     ///    (instead of XML-comments like this). 
     ///    See example for how this has been done for <see cref="CoreMethod"/>). 
-    ///    Usually accessed through <see cref="Extensions.GetAgoRapideAttribute(Type)"/>. 
+    ///    Usually accessed through <see cref="Extensions.GetAgoRapideAttributeForClass(Type)"/>. 
     ///    Some of the properties for <see cref="AgoRapideAttribute"/> are not relevant in this case, like <see cref="IsMany"/>
     /// 
     /// or
@@ -75,13 +75,15 @@ namespace AgoRapide.Core {
         public Type Class { get; private set; }
         
         /// <summary>
-        /// The underlying (more closer to the core AgoRapide library) property that <see cref="AgoRapideAttributeEnriched.Initialize"/> will inherit values from. 
+        /// The underlying (more closer to the core AgoRapide library) property that 
+        /// <see cref="AgoRapideAttributeEnriched.Initialize"/> will inherit values from. 
         /// 
-        /// At the same time attributes for that property will be overriden by this <see cref=""/>
+        /// At the same time attributes for that property will be overridden by this <see cref="AgoRapideAttribute"/>. 
+        /// (conceptual similar to virtual overridden C# properties)
         /// 
         /// The value will often correspond to some <see cref="CoreProperty"/>. 
         /// </summary>
-        public string InheritAndEnrichFromProperty { get; set; }
+        public object InheritAndEnrichFromProperty { get; set; }
 
         /// <summary>
         ///  
@@ -386,7 +388,7 @@ namespace AgoRapide.Core {
         /// Note (for "ordinary" classes) how you will inherit attributes for the base class if no attribute defined for <paramref name="type"/>. 
         /// (<see cref="IsInherited"/> will indicate this assumed that <see cref="DefinedForClass"/> has been set correctly)
         /// 
-        /// Usually called from <see cref="Extensions.GetAgoRapideAttribute(Type)"/>
+        /// Usually called from <see cref="Extensions.GetAgoRapideAttributeForClass(Type)"/>
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>

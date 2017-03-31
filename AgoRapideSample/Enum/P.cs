@@ -77,25 +77,25 @@ namespace AgoRapideSample {
         /// You only have to map those <see cref="CoreProperty"/> values for which you want to specify attributes.
         /// The other <see cref="CoreProperty"/> will be "silently" mapped to P anyway through <see cref="EnumMapper"/>
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.Username))] // TODO: Add email class like Type = typeof(EMail) with standardised AgoRapide interface.
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = CoreProperty.Username)] // TODO: Add email class like Type = typeof(EMail) with standardised AgoRapide interface.
         Email,
 
-        [AgoRapide(Group = typeof(PUD), InheritAndEnrichFromProperty = nameof(CoreProperty.Password))]
+        [AgoRapide(Group = typeof(PUD), InheritAndEnrichFromProperty = CoreProperty.Password)]
         Password,
 
-        [AgoRapide(Group = typeof(PUD), InheritAndEnrichFromProperty = nameof(CoreProperty.EntityToRepresent))]
+        [AgoRapide(Group = typeof(PUD), InheritAndEnrichFromProperty = CoreProperty.EntityToRepresent)]
         EntityToRepresent,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.AccessLevelGiven))]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = CoreProperty.AccessLevelGiven)]
         AccessLevelGiven,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.RepresentedByEntity))]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = CoreProperty.RepresentedByEntity)]
         RepresentedByEntity,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.RejectCredentialsNextTime))]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = CoreProperty.RejectCredentialsNextTime)]
         RejectCredentialsNextTime,
 
-        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = nameof(CoreProperty.AuthResult))]
+        [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = CoreProperty.AuthResult)]
         AuthResult,
 
         [AgoRapide(

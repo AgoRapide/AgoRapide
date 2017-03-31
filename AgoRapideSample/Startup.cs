@@ -109,10 +109,12 @@ namespace AgoRapideSample {
                 void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.EnumMapper.MapEnum<T>(s => Log(nameof(AgoRapide.EnumMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
                 mapper1<AgoRapide.CoreProperty>();
                 mapper1<P>();
-                // Add here other enum's which you want to use as entity-properties (so called entity property enums). Add at bottom of list, that is
-                // in order of going outwards from inner AgoRapide library towards your final application
-                AgoRapide.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.EnumMapper.MapEnumFinalize) + ": " + s));
+                // Add above other enum's which you want to use as properties for your entities (so called entity property enums). 
+                // Add at bottom of list, that is in order of going outwards from inner AgoRapide library towards your final application
 
+                AgoRapide.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.EnumMapper.MapEnumFinalize) + ": " + s));
+                Log(nameof(AgoRapide.EnumMapper.AllCoreProperty) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.EnumMapper.AllCoreProperty.Select(c => c.PExplained)) + "\r\n");
+                
                 var systemUser = new Person();
                 systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.AccessLevelGiven), AgoRapide.AccessLevel.System);
                 AgoRapide.Core.Util.Configuration.SystemUser = systemUser;

@@ -64,7 +64,8 @@ namespace AgoRapide.API {
         /// TODO: REMOVE <paramref name="segmentName"/>. We are able to reconstruct it from <paramref name="segment"/>
         /// </param>        
         /// <param name="segment">
-        /// Must match one of <see cref="Type"/>, <see cref="RouteSegment"/>, <see cref="Parameter"/> or <see cref="String"/>
+        /// Must match one of <see cref="Type"/>, <see cref="Parameter"/> or <see cref="String"/>. 
+        /// See <see cref="InvalidRouteSegmentClassException"/> for details. 
         /// </param>
         /// <param name="detailer">
         /// Must be set. 
@@ -80,25 +81,31 @@ namespace AgoRapide.API {
                 return;
             }
 
-            if (segment.GetType().IsEnum) {
+            if (segment.GetType().IsEnum) { // Turn into 
+                if (EnumMapper.TryGetCPA(segment.ToString(), out var temp)) {
+                    segment = temp;
+                } else {
+                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(EnumMapper) + " as an entity property enum");
+                }
+            }
 
-                /// TODO: Clean up this. What kind of enum can segment be now? Any enum or only an entity property enum like <see cref="CoreProperty"/> or P?
-                Parameter = EnumMapper.GetCPA(segment.ToString()) ?? throw new NullReferenceException(nameof(segment) + ". " + nameof(EnumMapper.GetCPA) + " failed");
-
+            Parameter = segment as AgoRapideAttributeEnriched;
+            if (Parameter != null) {
                 SampleValues = new Func<List<string>>(() => {
-                    if (Parameter.A.SampleValues == null || Parameter.A.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + Parameter.PExplained  };
+                    if (Parameter.A.SampleValues == null || Parameter.A.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + Parameter.PExplained };
                     return Parameter.A.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
                 })();
-                PropertyToStringToLower = Parameter.ToString().ToLower();
+                PropertyToStringToLower = Parameter.PToString.ToLower();
                 return;
-            } 
+            }
+
             String = segment as string;
             if (String != null) {
                 SampleValues = new List<string> { String };
                 StringToLower = String.ToLower();
                 return;
             }
-            throw new InvalidRouteSegmentClass("The type of " + SegmentName + "'s value (" + segment.GetType() + ") is not recognized. " + detailer());
+            throw new InvalidRouteSegmentClassException("The type of " + SegmentName + "'s value (" + segment.GetType() + ") is not recognized.\r\n\r\nDetails: " + detailer());
         }
 
         /// Adding to <see cref="MatchesURLSegment"/> or not?
@@ -118,8 +125,8 @@ namespace AgoRapide.API {
         public bool MatchesURLSegment(string urlSegment, string urlSegmentToLower) {
             if (Type != null) {
                 return TypeToStringShortToLower.Equals(urlSegmentToLower);
-            //} else if (RouteSegmentToStringToLower != null) {
-            //    return RouteSegmentToStringToLower.Equals(urlSegmentToLower);
+                //} else if (RouteSegmentToStringToLower != null) {
+                //    return RouteSegmentToStringToLower.Equals(urlSegmentToLower);
             } else if (Parameter != null) {
                 // Removed this 15 March 2017. We also want empty parameters to match at this stage.
                 // if (string.IsNullOrEmpty(urlSegment)) return false;
@@ -141,7 +148,7 @@ namespace AgoRapide.API {
             } else if (StringToLower != null) {
                 return StringToLower.Equals(urlSegmentToLower);
             } else {
-                throw new InvalidRouteSegmentClass("Type not recognized. This exception should never happen because the constructor should not have allowed it in the first place.");
+                throw new InvalidRouteSegmentClassException("Type not recognized. This exception should never happen because the constructor should not have allowed it in the first place.");
             }
         }
 
@@ -160,12 +167,12 @@ namespace AgoRapide.API {
         /// </summary>
         private string StringToLower;
 
-        public class InvalidRouteSegmentClass : ApplicationException {
-            public InvalidRouteSegmentClass(string message) : base(
-                "A " + nameof(RouteSegmentClass) + " must have one of the following types: " +
-                typeof(Type).ToString() + ", " +
-                typeof(CoreProperty).ToString() + ", " +
-                typeof(string).ToString() + ". This does not correspond to the following: " + message) { }
+        public class InvalidRouteSegmentClassException : ApplicationException {
+            public InvalidRouteSegmentClassException(string message) : base(
+                "A " + nameof(RouteSegmentClass) + " must have one of the following types:\r\n\r\n" +
+                "-" + typeof(Type).ToString() + ",\r\n" +
+                "-" + typeof(AgoRapideAttributeEnriched).ToString() + " (or an entity property enum like " + nameof(CoreProperty) + ", P or similar),\r\n" +
+                "-" + typeof(string).ToString() + ".\r\n\r\nThis does not correspond to the following:\r\n" + message) { }
         }
     }
 }

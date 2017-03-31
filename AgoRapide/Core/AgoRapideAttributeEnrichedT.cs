@@ -28,7 +28,14 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        /// <param name="coreProperty">Signifies that this is an entity property enum. See <see cref="AgoRapideAttributeEnriched.CoreProperty"/></param>
+        /// <param name="coreProperty">
+        /// Only given when called from <see cref="EnumMapper.MapEnum{T}"/>. 
+        /// Not given when called from <see cref="Extensions.GetAgoRapideAttributeT{T}"/>. 
+        /// Signifies that this is an entity property enum. See <see cref="AgoRapideAttributeEnriched.CoreProperty"/>. 
+        /// 
+        /// TODO: Elaborate on this comment:
+        /// Note that will use <see cref="CoreProperty"/> from <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> instead of that is set. 
+        /// </param>
         public AgoRapideAttributeEnrichedT(AgoRapideAttribute agoRapideAttribute, CoreProperty? coreProperty) {            
             A = agoRapideAttribute;
             _coreProperty = coreProperty;

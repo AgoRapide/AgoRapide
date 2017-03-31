@@ -94,7 +94,7 @@ namespace AgoRapide {
                     result: null);
                 db.CreateProperty(id, id, null, CoreProperty.Name.A(), key, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
                 db.CreateProperty(id, id, null, CoreProperty.Key.A(), key, null);
-                var a = type.GetAgoRapideAttribute();
+                var a = type.GetAgoRapideAttributeForClass();
                 db.CreateProperty(id, id, null, CoreProperty.AccessLevelRead.A(), a.AccessLevelRead, null);
                 db.CreateProperty(id, id, null, CoreProperty.AccessLevelWrite.A(), a.AccessLevelWrite, null);
                 return db.GetEntityById<T>(id);
