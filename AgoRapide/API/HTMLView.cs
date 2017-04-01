@@ -105,7 +105,7 @@ namespace AgoRapide.API {
             "     log: true,\r\n" +
             "     url: entityType + '/" + CoreMethod.UpdateProperty + "',\r\n" +
             "     type: '" + HTTPMethod.POST + "',\r\n" +
-            "     data: '" + CoreProperty.QueryId + "=' + entityId + '&" + CoreProperty.Key + "=' + encodeURIComponent(keyDB) + '&" + CoreProperty.Value + "=' + encodeURIComponent($(inputId).val()),\r\n" +
+            "     data: '" + CoreP.QueryId + "=' + entityId + '&" + CoreP.Key + "=' + encodeURIComponent(keyDB) + '&" + CoreP.Value + "=' + encodeURIComponent($(inputId).val()),\r\n" +
             "     success: function saveSuccess(data) {\r\n" +
             "        $('#generalQueryResult').html('');\r\n" +
             "        $(inputId).css({\"background-color\":\"lightgreen\"});\r\n" +
@@ -137,21 +137,21 @@ namespace AgoRapide.API {
                 "</p>"
             ) +
             (Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity == null ? "" :
-                /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreProperty.EntityToRepresent"/>
+                /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
                 /// TODO: Consider creating a <see cref="CoreMethod"/>.Logout in which to hide this code
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
                     CoreMethod.PropertyOperation,
                     "End representation as " + Request.CurrentUser.Name,
                     typeof(Property),
-                    new IntegerQueryId( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreProperty.EntityToRepresent"/> no longer exists for CurrentUser.
-                        (Request.CurrentUser.RepresentedByEntity.Properties.TryGetValue(CoreProperty.EntityToRepresent, out var p) ? p.Id : 0)),
+                    new IntegerQueryId( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreP.EntityToRepresent"/> no longer exists for CurrentUser.
+                        (Request.CurrentUser.RepresentedByEntity.Properties.TryGetValue(CoreP.EntityToRepresent, out var p) ? p.Id : 0)),
                     PropertyOperation.SetInvalid
                     ) +
                 "</p>"
             ) +
             (Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity != null ? "" :
-                /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreProperty.EntityToRepresent"/>
+                /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
                 /// TODO: Consider creating a <see cref="CoreMethod"/>.Logout in which to hide this code
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
@@ -159,8 +159,8 @@ namespace AgoRapide.API {
                     "Logout as " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
                     new IntegerQueryId(Request.CurrentUser.Id),
-                    CoreProperty.RejectCredentialsNextTime,
-                    true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreProperty.Value"/> is a string at this stage
+                    CoreP.RejectCredentialsNextTime,
+                    true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreP.Value"/> is a string at this stage
                                     /// (<see cref = "CoreMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
                                     /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
                     ) +

@@ -15,10 +15,10 @@ namespace AgoRapide.Database {
 
         /// <summary>
         /// An implementation should support use of 
-        /// <see cref="CoreProperty.Username"/>
-        /// <see cref="CoreProperty.Password"/>
-        /// <see cref="CoreProperty.AuthResult"/>
-        /// <see cref="CoreProperty.RejectCredentialsNextTime"/>
+        /// <see cref="CoreP.Username"/>
+        /// <see cref="CoreP.Password"/>
+        /// <see cref="CoreP.AuthResult"/>
+        /// <see cref="CoreP.RejectCredentialsNextTime"/>
         /// </summary>
         /// <param name="username"></param>
         /// <param name="password"></param>
@@ -38,7 +38,7 @@ namespace AgoRapide.Database {
         /// <param name="useCache"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out T entity, out Tuple<ResultCode, string> errorResponse) where T : BaseEntityT, new();
+        bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out T entity, out ErrorResponse errorResponse) where T : BaseEntityT, new();
 
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
@@ -64,7 +64,7 @@ namespace AgoRapide.Database {
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out List<T> entities, out Tuple<ResultCode, string> errorResponse) where T : BaseEntityT, new();
+        bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntityT, new();
 
         /// <summary>
         /// TODO: We could consider having the whole <see cref="AgoRapide.API.Request"/> object as parameter here but
@@ -93,7 +93,7 @@ namespace AgoRapide.Database {
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntityT> entities, out Tuple<ResultCode, string> errorResponse);
+        bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntityT> entities, out ErrorResponse errorResponse);
 
         /// <summary>
         /// See <see cref="CoreMethod.History"/>. 
@@ -138,7 +138,7 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         bool TryGetEntityById(long id, bool useCache, Type requiredType, out BaseEntityT entity);
 
-        Dictionary<CoreProperty, Property> GetChildProperties(Property parentProperty);
+        Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
 
         Property GetPropertyById(long id);
         bool TryGetPropertyById(long id, out Property property);
@@ -162,7 +162,7 @@ namespace AgoRapide.Database {
         long CreateEntity(long cid, Type entityType, Result result);
         long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT;
         long CreateEntity(long cid, Type entityType, Parameters properties, Result result);
-        long CreateEntity<T>(long cid, IEnumerable<Tuple<AgoRapideAttributeEnriched, object>> properties, Result result) where T : BaseEntityT;
+        long CreateEntity<T>(long cid, IEnumerable<(AgoRapideAttributeEnriched key, object value)> properties, Result result) where T : BaseEntityT;
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -171,10 +171,10 @@ namespace AgoRapide.Database {
         /// <param name="properties">May be null or empty. Turn this into an Properties collection? Or just a BaseEntity template or similar?</param>
         /// <param name="result"></param>
         /// <returns></returns>
-        long CreateEntity(long cid, Type entityType, IEnumerable<Tuple<AgoRapideAttributeEnriched, object>> properties, Result result);
+        long CreateEntity(long cid, Type entityType, IEnumerable<(AgoRapideAttributeEnriched key, object value)> properties, Result result);
 
         /// <summary>
-        /// Changes to entity given in <see cref="CoreProperty.EntityToRepresent"/> if that property exists for the entity given
+        /// Changes to entity given in <see cref="CoreP.EntityToRepresent"/> if that property exists for the entity given
         /// If not returns entity given
         /// 
         /// Through this concept the API can give the view of one API client (user) 
@@ -185,7 +185,7 @@ namespace AgoRapide.Database {
         /// This is typically used to "impersonate" customers through an admin-user. Used by 
         /// <see cref="BaseController.TryGetCurrentUser> and BAPIController.GetCurrentUser 
         /// 
-        /// See <see cref="CoreProperty.EntityToRepresent"/> and <see cref="CoreProperty.RepresentedByEntity"/>
+        /// See <see cref="CoreP.EntityToRepresent"/> and <see cref="CoreP.RepresentedByEntity"/>
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
@@ -261,7 +261,7 @@ namespace AgoRapide.Database {
 
     /// <summary>
     /// TODO: Most probably we can get away with this method by instead just silently mapping unknown string
-    /// TODO: values to <see cref="CoreProperty"/> in <see cref="EnumMapper"/>
+    /// TODO: values to <see cref="CoreP"/> in <see cref="EnumMapper"/>
     /// </summary>
     public class InvalidPropertyKeyException : ApplicationException { 
         public InvalidPropertyKeyException() : base() { }
@@ -274,7 +274,7 @@ namespace AgoRapide.Database {
         /// <param name="key">May be null</param>
         /// <param name="id"></param>
         public InvalidPropertyKeyException(string key, long? id) : base(
-            "The key " + (key ?? "[NULL]") + " is not recognized as a valid " + typeof(CoreProperty) + "-enum " +
+            "The key " + (key ?? "[NULL]") + " is not recognized as a valid " + typeof(CoreP) + "-enum " +
             ((key?.Contains("#") ?? false) ? ("(it was also most probably just checked that it is not a " + nameof(AgoRapideAttribute.IsMany) + "-property either)") : "") +
             (id != null ? ("Possible resolution: Set Property with id " + id + " as no-longer-current in database or delete altogether with SQL-code DELETE FROM p WHERE id = " + id) : "")
             ) { } // TODO: Add link to APIMethod for set-no-longer-current.

@@ -36,15 +36,11 @@ namespace AgoRapideSample {
         /// (and different) configuration files.
         /// </summary>
         /// <returns></returns>
-        private Tuple<Uri, AgoRapide.Environment> GetEnvironment() {
-            // We expected this to be possible in C# 7.0:
-            // private (Uri rootUrl, AgoRapide.Environment environment) GetEnvironment() {
-            // What happened to the promised named tuple elements?
-
+        private (Uri uri, AgoRapide.Environment environment) GetEnvironment() {
             if (System.IO.Directory.Exists(@"c:\git\AgoRapide")) {
-                return new Tuple<Uri, AgoRapide.Environment>(new Uri("http://localhost:52668/"), AgoRapide.Environment.Development);
+                return (new Uri("http://localhost:52668/"), AgoRapide.Environment.Development);
             } else if (System.IO.Directory.Exists(@"D:\p\wwwRootAgoRapideSample")) {
-                return new Tuple<Uri, AgoRapide.Environment>(new Uri("http://sample.agorapide.com"), AgoRapide.Environment.Production);
+                return (new Uri("http://sample.agorapide.com"), AgoRapide.Environment.Production);
             } else {
                 throw new UnknownEnvironmentException("Unable to recognize environment that application is running under.");
             }
@@ -80,14 +76,14 @@ namespace AgoRapideSample {
                 // var rootUrl = AgoRapide.Extensions.Use(System.Web.HttpContext.Current.Request.Url, u => u.Scheme + "://" + u.Host + (u.Port != 80 ? (":" + u.Port.ToString()) : "") + "/");
                 // but we do not get the correct URL in that manner at this stage (maybe because there is not defined any "real" HttpRequest yet?)
                 // Therefore we use the GetEnvironment method:
-                var rootUrl = environment.Item1.ToString();
+                var rootUrl = environment.uri.ToString();
                 Log("rootUrl: " + rootUrl);
                 // rootPath works as expected
                 var rootPath = System.Web.HttpContext.Current.Server.MapPath("") + @"\";
                 /// TODO: REMOVE USE OF RootPath now that documentation if offered through general API mechanism
                 Log("rootPath: " + rootPath);
 
-                Log("environment: " + environment.Item2);
+                Log("environment: " + environment.environment);
 
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl and rootPath
                 AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(
@@ -96,7 +92,7 @@ namespace AgoRapideSample {
                 ) {
                     // Change to different version of JQuery by adding this line:
                     // ScriptRelativePaths = new List<string> { "Scripts/AgoRapide-0.1.js", "Scripts/jquery-3.1.1.min.js" },
-                    Environment = environment.Item2,
+                    Environment = environment.environment,
                     SuperfluousStackTraceStrings = new List<string>() {
                         @"c:\git\AgoRapide",
                         @"C:\AgoRapide2\trunk\"
@@ -107,16 +103,16 @@ namespace AgoRapideSample {
                 };
 
                 void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.EnumMapper.MapEnum<T>(s => Log(nameof(AgoRapide.EnumMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
-                mapper1<AgoRapide.CoreProperty>();
+                mapper1<AgoRapide.CoreP>();
                 mapper1<P>();
                 // Add above other enum's which you want to use as properties for your entities (so called entity property enums). 
                 // Add at bottom of list, that is in order of going outwards from inner AgoRapide library towards your final application
 
                 AgoRapide.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.EnumMapper.MapEnumFinalize) + ": " + s));
-                Log(nameof(AgoRapide.EnumMapper.AllCoreProperty) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.EnumMapper.AllCoreProperty.Select(c => c.PExplained)) + "\r\n");
-                
+                Log(nameof(AgoRapide.EnumMapper.AllCoreP) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.EnumMapper.AllCoreP.Select(c => c.PExplained)) + "\r\n");
+
                 var systemUser = new Person();
-                systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.AccessLevelGiven), AgoRapide.AccessLevel.System);
+                systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.AccessLevelGiven), AgoRapide.AccessLevel.System);
                 AgoRapide.Core.Util.Configuration.SystemUser = systemUser;
 
                 Log("Going through all " + typeof(P) + " attributes in order to expose any issues at once");
@@ -124,15 +120,15 @@ namespace AgoRapideSample {
                 // Add here any kind of enums that you use
 
                 Log("\r\n\r\n" +
-                    "Mapping all " + typeof(P) + " to " + typeof(AgoRapide.CoreProperty) + " in order to expose any issues at once\r\n" +
-                    "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreProperty>().Max()) + 1) + " and onwards for all " + typeof(P) + " not explicitly mapped to a " + typeof(AgoRapide.CoreProperty) + ")\r\n\r\n" +
-                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetCPA(p).CoreProperty)) + "\r\n");
+                    "Mapping all " + typeof(P) + " to " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
+                    "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards for all " + typeof(P) + " not explicitly mapped to a " + typeof(AgoRapide.CoreP) + ")\r\n\r\n" +
+                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetCPA(p).CoreP)) + "\r\n");
 
-                string mapper2<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreProperty<T>().PExplained + "\r\n";
+                string mapper2<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreP<T>().PExplained + "\r\n";
                 Log("\r\n\r\n" +
-                    "Testing " + nameof(AgoRapide.Core.Util.MapTToCoreProperty) + " for a few enums\r\n\r\n" +
-                    mapper2<AgoRapide.ResultCode>() + /// Maps to <see cref="AgoRapide.CoreProperty.ResultCode"/>
-                    mapper2<AgoRapide.APIMethodOrigin>()  /// Maps to <see cref="AgoRapide.CoreProperty.APIMethodOrigin"/>
+                    "Testing " + nameof(AgoRapide.Core.Util.MapTToCoreP) + " for a few enums\r\n\r\n" +
+                    mapper2<AgoRapide.ResultCode>() + /// Maps to <see cref="AgoRapide.CoreP.ResultCode"/>
+                    mapper2<AgoRapide.APIMethodOrigin>()  /// Maps to <see cref="AgoRapide.CoreP.APIMethodOrigin"/>
                 );
                 Log("Miscellaneous testing");
                 if (!AgoRapide.Core.Extensions.GetAgoRapideAttributeT(P.Password).A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.AgoRapideAttribute) + "." + nameof(AgoRapide.Core.AgoRapideAttribute.IsPassword));
@@ -146,7 +142,7 @@ namespace AgoRapideSample {
                 AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.ClassAndMethod>(db, text => Log("(by " + typeof(AgoRapide.ApplicationPart) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
                 var startupAsApplicationPart = AgoRapide.ApplicationPart.GetOrAdd<AgoRapide.ClassAndMethod>(GetType(), System.Reflection.MethodBase.GetCurrentMethod().Name, db);
-                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.Log), value: "Initiating startup", result: null);
+                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.Core.Extensions.A(AgoRapide.CoreP.Log), value: "Initiating startup", result: null);
 
                 // ---------------------
 
@@ -161,18 +157,18 @@ namespace AgoRapideSample {
 
                 // ---------------------
 
-                Log("Looking for " + AgoRapide.CoreProperty.IsAnonymous + " persons");
-                var queryId = new AgoRapide.Core.PropertyValueQueryId(AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.IsAnonymous), AgoRapide.Core.Operator.EQ, true);
+                Log("Looking for " + AgoRapide.CoreP.IsAnonymous + " persons");
+                var queryId = new AgoRapide.Core.PropertyValueQueryId(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.IsAnonymous), AgoRapide.Core.Operator.EQ, true);
                 if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
-                    Log(AgoRapide.CoreProperty.IsAnonymous + " person not found, creating one");
+                    Log(AgoRapide.CoreP.IsAnonymous + " person not found, creating one");
                     AgoRapide.Core.Util.Configuration.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(
                         cid: startupAsApplicationPart.Id,
-                        properties: new Dictionary<AgoRapide.CoreProperty, object> {
-                            { AgoRapide.CoreProperty.Name, "anonymous" },
-                            { AgoRapide.CoreProperty.IsAnonymous, true },
-                            { AgoRapide.CoreProperty.AccessLevelRead, AgoRapide.AccessLevel.Anonymous },
-                            { AgoRapide.CoreProperty.AccessLevelWrite, AgoRapide.AccessLevel.System }
-                        }.Select(e => new Tuple<AgoRapide.Core.AgoRapideAttributeEnriched, object>(AgoRapide.Core.Extensions.A(e.Key), e.Value)).ToList(),
+                        properties: new Dictionary<AgoRapide.CoreP, object> {
+                            { AgoRapide.CoreP.Name, "anonymous"},
+                            { AgoRapide.CoreP.IsAnonymous, true },
+                            { AgoRapide.CoreP.AccessLevelRead, AgoRapide.AccessLevel.Anonymous },
+                            { AgoRapide.CoreP.AccessLevelWrite, AgoRapide.AccessLevel.System }
+                        }.Select(e => (AgoRapide.Core.Extensions.A(e.Key), e.Value)).ToList(),
                         result: null));
                 } else {
                     AgoRapide.Core.Util.Configuration.AnonymousUser = anonymousUser;
@@ -228,7 +224,7 @@ namespace AgoRapideSample {
                 Log("Calling Owin.WebApiAppBuilderExtensions.UseWebApi");
                 Owin.WebApiAppBuilderExtensions.UseWebApi(appBuilder, httpConfiguration);
 
-                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.Core.Extensions.A(AgoRapide.CoreProperty.Log), value: "Completed startup", result: null);
+                db.UpdateProperty(startupAsApplicationPart.Id, startupAsApplicationPart, key: AgoRapide.Core.Extensions.A(AgoRapide.CoreP.Log), value: "Completed startup", result: null);
                 Log("Completed");
             } catch (Exception ex) {
                 /// Insert your preferred logging mechanism in:
@@ -317,12 +313,16 @@ namespace AgoRapideSample {
 
                     AgoRapide.API.Request.GetMethodsMatchingRequest(context.Request, AgoRapide.API.Request.GetResponseFormatFromURL(context.Request.RequestUri.ToString()), out var exactMatch, out var candidateMatches, out _);
                     if (
-                        (exactMatch != null && exactMatch.Item1.RequiresAuthorization) ||
-                        (candidateMatches != null && candidateMatches.Item1.Any(m => m.RequiresAuthorization))
+                        (exactMatch != null && exactMatch.Value.method.RequiresAuthorization) ||
+                        (candidateMatches != null && candidateMatches.Value.methods.Any(m => m.RequiresAuthorization))
                         ) {
                         context.ErrorResult = errorResultGenerator();
                     } else {
-                        if (exactMatch != null && exactMatch.Item1.Origin != AgoRapide.APIMethodOrigin.Autogenerated) throw new AgoRapide.Core.InvalidEnumException(exactMatch.Item1.Origin, "Found " + nameof(exactMatch) + " for " + exactMatch.Item1.Name + " with " + nameof(exactMatch.Item1.Origin) + " " + exactMatch.Item1.Origin + " and " + nameof(exactMatch.Item1.RequiresAuthorization) + " " + exactMatch.Item1.RequiresAuthorization + ". This is not logical, as such an URL should not result in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " being called");
+                        if (exactMatch != null && exactMatch.Value.method.Origin != AgoRapide.APIMethodOrigin.Autogenerated) throw new AgoRapide.Core.InvalidEnumException(exactMatch.Value.method.Origin,
+                            "Found " + nameof(exactMatch) + " for " + exactMatch.Value.method.Name + " " +
+                            "with " + nameof(exactMatch.Value.method.Origin) + " " + exactMatch.Value.method.Origin + " " +
+                            "and " + nameof(exactMatch.Value.method.RequiresAuthorization) + " " + exactMatch.Value.method.RequiresAuthorization + ". " +
+                            "This is not logical, as such an URL should not result in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " being called");
                         generatePrincipal((Person)AgoRapide.Core.Util.Configuration.AnonymousUser); // Careful with casting here. Must match creation of anonymous user in Startup.Configuration
                     }
                 } else {

@@ -12,33 +12,30 @@ namespace AgoRapide {
     /// <summary>
     /// See <see cref="EnumMapper"/>.
     /// 
-    /// <see cref="CoreProperty"/> represents core AgoRapide properties that must always be available in the client application. 
-    /// 
-    /// If you want the enum names themselves to be different in your application 
-    /// you may decorate with <see cref="AgoRapideAttribute.CoreProperty"/> attribute like this:
+    /// <see cref="CoreP"/> represents core AgoRapide properties that must always be available in the client application. 
+    /// You may change their names and meaning by using <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/>
     /// 
     /// public enum P {
     ///   ...
-    ///   [AgoRapideAttribute(CoreProperty = CoreProperty.EntityToRepresent)]
+    ///   [AgoRapideAttribute(InheritAndEnrichFromProperty = CoreP.EntityToRepresent)]
     ///   LoggedInAs,
     ///   ...
     /// }
     /// 
-    /// Often you will keep the name but add more information, like this:
+    /// More often you will instead keep the name but add more information, like this:
     /// public enum P {
     ///   ...
-    ///   [AgoRapide(Parents = new Type[] { typeof(Person) }, CoreProperty = CoreProperty.EntityToRepresent)]
+    ///   [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = CoreP.EntityToRepresent)]
     ///   EntityToRepresent,
     ///   ...
     /// }
     /// 
-    /// See <see cref="AgoRapideAttribute.EnrichFrom"/> for how attributes given here are added to those of
-    /// your chosen "TProperty"-enum.
+    /// See <see cref="AgoRapideAttributeEnriched.Initialize"/> for more details about enrichment.
     /// 
     /// See <see cref="CoreMethod"/> for example of the recommended approach to setting attributes when the type given (<see cref="AgoRapideAttribute.Type"/>) 
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
     /// </summary>
-    public enum CoreProperty {
+    public enum CoreP {
         None,
 
         /// <summary>
@@ -119,20 +116,20 @@ namespace AgoRapide {
         GeneralQueryId,
 
         [AgoRapide(
-            Type = typeof(QueryId))] /// Note how <see cref="AgoRapideAttributeT"/> changes CoreProperty into TProperty
+            Type = typeof(QueryId))] 
         QueryId,
 
         [AgoRapide(
-            Type = typeof(IntegerQueryId))] /// Note how <see cref="AgoRapideAttributeT"/> changes CoreProperty into TProperty
+            Type = typeof(IntegerQueryId))] 
         IntegerQueryId,
 
         [AgoRapide(
-            Type = typeof(PropertyValueQueryId))] /// Note how <see cref="AgoRapideAttributeT"/> changes CoreProperty into TProperty
+            Type = typeof(PropertyValueQueryId))]
         PropertyAndValueQueryId,
 
         [AgoRapide(
             Description = "General key. Describes a value for the TProperty-type (usually P) used in your application.",
-            Parents = new Type[] { typeof(ApplicationPart) }, Type = typeof(CoreProperty))]
+            Parents = new Type[] { typeof(ApplicationPart) }, Type = typeof(CoreP))]
         Key,
 
         [AgoRapide(

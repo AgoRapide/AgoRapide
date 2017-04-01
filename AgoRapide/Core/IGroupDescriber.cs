@@ -8,11 +8,11 @@ namespace AgoRapide.Core {
 
     /// <summary>
     /// TODO: <see cref="IGroupDescriber"/> could be replaced by enum-"class" level attributes now that we (Mar 2017) map
-    /// TODO: TO <see cref="CoreProperty"/> instead of FROM <see cref="CoreProperty"/> and can have multiple enums in each project.
+    /// TODO: TO <see cref="CoreP"/> instead of FROM <see cref="CoreP"/> and can have multiple enums in each project.
     /// TODO: (the enums again can be placed inside each entity class that we want to use)
     /// 
-    /// Enabling practical grouping of properties together by specifying a type implementing 
-    /// this interface in <see cref="AgoRapideAttribute.Group"/>.
+    /// Practical mechanism for describing properties with common properties. 
+    /// Specified through <see cref="AgoRapideAttribute.Group"/>. 
     /// 
     /// The implementation should set COMMON attributes for all the enum-properties in the group 
     /// (group meaning all enum-properties having the SAME <see cref="AgoRapideAttribute.Group"/>-type.   

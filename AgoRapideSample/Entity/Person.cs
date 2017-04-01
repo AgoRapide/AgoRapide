@@ -22,7 +22,7 @@ namespace AgoRapideSample {
         /// </summary>
         public override string Name {
             get {
-                if (TryGetPV(CoreProperty.Name.A(), out string retval)) return retval;
+                if (TryGetPV(CoreP.Name.A(), out string retval)) return retval;
                 var firstName = PV(P.FirstName.A(), "");
                 var lastName = PV(P.LastName.A(), "");
                 if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName)) {

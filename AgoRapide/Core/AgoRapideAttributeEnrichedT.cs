@@ -28,17 +28,17 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        /// <param name="coreProperty">
+        /// <param name="coreP">
         /// Only given when called from <see cref="EnumMapper.MapEnum{T}"/>. 
         /// Not given when called from <see cref="Extensions.GetAgoRapideAttributeT{T}"/>. 
-        /// Signifies that this is an entity property enum. See <see cref="AgoRapideAttributeEnriched.CoreProperty"/>. 
+        /// Signifies that this is an entity property enum. See <see cref="AgoRapideAttributeEnriched.CoreP"/>. 
         /// 
         /// TODO: Elaborate on this comment:
-        /// Note that will use <see cref="CoreProperty"/> from <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> instead of that is set. 
+        /// Note that will use <see cref="CoreP"/> from <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> instead of that is set. 
         /// </param>
-        public AgoRapideAttributeEnrichedT(AgoRapideAttribute agoRapideAttribute, CoreProperty? coreProperty) {            
+        public AgoRapideAttributeEnrichedT(AgoRapideAttribute agoRapideAttribute, CoreP? coreP) {            
             A = agoRapideAttribute;
-            _coreProperty = coreProperty;
+            _coreP = coreP;
             if (!(A.Property is T)) throw new InvalidObjectTypeException(A.Property, typeof(T), nameof(A.Property) + ".\r\nDetails: " + ToString());
             P = (T)A.Property;
             Initialize();

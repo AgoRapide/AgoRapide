@@ -44,8 +44,8 @@ namespace AgoRapideSample {
         [OverrideAuthentication]
         [BasicAuthentication(AccessLevelUse = AccessLevel.User)]
         [Method(
-            Description = "Returns all persons where one of -" + nameof(P.FirstName) + "-, -" + nameof(P.LastName) + "- or -" + nameof(P.Email) + "- matches {" + nameof(CoreProperty.GeneralQueryId) + "}",
-            S1 = nameof(CoreMethod.GeneralQuery), S2 = CoreProperty.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
+            Description = "Returns all persons where one of -" + nameof(P.FirstName) + "-, -" + nameof(P.LastName) + "- or -" + nameof(P.Email) + "- matches {" + nameof(CoreP.GeneralQueryId) + "}",
+            S1 = nameof(CoreMethod.GeneralQuery), S2 = CoreP.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
         public object GeneralQuery(string GeneralQueryId) {
             try {
                 if (!TryGetRequest(GeneralQueryId, out var request, out var errorResponse)) return errorResponse;
@@ -72,16 +72,16 @@ namespace AgoRapideSample {
                 if (persons.Count == 0) return request.GetErrorResponse(ResultCode.data_error, "No persons found for query '" + GeneralQueryId + "'");
                 return request.GetOKResponseAsMultipleEntities(persons.Select(p => {
                     var r = new GeneralQueryResult();
-                    r.AddProperty(CoreProperty.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="AgoRapideAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
+                    r.AddProperty(CoreP.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="AgoRapideAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
                     r.AddProperty(
-                        CoreProperty.SuggestedUrl.A(), 
+                        CoreP.SuggestedUrl.A(), 
                         request.CreateAPIUrl(
                             CoreMethod.UpdateProperty, 
-                            typeof(Person),  /// Note important point here, do NOT set <see cref="CoreProperty.EntityToRepresent"/> for <see cref="CoreProperty.EntityToRepresent"/>!
-                            new IntegerQueryId(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreProperty.EntityToRepresent, p.Id.ToString()
+                            typeof(Person),  /// Note important point here, do NOT set <see cref="CoreP.EntityToRepresent"/> for <see cref="CoreP.EntityToRepresent"/>!
+                            new IntegerQueryId(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
                         )
                     );
-                    r.AddProperty(CoreProperty.Description.A(), p.Name);
+                    r.AddProperty(CoreP.Description.A(), p.Name);
                     return (BaseEntityT)r;
                 }).ToList());
             } catch (Exception ex) {
@@ -126,7 +126,7 @@ namespace AgoRapideSample {
                 if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "Admin user already exists. There is no need for calling this method.");
                 if (persons[0] != au.Id) throw new Exception(nameof(Util.Configuration.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
                 // ------------------------------
-                request.Parameters.AddProperty(CoreProperty.AccessLevelGiven.A(), AccessLevel.Admin);
+                request.Parameters.AddProperty(CoreP.AccessLevelGiven.A(), AccessLevel.Admin);
                 request.Result.LogInternal("Note how this API-method gives you a high level of details in the generated result because -" + nameof(MethodAttribute) + "." + nameof(MethodAttribute.ShowDetailedResult) + "- = true", GetType());
                 return request.GetOKResponseAsEntityId(typeof(Person), DB.CreateEntity<Person>(GetId(), request.Parameters, request.Result), null);
             } catch (Exception ex) {

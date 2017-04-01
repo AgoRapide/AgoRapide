@@ -10,7 +10,7 @@ namespace AgoRapide.API {
     /// <summary>
     /// Generates <see cref="ResponseFormat.JSON"/>-view of results.
     /// </summary>
-    public class JSONView : BaseView { 
+    public class JSONView : BaseView {
         public JSONView(Request request) : base(request) { }
 
         /// <summary>
@@ -20,15 +20,17 @@ namespace AgoRapide.API {
         /// <param name="resultCode"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public static object GenerateEmergencyResult(ResultCode resultCode, string message) => 
+        public static object GenerateEmergencyResult(ErrorResponse errorResponse) => GenerateEmergencyResult(errorResponse.ResultCode, errorResponse.Message);
+
+        public static object GenerateEmergencyResult(ResultCode resultCode, string message) =>
             new System.Web.Mvc.JsonResult { // Without method we can not construct a Request object. Send emergency response as JSON only.
                 Data = new {
                     ResultCode = ResultCode.exception_error.ToString(),
                     ResultCodeDescription = ResultCode.exception_error.GetAgoRapideAttributeT().A.Description,
-                    Message = System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + message
+                    Message = System.Reflection.MethodBase.GetCurrentMethod().Name + ": Unable to communicate " + resultCode + " with message " + message
                 }
             };
-        
+
         /// <summary>
         /// Note use of <see cref="JSONView.GenerateEmergencyResult"/> in case of an exception occurring. 
         /// (In other words this method tries to always return some useful information)
@@ -39,7 +41,7 @@ namespace AgoRapide.API {
                 if (Request.Result == null) {
                     dynamic json = new System.Web.Helpers.DynamicJsonObject(new Dictionary<string, object>());
                     json[nameof(ResultCode)] = ResultCode.exception_error.ToString();
-                    json[nameof(CoreProperty.Message)] = "ERROR: No result-object available, very unexpected";
+                    json[nameof(CoreP.Message)] = "ERROR: No result-object available, very unexpected";
                     return new System.Web.Mvc.JsonResult { Data = json };
                 } else {
                     return Request.Result.ToJSONDetailed(Request);

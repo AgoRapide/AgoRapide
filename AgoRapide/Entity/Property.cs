@@ -109,7 +109,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <returns></returns>
         public static Property CreateIsManyParent(AgoRapideAttributeEnriched a) => new Property(a) {
-            Properties = new Dictionary<CoreProperty, Property>(),
+            Properties = new Dictionary<CoreP, Property>(),
             IsIsManyParent = true
         };
 
@@ -119,7 +119,7 @@ namespace AgoRapide {
 
         public int GetNextIsManyId() {
             AssertIsManyParent();
-            var id = 1; while (Properties.ContainsKey((CoreProperty)(object)(int.MaxValue - id))) {
+            var id = 1; while (Properties.ContainsKey((CoreP)(object)(int.MaxValue - id))) {
                 id++; if (id > 1000) throw new AgoRapideAttribute.IsManyException("id " + id + ", limit is (somewhat artificially) set to 1000. " + ToString());
             }
             return id;
@@ -147,7 +147,7 @@ namespace AgoRapide {
 
             if (a.A.Type == null) throw new NullReferenceException(
                   "There is no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                  "defined for enum " + typeof(CoreProperty).ToString() + "." + a.CoreProperty + ". " +
+                  "defined for enum " + typeof(CoreP).ToString() + "." + a.CoreP + ". " +
                   "Unable to assert whether " + typeof(T) + " (or rather " + value.GetType() + ") is valid for this enum");
 
             // typeof(T) is really irrelevant now because it T is "thrown away" when creating property.
@@ -160,7 +160,7 @@ namespace AgoRapide {
             // Instead we can check for value.GetType instead
             InvalidTypeException.AssertAssignable(value.GetType(), a.A.Type, () =>
                 nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                "defined for enum " + typeof(CoreProperty) + "." + a.CoreProperty + ". " +
+                "defined for enum " + typeof(CoreP) + "." + a.CoreP + ". " +
                 "!IsAssignableFrom " + value.GetType() + " " +
                 "(actual " + nameof(T) + " is " + typeof(T) + ")");
 
@@ -289,7 +289,7 @@ namespace AgoRapide {
         public string KeyDB {
             get => _keyDB ?? (_keyDB = new Func<string>(() => {
                 if (Key == null) throw new NullReferenceException(nameof(Key) + ". Either " + nameof(Key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                if (Key.CoreProperty== CoreProperty.None) throw new InvalidEnumException(Key.CoreProperty, "Details: " + ToString());
+                if (Key.CoreP== CoreP.None) throw new InvalidEnumException(Key.CoreP, "Details: " + ToString());
                 if (Key.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + ".\r\nDetails: " + ToString());
                 return Key.PToString;
             })());
@@ -298,21 +298,21 @@ namespace AgoRapide {
 
         private AgoRapideAttributeEnriched _key;
         public AgoRapideAttributeEnriched Key =>
-            _key != null ? _key : _key = new Func<AgoRapideAttributeEnriched>(() => {
+            _key ?? (_key = new Func<AgoRapideAttributeEnriched>(() => {
                 if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
                 var retval = EnumMapper.GetCPAOrDefault(KeyDB);
-                if (retval.CoreProperty == CoreProperty.None) {
+                if (retval.CoreP == CoreP.None) {
                     var t = KeyDB.Split('#');
-                    if (t.Length != 2) throw new InvalidEnumException(typeof(CoreProperty), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+                    if (t.Length != 2) throw new InvalidEnumException(typeof(CoreP), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
                     retval = EnumMapper.GetCPAOrDefault(t[0]);
-                    if (retval.CoreProperty == CoreProperty.None) throw new InvalidEnumException(typeof(CoreProperty), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+                    if (retval.CoreP == CoreP.None) throw new InvalidEnumException(typeof(CoreP), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
                     if (!retval.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
                     // TODO: Use better Exception class here
                     if (!int.TryParse(t[1], out var temp)) throw new InvalidCountException("Invalid int '" + t[1] + " for " + KeyDB + ".\r\nDetails: " + ToString());
                     _multipleIndex = temp;
                 }
                 return retval;
-            })();
+            })());
 
         /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
         private int? _multipleIndex;
@@ -667,7 +667,7 @@ namespace AgoRapide {
         public override string ToString() =>
             nameof(ParentId) + ": " + ParentId + ", " +
             nameof(KeyDB) + ": " + (_keyDB ?? "[NULL]") + ", " +
-            nameof(Key.CoreProperty) + ": " + (Key?.PExplained ?? "[NULL]") + ", " +
+            nameof(Key.CoreP) + ": " + (Key?.PExplained ?? "[NULL]") + ", " +
             nameof(Value) + ": " + (Value ?? "[NULL]") + ", " +
             nameof(LngValue) + ": " + (LngValue?.ToString() ?? "[NULL]") + ", " +
             nameof(DblValue) + ": " + (DblValue?.ToString() ?? "[NULL]") + ", " +
@@ -870,7 +870,7 @@ namespace AgoRapide {
                     cmds.Add(cmd);
                 });
             });
-            request.Result.AddProperty(CoreProperty.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.CreateAPIUrl(cmd))));
+            request.Result.AddProperty(CoreP.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.CreateAPIUrl(cmd))));
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>

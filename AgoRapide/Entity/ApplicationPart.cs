@@ -32,7 +32,7 @@ namespace AgoRapide {
         /// <param name="logger"></param>
         public static void GetFromDatabase<T>(IDatabase db, Action<string> logger) where T : ApplicationPart, new() =>
             db.GetAllEntities<T>().ForEach(ap => {
-                var key = ap.PV<string>(CoreProperty.Key.A());
+                var key = ap.PV<string>(CoreP.Key.A());
                 if (!AllApplicationParts.TryAdd(key, ap)) {
                     // This is a known weakness as of Jan 2017 since creation of ApplicationPart is not thread safe regarding database operations
                     logger("Duplicate " + ap.GetType() + " found (" + key + "), suggestion: Keep " + AllApplicationParts[key].Id + " but delete " + ap.Id + " (since that is the one being ignored now)");
@@ -89,14 +89,14 @@ namespace AgoRapide {
                         GetOrAdd<ClassAndMethod>(typeof(ApplicationPart), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id,
                     pid: null,
                     fid: null,
-                    key: CoreProperty.Type.A(),
+                    key: CoreP.Type.A(),
                     value: typeof(T).ToStringDB(),
                     result: null);
-                db.CreateProperty(id, id, null, CoreProperty.Name.A(), key, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
-                db.CreateProperty(id, id, null, CoreProperty.Key.A(), key, null);
+                db.CreateProperty(id, id, null, CoreP.Name.A(), key, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
+                db.CreateProperty(id, id, null, CoreP.Key.A(), key, null);
                 var a = type.GetAgoRapideAttributeForClass();
-                db.CreateProperty(id, id, null, CoreProperty.AccessLevelRead.A(), a.AccessLevelRead, null);
-                db.CreateProperty(id, id, null, CoreProperty.AccessLevelWrite.A(), a.AccessLevelWrite, null);
+                db.CreateProperty(id, id, null, CoreP.AccessLevelRead.A(), a.AccessLevelRead, null);
+                db.CreateProperty(id, id, null, CoreP.AccessLevelWrite.A(), a.AccessLevelWrite, null);
                 return db.GetEntityById<T>(id);
             });
             if (!(retvalTemp is T)) throw new InvalidObjectTypeException(retvalTemp, typeof(T), nameof(key) + ": " + key + ", " + nameof(retvalTemp) + ": " + retvalTemp.ToString());
@@ -105,12 +105,11 @@ namespace AgoRapide {
             enrichAndReturnThisObject.Id = retval.Id;
             enrichAndReturnThisObject.Created = retval.Created;
             enrichAndReturnThisObject.RootProperty = retval.RootProperty;
-            if (enrichAndReturnThisObject.Properties == null) enrichAndReturnThisObject.Properties = new Dictionary<CoreProperty, Property>();
+            if (enrichAndReturnThisObject.Properties == null) enrichAndReturnThisObject.Properties = new Dictionary<CoreP, Property>();
             retval.Properties.ForEach(p => {
-                if (enrichAndReturnThisObject.Properties.ContainsKey(p.Key)) throw new KeyAlreadyExistsException<CoreProperty>(p.Key, nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
+                if (enrichAndReturnThisObject.Properties.ContainsKey(p.Key)) throw new KeyAlreadyExistsException<CoreP>(p.Key, nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
                 enrichAndReturnThisObject.Properties.AddValue2(p.Key, p.Value);
             });
-            // enrichAndReturnThisObject.Properties.AddValue(M(CoreProperty.RootProperty), retval.RootProperty);
             return enrichAndReturnThisObject;
         }
     }

@@ -13,7 +13,7 @@ namespace AgoRapide {
     /// </summary>
     [AgoRapide(Description = "Incoming parameters to an API call. Offered through -" + nameof(ValidRequest) + "-")]
     public class Parameters : BaseEntityT { 
-        public Parameters(Dictionary<CoreProperty, Property> parameters) => Properties = parameters;        
+        public Parameters(Dictionary<CoreP, Property> parameters) => Properties = parameters;        
         public override string Name => "Collection of parameters to API call";
     }
 }

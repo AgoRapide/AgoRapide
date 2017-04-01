@@ -29,7 +29,7 @@ namespace AgoRapide.API {
         public object GetOKResponseAsEntityId(Type entityType, long id) => GetOKResponseAsEntityId(entityType, id, message: null);
         /// <summary>
         /// </summary>
-        /// <param name="entityType">Necessary for creating <see cref="CoreProperty.SuggestedUrl"/></param>
+        /// <param name="entityType">Necessary for creating <see cref="CoreP.SuggestedUrl"/></param>
         /// <param name="id"></param>
         /// <param name="message">May be null or empty. <paramref name="id"/> will be added.</param>
         /// <returns></returns>
@@ -38,16 +38,16 @@ namespace AgoRapide.API {
             message += "Id: " + id;
             if (!string.IsNullOrEmpty(Method.A.A.Description)) message += ". The following was executed: " + Method.A.A.Description;
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(CoreProperty.DBId.A(), id);
-            Result.AddProperty(CoreProperty.SuggestedUrl.A(), CreateAPIUrl(entityType, id));
-            Result.AddProperty(CoreProperty.Message.A(), message);
+            Result.AddProperty(CoreP.DBId.A(), id);
+            Result.AddProperty(CoreP.SuggestedUrl.A(), CreateAPIUrl(entityType, id));
+            Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
 
         public object GetOKResponseAsText(string text, string additionalMessage) {
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(CoreProperty.Value.A(), text); // TODO: USE BETTER CoreProperty than this!
-            Result.AddProperty(CoreProperty.Message.A(), additionalMessage);
+            Result.AddProperty(CoreP.Value.A(), text); /// TODO: USE BETTER <see cref="CoreP"/> than this!
+            Result.AddProperty(CoreP.Message.A(), additionalMessage);
             return GetResponse();
         }
 
@@ -79,7 +79,7 @@ namespace AgoRapide.API {
             return GetResponse();
         }
 
-        public object GetErrorResponse(Tuple<ResultCode, string> errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => GetErrorResponse(errorResponse.Item1, errorResponse.Item2, caller);
+        public object GetErrorResponse(ErrorResponse errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => GetErrorResponse(errorResponse.ResultCode, errorResponse.Message, caller);
 
         /// <summary>
         /// 
@@ -97,7 +97,7 @@ namespace AgoRapide.API {
             //message += nameof(AgoRapideAttribute.Description) + ": " + resultCode.GetAgoRapideAttribute().A.Description;
 
             Result.ResultCode = resultCode;
-            if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreProperty.Message.A(), message);
+            if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
 
@@ -114,7 +114,7 @@ namespace AgoRapide.API {
             }
             message += ". Last .NET method involved: " + caller; // TODO: Better text here! TODO: Add type / class within which caller resides!
             Result.ResultCode = ResultCode.access_error;
-            Result.AddProperty(CoreProperty.Message.A(), message);
+            Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
 
@@ -127,7 +127,7 @@ namespace AgoRapide.API {
         /// <see cref="GetOKResponseAsEntityId"/>, <see cref="GetAccessDeniedResponse"/>, <see cref="GetErrorResponse"/> or similar 
         /// which again will call this method. 
         /// 
-        /// Note how <see cref="Request.GetResponse"/> removes <see cref="CoreProperty.Log"/> from <see cref="ResultCode.ok"/> result if not <see cref="MethodAttribute.ShowDetailedResult"/>
+        /// Note how <see cref="Request.GetResponse"/> removes <see cref="CoreP.Log"/> from <see cref="ResultCode.ok"/> result if not <see cref="MethodAttribute.ShowDetailedResult"/>
         /// </summary>
         /// <returns></returns>
         public object GetResponse() {
@@ -288,9 +288,10 @@ namespace AgoRapide.API {
         public static void GetMethodsMatchingRequest(
             System.Net.Http.HttpRequestMessage request,
             ResponseFormat responseFormat,
-            out Tuple<APIMethod, List<string>> exactMatch,
-            out Tuple<List<APIMethod>, int, string> candidateMatches,
-            out Tuple<List<APIMethod>, string> maybeIntended) {
+            out (APIMethod method, List<string> parameters)? exactMatch,
+            out (List<APIMethod> methods, int lastMatchingSegmentNo, string explanation)? candidateMatches,
+            out (List<APIMethod> methods, string explanation)? maybeIntended) {
+
             var url = request.RequestUri.ToString();
             var urlSegments = url.Split('/').ToList();
             if (responseFormat == ResponseFormat.HTML) {
@@ -313,10 +314,12 @@ namespace AgoRapide.API {
 
             var isPOST = request.Method.ToString().Equals(HTTPMethod.POST.ToString());
             var content = request.Content.ReadAsStringAsync().Result;
-            var postParameters = !isPOST ? new List<Tuple<string, string>>() : content.Split("&").Select(s => {
+
+            // Note: Use of "var" not possible here, because then we will loose naming of tuples
+            List<(string key, string value)> postParameters = !isPOST ? new List<(string key, string value)>() : content.Split("&").Select(s => {
                 var pair = s.Split("=");
                 if (pair.Count != 2) throw new MethodMatchingException("'" + s + "' is not valid. Expected exact 1 '=' character, not " + (pair.Count - 1) + ".\r\nDetails: " + nameof(content) + ": " + content + ", " + nameof(url) + ": " + url);
-                return new Tuple<string, string>(pair[0], System.Web.HttpUtility.UrlDecode(pair[1]));
+                return (pair[0], System.Web.HttpUtility.UrlDecode(pair[1]));
             }).ToList();
 
             var getDebugInformation = new Func<string>(() =>
@@ -329,7 +332,7 @@ namespace AgoRapide.API {
                         nameof(postParameters) + ":\r\n" +
                         string.Join("\r\n", postParameters.Select(p => {
                             var cpa = EnumMapper.GetCPAOrDefault(p.Item1);
-                            return p.Item1 + (cpa.CoreProperty == CoreProperty.None ? (" [Not recognized]" + ")") : "") + " = " + (cpa.A.IsPassword ? "[WITHHELD]" : ("'" + p.Item2 + "'"));
+                            return p.key + (cpa.CoreP == CoreP.None ? (" [Not recognized]" + ")") : "") + " = " + (cpa.A.IsPassword ? "[WITHHELD]" : ("'" + p.value + "'"));
                         })))
                     )
             );
@@ -366,10 +369,10 @@ namespace AgoRapide.API {
                     if (isPOST && m.RouteSegments[urlSegmentNo + postParameterNo].Parameter != null) { // Match against POST content, not against URL segment                        
                         if (postParameters.Count <= postParameterNo) return false;
                         var r = /// Note how both name of parameter and parameter must match (or rather, only name of parameter because <see cref="RouteSegmentClass.MatchesURLSegment"/> will now always return true.
-                            m.RouteSegments[urlSegmentNo + postParameterNo].SegmentName.Equals(postParameters[postParameterNo].Item1) &&
+                            m.RouteSegments[urlSegmentNo + postParameterNo].SegmentName.Equals(postParameters[postParameterNo].key) &&
                             m.RouteSegments[urlSegmentNo + postParameterNo].MatchesURLSegment(
-                                postParameters[postParameterNo].Item2,
-                                postParameters[postParameterNo].Item2); // Strictly this last parameter should be the ToLower representation but it does not matter. We could even set it to null now.
+                                postParameters[postParameterNo].value,
+                                postParameters[postParameterNo].value); // Strictly this last parameter should be the ToLower representation but it does not matter. We could even set it to null now.
                         if (r) {
                             // At least one method found where parameter matches, increase for next iteration in while-loop
                             increasePostParameterNo = true; // TODO: Could we remove this side-effect?
@@ -384,7 +387,7 @@ namespace AgoRapide.API {
                 if (newList.Count == 0) {
                     exactMatch = null;
                     candidateMatches = null;
-                    maybeIntended = new Tuple<List<APIMethod>, string>(lastList, getDebugInformation());
+                    maybeIntended = (lastList, getDebugInformation());
                     return;
                 }
                 lastList = newList;
@@ -398,7 +401,7 @@ namespace AgoRapide.API {
             if ((urlSegmentNo + postParameterNo) == 0) {
                 exactMatch = null;
                 candidateMatches = null;
-                maybeIntended = new Tuple<List<APIMethod>, string>(lastList, getDebugInformation());
+                maybeIntended = (lastList, getDebugInformation());
                 return;
             }
 
@@ -410,7 +413,7 @@ namespace AgoRapide.API {
             var getParameters = new Func<APIMethod, List<string>>(method => {
                 List<string> retval;
                 if (isPOST) { // Add from postParameters
-                    retval = postParameters.Select(s => s.Item2).ToList();
+                    retval = postParameters.Select(s => s.value).ToList();
                 } else {
                     if (method.RouteSegments.Count != urlSegments.Count) throw new MethodMatchingException(nameof(method.RouteSegments) + ".Count (" + method.RouteSegments.Count + ") != " + nameof(urlSegments) + ".Count: " + urlSegments.Count + "\r\nDetails: " + nameof(url) + ": " + url + ", " + nameof(content) + ": " + content + ", " + nameof(method) + ": " + method.ToString());
                     retval = new List<string>();
@@ -427,11 +430,11 @@ namespace AgoRapide.API {
             switch (exactMatches.Count) {
                 case 0:
                     exactMatch = null;
-                    candidateMatches = new Tuple<List<APIMethod>, int, string>(lastList, urlSegmentNo - 1 + postParameterNo, getDebugInformation());
+                    candidateMatches = (lastList, urlSegmentNo - 1 + postParameterNo, getDebugInformation());
                     maybeIntended = null;
                     return;
                 case 1:
-                    exactMatch = new Tuple<APIMethod, List<string>>(exactMatches[0], getParameters(exactMatches[0]));
+                    exactMatch = (exactMatches[0], getParameters(exactMatches[0]));
                     candidateMatches = null;
                     maybeIntended = null;
                     return;
@@ -451,7 +454,7 @@ namespace AgoRapide.API {
                     /// (assumed there is only one such method)
                     var exactMatchesOrdered = exactMatches.OrderBy(m => m.Parameters.Count).ToList();
                     if (exactMatchesOrdered[0].Parameters.Count < exactMatchesOrdered[1].Parameters.Count) {
-                        exactMatch = new Tuple<APIMethod, List<string>>(exactMatches[0], getParameters(exactMatches[0]));
+                        exactMatch = (exactMatches[0], getParameters(exactMatches[0]));
                         candidateMatches = null;
                         maybeIntended = null;
                         return;

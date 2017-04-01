@@ -11,7 +11,7 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: Consider renaming into A (and likewise <see cref="AgoRapideAttributeEnrichedT{T}"/> into AT).
     /// 
-    /// TODO: Consider implementing a separate class only for entity enum properties like <see cref="CoreProperty"/> and P 
+    /// TODO: Consider implementing a separate class only for entity enum properties like <see cref="CoreP"/> and P 
     /// 
     /// Extends on <see cref="AgoRapideAttribute"/> because that class is very limited since it is an <see cref="Attribute"/>-class.  
     /// See also subclass <see cref="AgoRapideAttributeEnrichedT{T}"/>.
@@ -42,23 +42,23 @@ namespace AgoRapide.Core {
         /// Explains how this originates. 
         /// 
         /// Typical examples:
-        /// CoreProperty.Username
-        /// P.Email &lt;- CoreProperty.Username (when <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> is used)
-        /// P.FirstName (CoreProperty 42) (when no corresponding <see cref="CoreProperty"/> exists. 
+        /// CoreP.Username
+        /// P.Email &lt;- CoreP.Username (when <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> is used)
+        /// P.FirstName (CoreP 42) (when no corresponding <see cref="CoreP"/> exists. 
         /// TODO: If very high value (like almost MaxInt), then explain this as a IsMany-property where P is the index
         /// </summary>
         public string PExplained { get; protected set; }
 
-        public CoreProperty? _coreProperty;
+        public CoreP? _coreP;
         /// <summary>
-        /// Throws exception if <see cref="_coreProperty"/> not set. 
+        /// Throws exception if <see cref="_coreP"/> not set. 
         /// 
         /// TODO: Split <see cref="AgoRapideAttributeEnriched"/> into multiple classes.
         /// </summary>
-        public CoreProperty CoreProperty => _coreProperty ?? throw new NullReferenceException(
-            nameof(CoreProperty) + ". " +
+        public CoreP CoreP => _coreP ?? throw new NullReferenceException(
+            nameof(CoreP) + ". " +
             "This property is only set for entity property enums through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" +
-            "For other enums it is irrelevant (illegal) to ask for " + nameof(CoreProperty) + ".\r\n" +
+            "For other enums it is irrelevant (illegal) to ask for " + nameof(CoreP) + ".\r\n" +
             "Details:\r\n" + A.ToString());
 
         private ConcurrentDictionary<Type, bool> _isParentForCache = new ConcurrentDictionary<Type, bool>();
@@ -141,7 +141,7 @@ namespace AgoRapide.Core {
         /// TODO: This could be smarter by not attempting to call validator for already set
         /// TODO: long, double, DateTime values
         ///
-        /// Note that TryValidateAndParse returns TRUE if no ValidatorAndParser is available
+        /// Note that <see cref="TryValidateAndParse"/> returns TRUE if no <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> is available
         /// TODO: This is not good enough. FALSE would be a better result (unless TProperty is string)
         /// 
         /// TODO: IMPLEMENT CHAINING OF VALIDATING!
@@ -177,6 +177,8 @@ namespace AgoRapide.Core {
             if (!retval && originalValue != null && !originalValue.Equals(value)) {
                 result = new ParseResult(result.ErrorResponse + ".\r\nValue was unsuccessfully first cleaned up from originalValue '" + originalValue + "'");
             }
+            var a = ("A", "b");
+            
             return retval;
         }
 
@@ -185,8 +187,8 @@ namespace AgoRapide.Core {
             PToString = A.Property.ToString();
             PExplained = A.Property.GetType().ToStringVeryShort() + "." + PToString;
             // TODO: Clean up code for documentation here.
-            if (_coreProperty != null && A.InheritAndEnrichFromProperty == null && !A.Property.GetType().Equals(typeof(CoreProperty))) {
-                PExplained += " (" + nameof(CoreProperty) + ": " + _coreProperty.ToString() + ")";
+            if (_coreP != null && A.InheritAndEnrichFromProperty == null && !A.Property.GetType().Equals(typeof(CoreP))) {
+                PExplained += " (" + nameof(CoreP) + ": " + _coreP.ToString() + ")";
             }
 
             /// Enrichment 1, explicit given
@@ -195,13 +197,13 @@ namespace AgoRapide.Core {
                 NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
                 if (A.Property.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.Property) + " (" + A.Property + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
                 var cpa = EnumMapper.GetCPA(A.InheritAndEnrichFromProperty.ToString());
-                _coreProperty = cpa.CoreProperty;
+                _coreP = cpa.CoreP;
                 A.EnrichFrom(cpa.A);
                 PExplained += " <- " + cpa.PExplained;
             }
 
             /// Enrichment 2, from enum-"class" 
-            /// (see <see cref="CoreProperty.CoreMethod"/> / <see cref="CoreMethod"/> for example)
+            /// (see <see cref="CoreP.CoreMethod"/> / <see cref="CoreMethod"/> for example)
             /// (note how both enrichment 2 and 4 is based on <see cref="AgoRapideAttribute.Type"/>)
             /// -----------------------------------------
             if (A.Type == null) {
@@ -217,13 +219,13 @@ namespace AgoRapide.Core {
             /// Enrichment 3, from <see cref="IGroupDescriber"/>
             /// -----------------------------------------
             if (A.Group != null) {
-                InvalidTypeException.AssertAssignable(A.Group, typeof(IGroupDescriber), () => "Type given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Group) + " to " + typeof(CoreProperty).ToString() + "." + A.Property + " must implement " + typeof(Core.IGroupDescriber));
+                InvalidTypeException.AssertAssignable(A.Group, typeof(IGroupDescriber), () => "Type given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + " must implement " + typeof(Core.IGroupDescriber));
                 try {
                     ((IGroupDescriber)Activator.CreateInstance(A.Group)).EnrichAttribute(this);
                     PExplained += " (also enriched from " + nameof(IGroupDescriber) + " " + A.Group.ToStringShort() + ")";
                 } catch (Exception ex) {
                     throw new AgoRapideAttributeException(
-                        "Unable to initialize instance of " + A.Group + " given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Group) + " to " + typeof(CoreProperty).ToString() + "." + A.Property + ".\r\n" +
+                        "Unable to initialize instance of " + A.Group + " given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + ".\r\n" +
                         "Most probably because " + A.Group + " does not have a default constructor without any arguments\r\n" +
                         "Details:\r\n" + A.ToString(), ex);
                 }
@@ -242,7 +244,7 @@ namespace AgoRapide.Core {
                     throw new AgoRapideAttributeException(
                         "Unable to invoke \r\n" + A.Type.ToStringShort() + "'s\r\n" +
                         "   public static void method " + methodName + "\r\n" +
-                        "given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Type) + " to " + typeof(CoreProperty).ToString() + "." + A.Property + "\r\n" +
+                        "given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Type) + " to " + typeof(CoreP).ToString() + "." + A.Property + "\r\n" +
                         "Resolution: Check that it exists and that it takes exactly one parameter of type " + typeof(AgoRapideAttributeEnriched).ToStringShort() + ".\r\n" +
                         "In other words it should look like\r\n\r\n" +
                         "   public static void method " + methodName + "(" + typeof(AgoRapideAttributeEnriched).ToStringShort() + " agoRapideAttribute)\r\n\r\n" +
@@ -305,7 +307,7 @@ namespace AgoRapide.Core {
                 typeof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.RegExpValidator) + "\r\n" +
                 "Details: " + A.ToString());
 
-            // Note how ValidatorAndParser-objects are duplicated for each and every TProperty / CoreProperty
+            /// Note how ValidatorAndParser-objects are duplicated for each and every <see cref="CoreP"/>, P and so on. 
             // This is assumed to be of little significance however as the number of such enum values is quite limited. 
             if (ValidatorAndParser != null) {
                 /// OK, was most probably set through Enrichment 4, from <see cref="ITypeDescriber"/>
@@ -320,13 +322,7 @@ namespace AgoRapide.Core {
                         throw new NotImplementedException(
                             "Validator for " + PExplained + " is not implemented because no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " was given.\r\n" +
                             "Details: " + A.ToString());
-                    };
-                    //} else if (CoreProperty == CoreProperty.None) {
-                    //    ValidatorAndParser = value => {
-                    //        throw new NotImplementedException(
-                    //            "Validator for " + PExplained + " is not implemented because no " + nameof(CoreProperty) + " was given (" + PExplained + " is assumed irrelevant as entity property enum).\r\n" +
-                    //            "Details: " + A.ToString());
-                    //    };
+                    };                    
                 } else {
                     if (A.Type.Equals(typeof(string))) {
                         ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? new ParseResult(new Property(this, value), value) : new ParseResult("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");

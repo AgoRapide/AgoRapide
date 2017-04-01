@@ -31,7 +31,7 @@ namespace AgoRapide {
         Relation,
 
         [AgoRapide(
-            Description = "General access to an individual entity (stored in database as -" + nameof(CoreProperty.AccessLevelRead) + "- and -" + nameof(CoreProperty.AccessLevelWrite) + ")-",
+            Description = "General access to an individual entity (stored in database as -" + nameof(CoreP.AccessLevelRead) + "- and -" + nameof(CoreP.AccessLevelWrite) + ")-",
             LongDescription = "Responsibility of -" + nameof(Extensions.GetChildPropertiesForUser) + "-.")]
         Entity,
 
@@ -41,7 +41,7 @@ namespace AgoRapide {
         Type,
 
         [AgoRapide(Description =
-            "For a TProperty / -" + nameof(CoreProperty) + "- (through -" + nameof(AgoRapideAttribute) + "- for that TProperty / -" + nameof(CoreProperty) + "-\r\n" +
+            "For a TProperty / -" + nameof(CoreP) + "- (through -" + nameof(AgoRapideAttribute) + "- for that TProperty / -" + nameof(CoreP) + "-\r\n" +
             "Typical example here would be -" + nameof(APIMethod) + "- with -" + nameof(AccessType.Read) + "- set to -" + nameof(AccessLevel.Anonymous) + "- and -" + nameof(AccessType.Write) + "- set to -" + nameof(AccessLevel.System) + "-.",
             LongDescription = "Responsibility of -" + nameof(Extensions.GetChildPropertiesForUser) + "-.")]
         Property

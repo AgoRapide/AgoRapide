@@ -19,7 +19,7 @@ namespace AgoRapide.Core {
         Description =
             "Represents a search term in the API. " +
             "In its simplest form it is just a long integer that corresponds directly to " + nameof(DBField.id) + ". " +
-            "It can also be more complex like 'WHERE -" + nameof(CoreProperty.Name) + "- LIKE 'John%' ORDER BY -" + nameof(DBField.id) + "-",
+            "It can also be more complex like 'WHERE -" + nameof(CoreP.Name) + "- LIKE 'John%' ORDER BY -" + nameof(DBField.id) + "-",
         LongDescription =
             "This class translates an (untrusted) SQL like expression to a sanitized intermediate format " +
             "that is safe to use in order to build up a real SQL query against the database backend",
@@ -70,7 +70,7 @@ namespace AgoRapide.Core {
         /// objects are guaranteed to be either of type <see cref="string"/>, type <see cref="double"/> or type <see cref="DateTime"/>
         /// Other types like long, bool, Enums are inserted directly into <see cref="SQLWhereStatement"/>. 
         /// </summary>
-        public List<Tuple<string, object>> SQLWhereStatementParameters { get; protected set; } = new List<Tuple<string, object>>();
+        public List<(string key, object value)> SQLWhereStatementParameters { get; protected set; } = new List<(string key, object value)>();
         public string SQLOrderByStatement => ""; // Not yet implemented
 
         public static QueryId Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidQueryIdException(nameof(value) + ": " + value + ", " + nameof(errorResponse) + ": " + errorResponse);
@@ -260,7 +260,7 @@ namespace AgoRapide.Core {
                 var sql = new StringBuilder();
                 var detailer = new Func<string>(() => A.PToString + " " + Operator + " " + Value + " (of type " + Value.GetType() + ")");
 
-                if (((int)(object)(A.CoreProperty)) == 0) throw new InvalidEnumException(A.CoreProperty, detailer.Result("Details: "));
+                if (((int)(object)(A.CoreP)) == 0) throw new InvalidEnumException(A.CoreP, detailer.Result("Details: "));
 
                 sql.Append(DBField.key + " = '" + A.PToString + "' AND ");
 
@@ -277,7 +277,7 @@ namespace AgoRapide.Core {
                             default:
                                 parameterNo++;
                                 sql.Append(dbField + " " + Operator.ToSQLString() + " :" + dbField + (parameterNo).ToString());
-                                SQLWhereStatementParameters.Add(new Tuple<string, object>(dbField + (parameterNo).ToString(), retval));
+                                SQLWhereStatementParameters.Add((dbField + (parameterNo).ToString(), retval));
                                 break;
                         }
                     }
@@ -300,7 +300,7 @@ namespace AgoRapide.Core {
                                 retval.ForEach(v => {
                                     parameterNo++;
                                     sql.Append(":" + dbField + (parameterNo).ToString() + ",\r\n");
-                                    SQLWhereStatementParameters.Add(new Tuple<string, object>(dbField + (parameterNo).ToString(), v));
+                                    SQLWhereStatementParameters.Add((dbField + (parameterNo).ToString(), v));
                                 });
                                 sql.Remove(sql.Length - 3, 3); // Remove last comma + \r\n
                                 sql.Append("\r\n)");
@@ -322,22 +322,12 @@ namespace AgoRapide.Core {
                                 Operator.AssertValidForType(typeof(string), detailer);
                                 parameterNo++;
                                 sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
-                                SQLWhereStatementParameters.Add(new Tuple<string, object>(DBField.strv + (parameterNo).ToString(), _string));
+                                SQLWhereStatementParameters.Add((DBField.strv + (parameterNo).ToString(), _string));
                                 return;
                         }
-                        //var _string = Value as string;
-                        //if (_string != null) {
-                        //    Operator.AssertValidForType(typeof(string), detailer);
-                        //    parameterNo++;
-                        //    sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
-                        //    SQLWhereStatementParameters.Add(new Tuple<string, object>(DBField.strv + (parameterNo).ToString(), _string));
-                        //    return;
-                        //}
                     }
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
-                        //var a = new AgoRapideAttributeEnrichedT<CoreProperty>(Value.GetAgoRapideAttribute(), null); // TODO: Verify that null is cor
-                        //sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" + a.PToString + "'");                        
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" +
                             (EnumMapper.TryGetCPA(Value.ToString(), out var cpa) ? cpa.PToString : Value.ToString()) +
                             "'"); 
@@ -346,7 +336,7 @@ namespace AgoRapide.Core {
                         Operator.AssertValidForType(typeof(string), detailer);
                         parameterNo++;
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo.ToString()));
-                        SQLWhereStatementParameters.Add(new Tuple<string, object>(DBField.strv + (parameterNo.ToString()), Value.ToString()));
+                        SQLWhereStatementParameters.Add((DBField.strv + (parameterNo.ToString()), Value.ToString()));
                     }
                     if (valueAsList<long>(DBField.lngv) != null) return;
                     if (valueAsList<double>(DBField.dblv) != null) return;
@@ -357,7 +347,7 @@ namespace AgoRapide.Core {
                     // TODO: Support for List<SomeEnum> is not yet implemented. 
                     // 
                     // This would be too naive:
-                    //   if (valueAsList<CoreProperty>(DBField.strv) != null) return;
+                    //   if (valueAsList<CoreP>(DBField.strv) != null) return;
                     // (among other, silently mapped properties would not be supported (The ToString value will be the int-value)).
                     // This just is something totally different (Enum is just an abstract class)
                     //   if (valueAsList<Enum>(DBField.strv) != null) return;

@@ -139,7 +139,7 @@ namespace AgoRapide.API {
         /// Next method that client is suggested to call. 
         /// Typical would be to suggest Person/{id} after doing Person/Add/{first_name}/{last_name} for instance. 
         /// <see cref="Result.ToHTMLDetailed"/> could add this, since it knows request, parameters and so on.
-        /// Typical would be to replace {id} in this string with result values like <see cref="CoreProperty.Id"/>. 
+        /// Typical would be to replace {id} in this string with result values like <see cref="CoreP.Id"/>. 
         /// We could also add this to <see cref="Result.ToJSONDetailed"/>
         /// </summary>
         public string SuggestedNextMethod { get; set; }

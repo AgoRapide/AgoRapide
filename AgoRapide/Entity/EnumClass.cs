@@ -20,7 +20,7 @@ namespace AgoRapide {
             { // What we really would want is "where T : Enum"
                 RegisterEnumClass<T>(db);
             }
-            Register<CoreProperty>(); 
+            Register<CoreP>(); 
             Register<AccessLevel>();
             Register<APIMethodOrigin>();
             Register<CoreMethod>();
@@ -46,7 +46,7 @@ namespace AgoRapide {
                 /// TODO: COMPLETE THIS! 
                 /// TODO: Get information from <see cref="EnumMapper"/> for instance
                 // db.UpdateProperty()
-                // ec.AddProperty(M(CoreProperty.EnumValue), "");
+                // ec.AddProperty(M(CoreP.EnumValue), "");
             });
         }
     }

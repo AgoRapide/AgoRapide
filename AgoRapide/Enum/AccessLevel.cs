@@ -10,12 +10,12 @@ namespace AgoRapide {
     /// <summary>
     /// Note increasing level of access making it possible to compare with greater than / lesser than in code
     /// 
-    /// See corresponding <see cref="CoreProperty.AccessLevelGiven"/>, <see cref="CoreProperty.AccessLevelUse"/>, <see cref="CoreProperty.AccessLevelRead"/> and <see cref="CoreProperty.AccessLevelWrite"/>
+    /// See corresponding <see cref="CoreP.AccessLevelGiven"/>, <see cref="CoreP.AccessLevelUse"/>, <see cref="CoreP.AccessLevelRead"/> and <see cref="CoreP.AccessLevelWrite"/>
     /// 
     /// See also <see cref="AccessType"/> and <see cref="AccessLocation"/>
     /// </summary>
     [AgoRapide(
-        Description = 
+        Description =
             "Describes level of access, from -" + nameof(Anonymous) + "- to -" + nameof(System) + "-.",
         LongDescription =
             "See -" + nameof(AccessLocation) + "- for how -" + nameof(AccessLevel) + "- " +
@@ -25,12 +25,14 @@ namespace AgoRapide {
 
         Anonymous,
 
+        [AgoRapide(Description = "Access is given for to all entities that are registered as users in the system")]
         User,
 
         /// <summary>
         /// TODO: Elaborate on this. Is this needed in addition to <see cref="AccessLocation.Relation"/>???
         /// </summary>
-        [AgoRapide(Description = "A relation has to exist between the current user and the entity in question.")]
+        [AgoRapide(Description = "A relation has to exist between the current user and the entity in question.",
+            LongDescription = "Either the current user IS the entity or there is some kind of relation giving access (like a parent-child relationship for instance).")]
         Relation,
 
         Admin,

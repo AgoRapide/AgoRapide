@@ -98,6 +98,7 @@
     <Compile Include="Core\AgoRapideAttributeEnrichedT.cs" />
     <Compile Include="Core\BaseCore.cs" />
     <Compile Include="Core\EnumMapper.cs" />
+    <Compile Include="Core\ErrorResponse.cs" />
     <Compile Include="Core\IGroupDescriber.cs" />
     <Compile Include="Core\ITypeDescriber.cs" />
     <Compile Include="Core\ParseResult.cs" />
@@ -124,7 +125,7 @@
     <Compile Include="Enum\AccessLocation.cs" />
     <Compile Include="Enum\APIMethodOrigin.cs" />
     <Compile Include="Enum\CoreMethod.cs" />
-    <Compile Include="Enum\CoreProperty.cs" />
+    <Compile Include="Enum\CoreP.cs" />
     <Compile Include="Enum\DateTimeFormat.cs" />
     <Compile Include="Enum\DBField.cs" />
     <Compile Include="Enum\Environment.cs" />

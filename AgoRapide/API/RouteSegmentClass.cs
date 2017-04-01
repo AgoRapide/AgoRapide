@@ -37,7 +37,7 @@ namespace AgoRapide.API {
         ///    (in "worst case", if <see cref="AgoRapideAttribute.SampleValues"/> is null or empty then a single-element List consisting of 
         ///    "[No sample value defined for ...]" will be given.
         /// (in other words this property will always have at least one non-null value defined, but note how for instance 
-        /// <see cref="CoreProperty.Password"/>) is deliberately set up with a blank value)
+        /// <see cref="CoreP.Password"/>) is deliberately set up with a blank value)
         /// </summary>
         public List<string> SampleValues { get; private set; }
 
@@ -47,7 +47,7 @@ namespace AgoRapide.API {
         public Type Type { get; private set; }
 
         /// <summary>
-        /// Typical example would be <see cref="CoreProperty.QueryId"/> like api/Person/{QueryId}
+        /// Typical example would be <see cref="CoreP.QueryId"/> like api/Person/{QueryId}
         /// </summary>
         public AgoRapideAttributeEnriched Parameter { get; private set; }
 
@@ -171,7 +171,7 @@ namespace AgoRapide.API {
             public InvalidRouteSegmentClassException(string message) : base(
                 "A " + nameof(RouteSegmentClass) + " must have one of the following types:\r\n\r\n" +
                 "-" + typeof(Type).ToString() + ",\r\n" +
-                "-" + typeof(AgoRapideAttributeEnriched).ToString() + " (or an entity property enum like " + nameof(CoreProperty) + ", P or similar),\r\n" +
+                "-" + typeof(AgoRapideAttributeEnriched).ToString() + " (or an entity property enum like " + nameof(CoreP) + ", P or similar),\r\n" +
                 "-" + typeof(string).ToString() + ".\r\n\r\nThis does not correspond to the following:\r\n" + message) { }
         }
     }

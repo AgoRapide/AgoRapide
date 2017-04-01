@@ -29,20 +29,20 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// For not-<see cref="ResultCode.ok"/> will set <see cref="CoreProperty.ResultCodeDescription"/> and <see cref="CoreProperty.APIDocumentationUrl"/>. 
-        /// For <see cref="ResultCode.exception_error"/> will set <see cref="CoreProperty.ExceptionDetailsUrl"/>. 
+        /// For not-<see cref="ResultCode.ok"/> will set <see cref="CoreP.ResultCodeDescription"/> and <see cref="CoreP.APIDocumentationUrl"/>. 
+        /// For <see cref="ResultCode.exception_error"/> will set <see cref="CoreP.ExceptionDetailsUrl"/>. 
         /// </summary>
         /// <param name="request"></param>
         private void AdjustAccordingToResultCodeAndMethod(Request request) {
             if (ResultCode == ResultCode.ok && !request.Method.A.A.ShowDetailedResult) {
-                if (Properties != null && Properties.ContainsKey(CoreProperty.Log)) Properties.Remove(CoreProperty.Log);
+                if (Properties != null && Properties.ContainsKey(CoreP.Log)) Properties.Remove(CoreP.Log);
             }
             if (ResultCode != ResultCode.ok) {
-                AddProperty(CoreProperty.ResultCodeDescription.A(), ResultCode.GetAgoRapideAttributeT().A.Description);
-                if (!Properties.ContainsKey(CoreProperty.APIDocumentationUrl)) AddProperty(CoreProperty.APIDocumentationUrl.A(), request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
+                AddProperty(CoreP.ResultCodeDescription.A(), ResultCode.GetAgoRapideAttributeT().A.Description);
+                if (!Properties.ContainsKey(CoreP.APIDocumentationUrl)) AddProperty(CoreP.APIDocumentationUrl.A(), request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
             }
             if (ResultCode == ResultCode.exception_error) {
-                AddProperty(CoreProperty.ExceptionDetailsUrl.A(), request.CreateAPIUrl(Util.Configuration.ExceptionDetailsAPISyntax));
+                AddProperty(CoreP.ExceptionDetailsUrl.A(), request.CreateAPIUrl(Util.Configuration.ExceptionDetailsAPISyntax));
             }
         }
 

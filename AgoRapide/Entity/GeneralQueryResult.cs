@@ -11,13 +11,16 @@ namespace AgoRapide {
     /// <summary>
     /// Never stored in database. 
     /// </summary>
-    [AgoRapide(Description = "Communicates result of -" + nameof(CoreMethod.GeneralQuery) + "-")]
+    [AgoRapide(
+        Description = "Communicates result of -" + nameof(CoreMethod.GeneralQuery) + "-",
+        AccessLevelRead = AccessLevel.User // For JSON to work something must be specified here
+    )]
     public class GeneralQueryResult : BaseEntityT {
 
         public override string ToHTMLTableHeading(Request request) => "<tr><th>Result</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
-            "<a href=\"" + PV<string>(CoreProperty.SuggestedUrl.A()) + "\">" + PV<string>(CoreProperty.Description.A()).HTMLEncode() + "</a>" +
+            "<a href=\"" + PV<string>(CoreP.SuggestedUrl.A()) + "\">" + PV<string>(CoreP.Description.A()).HTMLEncode() + "</a>" +
             "</tr>\r\n";
 
     }

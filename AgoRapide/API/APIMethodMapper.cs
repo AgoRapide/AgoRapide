@@ -33,11 +33,11 @@ namespace AgoRapide.API {
             // (instead of those produced by .NET which are more difficult to debug). 
             var tempNames = new Dictionary<string, APIMethod>();
             var tempTemplates = new Dictionary<string, APIMethod>();
-            var tempMappings = new List<Tuple<string, string, object>>();
+            var tempMappings = new List<(string name, string routeTemplate, object defaults)>();
             var tempMapper = new Action<APIMethod, string, string, object>((method, name, routeTemplate, defaults) => {
                 tempNames.AddValue(name, method, () => "\r\nName collision.\r\nNew method: " + method.ToString() + "\r\nExisting method: " + tempNames[name].ToString());
                 tempTemplates.AddValue(routeTemplate, method, () => "\r\nRoute template collision.\r\nNew method: " + method.ToString() + "\r\nExisting method: " + tempTemplates[routeTemplate].ToString());
-                tempMappings.Add(new Tuple<string, string, object>(name, routeTemplate, defaults));
+                tempMappings.Add((name, routeTemplate, defaults));
             });
 
             var nonCore = routes.Where(r => {
@@ -84,7 +84,7 @@ namespace AgoRapide.API {
 
             // It should now be safe to call config.Routes.MapHttpRoute
             tempMappings.ForEach(m => {
-                config.Routes.MapHttpRoute(name: m.Item1, routeTemplate: m.Item2, defaults: m.Item3);
+                config.Routes.MapHttpRoute(name: m.name, routeTemplate: m.routeTemplate, defaults: m.defaults);
             });
         }
     }

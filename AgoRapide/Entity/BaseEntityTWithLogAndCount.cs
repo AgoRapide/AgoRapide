@@ -29,7 +29,7 @@ namespace AgoRapide {
         /// <param name="text"></param>
         public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogData.AppendLine(DateTime.Now.ToString(DateTimeFormat.DateHourMinSecMs) + ": " + callerType.ToStringShort() + "." + caller + ": " + text);
 
-        public Dictionary<CoreProperty, long> Counts = new Dictionary<CoreProperty, long>();
+        public Dictionary<CoreP, long> Counts = new Dictionary<CoreP, long>();
         /// <summary>
         /// TODO: Consider removing Counts-dictionary altogether. 
         /// 
@@ -37,18 +37,17 @@ namespace AgoRapide {
         /// 
         /// TODO: Consider if Counts can be implemented straight from Properties collection
         /// TODO: At least, let the ToHTML-method transfer all counts to Properties collection
-        /// TODO: (which should again be shown with the correct attribute information, even if only a silently mapped CoreProperty enum)
         /// 
         /// TODO: Consider adding IsCount to <see cref="AgoRapideAttribute"/>. 
         /// TODO: This could transfer <see cref="Counts"/> values to / from database automatically. 
         /// </summary>
         /// <param name="id"></param>
-        public void Count(CoreProperty id) => Counts[id] = Counts.TryGetValue(id, out var count) ? ++count : 1;
-        public void SetCount(CoreProperty id, long value) => Counts[id] = value;
-        public long GetCount(CoreProperty id) => TryGetCount(id, out var retval) ? retval : throw new CountNotFoundException(id);
-        public bool TryGetCount(CoreProperty id, out long count) => TryGetCount(id, out count);
+        public void Count(CoreP id) => Counts[id] = Counts.TryGetValue(id, out var count) ? ++count : 1;
+        public void SetCount(CoreP id, long value) => Counts[id] = value;
+        public long GetCount(CoreP id) => TryGetCount(id, out var retval) ? retval : throw new CountNotFoundException(id);
+        public bool TryGetCount(CoreP id, out long count) => TryGetCount(id, out count);
         public class CountNotFoundException : ApplicationException {
-            public CountNotFoundException(CoreProperty id) : base(id.ToString()) { }
+            public CountNotFoundException(CoreP id) : base(id.ToString()) { }
         }
 
         /// <summary>
@@ -85,10 +84,10 @@ namespace AgoRapide {
             if (LogData.Length == 0) {
                 // Do not bother with any of these
             } else {
-                var p = CoreProperty.Log;
+                var p = CoreP.Log;
                 var key = p.A().PToString;
                 if (retval.Properties.TryGetValue(key, out var existing)) {
-                    throw new KeyAlreadyExistsException<CoreProperty>(p,
+                    throw new KeyAlreadyExistsException<CoreP>(p,
                         "Unable to add " + nameof(LogData) + "\r\n-------\r\n" + LogData.ToString() + "\r\n" +
                         "-------Because of existing property\r\n-------\r\n" +
                         ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + ". Details: " + ToString());
@@ -101,7 +100,7 @@ namespace AgoRapide {
                 Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
                     var key = c.Key.A().PToString;
                     if (retval.Properties.TryGetValue(key, out var existing)) {
-                        throw new KeyAlreadyExistsException<CoreProperty>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.GetAgoRapideAttributeT().PExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
+                        throw new KeyAlreadyExistsException<CoreP>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.GetAgoRapideAttributeT().PExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
                     }
                     retval.Properties[key] = new JSONProperty0 { Value = c.Value.ToString() };
                 });

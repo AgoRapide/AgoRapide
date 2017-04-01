@@ -31,12 +31,12 @@ namespace AgoRapide {
         /// </summary>
         public BaseEntityT RepresentedByEntity { get; set; }
 
-        public override string Name => PV(CoreProperty.Name.A(), Id.ToString());
+        public override string Name => PV(CoreP.Name.A(), Id.ToString());
 
         /// <summary>
         /// <see cref="RootProperty"/>.Id is same as (<see cref="BaseEntity.Id"/>. 
         /// 
-        /// <see cref="RootProperty"/>.<see cref="Property.KeyT"/> will usually correspond to <see cref="CoreProperty.Type"/>
+        /// <see cref="RootProperty"/>.<see cref="Property.KeyT"/> will usually correspond to <see cref="CoreP.Type"/>
         /// 
         /// Note: Not relevant for <see cref="Property"/>
         /// </summary>
@@ -50,7 +50,7 @@ namespace AgoRapide {
         /// Note how <see cref="AgoRapideAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="AgoRapideAttribute.IsMany"/>-parent and
         /// the different properties as properties under that again with dictionary index equal to <see cref="int.MaxValue"/> minus index
         /// </summary>
-        public Dictionary<CoreProperty, Property> Properties { get; set; }
+        public Dictionary<CoreP, Property> Properties { get; set; }
 
         public BaseEntityT() {
         }
@@ -66,7 +66,7 @@ namespace AgoRapide {
         /// </param>
         /// <param name="accessType"></param>
         /// <returns></returns>
-        public Dictionary<CoreProperty, Property> GetExistingProperties(BaseEntityT currentUser, AccessType accessType) {
+        public Dictionary<CoreP, Property> GetExistingProperties(BaseEntityT currentUser, AccessType accessType) {
             var possible = GetType().GetChildPropertiesForUser(currentUser, this, accessType);
             var allForType = GetType().GetChildProperties();
             return Properties.Where(p =>
@@ -80,7 +80,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public Property GetProperty(CoreProperty key) => Properties.GetValue2(key, () => "Entity " + ToString());
+        public Property GetProperty(CoreP key) => Properties.GetValue2(key, () => "Entity " + ToString());
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -94,7 +94,7 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public T PVM<T>() => PV<T>(Util.MapTToCoreProperty<T>()); // What we really would want is "where T : Enum"
+        public T PVM<T>() => PV<T>(Util.MapTToCoreP<T>()); // What we really would want is "where T : Enum"
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -109,7 +109,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public T PVM<T>(T defaultValue) => PV(Util.MapTToCoreProperty<T>(), defaultValue); // What we really would want is "where T : Enum"
+        public T PVM<T>(T defaultValue) => PV(Util.MapTToCoreP<T>(), defaultValue); // What we really would want is "where T : Enum"
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, throws exception if fails
@@ -117,7 +117,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="p"></param>
         /// <returns></returns>
-        public T PV<T>(AgoRapideAttributeEnriched p) => TryGetPV(p, out T retval) ? retval : throw new InvalidPropertyException<T>(p.CoreProperty, PExplained(p));
+        public T PV<T>(AgoRapideAttributeEnriched p) => TryGetPV(p, out T retval) ? retval : throw new InvalidPropertyException<T>(p.CoreP, PExplained(p));
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
@@ -140,7 +140,7 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public bool TryGetPVM<T>(out T t) => TryGetPV(Util.MapTToCoreProperty<T>(), out t); // What we really would want is "where T : Enum"
+        public bool TryGetPVM<T>(out T t) => TryGetPV(Util.MapTToCoreP<T>(), out t); // What we really would want is "where T : Enum"
 
         /// <summary>
         /// Returns FALSE if p does not exist at all
@@ -156,7 +156,7 @@ namespace AgoRapide {
             // TODO: or this:
             if (Properties == null) { pAsT = default(T); return false; }
 
-            if (!Properties.TryGetValue(p.CoreProperty, out var property)) { pAsT = default(T); return false; }
+            if (!Properties.TryGetValue(p.CoreP, out var property)) { pAsT = default(T); return false; }
             // Type checking here was considered Jan 2017 but left out. Instead we leave it to property to
             // convert as needed (double to int for instance or DateTime to string)
             // var type = typeof(T);
@@ -175,7 +175,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public string PExplained(AgoRapideAttributeEnriched p) => Properties.TryGetValue(p.CoreProperty, out var retval) ? retval.ToString() : "[NOT_FOUND]";
+        public string PExplained(AgoRapideAttributeEnriched p) => Properties.TryGetValue(p.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]";
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -189,7 +189,7 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
-        public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreProperty<T>(), value);
+        public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreP<T>(), value);
 
         public void AddProperty<T>(AgoRapideAttributeEnriched a, T value) {
             if (value == null) throw new ArgumentNullException(nameof(value));
@@ -198,8 +198,8 @@ namespace AgoRapide {
             property.Parent = this;
             property.Initialize();
             // TODO: Decide if this is as wanted. Maybe structure better how Properties is initialized
-            if (Properties == null) Properties = new Dictionary<CoreProperty, Property>();
-            Properties.AddValue2(a.CoreProperty, property);
+            if (Properties == null) Properties = new Dictionary<CoreP, Property>();
+            Properties.AddValue2(a.CoreP, property);
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         public class InvalidPropertyException<T> : ApplicationException {
-            public InvalidPropertyException(CoreProperty p, string value) : base("The value found for " + typeof(CoreProperty) + "." + p + " (" + value + ") is not valid for " + typeof(T)) { }
+            public InvalidPropertyException(CoreP p, string value) : base("The value found for " + typeof(CoreP) + "." + p + " (" + value + ") is not valid for " + typeof(T)) { }
         }
 
         public virtual string ToHTMLTableHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(Created) + "</th></tr>";
@@ -263,7 +263,7 @@ namespace AgoRapide {
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
                     // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                     retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.A.PriorityOrder).Select(p => {
-                        p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.CoreProperty); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
+                        p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                         return p.ToHTMLTableRow(request);
                     })));
                     retval.AppendLine("</table>");
@@ -303,10 +303,10 @@ namespace AgoRapide {
                             ("[" + nameof(AgoRapideAttribute) + "(" + nameof(AgoRapideAttribute.AccessLevelWrite) + " = " + a.AccessLevelWrite + "...)] for -" + GetType().ToStringShort() + "-.")
                         ) +
                         "<br><br>\r\n" +
-                        "In order to have any " + nameof(addableProperties) + " you must in general (for all the relevant enum values of -" + typeof(CoreProperty) + "-) " +
+                        "In order to have any " + nameof(addableProperties) + " you must in general (for all the relevant enum values of -" + typeof(CoreP) + "-) " +
                         "add typeof(" + GetType().ToStringShort() + ") to -" + nameof(AgoRapideAttribute.Parents) + "- and also set " + nameof(AgoRapideAttribute.AccessLevelWrite) + ". " +
                         "<br><br>\r\n" +
-                        "(currently -" + typeof(CoreProperty) + "- has -" + nameof(AgoRapideAttribute.Parents) + "- set to typeof(" + GetType().ToStringShort() + ") for " +
+                        "(currently -" + typeof(CoreP) + "- has -" + nameof(AgoRapideAttribute.Parents) + "- set to typeof(" + GetType().ToStringShort() + ") for " +
                         (childProperties.Count == 0 ? "no values at all" :
                             ("the following values:<br>\r\n" + string.Join("<br>\r\n", childProperties.Values.Select(v => v.PToString + " (" + v.A.AccessLevelWrite + ")"))) + "<br>\r\n") +
                         "). " +
@@ -341,11 +341,14 @@ namespace AgoRapide {
             var retval = new JSONEntity1 { Id = Id };
             if (Properties != null) {
                 retval.Properties = new Dictionary<string, JSONProperty0>();
+                /// Missing some properties in your HTML / JSON <see cref="Result"/>? See important comment for <see cref="AgoRapideAttribute.Parents"/> about access rights. 
+                /// (note how you may get different results for <see cref="Result.MultipleEntitiesResult"/> for HTML and JSON because HTML will use
+                /// <see cref="BaseEntityT.ToHTMLTableRow"/> which does not check access at all, while JSON data here checks for each individual property. 
                 GetExistingProperties(request.CurrentUser, AccessType.Read).ForEach(i => {
                     retval.Properties.Add(i.Value.Key.PToString, i.Value.ToJSONProperty());
                 });
                 // Note that we do not bother with Type when Properties is not set
-                if (!retval.Properties.ContainsKey(nameof(CoreProperty.Type))) retval.Properties.Add(nameof(CoreProperty.Type), new JSONProperty0 { Value = GetType().ToStringShort() });
+                if (!retval.Properties.ContainsKey(nameof(CoreP.Type))) retval.Properties.Add(nameof(CoreP.Type), new JSONProperty0 { Value = GetType().ToStringShort() });
             }
             // TODO: ADD THIS:
             // AddUserChangeablePropertiesToSimpleEntity(retval);

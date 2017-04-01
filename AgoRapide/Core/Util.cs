@@ -124,77 +124,49 @@ namespace AgoRapide.Core {
             return true;
         }
 
+        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>> _tToCorePCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>>();
+        public static AgoRapideAttributeEnriched MapTToCoreP<T>() => TryMapTToCoreP<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
+        public static bool TryMapTToCoreP<T>(out AgoRapideAttributeEnriched a) => TryMapTToCoreP<T>(out a, out _);
         /// <summary>
-        /// Would typically contain only one key, typeof(TProperty) (usually called P)
-        /// value has a key for each 
-        /// typeof(T) which points to the actual value of TProperty   OR to an errorResponse
-        /// like 
-        /// typeof(Money) pointing to P.Money)                        OR typeof(Money) pointing to "No mapping exists from Money to P"
-        /// </summary>
-        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>> _tToCorePropertyCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>>();
-        /// <summary>
-        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <typeparamref name="TProperty"/>
-        /// See 
-        /// <see cref="BaseEntityT.PVM{T}"/>
-        /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static AgoRapideAttributeEnriched MapTToCoreProperty<T>() => TryMapTToCoreProperty<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
-
-        /// <summary>
-        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <typeparamref name="TProperty"/>
-        /// See 
-        /// <see cref="BaseEntityT.PVM{T}"/>
-        /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="tProperty"></param>
-        /// <returns></returns>
-        public static bool TryMapTToCoreProperty<T>(out AgoRapideAttributeEnriched tProperty) => TryMapTToCoreProperty<T>(out tProperty, out _);
-
-        /// <summary>
-        /// TODO: ADJUST (MAR 2017) AFTER MAPPING _TO_ COREPROPERTY
-        /// 
-        /// Maps <typeparamref name="T"/> to a corresponding value for <see cref="CoreProperty"/> based on <see cref="AgoRapideAttribute.Type"/>. 
-        /// Example: Enum-"class" <see cref="CoreMethod"/> is linked to enum value <see cref="CoreProperty.CoreMethod"/>
+        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <see cref="CoreP"/> based on <see cref="AgoRapideAttribute.Type"/>. 
+        /// Example: See how enum-"class" <see cref="CoreMethod"/> is linked to enum value <see cref="CoreP.CoreMethod"/>
         /// 
         /// <see cref="BaseEntityT.PVM{T}"/>
         /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="tProperty"></param>
+        /// <param name="a"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public static bool TryMapTToCoreProperty<T>(out AgoRapideAttributeEnriched tProperty, out string errorResponse) {
-            if (typeof(T).Equals(typeof(CoreProperty))) throw new InvalidTypeException(typeof(T),
-                "Attempt of mapping from " + typeof(T) + " to " + typeof(CoreProperty) + ". " +
+        public static bool TryMapTToCoreP<T>(out AgoRapideAttributeEnriched a, out string errorResponse) {
+            if (typeof(T).Equals(typeof(CoreP))) throw new InvalidTypeException(typeof(T),
+                "Attempt of mapping from " + typeof(T) + " to " + typeof(CoreP) + ". " +
                 "A common cause is mistakenly calling " +
                 nameof(BaseEntityT) + "." + nameof(BaseEntityT.PVM) + " / " + nameof(BaseEntityT) + "." + nameof(BaseEntityT.TryGetPVM) + " instead of " +
                 nameof(BaseEntityT) + "." + nameof(BaseEntityT.PV) + " / " + nameof(BaseEntityT) + "." + nameof(BaseEntityT.TryGetPV) + " " +
                 "(note for instance how the overload of " + nameof(BaseEntityT.PVM) + " with defaultValue-parameter " +
                 "looks very similar to " + nameof(BaseEntityT.PV) + " if you forget the explicit type parameter for the latter method)");
-            var mapping = _tToCorePropertyCache.
-                GetOrAdd(typeof(CoreProperty), type => new ConcurrentDictionary<Type, object>()).
+            var mapping = _tToCorePCache.
+                GetOrAdd(typeof(CoreP), type => new ConcurrentDictionary<Type, object>()).
                 GetOrAdd(typeof(T), type => {
-                    /// NOTE: Note how <see cref="EnumMapper.AllCoreProperty"/> itself is cached but that should not matter
+                    /// NOTE: Note how <see cref="EnumMapper.AllCoreP"/> itself is cached but that should not matter
                     /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
-                    var candidates = EnumMapper.AllCoreProperty.Where(cpa => cpa.A.Type?.Equals(type) ?? false).ToList();
+                    var candidates = EnumMapper.AllCoreP.Where(cpa => cpa.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
-                        case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort();
+                        case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort();
                         case 1: return candidates[0];
                         default:
                             return
-                       "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreProperty).ToStringShort() + ".\r\n" +
-                       "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreProperty).ToStringShort() + "." + c.CoreProperty) + ".");
+                       "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + ".\r\n" +
+                       "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreP).ToStringShort() + "." + c.CoreP) + ".");
                     }
                 });
             if (mapping is string) {
-                tProperty = null;
+                a = null;
                 errorResponse = (string)mapping;
                 return false;
             }
-            tProperty = mapping as AgoRapideAttributeEnriched ?? throw new InvalidObjectTypeException(mapping, typeof(AgoRapideAttributeEnriched));
+            a = mapping as AgoRapideAttributeEnriched ?? throw new InvalidObjectTypeException(mapping, typeof(AgoRapideAttributeEnriched));
             errorResponse = null;
             return true;
         }
@@ -208,33 +180,31 @@ namespace AgoRapide.Core {
         /// By using these additional encodings you get a greater range of characters that can be 
         /// used as parameters when using AgoRapide's REST API GET-syntax
         /// </summary>
-        public static List<Tuple<string, string>> preEncoding = new List<Tuple<string, string>> {
-            T2("+", "_PLUS_"),
-            T2("&", "_AMP_"),
-            T2("%", "_PERCENT_"),
-            T2("-","_DASH_"),
-            T2(":","_COLON_"),
-            T2("/","_SLASH_"),
-            T2("#", "_HASH_"),
-            T2(".","_STOP_"),
-            T2("?","_QUESTION_"),
-            T2("*", "_STAR_"),
-            T2("'", "_APOSTROPHE_"),
-            T2(">", "_GREATER_"),
-            T2("<","_LESSER_")
+        public static List<(string unencoded, string encoded)> preEncoding = new List<(string unencoded, string encoded)> {
+            ("+", "_PLUS_"),
+            ("&", "_AMP_"),
+            ("%", "_PERCENT_"),
+            ("-","_DASH_"),
+            (":","_COLON_"),
+            ("/","_SLASH_"),
+            ("#", "_HASH_"),
+            (".","_STOP_"),
+            ("?","_QUESTION_"),
+            ("*", "_STAR_"),
+            ("'", "_APOSTROPHE_"),
+            (">", "_GREATER_"),
+            ("<","_LESSER_")
         };
 
         public static string UrlEncode(string str) {
-            preEncoding.ForEach(t => str = str.Replace(t.Item1, t.Item2));
+            preEncoding.ForEach(t => str = str.Replace(t.unencoded, t.encoded));
             return System.Web.HttpUtility.UrlEncode(str.Replace("+", "%20%"));
         }
 
         public static string UrlDecodeAdditional(string str) {
-            preEncoding.ForEach(t => str = str.Replace(t.Item2, t.Item1));
+            preEncoding.ForEach(t => str = str.Replace(t.encoded, t.unencoded));
             return str;
         }
-
-        private static Tuple<string, string> T2(string s1, string s2) => new Tuple<string, string>(s1, s2);
 
         /// <summary>
         /// Useful for getting shorter exception messages (shorter stack traces)
@@ -370,9 +340,8 @@ namespace AgoRapide.Core {
         /// Log-elements waiting to be written to disc
         /// By writing at regular intervals we reduce dramatically the load on the disc
         /// See also LOGGER_THREAD_SLEEP_PERIOD 
-        /// Item1 is LogPath, Item2 is LogText
         /// </summary>
-        private static ConcurrentQueue<Tuple<string, string>> logQueue = new ConcurrentQueue<Tuple<string, string>>();
+        private static ConcurrentQueue<(string path, string text)> logQueue = new ConcurrentQueue<(string path, string text)>();
         private static long loggerThreadIsRunning = 0;
 
         private static string InsertDateTimeIntoLogPath(string logPath) => logPath.Replace("[DATE]", DateTime.Now.ToString("yyyy-MM-dd")).Replace("[DATE_HOUR]", DateTime.Now.ToString("yyyy-MM-dd_HH")); // Note "hard coded" date formats since the resulting filename has to be guaranteed to be valid
@@ -401,15 +370,15 @@ namespace AgoRapide.Core {
                 if (lastLogData.Count > Configuration.LAST_LOG_DATA_MAX_SIZE) lastLogData.RemoveFirst();
             }
 
-            logQueue.Enqueue(new Tuple<string, string>(logPath, logText));
+            logQueue.Enqueue((logPath, logText));
             var wasRunning = System.Threading.Interlocked.Exchange(ref loggerThreadIsRunning, 1);
             if (wasRunning == 0) System.Threading.Tasks.Task.Factory.StartNew(() => {               // Start separate thread for actual logging to disk (the idea is to reduce dramatically the number of disk I/O-operations needed)
                 try {
                     while (true) {                                                                  // Empty queue continuously, use a separate StringBuilder for each logPath
                         var allLogData = new Dictionary<string, StringBuilder>();                   // This code is a bit hastily thrown together. We could most probably increase performance here, especially for applications where logPath never changes.
-                        while (logQueue.TryDequeue(out var logTuple)) { // (building allLogData is a bit expensive)
-                            if (!allLogData.TryGetValue(logTuple.Item1, out var logData)) allLogData.Add(logTuple.Item1, logData = new StringBuilder());
-                            logData.Append(logTuple.Item2);
+                        while (logQueue.TryDequeue(out var i)) { // (building allLogData is a bit expensive)
+                            if (!allLogData.TryGetValue(i.path, out var logData)) allLogData.Add(i.path, logData = new StringBuilder());
+                            logData.Append(i.text);
                         }
                         allLogData.ForEach(e => System.IO.File.AppendAllText(InsertDateTimeIntoLogPath(e.Key), e.Value.ToString()));
                         System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -524,8 +493,8 @@ namespace AgoRapide.Core {
     }
 
     public class InvalidMappingException<T> : ApplicationException {
-        public InvalidMappingException(string message) : base("Unable to map from " + typeof(T).ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
-        public InvalidMappingException(T _enum, string message) : base("Unable to map from " + _enum.GetType() + "." + _enum.ToString() + " to " + nameof(CoreProperty) + ".\r\nDetails:\r\n" + message) { }
+        public InvalidMappingException(string message) : base("Unable to map from " + typeof(T).ToString() + " to " + nameof(CoreP) + ".\r\nDetails:\r\n" + message) { }
+        public InvalidMappingException(T _enum, string message) : base("Unable to map from " + _enum.GetType() + "." + _enum.ToString() + " to " + nameof(CoreP) + ".\r\nDetails:\r\n" + message) { }
     }
 
     public class InvalidMappingException<T, TProperty> : ApplicationException
