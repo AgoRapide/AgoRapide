@@ -88,10 +88,10 @@ namespace AgoRapide.Core {
         [AgoRapide(
             Description =
                 "Used for general sorting. " +
-                "A lower value (think like 1'st priority, 2'nd priority) will put object higher up in a typical AgoRapide sorted list",
+                "A lower value (think like 1'st order of priority, 2'nd order of priority) will put object higher up (make more visible) in a typical AgoRapide sorted list",
             LongDescription =
                 "Recommended values are:\r\n" +
-                "-1 for very important,\r\n" +
+                "-1 for important,\r\n" +
                 "0 (default) for 'ordinary' and\r\n" +
                 "1 for not important.\r\n" +
                 "In this manner it will be relatively easy to emphasize or deemphasize single properties without having to give values for all the other properties.\r\n" +
