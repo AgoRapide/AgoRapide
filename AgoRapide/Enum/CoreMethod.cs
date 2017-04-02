@@ -16,7 +16,7 @@ namespace AgoRapide {
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
     /// </summary>
     [AgoRapide(
-        Description = "Represents core AgoRapide API methods that must be available in the client application."
+        Description = "Represents core AgoRapide API methods that must be available in the client application.",
         EnumType = EnumType.DataEnum
     )]
     public enum CoreMethod {

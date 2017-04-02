@@ -297,6 +297,8 @@ namespace AgoRapide {
                 }
                 return Key.PToString;
             })());
+
+          
             set => _keyDB = value;
         }
 
@@ -305,6 +307,7 @@ namespace AgoRapide {
             _key ?? (_key = new Func<AgoRapideAttributeEnriched>(() => {
                 if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
                 throw new NotImplementedException(); /// TODO: Implement use of <see cref="PropertyKey"/>
+              
                 var retval = EnumMapper.GetAOrDefault(KeyDB);
                 if (retval.CoreP == CoreP.None) {
                     var t = KeyDB.Split('#');

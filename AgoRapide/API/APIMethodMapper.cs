@@ -34,6 +34,7 @@ namespace AgoRapide.API {
             var tempNames = new Dictionary<string, APIMethod>();
             var tempTemplates = new Dictionary<string, APIMethod>();
             var tempMappings = new List<(string name, string routeTemplate, object defaults)>();
+
             var tempMapper = new Action<APIMethod, string, string, object>((method, name, routeTemplate, defaults) => {
                 tempNames.AddValue(name, method, () => "\r\nName collision.\r\nNew method: " + method.ToString() + "\r\nExisting method: " + tempNames[name].ToString());
                 tempTemplates.AddValue(routeTemplate, method, () => "\r\nRoute template collision.\r\nNew method: " + method.ToString() + "\r\nExisting method: " + tempTemplates[routeTemplate].ToString());

@@ -193,7 +193,7 @@ namespace AgoRapide.Core {
         };
 
         /// <summary>
-        /// This format is (within AgoRapide) only used by BUtil.Log 
+        /// This format is (within AgoRapide) only used by <see cref="Util.Log(string)"/>
         /// Note: <see cref="ValidDateFormats"/> must be a superset of { <see cref="DateAndHourMinSecMsFormat"/>, <see cref="DateAndHourMinSecFormat"/>, <see cref="DateAndHourMinFormat"/>, <see cref="DateAndHourFormat"/>, <see cref="DateOnlyFormat"/> }
         /// <see cref="Configuration.DateAndHourMinSecMsFormat"/> corresponds to <see cref="DateTimeFormat.DateHourMinSecMs"/> 
         /// </summary>
