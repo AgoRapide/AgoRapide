@@ -122,7 +122,7 @@ namespace AgoRapideSample {
                 Log("\r\n\r\n" +
                     "Mapping all " + typeof(P) + " to " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
                     "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards for all " + typeof(P) + " not explicitly mapped to a " + typeof(AgoRapide.CoreP) + ")\r\n\r\n" +
-                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetCPA(p).CoreP)) + "\r\n");
+                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetA(p).CoreP)) + "\r\n");
 
                 string mapper2<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreP<T>().PExplained + "\r\n";
                 Log("\r\n\r\n" +

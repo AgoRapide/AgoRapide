@@ -82,7 +82,7 @@ namespace AgoRapide.API {
             }
 
             if (segment.GetType().IsEnum) { // Turn into 
-                if (EnumMapper.TryGetCPA(segment.ToString(), out var temp)) {
+                if (EnumMapper.TryGetA(segment.ToString(), out var temp)) {
                     segment = temp;
                 } else {
                     throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(EnumMapper) + " as an entity property enum");

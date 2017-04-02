@@ -329,7 +329,7 @@ namespace AgoRapide.Core {
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" +
-                            (EnumMapper.TryGetCPA(Value.ToString(), out var cpa) ? cpa.PToString : Value.ToString()) +
+                            (EnumMapper.TryGetA(Value.ToString(), out var cpa) ? cpa.PToString : Value.ToString()) +
                             "'"); 
                     }
                     if (Value is ITypeDescriber) {

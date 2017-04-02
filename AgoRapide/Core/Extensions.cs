@@ -553,7 +553,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="AgoRapideAttribute.Parents"/>. 
         /// Note how result is cached.
-        /// TODO: Add reset of cache (because of <see cref="EnumMapper.GetCPA(string, IDatabase)"/> which will add new mappings after application startup)
+        /// TODO: Add reset of cache (because of <see cref="EnumMapper.GetA(string, IDatabase)"/> which will add new mappings after application startup)
         /// TODO: OR EVEN BETTER, MOVE INTO <see cref="EnumMapper"/> INSTEAD
         /// </summary>
         /// <param name="type"></param>
@@ -628,7 +628,7 @@ namespace AgoRapide.Core {
             _agoRapideAttributeTCache[type] = attributes;
         }
 
-        public static AgoRapideAttributeEnriched A(this CoreP coreP) => EnumMapper.GetCPA(coreP);
+        public static AgoRapideAttributeEnriched A(this CoreP coreP) => EnumMapper.GetA(coreP);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {

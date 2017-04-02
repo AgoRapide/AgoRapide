@@ -300,11 +300,11 @@ namespace AgoRapide {
         public AgoRapideAttributeEnriched Key =>
             _key ?? (_key = new Func<AgoRapideAttributeEnriched>(() => {
                 if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                var retval = EnumMapper.GetCPAOrDefault(KeyDB);
+                var retval = EnumMapper.GetAOrDefault(KeyDB);
                 if (retval.CoreP == CoreP.None) {
                     var t = KeyDB.Split('#');
                     if (t.Length != 2) throw new InvalidEnumException(typeof(CoreP), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
-                    retval = EnumMapper.GetCPAOrDefault(t[0]);
+                    retval = EnumMapper.GetAOrDefault(t[0]);
                     if (retval.CoreP == CoreP.None) throw new InvalidEnumException(typeof(CoreP), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
                     if (!retval.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
                     // TODO: Use better Exception class here

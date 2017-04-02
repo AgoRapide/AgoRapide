@@ -178,7 +178,7 @@ namespace AgoRapide.Core {
                 result = new ParseResult(result.ErrorResponse + ".\r\nValue was unsuccessfully first cleaned up from originalValue '" + originalValue + "'");
             }
             var a = ("A", "b");
-            
+
             return retval;
         }
 
@@ -196,7 +196,7 @@ namespace AgoRapide.Core {
             if (A.InheritAndEnrichFromProperty != null) {
                 NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
                 if (A.Property.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.Property) + " (" + A.Property + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
-                var cpa = EnumMapper.GetCPA(A.InheritAndEnrichFromProperty.ToString());
+                var cpa = EnumMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
                 _coreP = cpa.CoreP;
                 A.EnrichFrom(cpa.A);
                 PExplained += " <- " + cpa.PExplained;
@@ -322,7 +322,7 @@ namespace AgoRapide.Core {
                         throw new NotImplementedException(
                             "Validator for " + PExplained + " is not implemented because no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " was given.\r\n" +
                             "Details: " + A.ToString());
-                    };                    
+                    };
                 } else {
                     if (A.Type.Equals(typeof(string))) {
                         ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? new ParseResult(new Property(this, value), value) : new ParseResult("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
@@ -346,10 +346,15 @@ namespace AgoRapide.Core {
                             "Must be in one of the following formats:\r\n" +
                             string.Join(", ", validFormats) + "\r\n");
                     } else if (A.Type.IsEnum) {
-                        ValidatorAndParser = value => Util.EnumTryParse(A.Type, value, out var enumValue) ? new ParseResult(new Property(this, enumValue), enumValue) : new ParseResult(
-                            "Invalid as " + A.Type + ".\r\n" +
-                            "Must be one of the following values:\r\n" +
-                            string.Join(", ", A.ValidValues) + "\r\n");
+                        ValidatorAndParser = value => {
+                            // if (EnumMapper.TryGetA(value, out var cpa)) return new ParseResult(new Property(this, cpa.A.Property), cpa.A.Property);
+                            if (Util.EnumTryParse(A.Type, value, out var enumValue)) return new ParseResult(new Property(this, enumValue), enumValue);
+                            return new ParseResult(
+                                "Invalid as " + A.Type + ".\r\n" +
+                                "Must be one of the following values:\r\n" +
+                                string.Join(", ", A.ValidValues) + "\r\n"
+                            );
+                        };
                     } else {
                         // TODO: Try something like a general TryParse through reflection
                         ValidatorAndParser = value => {

@@ -11,7 +11,7 @@ namespace AgoRapide {
 
     [AgoRapide(
         Description = "Helper class matching entity property enums(like P) used in your project to -" + nameof(CoreP) + "-",
-        LongDescription = "Note especially -" + nameof(GetCPA) + "- which is able to store in database any new string values found"
+        LongDescription = "Note especially -" + nameof(GetA) + "- which is able to store in database any new string values found"
     )]
     public static class EnumMapper {
 
@@ -53,7 +53,7 @@ namespace AgoRapide {
         /// <summary>
         /// TODO: Rename into something else. MapEnum for instance.
         /// 
-        /// Register typeof(<typeparamref name="T"/>) for later use by <see cref="GetCPA{T}"/>
+        /// Register typeof(<typeparamref name="T"/>) for later use by <see cref="GetA{T}"/>
         /// 
         /// Not thread-safe. Only to be used by single thread at application initialization. 
         /// 
@@ -140,23 +140,15 @@ namespace AgoRapide {
         /// Returns all <see cref="CoreP"/> including additional ones mapped from other enums. 
         /// </summary>
         public static List<AgoRapideAttributeEnriched> AllCoreP => _allCoreP ?? throw new NullReferenceException(nameof(AllCoreP) + ". Most probably because no corresponding call was made to " + nameof(MapEnum));
+
         /// <summary>
         /// Preferred method when <paramref name="_enum"/> is known in the C# code
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="_enum"></param>
         /// <returns></returns>
-        public static AgoRapideAttributeEnriched GetCPA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
-            TryGetCPA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
-
-        /// <summary>
-        /// TODO: REMOVE THIS METHOD!
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="_enum"></param>
-        /// <returns></returns>
-        public static AgoRapideAttributeEnriched GetCPAOrDefault<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
-            TryGetCPA(_enum, out var retval) ? retval : throw new NullReferenceException("Unable to return default, concept does not exist");
+        public static AgoRapideAttributeEnriched GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+            TryGetA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
 
         /// <summary>
         /// Note how <see cref="InvalidMappingException{T}"/> is being thrown if no corresponding call was made to <see cref="MapEnum"/>.
@@ -165,37 +157,38 @@ namespace AgoRapide {
         /// <param name="_enum"></param>
         /// <param name="cpa"></param>
         /// <returns></returns>
-        public static bool TryGetCPA<T>(T _enum, out AgoRapideAttributeEnriched cpa) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+        public static bool TryGetA<T>(T _enum, out AgoRapideAttributeEnriched cpa) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
             _enumMapsCache.TryGetValue(typeof(T), out var dict) ?
                 dict.TryGetValue((int)(object)_enum, out cpa) :
                 throw new InvalidMappingException<T>(_enum,
                     "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
                     "(Hint: this is usually done in Startup.cs.)");
 
-        /// <summary>
-        /// TODO: Find a better name! Try to avoid use of this method. 
-        /// Necessary to use when <paramref name="_enum"/> originates from <see cref="AgoRapideAttribute.Property"/>
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="_enum"></param>
-        /// <param name="cpa"></param>
-        /// <returns></returns>
-        public static bool TryGetCPAAsObject(object _enum, out AgoRapideAttributeEnriched cpa) {
-            if (!(_enum?.GetType() ?? throw new NullReferenceException(nameof(_enum))).IsEnum) throw new InvalidObjectTypeException(_enum, "Expected " + nameof(Type.IsEnum));
-            return _enumMapsCache.TryGetValue(_enum.GetType(), out var dict) ?
-                dict.TryGetValue((int)_enum, out cpa) :
-                throw new InvalidMappingException(
-                    "Unable to map from " + _enum.GetType() + "." + _enum + ".\r\n" +
-                    "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + _enum.GetType() + ".\r\n" +
-                    "(Hint: this is usually done in Startup.cs)");
-        }
+        ///// <summary>
+        ///// TODO: Find a better name! Try to avoid use of this method. 
+        ///// Necessary to use when <paramref name="_enum"/> originates from <see cref="AgoRapideAttribute.Property"/>
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="_enum"></param>
+        ///// <param name="cpa"></param>
+        ///// <returns></returns>
+        //public static bool TryGetAAsObject(object _enum, out AgoRapideAttributeEnriched cpa) {
+        //    if (!(_enum?.GetType() ?? throw new NullReferenceException(nameof(_enum))).IsEnum) throw new InvalidObjectTypeException(_enum, "Expected " + nameof(Type.IsEnum));
+        //    return _enumMapsCache.TryGetValue(_enum.GetType(), out var dict) ?
+        //        dict.TryGetValue((int)_enum, out cpa) :
+        //        throw new InvalidMappingException(
+        //            "Unable to map from " + _enum.GetType() + "." + _enum + ".\r\n" +
+        //            "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + _enum.GetType() + ".\r\n" +
+        //            "(Hint: this is usually done in Startup.cs)");
+        //}
+
         /// <summary>
         /// TODO: REMOVE THIS METHOD!
         /// </summary>
         /// <param name="_enum"></param>
         /// <returns></returns>
-        public static AgoRapideAttributeEnriched GetCPAOrDefault(string _enum) => fromStringMaps.TryGetValue(_enum, out var retval) ? retval : throw new NullReferenceException("Unable to return default, concept does not exist");
-        public static AgoRapideAttributeEnriched GetCPA(string _enum) => fromStringMaps.GetValue(_enum);
+        public static AgoRapideAttributeEnriched GetAOrDefault(string _enum) => fromStringMaps.TryGetValue(_enum, out var retval) ? retval : throw new NullReferenceException("Unable to return default, concept does not exist");
+        public static AgoRapideAttributeEnriched GetA(string _enum) => fromStringMaps.GetValue(_enum);
         /// <summary>
         /// Method that will always "succeed" in the sense that unknown values of <paramref name="_enum"/> will just be added. 
         /// 
@@ -210,7 +203,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="_enum"></param>
         /// <returns></returns>
-        public static AgoRapideAttributeEnriched GetCPA(string _enum, IDatabase db) =>
+        public static AgoRapideAttributeEnriched GetA(string _enum, IDatabase db) =>
             fromStringMaps.GetOrAdd(_enum, e => {
                 if (db == null) throw new NullReferenceException(nameof(db));
                 throw new NotImplementedException(
@@ -223,6 +216,6 @@ namespace AgoRapide {
                     "Also implement support for hierarchically organised enums where AgoRapideAttribute reflects all hierarchical levels");
             });
 
-        public static bool TryGetCPA(string _enum, out AgoRapideAttributeEnriched cpa) => fromStringMaps.TryGetValue(_enum, out cpa);
+        public static bool TryGetA(string _enum, out AgoRapideAttributeEnriched cpa) => fromStringMaps.TryGetValue(_enum, out cpa);
     }
 }

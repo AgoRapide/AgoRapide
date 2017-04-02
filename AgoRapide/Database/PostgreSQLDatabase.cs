@@ -226,7 +226,7 @@ namespace AgoRapide.Database {
                     entity = root;
                     return true;
                 }
-                throw new InvalidEnumException(root.Key.CoreP, "Expected " + EnumMapper.GetCPA(CoreP.Type).PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                throw new InvalidEnumException(root.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.Type).PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
