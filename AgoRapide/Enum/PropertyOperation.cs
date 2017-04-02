@@ -7,7 +7,10 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    [AgoRapide(Description = "Describes operations allowed on a -" + nameof(Property) + "-")]
+    [AgoRapide(
+        Description = "Describes operations allowed on a -" + nameof(Property) + "-",
+        EnumType = EnumType.DataEnum
+    )]
     public enum PropertyOperation {
         None,
 

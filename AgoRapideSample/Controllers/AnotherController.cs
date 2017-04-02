@@ -30,7 +30,7 @@ namespace AgoRapideSample {
             S1 = "DemoDoubler", S2 = P.SomeNumber)]
         public object DemoDoubler(string SomeNumber) {
             try {
-                if (!TryGetRequest(SomeNumber, out var request, out var errorResponse)) return errorResponse;
+                if (!TryGetRequest(SomeNumber, out var request, out var completeErrorResponse)) return completeErrorResponse;
                 var answer = checked(request.Parameters.PV<long>(P.SomeNumber.A()) * 2);
                 return request.GetOKResponseAsText(answer.ToString(), "Your number doubled is: " + answer);
             } catch (Exception ex) {
@@ -47,7 +47,7 @@ namespace AgoRapideSample {
             S1 = "DemoTripler", S2 = P.SomeNumber)]
         public object DemoTripler(string SomeNumber) {
             try {
-                if (!TryGetRequest(SomeNumber, out var request, out var errorResponse)) return errorResponse;
+                if (!TryGetRequest(SomeNumber, out var request, out var completeErrorResponse)) return completeErrorResponse;
                 var answer = request.Parameters.PV<long>(P.SomeNumber.A()) * 3;
                 return request.GetOKResponseAsText(answer.ToString(), "Your number tripled is: " + answer);
             } catch (Exception ex) {

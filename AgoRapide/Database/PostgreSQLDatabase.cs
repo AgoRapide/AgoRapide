@@ -568,6 +568,7 @@ namespace AgoRapide.Database {
 
             Npgsql.NpgsqlCommand cmd;
             if (keyA.A.IsUniqueInDatabase) {
+                if (keyA.A.IsMany) throw new NotImplementedException(nameof(keyA.A.IsMany));
                 AssertUniqueness(keyA, value);
             }
             if (keyA.A.IsMany) throw new NotImplementedException(nameof(keyA.A.IsMany));

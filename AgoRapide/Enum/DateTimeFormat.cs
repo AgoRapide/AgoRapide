@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using AgoRapide.Core;
 
 namespace AgoRapide {
+
+    [AgoRapide(EnumType = EnumType.DataEnum)]
     public enum DateTimeFormat {
 
         None,

@@ -180,7 +180,7 @@ namespace AgoRapide.API {
             // TODO: INCREASE LIMIT OF NUMBER OF PARAMETERS HERE!
             Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(p1) + ": " + p1 + ", " + nameof(p2) + ": " + p2 + ", " + nameof(p3) + ": " + p3 + ", " + nameof(p4) + ": " + p4 + ", " + nameof(p5) + ": " + p5);
             method.A.A.AssertCoreMethod(CoreMethod.AddEntity);
-            if (!TryGetRequest(p1, p2, p3, p4, p5, method, out var request, out var errorResponse)) return errorResponse;
+            if (!TryGetRequest(p1, p2, p3, p4, p5, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             foreach (var p in request.Parameters.Properties.Values.Where(p => p.Key.A.IsUniqueInDatabase)) {
                 if (!DB.TryAssertUniqueness(p.Key, p.ADotTypeValue(), out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
             }
@@ -198,17 +198,17 @@ namespace AgoRapide.API {
         public object HandleCoreMethodEntityIndex(APIMethod method, string id) {
             Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(id) + ": " + id);
             method.A.A.AssertCoreMethod(CoreMethod.EntityIndex);
-            if (!TryGetRequest(id, method, out var request, out var errorResponse)) return errorResponse;
+            if (!TryGetRequest(id, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PVM<QueryId>();
             /// TODO: Utilize <see cref="APIMethod.EntityType"/> here. Maybe give up having TryGetEntities generic?
-            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
         }
 
         public object HandleCoreMethodUpdateProperty(APIMethod method, string id, string key, string value) {
             Log(nameof(id) + ": " + id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value);
             method.A.A.AssertCoreMethod(CoreMethod.UpdateProperty);
-            if (!TryGetRequest(id, key, value, method, out var request, out var errorResponse)) return errorResponse;
+            if (!TryGetRequest(id, key, value, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PVM<QueryId>();
             var cpKey = request.Parameters.PV<CoreP>(CoreP.Key.A());
             var strValue = request.Parameters.PV<string>(CoreP.Value.A());
@@ -222,7 +222,7 @@ namespace AgoRapide.API {
             if (cpKey.A().A.IsUniqueInDatabase) {
                 if (!DB.TryAssertUniqueness(a, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
             }
-            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, a, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {

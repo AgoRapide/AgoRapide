@@ -20,7 +20,7 @@ namespace AgoRapideSample {
         [Method(CoreMethod = CoreMethod.RootIndex)]
         public object RootIndex() {
             try {
-                if (!TryGetRequest(out var request, out var errorResponse)) return errorResponse;
+                if (!TryGetRequest(out var request, out var completeErrorResponse)) return completeErrorResponse;
                 request.ForceHTMLResponse(); // It is much more user friendly to have HTML respons always here. If JSON is needed it can always be obtained by querying api/Method/All or similar.
                 // TODO: Replace this with dictionary with links
                 // TODO: Like AllMethods, AllClassAndMethod, AllEnumClass
@@ -48,7 +48,7 @@ namespace AgoRapideSample {
             S1 = nameof(CoreMethod.GeneralQuery), S2 = CoreP.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
         public object GeneralQuery(string GeneralQueryId) {
             try {
-                if (!TryGetRequest(GeneralQueryId, out var request, out var errorResponse)) return errorResponse;
+                if (!TryGetRequest(GeneralQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
 
                 /// TODO: PostgreSQL specific? Where do we want to add this?
                 /// TODO: Should we add a WILDCARD-parameter to <see cref="PropertyValueQueryId"/>.
@@ -109,7 +109,7 @@ namespace AgoRapideSample {
             ShowDetailedResult = true)]
         public object AddFirstAdminUser(string Email, string Password) {
             try {
-                if (!TryGetRequest(Email, Password, out var request, out var errorResponse)) return errorResponse;
+                if (!TryGetRequest(Email, Password, out var request, out var completeErrorResponse)) return completeErrorResponse;
 
                 // Check that the only person in the database at the moment is the anonymous user created by Startup.cs
                 // ------------------------------

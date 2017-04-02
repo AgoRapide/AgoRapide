@@ -13,8 +13,9 @@ namespace AgoRapide {
     /// See <see cref="EnumMapper"/>.
     /// 
     /// <see cref="CoreP"/> represents core AgoRapide properties that must always be available in the client application. 
-    /// You may change their names and meaning by using <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/>
+    /// You may change their names and meaning by using <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> for your own <see cref="EnumType.EntityPropertyEnum"/> enums like this:
     /// 
+    /// [AgoRapide(EnumType = EnumType.EntityPropertyEnum)]
     /// public enum P {
     ///   ...
     ///   [AgoRapideAttribute(InheritAndEnrichFromProperty = CoreP.EntityToRepresent)]
@@ -23,6 +24,8 @@ namespace AgoRapide {
     /// }
     /// 
     /// More often you will instead keep the name but add more information, like this:
+    /// 
+    /// [AgoRapide(EnumType = EnumType.EntityPropertyEnum)]
     /// public enum P {
     ///   ...
     ///   [AgoRapide(Parents = new Type[] { typeof(Person) }, InheritAndEnrichFromProperty = CoreP.EntityToRepresent)]
@@ -35,6 +38,10 @@ namespace AgoRapide {
     /// See <see cref="CoreMethod"/> for example of the recommended approach to setting attributes when the type given (<see cref="AgoRapideAttribute.Type"/>) 
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
     /// </summary>
+    [AgoRapide(        
+        Description ="The core -" + nameof(EnumType.EntityPropertyEnum) + "-. All other -" + nameof(EnumType.EntityPropertyEnum) + "- are mapped to -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-.",
+        EnumType = EnumType.EntityPropertyEnum
+    )]
     public enum CoreP {
         None,
 
@@ -116,20 +123,21 @@ namespace AgoRapide {
         GeneralQueryId,
 
         [AgoRapide(
-            Type = typeof(QueryId))] 
+            Type = typeof(QueryId))]
         QueryId,
 
         [AgoRapide(
-            Type = typeof(IntegerQueryId))] 
+            Type = typeof(IntegerQueryId))]
         IntegerQueryId,
 
         [AgoRapide(
             Type = typeof(PropertyValueQueryId))]
         PropertyAndValueQueryId,
 
-        [AgoRapide(
-            Description = "General key. Describes a value for the TProperty-type (usually P) used in your application.",
-            Parents = new Type[] { typeof(ApplicationPart) }, Type = typeof(CoreP))]
+        [AgoRapide(Description = "General identifier.", IsUniqueInDatabase = true, Parents = new Type[] { typeof(ApplicationPart) })]
+        Identifier,
+
+        [AgoRapide(Type = typeof(PropertyKey))]
         Key,
 
         [AgoRapide(

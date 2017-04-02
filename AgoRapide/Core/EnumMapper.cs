@@ -85,7 +85,7 @@ namespace AgoRapide {
                     overriddenAttributes.GetValue(existing.A.Property.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
                         existing.A.Property.GetType().ToStringShort() + "." + existing.A.Property + " replaced by " + typeof(T).ToStringShort() + "." + e);
                 }
-                fromStringMaps[e.ToString()] = a; 
+                fromStringMaps[e.ToString()] = a;
                 if (a.A.InheritAndEnrichFromProperty != null && !a.A.InheritAndEnrichFromProperty.ToString().Equals(e.ToString())) {
                     if (fromStringMaps.TryGetValue(a.A.InheritAndEnrichFromProperty.ToString(), out existing)) {
                         overriddenAttributes.GetValue(existing.A.Property.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
@@ -117,6 +117,7 @@ namespace AgoRapide {
                 Extensions.SetAgoRapideAttribute(o, dict);
                 _enumMapsCache[o] = dict;
             });
+            var enumMapForCoreP = _enumMapsCache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
             var allCoreP = new Dictionary<CoreP, AgoRapideAttributeEnriched>();
             fromStringMaps.ForEach(e => {
                 if (!allCoreP.TryGetValue(e.Value.CoreP, out var existing)) {
@@ -127,7 +128,8 @@ namespace AgoRapide {
                         /// The new one came later as parameter to <see cref="MapEnum{T}"/> and should take precedence
                         allCoreP[e.Value.CoreP] = e.Value;
                     }
-                }
+                }                
+                if (!enumMapForCoreP.ContainsKey((int)e.Value.CoreP)) enumMapForCoreP.Add((int)e.Value.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out AgoRapideAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
             _allCoreP = allCoreP.Values.ToList();
         }

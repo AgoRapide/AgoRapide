@@ -8,12 +8,10 @@ using AgoRapide.Core;
 namespace AgoRapide {
 
     /// <summary>
-    /// Describes the different fields in the database. 
+    /// 
     /// 
     /// TODO: Add information about for which fields to add indexes
     /// TODO: Possible by adding a field to <see cref="AgoRapideAttribute"/>
-    /// 
-    /// Mostly used for documentation. Also used for generating database schema. 
     /// 
     /// The integer values are those typically used by a datareader like <see cref="Npgsql.NpgsqlDataReader"/>
     /// 
@@ -22,6 +20,9 @@ namespace AgoRapide {
     /// Future addition to this table should be limited to data types that the database engine actually understands.
     /// Other data types can be stored as <see cref="strv"/> (especially those supporting <see cref="ITypeDescriber"/>)
     /// </summary>
+    [AgoRapide( 
+        Description = "Describes the different fields in the database. Mostly used for documentation. Also used for generating database schema. ",
+        EnumType = EnumType.DataEnum)]
     public enum DBField {
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace AgoRapide {
         [AgoRapide(
             Description = "The actual name of the property",
             LongDescription =
-                "Correponds to the actual TProperty-enum used (usually an enum called P)" +
+                "Correponds to the actual enum used (like -" + nameof(CoreP) + "- or -P-)" +
                 "See also " + nameof(AgoRapideAttribute.IsMany) + "-properties",
             Type = typeof(string))]
         key = 5,

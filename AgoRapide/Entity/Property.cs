@@ -290,7 +290,11 @@ namespace AgoRapide {
             get => _keyDB ?? (_keyDB = new Func<string>(() => {
                 if (Key == null) throw new NullReferenceException(nameof(Key) + ". Either " + nameof(Key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
                 if (Key.CoreP== CoreP.None) throw new InvalidEnumException(Key.CoreP, "Details: " + ToString());
-                if (Key.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + ".\r\nDetails: " + ToString());
+                throw new NotImplementedException(); /// TODO: Implement use of <see cref="PropertyKey"/>
+                if (Key.A.IsMany) {
+                    if (IsTemplateOnly) return Key.PToString;
+                    throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + ".\r\nDetails: " + ToString());
+                }
                 return Key.PToString;
             })());
             set => _keyDB = value;
@@ -300,6 +304,7 @@ namespace AgoRapide {
         public AgoRapideAttributeEnriched Key =>
             _key ?? (_key = new Func<AgoRapideAttributeEnriched>(() => {
                 if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
+                throw new NotImplementedException(); /// TODO: Implement use of <see cref="PropertyKey"/>
                 var retval = EnumMapper.GetAOrDefault(KeyDB);
                 if (retval.CoreP == CoreP.None) {
                     var t = KeyDB.Split('#');
@@ -457,16 +462,16 @@ namespace AgoRapide {
 
                 /// TODO: WHAT IS THE MEANING OF SETTING <see cref="_ADotTypeValue"/> now?
                 /// TODO: WHAT IS THE PURPOSE OF SETTING IT TO A STRING? A STRING IS NOT WHAT IT IS SUPPOSED TO BE?
-                if (LngValue != null) { value = (T)(_ADotTypeValue = LngValue.ToString()); return true; };
-                if (DblValue != null) { value = (T)(_ADotTypeValue = ((double)DblValue).ToString2()); return true; };
-                if (DtmValue != null) { value = (T)(_ADotTypeValue = ((DateTime)DtmValue).ToString(DateTimeFormat.DateHourMin)); return true; };
+                if (LngValue != null) { value = (T)(_ADotTypeValue = LngValue.ToString()); return true; }; /// TODO: Introduce a <see cref="AgoRapideAttribute"/>.LngFormat property here
+                if (DblValue != null) { value = (T)(_ADotTypeValue = ((double)DblValue).ToString2()); return true; }; /// TODO: Introduce a <see cref="AgoRapideAttribute"/>.DblFormat property here
+                if (DtmValue != null) { value = (T)(_ADotTypeValue = ((DateTime)DtmValue).ToString(Key.A.DateTimeFormat)); return true; };
                 if (BlnValue != null) { value = (T)(_ADotTypeValue = BlnValue.ToString()); return true; }; // TODO: Better ToString here!
                 if (GeoValue != null) { value = (T)(_ADotTypeValue = GeoValue); return true; };
                 if (StrValue != null) { value = (T)(_ADotTypeValue = StrValue); return true; };
 
-                if (_ADotTypeValue != null) {
+                if (_ADotTypeValue != null) { // TODO: Is this code relevant? Should not the specific value have been set anyway?
                     // The ToString-representation is not very helpful in some cases (Type, DateTime and so on
-                    // There we check for thsoe first
+                    // Therefore we check for those first
                     if (_ADotTypeValue is double) { value = (T)(object)((double)_ADotTypeValue).ToString2(); return true; }
                     if (_ADotTypeValue is DateTime) { value = (T)(object)((DateTime)_ADotTypeValue).ToString(DateTimeFormat.DateHourMin); return true; }
                     // For all others we accept the default ToString conversion.
@@ -710,13 +715,17 @@ namespace AgoRapide {
             if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => p.Value.ToHTMLTableRow(request)));
             return "<tr><td>" +
 
-                // Key
+                // --------------------
+                // Column 1, Key
+                // --------------------
                 (string.IsNullOrEmpty(Key.A.Description) ? "" : "<span title=\"" + Key.A.Description.HTMLEncode() + "\">") +
                 (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) +
                 (string.IsNullOrEmpty(Key.A.Description) ? "" : " (+)</span>") +
                 "</td><td>" +
 
-                // Value
+                // --------------------
+                // Column 2, Value
+                // --------------------
                 (IsTemplateOnly || string.IsNullOrEmpty(ValueA.Description) ? "" : "<span title=\"" + ValueA.Description.HTMLEncode() + "\">") +
                 ((!IsChangeableByCurrentUser || Key.A.ValidValues != null) ?
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
@@ -736,6 +745,9 @@ namespace AgoRapide {
                 (IsTemplateOnly || string.IsNullOrEmpty(ValueA.Description) ? "" : " (+)</span>") +
                 "</td><td>" +
 
+                // --------------------
+                // Column 3, Save button or SELECT
+                // --------------------
                 (!IsChangeableByCurrentUser ? "&nbsp;" :
                     (Key.A.ValidValues == null ?
                         (
@@ -786,11 +798,15 @@ namespace AgoRapide {
                 ) +
                 "</td><td>" +
 
-                // Created
+                // --------------------
+                // Column 4, Created
+                // --------------------
                 (Created.Equals(default(DateTime)) ? "&nbsp;" : Created.ToString(DateTimeFormat.DateHourMin)) +
                 "</td><td>" +
 
-                // Invalid
+                // --------------------
+                // Column 5, Invalid
+                // --------------------
                 (Invalid == null ? "&nbsp;" : ((DateTime)Invalid).ToString(DateTimeFormat.DateHourMin)) +
                 "</td></tr>\r\n\r\n";
         }

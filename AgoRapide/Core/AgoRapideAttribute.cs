@@ -343,6 +343,12 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Only relevant when attribute for a class. 
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
+        /// </summary>
+        public EnumType EnumType { get; set; }
+
+        /// <summary>
+        /// Only relevant when attribute for a class. 
+        /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
         /// 
         /// Indicates if attribute was defined for a super class and not the actual class. 
         /// 

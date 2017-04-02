@@ -6,6 +6,8 @@ using AgoRapide;
 using AgoRapide.Core;
 
 namespace AgoRapideSample {
+
+    [AgoRapide(EnumType = EnumType.DataEnum)]
     public enum Colour {
         None,
 

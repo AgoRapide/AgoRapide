@@ -69,7 +69,7 @@ public class SomeController : BaseController {
         S1 = "DemoDoubler", S2 = P.SomeNumber)]
     public object DemoDoubler(string SomeNumber) {
         try {
-            if (!TryGetRequest(SomeNumber, out var request, out var errorResponse)) return errorResponse;
+            if (!TryGetRequest(SomeNumber, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var answer = checked(request.Parameters.PV<long>(P.SomeNumber) * 2);
             return request.GetOKResponseAsText(answer.ToString(), "Your number doubled is: " + answer);
         } catch (Exception ex) {

@@ -4,19 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.API;
+using AgoRapide.Core;
 
 namespace AgoRapide {
 
     /// <summary>
-    /// The response format requested by the client. 
-    /// JSON is default, HTML will be returned when request URL ends with 
-    /// <see cref="Configuration.HTMLPostfixIndicator"/> ("HTML")
-    /// 
     /// Note how XML can be disabled and JSON added 
     /// like this in Startup.cs class WebApiConfig static method Register(System.Web.Http.HttpConfiguration httpConfiguration):
     ///    httpConfiguration.Formatters.Remove(httpConfiguration.Formatters.XmlFormatter);
     ///    httpConfiguration.Formatters.JsonFormatter.MediaTypeMappings.Add(new System.Net.Http.Formatting.QueryStringMapping("json", "true", "application/json"));
     /// </summary>
+    [AgoRapide(
+        Description = 
+            "The response format requested by the client. " +
+            "JSON is default, HTML will be returned when request URL ends with -" + nameof(Configuration.HTMLPostfixIndicator) + "- (\"HTML\")",
+        EnumType = EnumType.DataEnum)]
     public enum ResponseFormat {
         None,
 

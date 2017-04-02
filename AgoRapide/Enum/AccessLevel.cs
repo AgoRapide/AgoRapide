@@ -19,7 +19,9 @@ namespace AgoRapide {
             "Describes level of access, from -" + nameof(Anonymous) + "- to -" + nameof(System) + "-.",
         LongDescription =
             "See -" + nameof(AccessLocation) + "- for how -" + nameof(AccessLevel) + "- " +
-            "(for -" + nameof(AccessType.Read) + "- / -" + nameof(AccessType.Write) + "-) may be specified.")]
+            "(for -" + nameof(AccessType.Read) + "- / -" + nameof(AccessType.Write) + "-) may be specified.",
+        EnumType =EnumType.DataEnum
+    )]
     public enum AccessLevel {
         None,
 

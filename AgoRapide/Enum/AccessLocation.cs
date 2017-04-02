@@ -8,12 +8,8 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
 
-    /// <summary>
-    /// As of March 2017 this enum is not used in code, only in documentation. 
-    /// 
-    /// TODO: ELABORATE MORE ON THE DOCUMENTATION!
-    /// </summary>
     [AgoRapide(
+        EnumType = EnumType.DocumentationOnlyEnum,
         Description = "Describes how access is granted within AgoRapide.",
         LongDescription =
             "Restricting access is the responsibility of " +
@@ -25,7 +21,7 @@ namespace AgoRapide {
 
         [AgoRapide(
             Description = "Access through relation (A relation gives right to an involved entity.  Not implemented as of March 2017)",
-            LongDescription = 
+            LongDescription =
                 "Responsibility of -" + nameof(IDatabase.TryGetEntities) + "- (Not implemented as of March 2017)\r\n" +
                 "(note how -" + nameof(Extensions.GetChildPropertiesForUser) + "- also partly implements -" + nameof(AccessLocation.Relation) + "-")]
         Relation,

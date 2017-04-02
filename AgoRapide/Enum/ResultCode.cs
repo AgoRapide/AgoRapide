@@ -5,19 +5,18 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
 
-    /// <summary>
-    /// Usually contained as <see cref="CoreP.ResultCode"/> within <see cref="Result"/>
-    /// 
-    /// Ordering should be in increasing order of seriousness
-    /// </summary>
+    [AgoRapide(
+        Description = "Describes in detail how an API operation failed.",
+        LongDescription = "Usually contained as -" + nameof(CoreP.ResultCode) + "- within -" + nameof(Result) + "-. Ordering should be in increasing order of \"seriousness\".",
+        EnumType = EnumType.DataEnum)]
     public enum ResultCode {
-        None, 
+        None,
 
         ok,
 
         [Description("Query was not syntactically correct.\r\nMistake is assumed to reside with the client.")]
         client_error,
-        
+
         [Description("Access was denied.")]
         [AgoRapideAttribute(LongDescription = "Occurs seldom or never because access restrictions are usually implemented at HTTP-level with Basic Authorization, OAuth or similar.")]
         access_error,
@@ -35,12 +34,12 @@ namespace AgoRapide {
         invalid_parameter_error,
 
         [Description("Corresponding data was not found in the database or existing data was inconsistent with query")]
-        data_error, 
+        data_error,
 
         [Description("Some kind of problems communicating with underlying systems (database or similar)")]
-        communication_error, 
+        communication_error,
 
         [Description("Internal AgoRapide or REST API application error.\r\nThese errors should never occur.\r\nIf they occur them some corrections should be made to either the AgoRapide library or to the functionality of the REST API application that is being called. Therefore you should contact your IT-administrator / support department if you get these kind of errors.")]
-        exception_error 
+        exception_error
     }
 }

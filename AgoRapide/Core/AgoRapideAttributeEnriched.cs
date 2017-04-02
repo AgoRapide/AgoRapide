@@ -347,7 +347,10 @@ namespace AgoRapide.Core {
                             string.Join(", ", validFormats) + "\r\n");
                     } else if (A.Type.IsEnum) {
                         ValidatorAndParser = value => {
-                            // if (EnumMapper.TryGetA(value, out var cpa)) return new ParseResult(new Property(this, cpa.A.Property), cpa.A.Property);
+                            /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="EnumMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
+                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var cpa)) return new ParseResult(new Property(this, cpa.CoreP), cpa.CoreP);
+
+                            // All others enums are parsed in an ordinary manner
                             if (Util.EnumTryParse(A.Type, value, out var enumValue)) return new ParseResult(new Property(this, enumValue), enumValue);
                             return new ParseResult(
                                 "Invalid as " + A.Type + ".\r\n" +

@@ -10,12 +10,6 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
-    public enum AccessType {
-        None,
-        Read,
-        Write
-    }
-
     /// <summary>
     /// <see cref="BaseEntity"/> represent a basic data object in your model like Person, Order and so on.
     /// Also used internally by AgoRapide like <see cref="Parameters"/>, <see cref="Result"/>, <see cref="ApplicationPart"/>, <see cref="APIMethod"/>

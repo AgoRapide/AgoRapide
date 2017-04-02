@@ -102,11 +102,11 @@
     <Compile Include="Core\IGroupDescriber.cs" />
     <Compile Include="Core\ITypeDescriber.cs" />
     <Compile Include="Core\ParseResult.cs" />
+    <Compile Include="Core\PropertyKey.cs" />
     <Compile Include="Core\QueryId.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Configuration.cs" />
     <Compile Include="Core\Extensions.cs" />
-    <Compile Include="Core\RuntimeEnvironment.cs" />
     <Compile Include="Database\IDatabase.cs" />
     <Compile Include="Database\PostgreSQLDatabase.cs" />
     <Compile Include="Entity\APIMethod.cs" />
@@ -123,11 +123,13 @@
     <Compile Include="Entity\Result.cs" />
     <Compile Include="Enum\AccessLevel.cs" />
     <Compile Include="Enum\AccessLocation.cs" />
+    <Compile Include="Enum\AccessType.cs" />
     <Compile Include="Enum\APIMethodOrigin.cs" />
     <Compile Include="Enum\CoreMethod.cs" />
     <Compile Include="Enum\CoreP.cs" />
     <Compile Include="Enum\DateTimeFormat.cs" />
     <Compile Include="Enum\DBField.cs" />
+    <Compile Include="Enum\EnumType.cs" />
     <Compile Include="Enum\Environment.cs" />
     <Compile Include="Enum\HTTPMethod.cs" />
     <Compile Include="API\MethodAttribute.cs" />

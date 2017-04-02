@@ -64,7 +64,10 @@ namespace AgoRapide.API {
         /// TODO: REMOVE <paramref name="segmentName"/>. We are able to reconstruct it from <paramref name="segment"/>
         /// </param>        
         /// <param name="segment">
-        /// Must match one of <see cref="Type"/>, <see cref="Parameter"/> or <see cref="String"/>. 
+        /// Must match one of 
+        /// <see cref="Type"/> (<see cref="System.Type"/>), 
+        /// <see cref="Parameter"/> (<see cref="AgoRapideAttributeEnriched"/>) or 
+        /// <see cref="String"/> (<see cref="System.String"/>). 
         /// See <see cref="InvalidRouteSegmentClassException"/> for details. 
         /// </param>
         /// <param name="detailer">

@@ -215,7 +215,6 @@ namespace AgoRapide.Database {
         /// <param name="fid"><see cref="DBField.fid"/> </param>
         /// <param name="key">
         /// <see cref="DBField.key"/>. 
-        /// For <see cref="AgoRapideAttribute.IsMany"/> this will be <see cref="int.MaxValue"/> minus index
         /// </param>
         /// <param name="value">TODO: Consider strongly typed overloads which leads to less processing here</param>
         /// <param name="result">May be null</param>
