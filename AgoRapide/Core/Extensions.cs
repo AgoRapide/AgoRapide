@@ -466,7 +466,7 @@ namespace AgoRapide.Core {
         /// <param name="accessType"></param>
         /// <param name="accessLevelGiven"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, AgoRapideAttributeEnriched> GetChildPropertiesForUser(this Type type, BaseEntityT currentUser, BaseEntityT entity, AccessType accessType) {
+        public static Dictionary<CoreP, PropertyKey> GetChildPropertiesForUser(this Type type, BaseEntityT currentUser, BaseEntityT entity, AccessType accessType) {
             var accessLevelGiven = currentUser?.AccessLevelGiven ?? AccessLevel.Anonymous;
 
             if (currentUser != null && currentUser.Id == entity.Id) {
@@ -482,13 +482,13 @@ namespace AgoRapide.Core {
                     case AccessType.Read:
                         if (accessLevelGiven < entity.PV(CoreP.AccessLevelRead.A(), aType.AccessLevelRead)) {
                             /// TODO: Implement access through relations (not implemented as of March 2017)
-                            return new Dictionary<CoreP, AgoRapideAttributeEnriched>();
+                            return new Dictionary<CoreP, PropertyKey>();
                         }
                         break;
                     case AccessType.Write:
                         if (accessLevelGiven < entity.PV(CoreP.AccessLevelWrite.A(), aType.AccessLevelRead)) {
                             /// TODO: Implement access through relations (not implemented as of March 2017)
-                            return new Dictionary<CoreP, AgoRapideAttributeEnriched>();
+                            return new Dictionary<CoreP, PropertyKey>();
                         }
                         break;
                     default: throw new InvalidEnumException(accessType);
@@ -501,7 +501,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// key = type.ToString() + "_" + accessType + "_" + accessLevelGiven
         /// </summary>
-        private static ConcurrentDictionary<string, Dictionary<CoreP, AgoRapideAttributeEnriched>> _childPropertiesForAccessLevelCache = new ConcurrentDictionary<string, Dictionary<CoreP, AgoRapideAttributeEnriched>>();
+        private static ConcurrentDictionary<string, Dictionary<CoreP, PropertyKey>> _childPropertiesForAccessLevelCache = new ConcurrentDictionary<string, Dictionary<CoreP, PropertyKey>>();
         /// <summary>
         /// Returns all <see cref="CoreP"/> relevant for <paramref name="accessType"/> and <paramref name="accessLevelGiven"/> 
         /// for which <paramref name="type"/> is in <see cref="AgoRapideAttribute.Parents"/> 
@@ -513,10 +513,10 @@ namespace AgoRapide.Core {
         /// <param name="accessType"></param>
         /// <param name="accessLevelGiven"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, AgoRapideAttributeEnriched> GetChildPropertiesForAccessLevel(this Type type, AccessType accessType, AccessLevel accessLevelGiven) {
+        public static Dictionary<CoreP, PropertyKey> GetChildPropertiesForAccessLevel(this Type type, AccessType accessType, AccessLevel accessLevelGiven) {
             var key = type.ToString() + "_" + accessType + "_" + accessLevelGiven;
             return _childPropertiesForAccessLevelCache.GetOrAdd(key, k => {
-                var r = new Dictionary<CoreP, AgoRapideAttributeEnriched>();
+                var r = new Dictionary<CoreP, PropertyKey>();
 
                 /// Implementing <see cref="AccessLocation.Type"/>. 
                 var aType = type.GetAgoRapideAttributeForClass();
@@ -538,7 +538,7 @@ namespace AgoRapide.Core {
             });
         }
 
-        private static ConcurrentDictionary<Type, Dictionary<CoreP, AgoRapideAttributeEnriched>> _obligatoryChildPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, AgoRapideAttributeEnriched>>();
+        private static ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>> _obligatoryChildPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>>();
         /// <summary>
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="AgoRapideAttribute.Parents"/> 
         /// with <see cref="AgoRapideAttribute.IsObligatory"/>. 
@@ -547,9 +547,9 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, AgoRapideAttributeEnriched> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value));
+        public static Dictionary<CoreP, PropertyKey> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value));
 
-        private static ConcurrentDictionary<Type, Dictionary<CoreP, AgoRapideAttributeEnriched>> _childPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, AgoRapideAttributeEnriched>>();
+        private static ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>> _childPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>>();
         /// <summary>
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="AgoRapideAttribute.Parents"/>. 
         /// Note how result is cached.
@@ -558,8 +558,8 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, AgoRapideAttributeEnriched> GetChildProperties(this Type type) =>
-             _childPropertiesCache.GetOrAdd(type, t => EnumMapper.AllCoreP.Where(cpa => cpa.IsParentFor(type)).ToDictionary(cpa => cpa.CoreP, cpa => cpa));
+        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) =>
+             _childPropertiesCache.GetOrAdd(type, t => EnumMapper.AllCoreP.Where(cpa => cpa.Key.IsParentFor(type)).ToDictionary(cpa => cpa.Key.CoreP, cpa => cpa));
 
         private static ConcurrentDictionary<Type, AgoRapideAttribute> _agoRapideAttributeForClassCache = new ConcurrentDictionary<Type, AgoRapideAttribute>();
         /// <summary>
@@ -624,11 +624,11 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="attributes"></param>
         public static void SetAgoRapideAttribute(Type type, Dictionary<int, AgoRapideAttributeEnriched> attributes) {
-            if (_agoRapideAttributeTCache.ContainsKey(type)) throw new KeyAlreadyExistsException(type, nameof(_agoRapideAttributeTCache), "All entity property enums are supposed to be found by " + nameof(EnumMapper.MapEnum) + " before " + nameof(GetAgoRapideAttributeT) + " is being called");
+            if (_agoRapideAttributeTCache.ContainsKey(type)) throw new KeyAlreadyExistsException(type, nameof(_agoRapideAttributeTCache), "All -" + nameof(EnumType.EntityPropertyEnum) + "- are supposed to be found by " + nameof(EnumMapper.MapEnum) + " before " + nameof(GetAgoRapideAttributeT) + " is being called");
             _agoRapideAttributeTCache[type] = attributes;
         }
 
-        public static AgoRapideAttributeEnriched A(this CoreP coreP) => EnumMapper.GetA(coreP);
+        public static PropertyKey A(this CoreP coreP) => EnumMapper.GetA(coreP);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {

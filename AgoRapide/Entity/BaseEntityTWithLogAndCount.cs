@@ -85,7 +85,7 @@ namespace AgoRapide {
                 // Do not bother with any of these
             } else {
                 var p = CoreP.Log;
-                var key = p.A().PToString;
+                var key = p.A().Key.PToString;
                 if (retval.Properties.TryGetValue(key, out var existing)) {
                     throw new KeyAlreadyExistsException<CoreP>(p,
                         "Unable to add " + nameof(LogData) + "\r\n-------\r\n" + LogData.ToString() + "\r\n" +
@@ -98,7 +98,7 @@ namespace AgoRapide {
                 // Do not bother with any of these
             } else {
                 Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
-                    var key = c.Key.A().PToString;
+                    var key = c.Key.A().Key.PToString;
                     if (retval.Properties.TryGetValue(key, out var existing)) {
                         throw new KeyAlreadyExistsException<CoreP>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.GetAgoRapideAttributeT().PExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
                     }

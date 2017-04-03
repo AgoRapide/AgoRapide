@@ -181,7 +181,7 @@ namespace AgoRapide.API {
             Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(p1) + ": " + p1 + ", " + nameof(p2) + ": " + p2 + ", " + nameof(p3) + ": " + p3 + ", " + nameof(p4) + ": " + p4 + ", " + nameof(p5) + ": " + p5);
             method.A.A.AssertCoreMethod(CoreMethod.AddEntity);
             if (!TryGetRequest(p1, p2, p3, p4, p5, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
-            foreach (var p in request.Parameters.Properties.Values.Where(p => p.Key.A.IsUniqueInDatabase)) {
+            foreach (var p in request.Parameters.Properties.Values.Where(p => p.Key.Key.A.IsUniqueInDatabase)) {
                 if (!DB.TryAssertUniqueness(p.Key, p.ADotTypeValue(), out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
             }
             return request.GetOKResponseAsEntityId(method.EntityType, DB.CreateEntity(request.CurrentUser.Id, method.EntityType, request.Parameters, request.Result));
@@ -210,20 +210,19 @@ namespace AgoRapide.API {
             method.A.A.AssertCoreMethod(CoreMethod.UpdateProperty);
             if (!TryGetRequest(id, key, value, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PVM<QueryId>();
-            var cpKey = request.Parameters.PV<CoreP>(CoreP.Key.A());
+            var cpKey = request.Parameters.PVM<PropertyKey>();
             var strValue = request.Parameters.PV<string>(CoreP.Value.A());
             /// Validate value. Note how TryGetRequest was only able to validate value as string 
             /// because <see cref="CoreMethod.UpdateProperty"/> does not know anything about which values are valid for which keys.
             /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
-            var a = cpKey.A();
-            if (!a.TryValidateAndParse(strValue, out var parseResult)) return request.GetErrorResponse(ResultCode.invalid_parameter_error, parseResult.ErrorResponse);
+            if (!cpKey.Key.TryValidateAndParse(strValue, out var parseResult)) return request.GetErrorResponse(ResultCode.invalid_parameter_error, parseResult.ErrorResponse);
             var objValue = parseResult.Result.ADotTypeValue();
 
-            if (cpKey.A().A.IsUniqueInDatabase) {
-                if (!DB.TryAssertUniqueness(a, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
+            if (cpKey.Key.A.IsUniqueInDatabase) {
+                if (!DB.TryAssertUniqueness(cpKey, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
             }
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
-            entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, a, objValue, request.Result));
+            entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, cpKey, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
                 case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;

@@ -125,8 +125,8 @@ namespace AgoRapide.Core {
         }
 
         private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>> _tToCorePCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>>();
-        public static AgoRapideAttributeEnriched MapTToCoreP<T>() => TryMapTToCoreP<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
-        public static bool TryMapTToCoreP<T>(out AgoRapideAttributeEnriched a) => TryMapTToCoreP<T>(out a, out _);
+        public static PropertyKey MapTToCoreP<T>() => TryMapTToCoreP<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
+        public static bool TryMapTToCoreP<T>(out PropertyKey a) => TryMapTToCoreP<T>(out a, out _);
         /// <summary>
         /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <see cref="CoreP"/> based on <see cref="AgoRapideAttribute.Type"/>. 
         /// Example: See how enum-"class" <see cref="CoreMethod"/> is linked to enum value <see cref="CoreP.CoreMethod"/>
@@ -138,7 +138,7 @@ namespace AgoRapide.Core {
         /// <param name="a"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public static bool TryMapTToCoreP<T>(out AgoRapideAttributeEnriched a, out string errorResponse) {
+        public static bool TryMapTToCoreP<T>(out PropertyKey a, out string errorResponse) {
             if (typeof(T).Equals(typeof(CoreP))) throw new InvalidTypeException(typeof(T),
                 "Attempt of mapping from " + typeof(T) + " to " + typeof(CoreP) + ". " +
                 "A common cause is mistakenly calling " +
@@ -151,14 +151,14 @@ namespace AgoRapide.Core {
                 GetOrAdd(typeof(T), type => {
                     /// NOTE: Note how <see cref="EnumMapper.AllCoreP"/> itself is cached but that should not matter
                     /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
-                    var candidates = EnumMapper.AllCoreP.Where(cpa => cpa.A.Type?.Equals(type) ?? false).ToList();
+                    var candidates = EnumMapper.AllCoreP.Where(cpa => cpa.Key.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
                         case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort();
                         case 1: return candidates[0];
                         default:
                             return
-                       "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + ".\r\n" +
-                       "The actual mappings found where: " + string.Join(", ", candidates.Select(c => typeof(CoreP).ToStringShort() + "." + c.CoreP) + ".");
+                                "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + ".\r\n" +
+                                "The actual mappings found where: " + string.Join(", ", candidates.Select(c => c.Key.PToString + " (" + nameof(CoreP) + "." + c.Key.CoreP + ")")) + ".";
                     }
                 });
             if (mapping is string) {
@@ -166,7 +166,7 @@ namespace AgoRapide.Core {
                 errorResponse = (string)mapping;
                 return false;
             }
-            a = mapping as AgoRapideAttributeEnriched ?? throw new InvalidObjectTypeException(mapping, typeof(AgoRapideAttributeEnriched));
+            a = mapping as PropertyKey ?? throw new InvalidObjectTypeException(mapping, typeof(PropertyKey));
             errorResponse = null;
             return true;
         }

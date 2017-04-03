@@ -498,10 +498,6 @@ namespace AgoRapide {
                     parameters: obligatoryParameters.Values.ToList(),
                     routeTemplate: t.ToStringVeryShort() + "/Add" + string.Join("", obligatoryParameters.Select(p => "/{" + p.Value.PToString + "}"))
                     );
-                //if (obligatoryParameters.Count==1) {
-                //    if (obligatoryParameters[0].A.SampleValues!=null) {
-                //    }
-                //}
                 connector(method, true);
             });
 
@@ -523,7 +519,7 @@ namespace AgoRapide {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
                         new RouteSegmentClass(CoreP.QueryId.ToString(), CoreP.QueryId , detailer)
                     },
-                    parameters: new List<AgoRapideAttributeEnriched> { CoreP.QueryId.A() },
+                    parameters: new List<AgoRapideAttributeEnriched> { CoreP.QueryId.A().Key },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.QueryId + "}" // Do not use M here!
                     );
                 // TODO: Create a configuration parameter deciding whether API-documentation should be available without authorization.
@@ -554,9 +550,9 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreP.Value), CoreP.Value , detailer)
                     },
                     parameters: new List<AgoRapideAttributeEnriched> {
-                        CoreP.QueryId.A(),
-                        CoreP.Key.A(),
-                        CoreP.Value.A()
+                        CoreP.QueryId.A().Key,
+                        CoreP.Key.A().Key,
+                        CoreP.Value.A().Key
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.QueryId + "}/" + CoreMethod.UpdateProperty.ToString() + "/{" + CoreP.Key + "}/{" + CoreP.Value + "}" // Do not use M here!
                     );
@@ -583,8 +579,8 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreP.PropertyOperation), CoreP.PropertyOperation , detailer)
                     },
                     parameters: new List<AgoRapideAttributeEnriched> {
-                        CoreP.QueryId.A(),
-                        CoreP.PropertyOperation.A()
+                        CoreP.QueryId.A().Key,
+                        CoreP.PropertyOperation.A().Key
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.QueryId + "}/{" + CoreP.PropertyOperation + "}" // Do not use M here!
                 );
@@ -610,7 +606,7 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreMethod.History), CoreMethod.History.ToString() , detailer)
                     },
                     parameters: new List<AgoRapideAttributeEnriched> {
-                        CoreP.IntegerQueryId.A()
+                        CoreP.IntegerQueryId.A().Key
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.IntegerQueryId + "}/" + CoreMethod.History // Do not use M here!
                     );
@@ -736,19 +732,19 @@ namespace AgoRapide {
             // TODO: Implement some kind of copying of properties in order to avoid this!
             // TODO: (or rather, solve the general problem of using generics with properties)
             method.A.Properties.Values.ForEach(p => {
-                if (p.Key.A.Type == null) {
-                    throw new NullReferenceException("p.KeyA.A.Type, details: " + p.ToString());
-                } else if (p.Key.A.Type.Equals(typeof(bool))) {
+                if (p.Key.Key.A.Type == null) {
+                    throw new NullReferenceException("p.Key.Key.A.Type, details: " + p.ToString());
+                } else if (p.Key.Key.A.Type.Equals(typeof(bool))) {
                     db.UpdateProperty(cid, method, p.Key, p.V<bool>(), result: null);
                     // TODO: Maybe replace this check with extension-method IsStoredAsStringInDatabase or similar...
-                } else if (p.Key.A.Type.Equals(typeof(Type)) || p.Key.A.Type.IsEnum || p.Key.A.Type.Equals(typeof(string))) {
+                } else if (p.Key.Key.A.Type.Equals(typeof(Type)) || p.Key.Key.A.Type.IsEnum || p.Key.Key.A.Type.Equals(typeof(string))) {
                     var value = p.V<string>();
                     if (method.A.A.CoreMethod != CoreMethod.None) {
                         /// Add information about CoreMethod
                         /// TODO: This is very similar to <see cref="AgoRapideAttribute.EnrichFrom"/> 
                         /// TODO: We should use some of the same mechanism there.
                         var coreA = method.A.A.CoreMethod.GetAgoRapideAttributeT();
-                        if (p.Key.CoreP.Equals(CoreP.Description) && !string.IsNullOrEmpty(coreA.A.Description)) { // TODO: Do this in a more streamlined manner!
+                        if (p.Key.Key.CoreP.Equals(CoreP.Description) && !string.IsNullOrEmpty(coreA.A.Description)) { // TODO: Do this in a more streamlined manner!
                             if (string.IsNullOrEmpty(value)) {
                                 value = coreA.A.Description;
                             } else {
@@ -764,7 +760,7 @@ namespace AgoRapide {
                     }
                     db.UpdateProperty(cid, method, p.Key, value, result: null);
                 } else {
-                    throw new InvalidTypeException(p.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
+                    throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
                 }
 
             });

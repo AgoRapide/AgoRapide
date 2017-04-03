@@ -96,7 +96,7 @@ namespace AgoRapide {
         /// 
         /// TODO: Is this only used by <see cref="CreateIsManyParent"/>? In that case we may make it private
         /// </summary>
-        public Property(AgoRapideAttributeEnriched a) => _key = a;
+        public Property(PropertyKey a) => _key = a;
 
         /// <summary>
         /// TODO: REMOVE THIS. <see cref="Key"/> gives the same information (A.a.IsMany)
@@ -108,7 +108,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static Property CreateIsManyParent(AgoRapideAttributeEnriched a) => new Property(a) {
+        public static Property CreateIsManyParent(PropertyKey a) => new Property(a) {
             Properties = new Dictionary<CoreP, Property>(),
             IsIsManyParent = true
         };
@@ -135,7 +135,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static Property Create<T>(AgoRapideAttributeEnriched a, T value) {
+        public static Property Create<T>(PropertyKey a, T value) {
             if (value == null) throw new ArgumentNullException(nameof(value));
             var t = typeof(T);
             if (typeof(long).Equals(t)) return new Property(a, (long)(object)value);
@@ -145,9 +145,9 @@ namespace AgoRapide {
             if (typeof(DateTime).Equals(t)) return new Property(a, (DateTime)(object)value);
             if (typeof(string).Equals(t)) return new Property(a, (string)(object)value);
 
-            if (a.A.Type == null) throw new NullReferenceException(
+            if (a.Key.A.Type == null) throw new NullReferenceException(
                   "There is no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                  "defined for enum " + typeof(CoreP).ToString() + "." + a.CoreP + ". " +
+                  "defined for enum " + a.Key.A.Property.GetType() + "." + a.Key.A.Property + ". " +
                   "Unable to assert whether " + typeof(T) + " (or rather " + value.GetType() + ") is valid for this enum");
 
             // typeof(T) is really irrelevant now because it T is "thrown away" when creating property.
@@ -158,14 +158,14 @@ namespace AgoRapide {
             //    "(actual type for parameter " + nameof(value) + " is " + value.GetType() + ")");
 
             // Instead we can check for value.GetType instead
-            InvalidTypeException.AssertAssignable(value.GetType(), a.A.Type, () =>
+            InvalidTypeException.AssertAssignable(value.GetType(), a.Key.A.Type, () =>
                 nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-                "defined for enum " + typeof(CoreP) + "." + a.CoreP + ". " +
+                "defined for enum " + a.Key.A.Property.GetType() + "." + a.Key.A.Property + ". " +
                 "!IsAssignableFrom " + value.GetType() + " " +
                 "(actual " + nameof(T) + " is " + typeof(T) + ")");
 
             return new Property(a, (object)value); // (object) clarifies which constructor we call now
-                                                     // })().Initialize();
+                                                   // })().Initialize();
         }
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="objValue"></param>
-        public Property(AgoRapideAttributeEnriched a, object objValue) {
+        public Property(PropertyKey a, object objValue) {
             _key = a;
             _ADotTypeValue = objValue;
         }
@@ -184,7 +184,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(AgoRapideAttributeEnriched a, long value) {
+        public Property(PropertyKey a, long value) {
             _key = a;
             LngValue = value;
         }
@@ -194,7 +194,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(AgoRapideAttributeEnriched a, double value) {
+        public Property(PropertyKey a, double value) {
             _key = a;
             DblValue = value;
         }
@@ -204,7 +204,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(AgoRapideAttributeEnriched a, bool value) {
+        public Property(PropertyKey a, bool value) {
             _key = a;
             BlnValue = value;
         }
@@ -214,7 +214,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(AgoRapideAttributeEnriched a, DateTime value) {
+        public Property(PropertyKey a, DateTime value) {
             _key = a;
             DtmValue = value;
         }
@@ -225,7 +225,7 @@ namespace AgoRapide {
         ///// </summary>
         ///// <param name="key"></param>
         ///// <param name="value"></param>
-        //public Property(AgoRapideAttributeEnriched a, ??? value) {
+        //public Property(PropertyKey a, ??? value) {
         //    _a = a;
         //    GeoValue = value;
 
@@ -236,7 +236,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public Property(AgoRapideAttributeEnriched a, string value) {
+        public Property(PropertyKey a, string value) {
             _key = a;
             StrValue = value;
         }
@@ -281,64 +281,60 @@ namespace AgoRapide {
         private string _keyDB;
         /// <summary>
         /// Key as stored in database
-        /// 
-        /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
-        /// For <see cref="AgoRapideAttribute.IsMany"/>-properties (#x-properties) Key is given as stored in database (like member#1)
-        /// For other properties Key will correspond to KeyT
         /// </summary>
         public string KeyDB {
-            get => _keyDB ?? (_keyDB = new Func<string>(() => {
-                if (Key == null) throw new NullReferenceException(nameof(Key) + ". Either " + nameof(Key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                if (Key.CoreP== CoreP.None) throw new InvalidEnumException(Key.CoreP, "Details: " + ToString());
-                throw new NotImplementedException(); /// TODO: Implement use of <see cref="PropertyKey"/>
-                if (Key.A.IsMany) {
-                    if (IsTemplateOnly) return Key.PToString;
-                    throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + ".\r\nDetails: " + ToString());
-                }
-                return Key.PToString;
-            })());
-
-          
+            get => _keyDB ?? _key?.ToString() ?? throw new NullReferenceException(nameof(Key) + ". Either " + nameof(Key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
+            //get => _keyDB ?? (_keyDB = new Func<string>(() => {
+            //    if (Key == null) throw new NullReferenceException(nameof(Key) + ". Either " + nameof(Key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
+            //if (Key.Key.CoreP == CoreP.None) throw new InvalidEnumException(Key.CoreP, "Details: " + ToString());
+            //throw new NotImplementedException(); /// TODO: Implement use of <see cref="PropertyKey"/>
+            //if (Key.A.IsMany) {
+            //    if (IsTemplateOnly) return Key.PToString;
+            //    throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + ".\r\nDetails: " + ToString());
+            //}
+            //return Key.PToString;
+            // })());
             set => _keyDB = value;
         }
 
-        private AgoRapideAttributeEnriched _key;
-        public AgoRapideAttributeEnriched Key =>
-            _key ?? (_key = new Func<AgoRapideAttributeEnriched>(() => {
-                if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
-                throw new NotImplementedException(); /// TODO: Implement use of <see cref="PropertyKey"/>
-              
-                var retval = EnumMapper.GetAOrDefault(KeyDB);
-                if (retval.CoreP == CoreP.None) {
-                    var t = KeyDB.Split('#');
-                    if (t.Length != 2) throw new InvalidEnumException(typeof(CoreP), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
-                    retval = EnumMapper.GetAOrDefault(t[0]);
-                    if (retval.CoreP == CoreP.None) throw new InvalidEnumException(typeof(CoreP), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
-                    if (!retval.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
-                    // TODO: Use better Exception class here
-                    if (!int.TryParse(t[1], out var temp)) throw new InvalidCountException("Invalid int '" + t[1] + " for " + KeyDB + ".\r\nDetails: " + ToString());
-                    _multipleIndex = temp;
-                }
-                return retval;
-            })());
+        private PropertyKey _key;
+        public PropertyKey Key => PropertyKey.Parse(_keyDB ?? throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'"), () => ToString());
+        //_key ?? (_key = new Func<AgoRapideAttributeEnriched>(() => {
+        //    if (_keyDB == null) throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'");
 
-        /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
-        private int? _multipleIndex;
-        /// <summary>
-        /// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
-        /// The 1-based index this property has as a multiple current property (#x-property)
-        /// When stored in a dictionary the index <see cref="int.MaxValue"/> minus MultipleIndex is used.
-        /// </summary>
-        public int? MultipleIndex {
-            get {
-                if (Key == null) {
-                    var dummy = Key; // This will also initialize _multipleIndex
-                }
-                if (Key.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + "\r\nDetails: " + ToString());
-                /// TODO: Not good enough for instance if <see cref="Key"/> was set directly from outside
-                return _multipleIndex;
-            }
-        }
+        //    throw new NotImplementedException(); /// TODO: Implement use of <see cref="PropertyKey"/>
+
+        //    var retval = EnumMapper.GetAOrDefault(KeyDB);
+        //    if (retval.CoreP == CoreP.None) {
+        //        var t = KeyDB.Split('#');
+        //        if (t.Length != 2) throw new InvalidEnumException(typeof(CoreP), KeyDB, "Single # not found. " + nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+        //        retval = EnumMapper.GetAOrDefault(t[0]);
+        //        if (retval.CoreP == CoreP.None) throw new InvalidEnumException(typeof(CoreP), t[0], nameof(KeyDB) + ": " + KeyDB + ".\r\nDetails: " + ToString());
+        //        if (!retval.A.IsMany) throw new InvalidCountException("!" + nameof(AgoRapideAttribute.IsMany) + " for " + KeyDB + ".\r\nDetails: " + ToString());
+        //        // TODO: Use better Exception class here
+        //        if (!int.TryParse(t[1], out var temp)) throw new InvalidCountException("Invalid int '" + t[1] + " for " + KeyDB + ".\r\nDetails: " + ToString());
+        //        _multipleIndex = temp;
+        //    }
+        //    return retval;
+        //})());
+
+        ///// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
+        //private int? _multipleIndex;
+        ///// <summary>
+        ///// TODO: CLEAN UP HOW WE HANDLE IsMany-properties!
+        ///// The 1-based index this property has as a multiple current property (#x-property)
+        ///// When stored in a dictionary the index <see cref="int.MaxValue"/> minus MultipleIndex is used.
+        ///// </summary>
+        //public int? MultipleIndex {
+        //    get {
+        //        if (Key == null) {
+        //            var dummy = Key; // This will also initialize _multipleIndex
+        //        }
+        //        if (Key.A.IsMany) throw new NotImplementedException("Not implemented for " + nameof(Key.A.IsMany) + "\r\nDetails: " + ToString());
+        //        /// TODO: Not good enough for instance if <see cref="Key"/> was set directly from outside
+        //        return _multipleIndex;
+        //    }
+        //}
 
         /// <summary>
         /// Key for use in HTML-code 
@@ -675,15 +671,15 @@ namespace AgoRapide {
         public override string ToString() =>
             nameof(ParentId) + ": " + ParentId + ", " +
             nameof(KeyDB) + ": " + (_keyDB ?? "[NULL]") + ", " +
-            nameof(Key.CoreP) + ": " + (Key?.PExplained ?? "[NULL]") + ", " +
+            nameof(Key.Key.CoreP) + ": " + (_key?.Key.PExplained ?? "[NULL]") + ", " +
             nameof(Value) + ": " + (Value ?? "[NULL]") + ", " +
             nameof(LngValue) + ": " + (LngValue?.ToString() ?? "[NULL]") + ", " +
             nameof(DblValue) + ": " + (DblValue?.ToString() ?? "[NULL]") + ", " +
             nameof(BlnValue) + ": " + (BlnValue?.ToString() ?? "[NULL]") + ", " +
             nameof(DtmValue) + ": " + (DtmValue?.ToString() ?? "[NULL]") + ", " +
             nameof(GeoValue) + ": " + (GeoValue?.ToString() ?? "[NULL]") + ", " +
-            nameof(StrValue) + ": " + (StrValue ?? "[NULL]") + 
-            (_key == null ? "" : (", " + nameof(Key) + "." + nameof(Key.A) + "." + nameof(Key.A.Type) + ": " + (_key.A.Type?.ToString() ?? "[NULL]"))) + ". " 
+            nameof(StrValue) + ": " + (StrValue ?? "[NULL]") +
+            (_key == null ? "" : (", " + nameof(Key.Key.A.Type) + ": " + (_key.Key.A.Type?.ToString() ?? "[NULL]"))) + ". "
             + base.ToString();
 
         public override string ToHTMLTableHeading(Request request) => HTMLTableHeading;

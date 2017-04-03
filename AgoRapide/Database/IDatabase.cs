@@ -162,7 +162,7 @@ namespace AgoRapide.Database {
         long CreateEntity(long cid, Type entityType, Result result);
         long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT;
         long CreateEntity(long cid, Type entityType, Parameters properties, Result result);
-        long CreateEntity<T>(long cid, IEnumerable<(AgoRapideAttributeEnriched key, object value)> properties, Result result) where T : BaseEntityT;
+        long CreateEntity<T>(long cid, IEnumerable<(PropertyKey key, object value)> properties, Result result) where T : BaseEntityT;
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -171,7 +171,7 @@ namespace AgoRapide.Database {
         /// <param name="properties">May be null or empty. Turn this into an Properties collection? Or just a BaseEntity template or similar?</param>
         /// <param name="result"></param>
         /// <returns></returns>
-        long CreateEntity(long cid, Type entityType, IEnumerable<(AgoRapideAttributeEnriched key, object value)> properties, Result result);
+        long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKey key, object value)> properties, Result result);
 
         /// <summary>
         /// Changes to entity given in <see cref="CoreP.EntityToRepresent"/> if that property exists for the entity given
@@ -191,7 +191,7 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         void SwitchIfHasEntityToRepresent(ref BaseEntityT entity);
 
-        void AssertUniqueness(AgoRapideAttributeEnriched key, object value);
+        void AssertUniqueness(PropertyKey key, object value);
         /// <summary>
         /// Only relevant for <paramref name="key"/> <see cref="AgoRapideAttribute.IsUniqueInDatabase"/> 
         /// </summary>
@@ -200,7 +200,7 @@ namespace AgoRapide.Database {
         /// <param name="existingProperty">Useful for including in exception response (for logging purposes)</param>
         /// <param name="errorResponse">Suitable for returning to API client</param>
         /// <returns></returns>
-        bool TryAssertUniqueness(AgoRapideAttributeEnriched key, object value, out Property existingProperty, out string errorResponse);
+        bool TryAssertUniqueness(PropertyKey key, object value, out Property existingProperty, out string errorResponse);
 
         /// <summary>
         /// Returns id (database primary-key) of property created
@@ -219,7 +219,7 @@ namespace AgoRapide.Database {
         /// <param name="value">TODO: Consider strongly typed overloads which leads to less processing here</param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        long CreateProperty(long? cid, long? pid, long? fid, AgoRapideAttributeEnriched key, object value, Result result);
+        long CreateProperty(long? cid, long? pid, long? fid, PropertyKey key, object value, Result result);
 
         /// <summary>
         /// See <see cref="CoreMethod.UpdateProperty"/>
@@ -233,7 +233,7 @@ namespace AgoRapide.Database {
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        void UpdateProperty<T>(long cid, BaseEntityT entity, AgoRapideAttributeEnriched key, T value, Result result);
+        void UpdateProperty<T>(long cid, BaseEntityT entity, PropertyKey key, T value, Result result);
     }
 
     public class ExactOneEntityNotFoundException : ApplicationException {

@@ -31,7 +31,7 @@ namespace AgoRapide.Core {
         /// <param name="coreP">
         /// Only given when called from <see cref="EnumMapper.MapEnum{T}"/>. 
         /// Not given when called from <see cref="Extensions.GetAgoRapideAttributeT{T}"/>. 
-        /// Signifies that this is an entity property enum. See <see cref="AgoRapideAttributeEnriched.CoreP"/>. 
+        /// Signifies that this is an <see cref="AgoRapide.EnumType.EntityPropertyEnum"/> like <see cref="AgoRapideAttributeEnriched.CoreP"/>, P or similar.
         /// 
         /// TODO: Elaborate on this comment:
         /// Note that will use <see cref="CoreP"/> from <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> instead of that is set. 

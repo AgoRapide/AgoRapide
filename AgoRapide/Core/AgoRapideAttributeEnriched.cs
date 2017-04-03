@@ -57,7 +57,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public CoreP CoreP => _coreP ?? throw new NullReferenceException(
             nameof(CoreP) + ". " +
-            "This property is only set for entity property enums through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" +
+            "This property is only set for -" + nameof(EnumType.EntityPropertyEnum) + "- through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" +
             "For other enums it is irrelevant (illegal) to ask for " + nameof(CoreP) + ".\r\n" +
             "Details:\r\n" + A.ToString());
 
@@ -325,12 +325,12 @@ namespace AgoRapide.Core {
                     };
                 } else {
                     if (A.Type.Equals(typeof(string))) {
-                        ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? new ParseResult(new Property(this, value), value) : new ParseResult("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
+                        ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? new ParseResult(new Property(new PropertyKey(this), value), value) : new ParseResult("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
                     } else if (A.Type.Equals(typeof(int))) {
                         throw new TypeIntNotSupportedByAgoRapideException(A.ToString());
                         // ValidatorAndParser = value => int.TryParse(value, out var intValue) ? new ParseResult(new Property(P, intValue), intValue) : new ParseResult("Illegal as int");
                     } else if (A.Type.Equals(typeof(long))) {
-                        ValidatorAndParser = value => long.TryParse(value, out var lngValue) ? new ParseResult(new Property(this, lngValue), lngValue) : new ParseResult("Illegal as long");
+                        ValidatorAndParser = value => long.TryParse(value, out var lngValue) ? new ParseResult(new Property(new PropertyKey(this), lngValue), lngValue) : new ParseResult("Illegal as long");
                     } else if (A.Type.Equals(typeof(double))) {
                         ValidatorAndParser = value => {
                             throw new NotImplementedException(
@@ -338,7 +338,7 @@ namespace AgoRapide.Core {
                                 "Details: " + A.ToString());
                         };
                     } else if (A.Type.Equals(typeof(bool))) {
-                        ValidatorAndParser = value => bool.TryParse(value, out var blnValue) ? new ParseResult(new Property(this, blnValue), blnValue) : new ParseResult("Illegal as boolean, use '" + true.ToString() + "' or '" + false.ToString() + "'");
+                        ValidatorAndParser = value => bool.TryParse(value, out var blnValue) ? new ParseResult(new Property(new PropertyKey(this), blnValue), blnValue) : new ParseResult("Illegal as boolean, use '" + true.ToString() + "' or '" + false.ToString() + "'");
                     } else if (A.Type.Equals(typeof(DateTime))) {
                         var validFormats = Util.Configuration.ValidDateFormatsByResolution.GetValue2(A.DateTimeFormat);
                         ValidatorAndParser = value => DateTime.TryParseExact(value, validFormats, Util.Configuration.Culture, System.Globalization.DateTimeStyles.None, out var dtmValue) ? new ParseResult(new Property(this, dtmValue), dtmValue) : new ParseResult(
@@ -348,10 +348,10 @@ namespace AgoRapide.Core {
                     } else if (A.Type.IsEnum) {
                         ValidatorAndParser = value => {
                             /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="EnumMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
-                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var cpa)) return new ParseResult(new Property(this, cpa.CoreP), cpa.CoreP);
+                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var cpa)) return new ParseResult(new Property(new PropertyKey(this), cpa.Key.CoreP), cpa.Key.CoreP);
 
                             // All others enums are parsed in an ordinary manner
-                            if (Util.EnumTryParse(A.Type, value, out var enumValue)) return new ParseResult(new Property(this, enumValue), enumValue);
+                            if (Util.EnumTryParse(A.Type, value, out var enumValue)) return new ParseResult(new Property(new PropertyKey(this), enumValue), enumValue);
                             return new ParseResult(
                                 "Invalid as " + A.Type + ".\r\n" +
                                 "Must be one of the following values:\r\n" +

@@ -105,8 +105,8 @@ namespace AgoRapideSample {
                 void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.EnumMapper.MapEnum<T>(s => Log(nameof(AgoRapide.EnumMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
                 mapper1<AgoRapide.CoreP>();
                 mapper1<P>();
-                // Add above other enum's which you want to use as properties for your entities (so called entity property enums). 
-                // Add at bottom of list, that is in order of going outwards from inner AgoRapide library towards your final application
+                /// Add all your <see cref="AgoRapide.EnumType.EntityPropertyEnum"/> at bottom of list, 
+                /// that is in order of going outwards from inner AgoRapide library towards your final application
 
                 AgoRapide.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.EnumMapper.MapEnumFinalize) + ": " + s));
                 Log(nameof(AgoRapide.EnumMapper.AllCoreP) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.EnumMapper.AllCoreP.Select(c => c.PExplained)) + "\r\n");

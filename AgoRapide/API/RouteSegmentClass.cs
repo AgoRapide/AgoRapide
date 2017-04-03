@@ -88,7 +88,7 @@ namespace AgoRapide.API {
                 if (EnumMapper.TryGetA(segment.ToString(), out var temp)) {
                     segment = temp;
                 } else {
-                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(EnumMapper) + " as an entity property enum");
+                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(EnumMapper) + " as an -" + nameof(EnumType.EntityPropertyEnum) + "-");
                 }
             }
 
@@ -174,7 +174,7 @@ namespace AgoRapide.API {
             public InvalidRouteSegmentClassException(string message) : base(
                 "A " + nameof(RouteSegmentClass) + " must have one of the following types:\r\n\r\n" +
                 "-" + typeof(Type).ToString() + ",\r\n" +
-                "-" + typeof(AgoRapideAttributeEnriched).ToString() + " (or an entity property enum like " + nameof(CoreP) + ", P or similar),\r\n" +
+                "-" + typeof(AgoRapideAttributeEnriched).ToString() + " (or an -" + nameof(EnumType.EntityPropertyEnum) + "-),\r\n" +
                 "-" + typeof(string).ToString() + ".\r\n\r\nThis does not correspond to the following:\r\n" + message) { }
         }
     }

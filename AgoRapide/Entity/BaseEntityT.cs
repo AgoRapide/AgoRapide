@@ -117,7 +117,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="p"></param>
         /// <returns></returns>
-        public T PV<T>(AgoRapideAttributeEnriched p) => TryGetPV(p, out T retval) ? retval : throw new InvalidPropertyException<T>(p.CoreP, PExplained(p));
+        public T PV<T>(PropertyKey p) => TryGetPV(p, out T retval) ? retval : throw new InvalidPropertyException<T>(p.Key.CoreP, PExplained(p));
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
@@ -126,7 +126,7 @@ namespace AgoRapide {
         /// <param name="p"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public T PV<T>(AgoRapideAttributeEnriched p, T defaultValue) => TryGetPV(p, out T retval) ? retval : defaultValue;
+        public T PV<T>(PropertyKey p, T defaultValue) => TryGetPV(p, out T retval) ? retval : defaultValue;
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -150,13 +150,15 @@ namespace AgoRapide {
         /// <param name="p"></param>
         /// <param name="pAsT"></param>
         /// <returns></returns>
-        public bool TryGetPV<T>(AgoRapideAttributeEnriched p, out T pAsT) {
+        public bool TryGetPV<T>(PropertyKey p, out T pAsT) {
             // TODO: Decide whether to do this:
             // TODO: if (Properties == null) throw new NullReferenceException(nameof(Properties) + ". Details: " + ToString());
             // TODO: or this:
             if (Properties == null) { pAsT = default(T); return false; }
 
-            if (!Properties.TryGetValue(p.CoreP, out var property)) { pAsT = default(T); return false; }
+            if (p.Key.A.IsMany) throw new NotImplementedException(nameof(p.Key.A.IsMany));
+
+            if (!Properties.TryGetValue(p.Key.CoreP, out var property)) { pAsT = default(T); return false; }
             // Type checking here was considered Jan 2017 but left out. Instead we leave it to property to
             // convert as needed (double to int for instance or DateTime to string)
             // var type = typeof(T);
@@ -172,10 +174,12 @@ namespace AgoRapide {
         /// Safe to call method that returns a human readable explanation of what is found for the given property. 
         /// Useful for logging and exception messages
         /// Returns either "[NOT_FOUND]" or the result of <see cref="Property.ToString"/>
+        /// 
+        /// TODO: Solve for <see cref="AgoRapideAttribute.IsMany"/> properties
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public string PExplained(AgoRapideAttributeEnriched p) => Properties.TryGetValue(p.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]";
+        public string PExplained(PropertyKey p) => Properties.TryGetValue(p.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]";
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -191,8 +195,9 @@ namespace AgoRapide {
         /// <param name="value"></param>
         public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreP<T>(), value);
 
-        public void AddProperty<T>(AgoRapideAttributeEnriched a, T value) {
+        public void AddProperty<T>(PropertyKey a, T value) {
             if (value == null) throw new ArgumentNullException(nameof(value));
+            if (a.Key.A.IsMany) throw new NotImplementedException(nameof(a.Key.A.IsMany));
             var property = Property.Create(a, value);
             property.ParentId = Id;
             property.Parent = this;
@@ -262,8 +267,8 @@ namespace AgoRapide {
                     // retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableHeading(request));
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
                     // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
-                    retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.A.PriorityOrder).Select(p => {
-                        p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
+                    retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.Key.A.PriorityOrder).Select(p => {
+                        p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                         return p.ToHTMLTableRow(request);
                     })));
                     retval.AppendLine("</table>");
@@ -345,7 +350,8 @@ namespace AgoRapide {
                 /// (note how you may get different results for <see cref="Result.MultipleEntitiesResult"/> for HTML and JSON because HTML will use
                 /// <see cref="BaseEntityT.ToHTMLTableRow"/> which does not check access at all, while JSON data here checks for each individual property. 
                 GetExistingProperties(request.CurrentUser, AccessType.Read).ForEach(i => {
-                    retval.Properties.Add(i.Value.Key.PToString, i.Value.ToJSONProperty());
+                    if (i.Value.Key.Key.A.IsMany) throw new NotImplementedException(nameof(i.Value.Key.Key.A.IsMany));
+                    retval.Properties.Add(i.Value.Key.Key.PToString, i.Value.ToJSONProperty());
                 });
                 // Note that we do not bother with Type when Properties is not set
                 if (!retval.Properties.ContainsKey(nameof(CoreP.Type))) retval.Properties.Add(nameof(CoreP.Type), new JSONProperty0 { Value = GetType().ToStringShort() });
