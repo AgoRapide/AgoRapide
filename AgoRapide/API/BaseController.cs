@@ -62,7 +62,7 @@ namespace AgoRapide.API {
             // parameters we must be able to call the full version. That will be difficult to do 
             // from here. In other words, for the time being (Jan 2017) all such overloads
             // have to be manually implemented as ordinary Controller-methods anyway.
-            // (but TryValidateAndParseParameters will work anyway)
+            /// (but <see cref="AgoRapideAttributeEnriched.TryValidateAndParse"/> will work anyway)
 
             var url = Request.RequestUri.ToString();
             Log("url: " + url);
@@ -125,9 +125,9 @@ namespace AgoRapide.API {
                                 "It looks like you tried to access method\r\n" + c.methods[0].ToString() + "\r\n" +
                                 (s.Parameter == null ?
                                     "but " + s.SegmentName + " is missing from your URL.\r\n" :
-                                    "but parameter {" + s.Parameter.PToString + "} is missing from your URL\r\n") +
+                                    "but parameter {" + s.Parameter.Key.PToString + "} is missing from your URL\r\n") +
                                 (string.IsNullOrEmpty(s.SampleValues[0]) ?
-                                    ("Unable to suggest a value for you for this missing parameter" + ((s.Parameter?.A.IsPassword ?? false) ? " since it is a password (you must come up with a value by yourself)" : "")) :
+                                    ("Unable to suggest a value for you for this missing parameter" + ((s.Parameter?.Key.A.IsPassword ?? false) ? " since it is a password (you must come up with a value by yourself)" : "")) :
                                     "Try to add '" + s.SampleValues[0] + "' to your URL") +
                                 tip);
                             request.Result.AddProperty(CoreP.SuggestedUrl.A(), retval.PV<string>(CoreP.SuggestedUrl.A()));
@@ -389,27 +389,28 @@ namespace AgoRapide.API {
                 //var p = method.Parameters[index - 1].cp; // TODO: Use better names (cp maybe? and a maybe?)
                 //var ea = method.Parameters[index - 1].a;
                 var par = method.Parameters[index - 1];
-                if (parameter == null) parameter = par.A.DefaultValue;
+                var a = par.Key.A;
+                if (parameter == null) parameter = a.DefaultValue;
                 if (parameter == null) { // Missing parameter and no default available
                     errorResponseTemp = new Request(Request, method, currentUser, exceptionHasOccurred: false).GetErrorResponse(
                         ResultCode.missing_parameter_error,
-                        "Parameter " + index + " (" + par.PToString + ") is missing and there was no " + nameof(AgoRapideAttribute) + "." + nameof(par.A.DefaultValue) + " defined.\r\n" +
-                        (par.A.ValidValues != null && par.A.ValidValues.Length > 0 ? ("\r\n" + nameof(par.A.ValidValues) + ":\r\n" + string.Join(", ", par.A.ValidValues)) :
-                        (par.A.SampleValues != null && par.A.SampleValues.Length > 0 ? ("\r\n" + nameof(par.A.SampleValues) + ":\r\n" + string.Join(", ", par.A.SampleValues)) : "")));
+                        "Parameter " + index + " (" + par.Key.PToString + ") is missing and there was no " + nameof(AgoRapideAttribute) + "." + nameof(a.DefaultValue) + " defined.\r\n" +
+                        (a.ValidValues != null && a.ValidValues.Length > 0 ? ("\r\n" + nameof(a.ValidValues) + ":\r\n" + string.Join(", ", a.ValidValues)) :
+                        (a.SampleValues != null && a.SampleValues.Length > 0 ? ("\r\n" + nameof(a.SampleValues) + ":\r\n" + string.Join(", ", a.SampleValues)) : "")));
                     return false;
                 }
 
-                if (!par.TryCleanAndValidateAndParse(parameter, out var parseResult)) {
+                if (!par.Key.TryCleanAndValidateAndParse(parameter, out var parseResult)) {
                     errorResponseTemp = new Request(Request, method, currentUser, exceptionHasOccurred: false).GetErrorResponse(
                         ResultCode.invalid_parameter_error,
-                        "Parameter " + index + " (" + par.PToString + ") is invalid.\r\n" +
+                        "Parameter " + index + " (" + par.Key.PToString + ") is invalid.\r\n" +
                         "Details: " + parseResult.ErrorResponse + ". " +
-                        (par.A.ValidValues != null && par.A.ValidValues.Length > 0 ? ("\r\n" + nameof(par.A.ValidValues) + ":\r\n" + string.Join(", ", par.A.ValidValues)) :
-                        (par.A.SampleValues != null && par.A.SampleValues.Length > 0 ? ("\r\n" + nameof(par.A.SampleValues) + ":\r\n" + string.Join(", ", par.A.SampleValues)) : "")));
+                        (a.ValidValues != null && a.ValidValues.Length > 0 ? ("\r\n" + nameof(a.ValidValues) + ":\r\n" + string.Join(", ", a.ValidValues)) :
+                        (a.SampleValues != null && a.SampleValues.Length > 0 ? ("\r\n" + nameof(a.SampleValues) + ":\r\n" + string.Join(", ", a.SampleValues)) : "")));
                     return false;
                 }
-                parameters.AddValue2(par.CoreP, parseResult.Result);
-                Log("Parameter " + par.PToString + ": " + parameter);
+                parameters.AddValue2(par.Key.CoreP, parseResult.Result);
+                Log("Parameter " + par.Key.PToString + ": " + parameter);
                 return true;
             });
 
@@ -504,7 +505,7 @@ namespace AgoRapide.API {
         protected object HandleExceptionAndGenerateResponse(Exception ex, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             HandledExceptionEvent?.Invoke(ex);
             var exceptionMessage = "";
-            Util.EntityCache = new System.Collections.Concurrent.ConcurrentDictionary<long, BaseEntity>(); // Reset as a precaution
+            Util.ResetEntityCache(); // Reset as a precaution
             var msg = "An internal exception of type " + ex.GetType().ToStringShort() + " occurred in " + GetType().ToStringShort() + ".\r\n" +
                     (string.IsNullOrEmpty(exceptionMessage) ? "" : "Exception message: " + exceptionMessage + ".\r\n") +
                     (string.IsNullOrEmpty(caller) ? "" : "Method that failed: " + caller + ".\r\n") +

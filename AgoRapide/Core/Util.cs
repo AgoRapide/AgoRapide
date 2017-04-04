@@ -403,11 +403,12 @@ namespace AgoRapide.Core {
         /// Note subtle point about the entity being stored in the cache, not the root-property (in other words, entity root-properties
         /// are not found in cache per se)
         /// </summary>
-        public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
+        public static ConcurrentDictionary<long, BaseEntityT> EntityCache = new ConcurrentDictionary<long, BaseEntityT>();
         /// <summary>
+        /// Usually reset is done as a precaution when exceptions occur. 
         /// TODO: Move <see cref="ResetEntityCache"/> into <see cref="AgoRapide.Database.IDatabase"/>?
         /// </summary>
-        public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
+        public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntityT>();
 
         public static System.Security.Cryptography.MD5 MD5 = System.Security.Cryptography.MD5.Create();
         /// <summary>

@@ -30,12 +30,24 @@ namespace AgoRapide.Core {
         /// </summary>
         public string ErrorResponse { get; private set; }
 
-        public ParseResult(Property result, object objResult) {
+        /// <summary>
+        /// Typically called from <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/>. 
+        /// 
+        /// TODO: Ensure that correct constructor for <see cref="Property"/> will be called.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="key"></param>
+        /// <param name="objResult"></param>
+        /// <returns></returns>
+        public static ParseResult Create<T>(AgoRapideAttributeEnriched key, T objResult) => new ParseResult(Property.Create(new PropertyKey(key), objResult), (object)objResult);
+        private ParseResult(Property result, object objResult) {
             Result = result ?? throw new NullReferenceException(nameof(result));
             ObjResult = objResult ?? throw new NullReferenceException(nameof(objResult));
             ErrorResponse = null;
         }
-        public ParseResult(string errorResponse) {
+
+        public static ParseResult Create(string errorResponse) => new ParseResult(errorResponse);
+        private ParseResult(string errorResponse) {
             ErrorResponse = errorResponse ?? throw new NullReferenceException(nameof(errorResponse));
             Result = null;
         }

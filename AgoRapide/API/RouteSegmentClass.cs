@@ -49,7 +49,7 @@ namespace AgoRapide.API {
         /// <summary>
         /// Typical example would be <see cref="CoreP.QueryId"/> like api/Person/{QueryId}
         /// </summary>
-        public AgoRapideAttributeEnriched Parameter { get; private set; }
+        public PropertyKey Parameter { get; private set; }
 
         /// <summary>
         /// Typical example would be Add like api/Person/Add
@@ -66,7 +66,7 @@ namespace AgoRapide.API {
         /// <param name="segment">
         /// Must match one of 
         /// <see cref="Type"/> (<see cref="System.Type"/>), 
-        /// <see cref="Parameter"/> (<see cref="AgoRapideAttributeEnriched"/>) or 
+        /// <see cref="Parameter"/> (<see cref="PropertyKey"/>) or 
         /// <see cref="String"/> (<see cref="System.String"/>). 
         /// See <see cref="InvalidRouteSegmentClassException"/> for details. 
         /// </param>
@@ -92,13 +92,14 @@ namespace AgoRapide.API {
                 }
             }
 
-            Parameter = segment as AgoRapideAttributeEnriched;
+            Parameter = segment as PropertyKey;
             if (Parameter != null) {
                 SampleValues = new Func<List<string>>(() => {
-                    if (Parameter.A.SampleValues == null || Parameter.A.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + Parameter.PExplained };
-                    return Parameter.A.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
+                    var a = Parameter.Key.A;
+                    if (a.SampleValues == null || a.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + Parameter.Key.PExplained };
+                    return a.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
                 })();
-                PropertyToStringToLower = Parameter.PToString.ToLower();
+                PropertyToStringToLower = Parameter.Key.PToString.ToLower();
                 return;
             }
 
@@ -174,7 +175,7 @@ namespace AgoRapide.API {
             public InvalidRouteSegmentClassException(string message) : base(
                 "A " + nameof(RouteSegmentClass) + " must have one of the following types:\r\n\r\n" +
                 "-" + typeof(Type).ToString() + ",\r\n" +
-                "-" + typeof(AgoRapideAttributeEnriched).ToString() + " (or an -" + nameof(EnumType.EntityPropertyEnum) + "-),\r\n" +
+                "-" + typeof(PropertyKey).ToString() + " (or an -" + nameof(EnumType.EntityPropertyEnum) + "-),\r\n" +
                 "-" + typeof(string).ToString() + ".\r\n\r\nThis does not correspond to the following:\r\n" + message) { }
         }
     }

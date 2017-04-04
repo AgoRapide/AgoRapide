@@ -226,7 +226,7 @@ namespace AgoRapide.Database {
                     entity = root;
                     return true;
                 }
-                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.Type).PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.Type).Key.PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
@@ -292,6 +292,8 @@ namespace AgoRapide.Database {
 
         public void OperateOnProperty(long operatorId, Property property, PropertyOperation operation, Result result) {
             Log(nameof(operatorId) + ": " + operatorId + ", " + nameof(property) + ": " + property.Id + ", " + nameof(operation) + ": " + operation);
+            property.AssertIdIsSet();
+            property.Key.AssertIndexSpecifiedIfIsMany(() => property.ToString());
             Npgsql.NpgsqlCommand cmd;
             switch (operation) {
                 case PropertyOperation.SetValid:
@@ -313,22 +315,20 @@ namespace AgoRapide.Database {
                 case PropertyOperation.SetValid: break;
                 case PropertyOperation.SetInvalid:
 
-                    // TODO: Take into consideration how to remove from cache and also how to remove from
-                    // TODO: properties collection when IsMany
-                    if (property.Key.Key.A.IsMany) throw new NotImplementedException(nameof(property.Key.Key.A.IsMany));
-
                     if (property.ParentId > 0) {
                         // Remove whole of parent from cache since its initialization result may no longer be correct
                         // (It would be naive to assume that we can only remove the property itself)
 
-                        // TODO: Take into consideration how to remove from cache and also how to remove from
-                        // TODO: properties collection when IsMany
                         if (Util.EntityCache.TryRemove(property.ParentId, out var entity)) {
-                            switch (entity) { // And also remove from parent's property collection in case object exists somewhere (as a singleton class or similar)
-
-                                // TODO: Take into consideration how to remove from cache and also how to remove from
-                                // TODO: properties collection when IsMany
-                                case BaseEntityT e2: if (e2.Properties != null && e2.Properties.ContainsKey(property.Key.Key.CoreP)) e2.Properties.Remove(property.Key.Key.CoreP); break;
+                            // And also remove from parent's property collection in case object exists somewhere (as a singleton class or similar)
+                            if (entity.Properties != null) {
+                                if (property.Key.Key.A.IsMany) {
+                                    if (entity.Properties.GetOrAddIsManyParent(property.Key).Properties.ContainsKey(property.Key.IndexAsCoreP)) {
+                                        entity.Properties.Remove(property.Key.IndexAsCoreP); break;
+                                    }
+                                } else if (entity.Properties.ContainsKey(property.Key.Key.CoreP)) {
+                                    entity.Properties.Remove(property.Key.Key.CoreP); break;
+                                }
                             }
                         }
                     }
@@ -377,7 +377,7 @@ namespace AgoRapide.Database {
             Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
             InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntityT), detailer: null);
             var retval = new Result();
-            var pid = CreateProperty(cid, null, null, new PropertyKey(CoreP.Type.A()), entityType, result);
+            var pid = CreateProperty(cid, null, null, CoreP.Type.A(), entityType, result);
             if (properties != null) {
                 foreach (var v in properties) {
                     CreateProperty(cid, pid, null, v.key, v.value, result);
@@ -415,45 +415,48 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         protected Property ReadOneProperty(Npgsql.NpgsqlDataReader r) {
             // Log(""); Logging now generates too much data
-            var retval = new Property {
-                Id = r.GetInt64((int)DBField.id),
-                Created = r.GetDateTime((int)DBField.created),
-                CreatorId = r.IsDBNull((int)DBField.cid) ? 0 : r.GetInt64((int)DBField.cid),
-                ParentId = r.IsDBNull((int)DBField.pid) ? 0 : r.GetInt64((int)DBField.pid),
-                ForeignId = r.IsDBNull((int)DBField.fid) ? 0 : r.GetInt64((int)DBField.fid),
-                KeyDB = r.IsDBNull((int)DBField.key) ? throw new InvalidPropertyKeyException(null, r.GetInt64((int)DBField.id)) : r.GetString((int)DBField.key),
-                LngValue = r.IsDBNull((int)DBField.lngv) ? (long?)null : r.GetInt64((int)DBField.lngv),
-                DblValue = r.IsDBNull((int)DBField.dblv) ? (double?)null : r.GetDouble((int)DBField.dblv),
-                BlnValue = r.IsDBNull((int)DBField.blnv) ? (bool?)null : r.GetBoolean((int)DBField.blnv),
-                DtmValue = r.IsDBNull((int)DBField.dtmv) ? (DateTime?)null : r.GetDateTime((int)DBField.dtmv),
-                GeoValue = r.IsDBNull((int)DBField.geov) ? null : r.GetString((int)DBField.geov),
-                StrValue = r.IsDBNull((int)DBField.strv) ? null : r.GetString((int)DBField.strv),
-                Valid = r.IsDBNull((int)DBField.valid) ? (DateTime?)null : r.GetDateTime((int)DBField.valid),
-                ValidatorId = r.IsDBNull((int)DBField.vid) ? (long?)null : r.GetInt64((int)DBField.vid),
-                Invalid = r.IsDBNull((int)DBField.invalid) ? (DateTime?)null : r.GetDateTime((int)DBField.invalid),
-                InvalidatorId = r.IsDBNull((int)DBField.iid) ? (long?)null : r.GetInt64((int)DBField.iid),
 
-                // 13 Oct 2015 We could consider doing this, that is, ALWAYS read children if they may exist
-                // (instead it is being done as desired by BaseController.GetProperties)
-                // BE CAREFUL ABOUT PERFORMANCE (WHEN READING A LONG LIST OF PERSONS OR DEALS FOR INSTANCE)
-                // (retval.CanHaveChildren) AddChildrenToProperty(retval);
-            }.Initialize();
+            var retval = Property.Create(
+                id: r.GetInt64((int)DBField.id),
+                created: r.GetDateTime((int)DBField.created),
+                creatorId: r.IsDBNull((int)DBField.cid) ? 0 : r.GetInt64((int)DBField.cid),
+                parentId: r.IsDBNull((int)DBField.pid) ? 0 : r.GetInt64((int)DBField.pid),
+                foreignId: r.IsDBNull((int)DBField.fid) ? 0 : r.GetInt64((int)DBField.fid),
+                keyDB: r.IsDBNull((int)DBField.key) ? throw new InvalidPropertyKeyException(null, r.GetInt64((int)DBField.id)) : r.GetString((int)DBField.key),
+                lngValue: r.IsDBNull((int)DBField.lngv) ? (long?)null : r.GetInt64((int)DBField.lngv),
+                dblValue: r.IsDBNull((int)DBField.dblv) ? (double?)null : r.GetDouble((int)DBField.dblv),
+                blnValue: r.IsDBNull((int)DBField.blnv) ? (bool?)null : r.GetBoolean((int)DBField.blnv),
+                dtmValue: r.IsDBNull((int)DBField.dtmv) ? (DateTime?)null : r.GetDateTime((int)DBField.dtmv),
+                geoValue: r.IsDBNull((int)DBField.geov) ? null : r.GetString((int)DBField.geov),
+                strValue: r.IsDBNull((int)DBField.strv) ? null : r.GetString((int)DBField.strv),
+                valid: r.IsDBNull((int)DBField.valid) ? (DateTime?)null : r.GetDateTime((int)DBField.valid),
+                validatorId: r.IsDBNull((int)DBField.vid) ? (long?)null : r.GetInt64((int)DBField.vid),
+                invalid: r.IsDBNull((int)DBField.invalid) ? (DateTime?)null : r.GetDateTime((int)DBField.invalid),
+                invalidatorId: r.IsDBNull((int)DBField.iid) ? (long?)null : r.GetInt64((int)DBField.iid)
+            );
 
-            // No reason for doing this: KeyDB is "correct" when reading from database
-            //// TODO: IMPROVE ON THIS. Check consequences for IsMany. Maybe a KeyLng for Property.
-            //var keyLng = (long)(object)retval.KeyT;
-            //if (retval.KeyDB.Equals(keyLng.ToString())) {
-            //    // TODO: USE TRYMAPREVERSE, WITH EXCEPTION HANDLING HERE
-            //    retval.KeyDB = _cpm.MapReverse((TProperty)(object)keyLng).ToString();
-            //}
+            // 13 Oct 2015 We could consider doing this, that is, ALWAYS read children if they may exist
+            // (instead it is being done as desired by BaseController.GetProperties)
+            // BE CAREFUL ABOUT PERFORMANCE (WHEN READING A LONG LIST OF PERSONS OR DEALS FOR INSTANCE)
+            // (retval.CanHaveChildren) AddChildrenToProperty(retval);
 
+            retval.Initialize();
+
+            retval.Key.AssertIndexSpecifiedIfIsMany(() =>
+                // TODO: This is too inflexible in cases where the user changes from !IsMany to IsMany.
+                // TODO: We could consider silently adding a #1 to KeyDB in cases like this.
+                // TODO: We could also have the opposite check, checking that no index is given when !IsMany
+                "\r\nPossible resolution: Set Property with id " + retval.Id + " as no-longer-current in database or delete altogether with SQL-code DELETE FROM p WHERE id = " + retval.Id + "\r\n\r\n" +
+                "Details: " + retval.ToString()
+            );
+            
             // TODO: FIX THIS!
             if (retval.ParentId == 0) {
                 /// This is an entity root property. We can not put that into cache because the same id will be used
-                /// to store the entity itself. We do not have any use for it either (<see cref="CreateProperty"/> does not need it)
+                /// to store the entity itself. We do not have any use for it either (because <see cref="CreateProperty"/> does not need it)
             } else {
                 /// Note how putting properties in cache is used for invalidating cached entries by <see cref="CreateProperty"/>
-                /// The cache is never used in itself when reading properties from database (GetPropertyById for instance will never use cache)
+                /// The cache is never used in itself when reading properties from database (<see cref="TryGetPropertyById"/> for instance will never use cache)
                 Util.EntityCache[retval.Id] = retval;
             }
             return retval;
@@ -574,15 +577,14 @@ namespace AgoRapide.Database {
             }
         }
 
-        public long CreateProperty(long? cid, long? pid, long? fid, PropertyKey keyA, object value, Result result) {
-            if (keyA.Key.A.IsMany) throw new NotImplementedException(nameof(keyA.Key.A.IsMany));
+        public long CreateProperty(long? cid, long? pid, long? fid, PropertyKey key, object value, Result result) {
+            key.AssertIndexSpecifiedIfIsMany(() => key.Key.PToString + " = " + value);
 
             Npgsql.NpgsqlCommand cmd;
-            if (keyA.Key.A.IsUniqueInDatabase) {
-                if (keyA.Key.A.IsMany) throw new NotImplementedException(nameof(keyA.Key.A.IsMany));
-                AssertUniqueness(keyA, value);
+            if (key.Key.A.IsUniqueInDatabase) {
+                if (key.Key.A.IsMany) throw new NotImplementedException(nameof(key.Key.A.IsMany) + " when " + nameof(key.Key.A.IsUniqueInDatabase));
+                AssertUniqueness(key, value);
             }
-            if (keyA.Key.A.IsMany) throw new NotImplementedException(nameof(keyA.Key.A.IsMany));
 
             var idStrings = new Func<(string logtext, string names, string values)>(() => {
                 if (cid == null && pid == null && fid == null) {
@@ -635,8 +637,8 @@ namespace AgoRapide.Database {
             })();
 
             Log(idStrings.logtext +
-                ", " + nameof(keyA.Key.PToString) + ": " + keyA.Key.PToString +
-                ", " + nameof(value) + ": " + (keyA.Key.A.IsPassword ? "[WITHHELD]" : value.ToString()), result);
+                ", " + nameof(key) + ": " + key.ToString() +
+                ", " + nameof(value) + ": " + (key.Key.A.IsPassword ? "[WITHHELD]" : value.ToString()), result);
             var type = value.GetType();
 
             // TODO: Idea for performance improvement. We could read some sequence values in a separate
@@ -658,38 +660,18 @@ namespace AgoRapide.Database {
                         if (!(value is string)) throw new InvalidObjectTypeException(value, typeof(string));
                         return (nameof(DBField.strv), ":" + nameof(DBField.strv), NpgsqlTypes.NpgsqlDbType.Text); // Leave conversion to Npgsql (because of SQL injection issues)
                 }
-                // DELETE COMMENT. Lambda eliminated 01 Apr 2016. 
-                // NOTE: Pattern matching not possible because variable is consumed in lambda above. See 
-                // NOTE: https://github.com/dotnet/roslyn/issues/16066
-                // NOTE for explanation
-                // TOOD: Rewrite returner as local method and see of works then!
-                //var _long = value as long?;
-                //if (_long != null) return (nameof(DBField.lngv), "'" + _long.ToString() + "'", null);
-                //var _dbl = value as double?;
-                //if (_dbl != null) return (nameof(DBField.dblv), ":" + nameof(DBField.dblv), NpgsqlTypes.NpgsqlDbType.Double); // Leave conversion to Npgsql
-                //var _bln = value as bool?;
-                //if (_bln != null) return (nameof(DBField.blnv), (bool)_bln ? "TRUE" : "FALSE", null);
-                //var _dtm = value as DateTime?;
-                //if (_dtm != null) return (nameof(DBField.dtmv), ":" + nameof(DBField.dtmv), NpgsqlTypes.NpgsqlDbType.Timestamp); // Leave conversion to Npgsql
-                //if (value.GetType().IsEnum) return (nameof(DBField.strv), "'" + value.ToString() + "'", null); // Considered SQL injection safe
-                //var _type = value as Type;
-                //if (_type != null) return (nameof(DBField.strv), "'" + _type.ToStringDB() + "'", null); // Considered SQL injection safe
-                //var _typeDescriber = value as ITypeDescriber;
-                //if (_typeDescriber != null) value = value.ToString();
-                //if (!(value is string)) throw new InvalidObjectTypeException(value, typeof(string));
-                //return (nameof(DBField.strv), ":" + nameof(DBField.strv), NpgsqlTypes.NpgsqlDbType.Text); // Leave conversion to Npgsql (because of SQL injection issues)
             })();
             Log("Storing as " + valueStrings.nameOfDbField + ", " + valueStrings.valueOrParameter, result);
             // Note how we do not bother with parameters for object types which do not have any SQL injection issues.
             cmd = new Npgsql.NpgsqlCommand("INSERT INTO p\r\n" +
                 "(" + DBField.id + idStrings.names + ", " + DBField.key + ", " + valueStrings.nameOfDbField + ")\r\n" +
-                "VALUES (" + id + idStrings.values + ", '" + keyA.Key.PToString + "', " + valueStrings.valueOrParameter + ")", _cn1);
+                "VALUES (" + id + idStrings.values + ", '" + key.ToString() + "', " + valueStrings.valueOrParameter + ")", _cn1);
 
             if (valueStrings.valueOrParameter.StartsWith(":")) {
                 if (valueStrings.dbType == null) throw new NullReferenceException(nameof(valueStrings) + "." + nameof(valueStrings.dbType) + ". Must be set when " + nameof(valueStrings) + "." + nameof(valueStrings.valueOrParameter) + ".StartsWith(\":\") (" + valueStrings.valueOrParameter + ")");
                 cmd.Parameters.Add(new Npgsql.NpgsqlParameter(valueStrings.valueOrParameter, valueStrings.dbType) {
                     Value = new Func<object>(() => {
-                        if (!keyA.Key.A.IsPassword) return value;
+                        if (!key.Key.A.IsPassword) return value;
                         // salt and hash
                         if (pid == null) throw new ArgumentNullException(nameof(pid) + " must be set for " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.IsPassword));
                         if (!(value is string)) throw new InvalidObjectTypeException(value, typeof(string), "Only string is allowed for " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.IsPassword));
@@ -698,7 +680,7 @@ namespace AgoRapide.Database {
                 });
             } else {
                 if (valueStrings.dbType != null) throw new NotNullReferenceException(nameof(valueStrings) + "." + nameof(valueStrings.dbType) + ". Must not be set when !" + nameof(valueStrings) + "." + nameof(valueStrings.valueOrParameter) + ".StartsWith(\":\") (" + valueStrings.valueOrParameter + ")");
-                if (keyA.Key.A.IsPassword) throw new Exception(nameof(AgoRapideAttribute) + "." + nameof(keyA.Key.A.IsPassword) + " only valid for strings, not " + value.GetType());
+                if (key.Key.A.IsPassword) throw new Exception(nameof(AgoRapideAttribute) + "." + nameof(key.Key.A.IsPassword) + " only valid for strings, not " + value.GetType());
             }
             var propertiesAffected = ExecuteNonQuery(cmd, expectedRows: 1, doLogging: false);
             result?.SetCount(CoreP.PAffectedCount, propertiesAffected);
@@ -708,40 +690,112 @@ namespace AgoRapide.Database {
             return id;
         }
 
-        public void UpdateProperty<T>(long cid, BaseEntityT entity, PropertyKey a, T value, Result result) {
-            // Note how we only log when property is created or updated
-            if (a.Key.A.IsMany) throw new NotImplementedException(nameof(a.Key.A.IsMany));
-            var key = a.Key.CoreP;
+        public void UpdateProperty<T>(long cid, BaseEntityT entity, PropertyKey key, T value, Result result) {
+            // Log(""); Note how we only log when property is actually created or updated
             var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
             if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
 
-            var creator = new Func<long>(() => CreateProperty(cid, entity.Id, null, a, value, result));
+            var creator = new Func<PropertyKey, Property>(finalKey => {
+                var retval = GetPropertyById(CreateProperty(cid, entity.Id, null, finalKey, value, result));
+                finalKey.AssertEquals(retval.Key, () => retval.ToString());
+                return retval;
+            });
 
-            if (entity.Properties.TryGetValue(key, out var existingProperty)) {
-                var existingValue = existingProperty.V<T>();
-                if (existingValue.Equals(value)) {
-                    // Note how this is not logged
-                    OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
-                    result?.Count(CoreP.PUnchangedCount);
-                } else { // Vanlig variant
-                         // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
-                         // TODO: At least for presenting DateTime-objects and double in a preferred manner
-                    Log(detailer() + ". Property changed from '" + existingValue + "' to '" + value + "'", result);
-                    var id = creator();
-                    var changedProperty = GetPropertyById(id);
-                    result?.Count(CoreP.PChangedCount);
-                    entity.Properties[key] = changedProperty;
+            var entityOrIsManyParentCreator = new Action<BaseEntityT, CoreP>((entityOrIsManyParent, keyAsCoreP) => {
+                if (entityOrIsManyParent.Properties.TryGetValue(keyAsCoreP, out var existingProperty)) {
+                    var existingValue = existingProperty.V<T>();
+                    if (existingValue.Equals(value)) {
+                        // Note how this is not logged
+                        OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
+                        result?.Count(CoreP.PUnchangedCount);
+                    } else { // Vanlig variant
+                             // TODO: Use of default value.ToString() here is not optimal
+                             // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+                             // TODO: At least for presenting DateTime-objects and double in a preferred manner
+                        Log(detailer() + ". Property changed from '" + existingValue + "' to '" + value + "'", result);
+                        var changedProperty = creator(key);
+                        result?.Count(CoreP.PChangedCount);
+                        entityOrIsManyParent.Properties[keyAsCoreP] = changedProperty;
+                    }
+                } else {
+                    // TODO: Use of default value.ToString() here is not optimal
+                    // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+                    // TODO: At least for presenting DateTime-objects and double in a preferred manner
+                    Log(detailer() + ". Property was not known. Initial value: '" + value + "'", result);
+                    var newProperty = creator(key);
+                    entityOrIsManyParent.Properties[keyAsCoreP] = newProperty;
+                    result?.Count(CoreP.PTotalCount);
+                }
+
+            });
+
+            if (key.Key.A.IsMany) {
+                var isManyParent = entity.Properties.GetOrAddIsManyParent(key);
+                if (key.Index == 0) {
+                    // This is understood as create new property with next available id
+                    // Like Person/42/AddProperty/PhoneNumber/1234
+                    var keyWithIndex = isManyParent.GetNextIsManyId();
+                    var newProperty = creator(keyWithIndex);
+                    isManyParent.Properties[keyWithIndex.IndexAsCoreP] = newProperty;
+                } else {
+                    // This corresponds to client knowing exact which id to use 
+                    // Like Person/42/AddProperty/PhoneNumber#3/1234
+                    entityOrIsManyParentCreator(isManyParent, key.IndexAsCoreP);
                 }
             } else {
-                // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
-                // TODO: At least for presenting DateTime-objects and double in a preferred manner
-                Log(detailer() + ". Property was not known. Initial value: '" + value + "'", result);
-                var id = creator();
-                var newProperty = GetPropertyById(id);
-                /// result?.Count(M(CoreP.PCreatedCount)); Counted by <see cref="CreateProperty"/>
-                result?.Count(CoreP.PTotalCount);
-                entity.Properties[key] = newProperty;
+                entityOrIsManyParentCreator(entity, key.Key.CoreP);
             }
+            //    if (isManyParent.Properties.TryGetValue(key.IndexAsCoreP, out var existingProperty)) {
+            //        var existingValue = existingProperty.V<T>();
+            //        if (existingValue.Equals(value)) {
+            //            // Note how this is not logged
+            //            OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
+            //            result?.Count(CoreP.PUnchangedCount);
+            //        } else { // Vanlig variant
+
+            //            // TODO: Use of default value.ToString() here is not optimal
+            //            // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+            //            // TODO: At least for presenting DateTime-objects and double in a preferred manner
+            //            Log(detailer() + ". Property changed from '" + existingValue + "' to '" + value + "'", result);
+            //            var changedProperty = creator(key);
+            //            result?.Count(CoreP.PChangedCount);
+            //            isManyParent.Properties[key.IndexAsCoreP] = changedProperty;
+            //        }
+            //    } else {
+            //        // TODO: Use of default value.ToString() here is not optimal
+            //        // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+            //        // TODO: At least for presenting DateTime-objects and double in a preferred manner
+            //        Log(detailer() + ". Property was not known. Initial value: '" + value + "'", result);
+            //        var newProperty = creator(key);
+            //        isManyParent.Properties[key.Key.CoreP] = newProperty;
+            //        result?.Count(CoreP.PTotalCount);
+            //    }
+            //} else {
+            //    if (entity.Properties.TryGetValue(key.Key.CoreP, out var existingProperty)) {
+            //        var existingValue = existingProperty.V<T>();
+            //        if (existingValue.Equals(value)) {
+            //            // Note how this is not logged
+            //            OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
+            //            result?.Count(CoreP.PUnchangedCount);
+            //        } else { // Vanlig variant
+            //                 // TODO: Use of default value.ToString() here is not optimal
+            //                 // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+            //                 // TODO: At least for presenting DateTime-objects and double in a preferred manner
+            //            Log(detailer() + ". Property changed from '" + existingValue + "' to '" + value + "'", result);
+            //            var changedProperty = creator(key);
+            //            result?.Count(CoreP.PChangedCount);
+            //            entity.Properties[key.Key.CoreP] = changedProperty;
+            //        }
+            //    } else {
+            //        // TODO: Use of default value.ToString() here is not optimal
+            //        // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+            //        // TODO: At least for presenting DateTime-objects and double in a preferred manner
+            //        Log(detailer() + ". Property was not known. Initial value: '" + value + "'", result);
+            //        var newProperty = creator(key);
+            //        entity.Properties[key.Key.CoreP] = newProperty;
+            //        result?.Count(CoreP.PTotalCount);
+            //    }
+            // }
         }
 
         /// <summary>
@@ -891,13 +945,13 @@ namespace AgoRapide.Database {
                 var noLongerCurrent = new List<(Property p, byte id)>();
                 while (r.Read()) {
                     var p = ReadOneProperty(r);
-                    if (p.Key.Key.CoreP.Equals(CoreP.None)) throw new InvalidPropertyKeyException(p.KeyDB, p.Id);
-                    if (p.Key.Index > 0) {
-                        var isManyParent = dict.GetOrAddIsManyParent(p.Key.Key);
-                        if (isManyParent.Properties.TryGetValue((CoreP)(object)p.Key.Index, out var toBeOverwritten)) {
+                    var test = p.Key; /// Check that <see cref="Property.KeyDB"/> parses correctly. 
+                    if (p.Key.Key.A.IsMany) {
+                        var isManyParent = dict.GetOrAddIsManyParent(p.Key);
+                        if (isManyParent.Properties.TryGetValue(p.Key.IndexAsCoreP, out var toBeOverwritten)) {
                             noLongerCurrent.Add((toBeOverwritten, 1)); // #1 when calling GetId
                         }
-                        isManyParent.Properties[(CoreP)(object)(int.MaxValue - p.Key.Index)] = p;
+                        isManyParent.Properties[p.Key.IndexAsCoreP] = p;
                     } else {
                         if (dict.TryGetValue(p.Key.Key.CoreP, out var toBeOverwritten)) {
                             noLongerCurrent.Add((toBeOverwritten, 2)); // #2 when calling GetId

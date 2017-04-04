@@ -9,8 +9,8 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: Note how <see cref="PropertyKey"/> became ubiquitous throughout the library at introduction.
     /// TDOO: Consider if some use of it can be changed back to use of <see cref="AgoRapideAttributeEnriched"/> instead. 
-    /// TODO: Notice how connected everything is, starting with the need for describing a <see cref="Property.Key"/>, this
-    /// TODO: is assumed to be a suboptimal situation at present.
+    /// TODO: Notice how connected everything is, starting with the need for describing <see cref="Property.Key"/>.
+    /// TODO: this is assumed to be a suboptimal situation at present.
     /// </summary>
     [AgoRapide(
         Description =
@@ -26,10 +26,29 @@ namespace AgoRapide.Core {
         /// If relevant then has value 1 or greater. 
         /// </summary>
         public int Index { get; private set; }
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertIndexSpecifiedIfIsMany(Func<string> detailer) {
+            if (Key.A.IsMany && Index == 0) throw new InvalidPropertyKeyException(nameof(Index) + " not specified for " + nameof(Key.A.IsMany) + " for " + ToString() + "." + detailer.Result("\r\nDetails: "));
+        }
+
+        public CoreP IndexAsCoreP =>(CoreP)(object)(int.MaxValue - (Index > 0 ? Index : throw new InvalidPropertyKeyException(nameof(Index) + " not set. Details: " + Key.ToString())));
+
+        public bool Equals(PropertyKey other) => Key.CoreP.Equals(other.Key.CoreP) && Index.Equals(other.Index);
+        /// <summary>
+        /// </summary>
+        /// <param name="other"></param>
+        /// <param name="detailer">May be null</param>
+        public void AssertEquals(PropertyKey other, Func<string> detailer) { 
+            if (!Equals(other)) throw new InvalidPropertyKeyException(ToString() + " != " + other.ToString() + "." + detailer.Result("\r\nDetails: "));
+        }
 
         public PropertyKey(AgoRapideAttributeEnriched key) : this(key, 0) { }
         public PropertyKey(AgoRapideAttributeEnriched key, int index) {
-            Key = key;
+            Key = key ?? throw new ArgumentNullException(nameof(key));
+            if (index > 0 && !key.A.IsMany) throw new InvalidPropertyKeyException("Invalid to specify " + nameof(index) + " (" + index + ") when not " + nameof(key.A.IsMany) + ".\r\nDetails: " + key.ToString());
+            /// Regarding check above, note how the opposite is legal, you may have <see cref="AgoRapideAttribute.IsMany"/> without <param name="index"/> (that would be the <see cref="Property.IsIsManyParent"/>)
             Index = index;
         }
 
@@ -72,25 +91,25 @@ namespace AgoRapide.Core {
 
             errorResponse = null;
             key = new PropertyKey(retval.Key, index);
-            return false;
+            return true;
         }
 
         public static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                new ParseResult(new Property(new PropertyKey(agoRapideAttribute), retval), retval) :
-                new ParseResult(errorResponse);
+                ParseResult.Create(agoRapideAttribute, retval) :
+                ParseResult.Create(errorResponse);
             });
 
-        public static PropertyKey GetNextAvailableKey(CoreP coreP, BaseEntityT entity) {
-            throw new NotImplementedException();
-        }
-
+        /// <summary>
+        /// TOOD: Do not confuse <see cref="AgoRapide.Database.InvalidPropertyKeyException"/> and <see cref="PropertyKey.InvalidPropertyKeyException"/>,
+        /// TODO: RENAME ONE OF THESE INTO SOMETHING ELSE
+        /// </summary>
         public class InvalidPropertyKeyException : ApplicationException {
             public InvalidPropertyKeyException(string message) : base(message) { }
             public InvalidPropertyKeyException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public override string ToString() => Key.PToString + (Index >= 0 ? "" : ("#" + Index));
+        public override string ToString() => Key.PToString + (Index <= 0 ? "" : ("#" + Index));
     }
 }

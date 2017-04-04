@@ -188,8 +188,8 @@ namespace AgoRapideSample {
         /// <param name="agoRapideAttribute"></param>
         public static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value =>
                 TryParse(value, out var retval, out var errorResponse) ?
-                    new ParseResult(new Property(agoRapideAttribute, retval), retval) :
-                    new ParseResult(errorResponse));
+                    ParseResult.Create(agoRapideAttribute, retval) :
+                    ParseResult.Create(errorResponse));
 
         public class InvalidNorwegianPostalCodeException : ApplicationException {
             public InvalidNorwegianPostalCodeException(string message) : base(message) { }

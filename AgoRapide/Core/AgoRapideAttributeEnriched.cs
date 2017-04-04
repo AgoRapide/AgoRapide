@@ -158,7 +158,7 @@ namespace AgoRapide.Core {
             // Therefore we do this:
             if (ValidatorAndParser == null) throw new NullReferenceException(nameof(ValidatorAndParser) + ". Details: " + ToString());
             result = ValidatorAndParser(value);
-            if (result.ErrorResponse != null) result = new ParseResult("Validation failed for " + PToString + " = '" + value + "'.\r\nDetails: " + result.ErrorResponse);
+            if (result.ErrorResponse != null) result = ParseResult.Create("Validation failed for " + PToString + " = '" + value + "'.\r\nDetails: " + result.ErrorResponse);
             return result.ErrorResponse == null;
         }
 
@@ -175,7 +175,7 @@ namespace AgoRapide.Core {
             // TODO: Try to MAKE A.TryValidateAndParse GENERIC in order for it to return a more strongly typed result.
             var retval = TryValidateAndParse(value, out result);
             if (!retval && originalValue != null && !originalValue.Equals(value)) {
-                result = new ParseResult(result.ErrorResponse + ".\r\nValue was unsuccessfully first cleaned up from originalValue '" + originalValue + "'");
+                result = ParseResult.Create(result.ErrorResponse + ".\r\nValue was unsuccessfully first cleaned up from originalValue '" + originalValue + "'");
             }
             var a = ("A", "b");
 
@@ -197,9 +197,9 @@ namespace AgoRapide.Core {
                 NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
                 if (A.Property.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.Property) + " (" + A.Property + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
                 var cpa = EnumMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
-                _coreP = cpa.CoreP;
-                A.EnrichFrom(cpa.A);
-                PExplained += " <- " + cpa.PExplained;
+                _coreP = cpa.Key.CoreP;
+                A.EnrichFrom(cpa.Key.A);
+                PExplained += " <- " + cpa.Key.PExplained;
             }
 
             /// Enrichment 2, from enum-"class" 
@@ -325,12 +325,12 @@ namespace AgoRapide.Core {
                     };
                 } else {
                     if (A.Type.Equals(typeof(string))) {
-                        ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? new ParseResult(new Property(new PropertyKey(this), value), value) : new ParseResult("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
+                        ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? ParseResult.Create(this, value) : ParseResult.Create("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
                     } else if (A.Type.Equals(typeof(int))) {
                         throw new TypeIntNotSupportedByAgoRapideException(A.ToString());
                         // ValidatorAndParser = value => int.TryParse(value, out var intValue) ? new ParseResult(new Property(P, intValue), intValue) : new ParseResult("Illegal as int");
                     } else if (A.Type.Equals(typeof(long))) {
-                        ValidatorAndParser = value => long.TryParse(value, out var lngValue) ? new ParseResult(new Property(new PropertyKey(this), lngValue), lngValue) : new ParseResult("Illegal as long");
+                        ValidatorAndParser = value => long.TryParse(value, out var lngValue) ? ParseResult.Create(this, lngValue) : ParseResult.Create("Illegal as long");
                     } else if (A.Type.Equals(typeof(double))) {
                         ValidatorAndParser = value => {
                             throw new NotImplementedException(
@@ -338,21 +338,21 @@ namespace AgoRapide.Core {
                                 "Details: " + A.ToString());
                         };
                     } else if (A.Type.Equals(typeof(bool))) {
-                        ValidatorAndParser = value => bool.TryParse(value, out var blnValue) ? new ParseResult(new Property(new PropertyKey(this), blnValue), blnValue) : new ParseResult("Illegal as boolean, use '" + true.ToString() + "' or '" + false.ToString() + "'");
+                        ValidatorAndParser = value => bool.TryParse(value, out var blnValue) ? ParseResult.Create(this, blnValue) : ParseResult.Create("Illegal as boolean, use '" + true.ToString() + "' or '" + false.ToString() + "'");
                     } else if (A.Type.Equals(typeof(DateTime))) {
                         var validFormats = Util.Configuration.ValidDateFormatsByResolution.GetValue2(A.DateTimeFormat);
-                        ValidatorAndParser = value => DateTime.TryParseExact(value, validFormats, Util.Configuration.Culture, System.Globalization.DateTimeStyles.None, out var dtmValue) ? new ParseResult(new Property(this, dtmValue), dtmValue) : new ParseResult(
+                        ValidatorAndParser = value => DateTime.TryParseExact(value, validFormats, Util.Configuration.Culture, System.Globalization.DateTimeStyles.None, out var dtmValue) ? ParseResult.Create(this, dtmValue) : ParseResult.Create(
                             "Invalid as " + A.Type + ".\r\n" +
                             "Must be in one of the following formats:\r\n" +
                             string.Join(", ", validFormats) + "\r\n");
                     } else if (A.Type.IsEnum) {
                         ValidatorAndParser = value => {
                             /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="EnumMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
-                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var cpa)) return new ParseResult(new Property(new PropertyKey(this), cpa.Key.CoreP), cpa.Key.CoreP);
+                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var cpa)) return ParseResult.Create(this, cpa.Key.CoreP);
 
                             // All others enums are parsed in an ordinary manner
-                            if (Util.EnumTryParse(A.Type, value, out var enumValue)) return new ParseResult(new Property(new PropertyKey(this), enumValue), enumValue);
-                            return new ParseResult(
+                            if (Util.EnumTryParse(A.Type, value, out var enumValue)) return ParseResult.Create(this, enumValue);
+                            return ParseResult.Create(
                                 "Invalid as " + A.Type + ".\r\n" +
                                 "Must be one of the following values:\r\n" +
                                 string.Join(", ", A.ValidValues) + "\r\n"
@@ -369,5 +369,7 @@ namespace AgoRapide.Core {
                 }
             }
         }
+
+        public override string ToString() => A == null ? ("[" + GetType() + " NOT INITIALIZED CORRECTLY (" + nameof(A) + " == null)]") : A.ToString();
     }
 }

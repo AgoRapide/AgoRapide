@@ -69,7 +69,7 @@ namespace AgoRapide {
             } else {
                 retval.AppendLine("<h1>" + nameof(Counts) + "</h1>");
                 retval.AppendLine("<table><tr><th>Key</th><th>Value</th></tr>");
-                retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => " <tr><td>" + e.Key.A().PToString + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n")));
+                retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => " <tr><td>" + e.Key.A().Key.PToString + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n")));
                 retval.AppendLine("</table>");
             }
             return retval.ToString();

@@ -106,8 +106,8 @@ namespace AgoRapide.Core {
         public static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    new ParseResult(new Property(agoRapideAttribute, retval), retval) :
-                    new ParseResult(errorResponse);
+                    ParseResult.Create(agoRapideAttribute, retval) :
+                    ParseResult.Create(errorResponse);
             });
 
         public class InvalidQueryIdException : ApplicationException {
@@ -153,10 +153,10 @@ namespace AgoRapide.Core {
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is IntegerQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="IntegerQueryId"/>
-                    new ParseResult(new Property(agoRapideAttribute, retval), retval) :
-                        new ParseResult("Not a valid " + typeof(IntegerQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
+                    ParseResult.Create(agoRapideAttribute, retval) :
+                        ParseResult.Create("Not a valid " + typeof(IntegerQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
                         ) :
-                        new ParseResult(errorResponse);
+                        ParseResult.Create(errorResponse);
             });
     }
 
@@ -329,7 +329,7 @@ namespace AgoRapide.Core {
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" +
-                            (EnumMapper.TryGetA(Value.ToString(), out var cpa) ? cpa.PToString : Value.ToString()) +
+                            (EnumMapper.TryGetA(Value.ToString(), out var cpa) ? cpa.Key.PToString : Value.ToString()) +
                             "'"); 
                     }
                     if (Value is ITypeDescriber) {
@@ -396,10 +396,10 @@ namespace AgoRapide.Core {
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is PropertyValueQueryId ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="PropertyValueQueryId"/>
-                        new ParseResult(new Property(agoRapideAttribute, retval), retval) :
-                        new ParseResult("Not a valid " + typeof(PropertyValueQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
+                        ParseResult.Create(agoRapideAttribute, retval) :
+                        ParseResult.Create("Not a valid " + typeof(PropertyValueQueryId).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
                         ) :
-                        new ParseResult(errorResponse);
+                        ParseResult.Create(errorResponse);
             });
     }
 

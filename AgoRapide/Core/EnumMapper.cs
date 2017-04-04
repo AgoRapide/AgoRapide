@@ -115,7 +115,7 @@ namespace AgoRapide {
                     /// TODO: We must also replace for "manually" given <see cref="CoreP"/>
                     fromStringMaps.GetValue(e.ToString(), () => nameof(o) + ": " + o)
                 );
-                Extensions.SetAgoRapideAttribute(o, dict);
+                Extensions.SetAgoRapideAttribute(o, dict.ToDictionary(e => e.Key, e => e.Value.Key));
                 _enumMapsCache[o] = dict;
             });
             var enumMapForCoreP = _enumMapsCache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");

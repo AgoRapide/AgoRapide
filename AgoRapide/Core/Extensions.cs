@@ -10,17 +10,17 @@ namespace AgoRapide.Core {
     public static class Extensions {
 
         /// <summary>
-        /// TODO: DOCUMENT THIS!
+        /// Readies <paramref name="dict"/> for storing of <see cref="AgoRapideAttribute.IsMany"/> <paramref name="a"/> properties 
         /// </summary>
         /// <param name="dict"></param>
-        /// <param name="p"></param>
+        /// <param name="a"></param>
         /// <returns></returns>
-        public static Property GetOrAddIsManyParent(this Dictionary<CoreP, Property> dict, AgoRapideAttributeEnriched a) {
-            a.A.AssertIsMany();
-            if (dict.TryGetValue(a.CoreP, out var retval)) {
+        public static Property GetOrAddIsManyParent(this Dictionary<CoreP, Property> dict, PropertyKey a) {
+            a.Key.A.AssertIsMany(null);
+            if (dict.TryGetValue(a.Key.CoreP, out var retval)) {
                 retval.AssertIsManyParent();
             } else {
-                retval = dict[a.CoreP] = Property.CreateIsManyParent(a);
+                retval = dict[a.Key.CoreP] = Property.CreateIsManyParent(a.Index == 0 ? a : new PropertyKey(a.Key)); /// Important, create new <see cref="PropertyKey"/> in cause <see cref="PropertyKey.Index"/> was set on the old one
             }
             return retval;
         }
@@ -529,8 +529,8 @@ namespace AgoRapide.Core {
                 /// Implementing <see cref="AccessLocation.Property"/> for TProperty. 
                 GetChildProperties(type).ForEach(e => {
                     switch (accessType) {
-                        case AccessType.Read: if (accessLevelGiven >= e.Value.A.AccessLevelRead) r.Add(e.Key, e.Value); break;
-                        case AccessType.Write: if (accessLevelGiven >= e.Value.A.AccessLevelWrite) r.Add(e.Key, e.Value); break;
+                        case AccessType.Read: if (accessLevelGiven >= e.Value.Key.A.AccessLevelRead) r.Add(e.Key, e.Value); break;
+                        case AccessType.Write: if (accessLevelGiven >= e.Value.Key.A.AccessLevelWrite) r.Add(e.Key, e.Value); break;
                         default: throw new InvalidEnumException(accessType, key);
                     }
                 });
@@ -547,7 +547,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKey> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value));
+        public static Dictionary<CoreP, PropertyKey> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.Key.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value));
 
         private static ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>> _childPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>>();
         /// <summary>

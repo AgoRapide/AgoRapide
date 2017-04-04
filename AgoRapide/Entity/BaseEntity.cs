@@ -34,6 +34,14 @@ namespace AgoRapide {
         /// </summary>
         public long Id { get; set; }
 
+        public void AssertIdIsSet() {
+            if (Id <= 0) throw new IdNotSetException(ToString());
+        }
+        public class IdNotSetException : ApplicationException {
+            public IdNotSetException(string message) : base(nameof(BaseEntity.Id) + " was not set. Possible cause: An object was assumed to originate from the database but did not.\r\nDetails:\r\n" + message) { }
+        }
+
+
         /// <summary>
         /// Environment as used to characterize this entity
         /// 

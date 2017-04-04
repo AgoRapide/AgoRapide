@@ -55,9 +55,9 @@ namespace AgoRapideSample {
                 if (!GeneralQueryId.EndsWith("%")) GeneralQueryId += "%";
 
                 QueryId queryId = new PropertyValueQueryId(new List<AgoRapideAttributeEnriched> {
-                    P.FirstName.A(),  // Add all keys that you consider
-                    P.LastName.A(),   // relevant for a general query here
-                    P.Email.A()       // (remember to optimize database correspondingly, like using partial indexes in PostgreSQL)
+                    P.FirstName.A().Key,  // Add all keys that you consider
+                    P.LastName.A().Key,   // relevant for a general query here
+                    P.Email.A().Key       // (remember to optimize database correspondingly, like using partial indexes in PostgreSQL)
                 }, Operator.ILIKE, GeneralQueryId);
                 /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId"/>.
                 /// Note relatively expensive reading of whole <see cref="Person"/>-objects now. 

@@ -10,7 +10,7 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
     /// <summary>
-    /// TODO: REMOVE. PUT FUNCTIONALITY INTO BaseEntity class.
+    /// TODO: REMOVE. PUT FUNCTIONALITY INTO BaseEntity class (because this class is now no longer generic)
     /// 
     /// Also used internally by AgoRapide like <see cref="Parameters"/>, <see cref="Result"/>, 
     /// <see cref="ApplicationPart"/>, <see cref="APIMethod"/> and so on, in order to reuse the
@@ -196,6 +196,7 @@ namespace AgoRapide {
         public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreP<T>(), value);
 
         public void AddProperty<T>(PropertyKey a, T value) {
+            if (a == null) throw new ArgumentNullException(nameof(a));
             if (value == null) throw new ArgumentNullException(nameof(value));
             if (a.Key.A.IsMany) throw new NotImplementedException(nameof(a.Key.A.IsMany));
             var property = Property.Create(a, value);
@@ -204,7 +205,7 @@ namespace AgoRapide {
             property.Initialize();
             // TODO: Decide if this is as wanted. Maybe structure better how Properties is initialized
             if (Properties == null) Properties = new Dictionary<CoreP, Property>();
-            Properties.AddValue2(a.CoreP, property);
+            Properties.AddValue2(a.Key.CoreP, property);
         }
 
         /// <summary>
@@ -313,7 +314,7 @@ namespace AgoRapide {
                         "<br><br>\r\n" +
                         "(currently -" + typeof(CoreP) + "- has -" + nameof(AgoRapideAttribute.Parents) + "- set to typeof(" + GetType().ToStringShort() + ") for " +
                         (childProperties.Count == 0 ? "no values at all" :
-                            ("the following values:<br>\r\n" + string.Join("<br>\r\n", childProperties.Values.Select(v => v.PToString + " (" + v.A.AccessLevelWrite + ")"))) + "<br>\r\n") +
+                            ("the following values:<br>\r\n" + string.Join("<br>\r\n", childProperties.Values.Select(v => v.Key.PToString + " (" + v.Key.A.AccessLevelWrite + ")"))) + "<br>\r\n") +
                         "). " +
                         "</p>");
                 }
@@ -325,12 +326,9 @@ namespace AgoRapide {
                     retval.AppendLine("<h2>Properties you may add</h2>");
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
                     retval.AppendLine(string.Join("", notExisting.Select(p => {
-                        return new Property(p.Value) {
-                            IsTemplateOnly = true, /// Important in order for <see cref="Property.V{T}"/> and <see cref="Property.ValueA"/> or similar not to be called
-                            Parent = this, /// TODO: Make a separate property class for PropertyTemplate instead of using <see cref="Property.IsTemplateOnly"/>
-                            ParentId = Id, /// TODO: Make a separate property class for PropertyTemplate instead of using <see cref="Property.IsTemplateOnly"/>
-                            IsChangeableByCurrentUser = true, /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
-                        }.ToHTMLTableRow(request);
+                        var property = Property.CreateTemplate(p.Value, this);
+                        property.IsChangeableByCurrentUser = true; /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
+                        return property.ToHTMLTableRow(request);
                     })));
                     retval.AppendLine("</table>");
                 }

@@ -109,7 +109,7 @@ namespace AgoRapideSample {
                 /// that is in order of going outwards from inner AgoRapide library towards your final application
 
                 AgoRapide.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.EnumMapper.MapEnumFinalize) + ": " + s));
-                Log(nameof(AgoRapide.EnumMapper.AllCoreP) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.EnumMapper.AllCoreP.Select(c => c.PExplained)) + "\r\n");
+                Log(nameof(AgoRapide.EnumMapper.AllCoreP) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.EnumMapper.AllCoreP.Select(c => c.Key.PExplained)) + "\r\n");
 
                 var systemUser = new Person();
                 systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.AccessLevelGiven), AgoRapide.AccessLevel.System);
@@ -122,9 +122,9 @@ namespace AgoRapideSample {
                 Log("\r\n\r\n" +
                     "Mapping all " + typeof(P) + " to " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
                     "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards for all " + typeof(P) + " not explicitly mapped to a " + typeof(AgoRapide.CoreP) + ")\r\n\r\n" +
-                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetA(p).CoreP)) + "\r\n");
+                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.EnumMapper.GetA(p).Key.CoreP)) + "\r\n");
 
-                string mapper2<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreP<T>().PExplained + "\r\n";
+                string mapper2<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreP<T>().Key.PExplained + "\r\n";
                 Log("\r\n\r\n" +
                     "Testing " + nameof(AgoRapide.Core.Util.MapTToCoreP) + " for a few enums\r\n\r\n" +
                     mapper2<AgoRapide.ResultCode>() + /// Maps to <see cref="AgoRapide.CoreP.ResultCode"/>
@@ -158,7 +158,7 @@ namespace AgoRapideSample {
                 // ---------------------
 
                 Log("Looking for " + AgoRapide.CoreP.IsAnonymous + " persons");
-                var queryId = new AgoRapide.Core.PropertyValueQueryId(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.IsAnonymous), AgoRapide.Core.Operator.EQ, true);
+                var queryId = new AgoRapide.Core.PropertyValueQueryId(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.IsAnonymous).Key, AgoRapide.Core.Operator.EQ, true);
                 if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
                     Log(AgoRapide.CoreP.IsAnonymous + " person not found, creating one");
                     AgoRapide.Core.Util.Configuration.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(

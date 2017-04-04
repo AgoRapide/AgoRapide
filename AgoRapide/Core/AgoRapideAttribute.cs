@@ -209,8 +209,12 @@ namespace AgoRapide.Core {
         private bool _isManyIsSet = false;
         private bool IsManyIsSet => _isManyIsSet;
 
-        public void AssertIsMany() {
-            if (!true.Equals(IsMany)) throw new IsManyException(ToString());
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertIsMany(Func<string> detailer) {
+            if (!true.Equals(IsMany)) throw new IsManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
         public class IsManyException : ApplicationException {

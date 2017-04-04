@@ -86,7 +86,7 @@ namespace AgoRapide {
         /// <param name="httpMethods"></param>
         /// <param name="routeSegments"></param>
         /// <param name="routeTemplate"></param>
-        public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<AgoRapideAttributeEnriched> parameters, string routeTemplate) {
+        public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<PropertyKey> parameters, string routeTemplate) {
             EntityType = entityType ?? throw new NullReferenceException(nameof(entityType));
             A = new MethodAttributeT(methodAttribute) ?? throw new NullReferenceException(nameof(methodAttribute));
             HttpMethods = httpMethods ?? throw new NullReferenceException(nameof(httpMethods));
@@ -143,7 +143,7 @@ namespace AgoRapide {
                 throw new NotImplementedException(nameof(MethodAttribute) + "." + nameof(MethodAttribute.RouteTemplate) + ", " + detailer1());
             }
 
-            Parameters = new List<AgoRapideAttributeEnriched>();
+            Parameters = new List<PropertyKey>();
 
             if (RouteSegments.Count == 0) {
                 switch (A.A.CoreMethod) {
@@ -182,27 +182,28 @@ namespace AgoRapide {
                         detailer2());
                     EntityType = s.Type;
                 } else if (s.Parameter != null) {
-                    if (s.Parameter.A.Parents != null && EntityType != null && !s.Parameter.IsParentFor(EntityType)) throw new MethodInitialisationException(
+                    var p = s.Parameter.Key;
+                    if (p.A.Parents != null && EntityType != null && !p.IsParentFor(EntityType)) throw new MethodInitialisationException(
                             "Incompatible types given for " +
-                            s.Parameter.GetType().ToString() + "-segment (" + EntityType + ") and " +
-                            typeof(CoreP).ToString() + "." + s.Parameter.CoreP.ToString() + " (" + s.Parameter.A.Parents + ")\r\n" +
-                            "You can not have " + typeof(CoreP).ToString() + "." + s.Parameter.CoreP + " " +
+                            p.GetType().ToString() + "-segment (" + EntityType + ") and " +
+                            typeof(CoreP).ToString() + "." + p.CoreP.ToString() + " (" + p.A.Parents + ")\r\n" +
+                            "You can not have " + typeof(CoreP).ToString() + "." + p.CoreP + " " +
                             "as parameter for operations involving entities of type " + EntityType + " " +
-                            "because !" + nameof(s.Parameter.IsParentFor) + "(" + EntityType + ")" + detailer2());
+                            "because !" + nameof(p.IsParentFor) + "(" + EntityType + ")" + detailer2());
 
                     if (restParameters.Count == 0) throw new MethodInitialisationException(
                         "Too few parameters defined in source code.\r\n" +
-                        "Corresponding parameter " + s.Parameter.PExplained + " for RouteSegment " +
+                        "Corresponding parameter " + p.PExplained + " for RouteSegment " +
                         "is missing for method " + ControllerMethod.Name + detailer2());
-                    if (!restParameters.TryGetValue(s.Parameter.PToString, out _)) throw new MethodInitialisationException(
-                        "Corresponding parameter " + s.Parameter.PExplained + " for RouteSegment " +
+                    if (!restParameters.TryGetValue(p.PToString, out _)) throw new MethodInitialisationException(
+                        "Corresponding parameter " + p.PExplained + " for RouteSegment " +
                         "is missing (or wrongly named) for method " + ControllerMethod.Name + ".\r\n" +
                         "Is one of the following mis-named: " + restParameters.KeysAsString() + "\r\n?\r\n" +
                         detailer2());
-                    if (Parameters.Any(t => t.CoreP.Equals(s.Parameter.CoreP))) throw new MethodInitialisationException("Duplicate parameter " + typeof(CoreP).ToString() + "." + s.Parameter.CoreP + " given" + detailer2());
+                    if (Parameters.Any(t => t.Key.CoreP.Equals(p.CoreP))) throw new MethodInitialisationException("Duplicate parameter " + typeof(CoreP).ToString() + "." + p.CoreP + " given" + detailer2());
                     Parameters.Add(s.Parameter);
-                    restParameters.Remove(s.Parameter.PToString);
-                    routeTemplate.Append("/{" + s.Parameter.PToString + "}");
+                    restParameters.Remove(p.PToString);
+                    routeTemplate.Append("/{" + p.PToString + "}");
                     // break;
                     // case RouteSegment es:
                 } else if (s.String != null) {
@@ -252,7 +253,7 @@ namespace AgoRapide {
         public List<string> RouteTemplates { get; private set; }
 
         /// <summary>
-        /// Inserts each <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeEnriched.ConvertObjectToString"/>
+        /// Inserts <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="AgoRapideAttributeEnriched.ConvertObjectToString"/>
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
@@ -261,8 +262,8 @@ namespace AgoRapide {
             var retval = RouteTemplates[0];
             for (var i = 0; i < parameters.Length; i++) {
                 if (Parameters.Count <= i) return retval;
-                var key = "{" + Parameters[i].PToString + "}";
-                var next = retval.Replace(key, Parameters[i].ConvertObjectToString(parameters[i]));
+                var key = "{" + Parameters[i].Key.PToString + "}";
+                var next = retval.Replace(key, Parameters[i].Key.ConvertObjectToString(parameters[i]));
                 if (next.Equals(retval)) throw new MethodInitialisationException(key + " not found for " + ToString());
                 retval = next;
             }
@@ -335,7 +336,7 @@ namespace AgoRapide {
 
         public Type EntityType { get; private set; }
 
-        public List<AgoRapideAttributeEnriched> Parameters { get; private set; }
+        public List<PropertyKey> Parameters { get; private set; }
 
         /// <summary>
         /// Set by <see cref="CreateSemiAutogeneratedMethods"/>
@@ -483,7 +484,7 @@ namespace AgoRapide {
                     new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
                     new RouteSegmentClass("Add", "Add", detailer),
                 };
-                obligatoryParameters.ForEach(p => routeSegments.Add(new RouteSegmentClass(p.Value.PToString, p.Value, detailer)));
+                obligatoryParameters.ForEach(p => routeSegments.Add(new RouteSegmentClass(p.Value.Key.PToString, p.Value, detailer)));
                 var method = new APIMethod(
                     entityType: t,
                     methodAttribute: new MethodAttribute {
@@ -496,7 +497,7 @@ namespace AgoRapide {
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
                     routeSegments: routeSegments,
                     parameters: obligatoryParameters.Values.ToList(),
-                    routeTemplate: t.ToStringVeryShort() + "/Add" + string.Join("", obligatoryParameters.Select(p => "/{" + p.Value.PToString + "}"))
+                    routeTemplate: t.ToStringVeryShort() + "/Add" + string.Join("", obligatoryParameters.Select(p => "/{" + p.Value.Key.PToString + "}"))
                     );
                 connector(method, true);
             });
@@ -519,7 +520,7 @@ namespace AgoRapide {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
                         new RouteSegmentClass(CoreP.QueryId.ToString(), CoreP.QueryId , detailer)
                     },
-                    parameters: new List<AgoRapideAttributeEnriched> { CoreP.QueryId.A().Key },
+                    parameters: new List<PropertyKey> { CoreP.QueryId.A() },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.QueryId + "}" // Do not use M here!
                     );
                 // TODO: Create a configuration parameter deciding whether API-documentation should be available without authorization.
@@ -549,10 +550,10 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreP.Key), CoreP.Key , detailer),
                         new RouteSegmentClass(nameof(CoreP.Value), CoreP.Value , detailer)
                     },
-                    parameters: new List<AgoRapideAttributeEnriched> {
-                        CoreP.QueryId.A().Key,
-                        CoreP.Key.A().Key,
-                        CoreP.Value.A().Key
+                    parameters: new List<PropertyKey> {
+                        CoreP.QueryId.A(),
+                        CoreP.Key.A(),
+                        CoreP.Value.A()
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.QueryId + "}/" + CoreMethod.UpdateProperty.ToString() + "/{" + CoreP.Key + "}/{" + CoreP.Value + "}" // Do not use M here!
                     );
@@ -578,9 +579,9 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreP.QueryId), CoreP.QueryId , detailer),
                         new RouteSegmentClass(nameof(CoreP.PropertyOperation), CoreP.PropertyOperation , detailer)
                     },
-                    parameters: new List<AgoRapideAttributeEnriched> {
-                        CoreP.QueryId.A().Key,
-                        CoreP.PropertyOperation.A().Key
+                    parameters: new List<PropertyKey> {
+                        CoreP.QueryId.A(),
+                        CoreP.PropertyOperation.A()
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.QueryId + "}/{" + CoreP.PropertyOperation + "}" // Do not use M here!
                 );
@@ -605,8 +606,8 @@ namespace AgoRapide {
                         new RouteSegmentClass(nameof(CoreP.IntegerQueryId), CoreP.IntegerQueryId , detailer),
                         new RouteSegmentClass(nameof(CoreMethod.History), CoreMethod.History.ToString() , detailer)
                     },
-                    parameters: new List<AgoRapideAttributeEnriched> {
-                        CoreP.IntegerQueryId.A().Key
+                    parameters: new List<PropertyKey> {
+                        CoreP.IntegerQueryId.A()
                     },
                     routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.IntegerQueryId + "}/" + CoreMethod.History // Do not use M here!
                     );
@@ -681,28 +682,28 @@ namespace AgoRapide {
             var suggestedUrls = new List<string>();
             if (method.Parameters.Count == 0) {
                 suggestedUrls.Add(method.RouteTemplates[0]);
-            } else if (method.Parameters.All(p => p.A.SampleValues != null && p.A.SampleValues.Length > 0)) {
+            } else if (method.Parameters.All(p => p.Key.A.SampleValues != null && p.Key.A.SampleValues.Length > 0)) {
                 /// We have sample values for all parameters. Permutate between them
                 /// TODO: Make better code than this!
                 var t = method.RouteTemplates[0];
                 if (method.Parameters.Count <= 0) {
                     suggestedUrls.Add(t);
                 } else {
-                    var p = method.Parameters[0];
+                    var p = method.Parameters[0].Key;
                     p.A.SampleValues.ForEach(v0 => {
                         /// TODO: Make better code than this!
                         var t0 = t.Replace("{" + p.PToString + "}", v0);
                         if (method.Parameters.Count <= 1) {
                             suggestedUrls.Add(t0);
                         } else {
-                            p = method.Parameters[1];
+                            p = method.Parameters[1].Key;
                             p.A.SampleValues.ForEach(v1 => {
                                 /// TODO: Make better code than this!
                                 var t1 = t0.Replace("{" + p.PToString + "}", v1);
                                 if (method.Parameters.Count <= 2) {
                                     suggestedUrls.Add(t1);
                                 } else {
-                                    p = method.Parameters[2];
+                                    p = method.Parameters[2].Key;
                                     p.A.SampleValues.ForEach(v2 => {
                                         /// TODO: Make better code than this!
                                         var t2 = t1.Replace("{" + p.PToString + "}", v2);
