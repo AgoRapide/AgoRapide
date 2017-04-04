@@ -319,7 +319,7 @@ namespace AgoRapide {
                         "</p>");
                 }
             } else {
-                var notExisting = addableProperties.Where(p => !Properties.ContainsKey(p.Key)).ToList();
+                var notExisting = addableProperties.Where(p => p.Value.Key.A.IsMany || !Properties.ContainsKey(p.Key)).ToList();
                 if (notExisting.Count == 0) {
                     /// Do not give any explanation now. All relevant properties are already shown by <see cref="CreateHTMLForExistingProperties"/>
                 } else {

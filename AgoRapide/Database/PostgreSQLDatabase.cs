@@ -250,7 +250,14 @@ namespace AgoRapide.Database {
             retval.RootProperty = root;
             retval.Created = root.Created;
             retval.Properties = GetChildProperties(root);
-            retval.Properties.Values.ForEach(p => p.Parent = retval);
+            retval.Properties.Values.ForEach(p => {
+                p.Parent = retval;
+                if (p.Properties != null) { /// Typical case for <see cref="Property.IsIsManyParent"/>
+                    p.Properties.Values.ForEach(p2 => {
+                        p2.Parent = retval;
+                    });
+                }
+            });
             retval.Properties.AddValue(CoreP.RootProperty, root);
             retval.AddProperty(CoreP.DBId.A(), id);
 
@@ -449,7 +456,7 @@ namespace AgoRapide.Database {
                 "\r\nPossible resolution: Set Property with id " + retval.Id + " as no-longer-current in database or delete altogether with SQL-code DELETE FROM p WHERE id = " + retval.Id + "\r\n\r\n" +
                 "Details: " + retval.ToString()
             );
-            
+
             // TODO: FIX THIS!
             if (retval.ParentId == 0) {
                 /// This is an entity root property. We can not put that into cache because the same id will be used

@@ -56,7 +56,7 @@ namespace AgoRapide {
         /// TODO: Make id more specific because saving for instance will now fail 
         /// TODO: for multiple properties on same HTML page with same <see cref="KeyDB"/>
         /// </summary>
-        public string KeyHTML => KeyDB.ToString();
+        public string KeyHTML => KeyDB.ToString().Replace("#","_");
 
         /// <summary>
         /// <see cref="DBField.cid"/>
@@ -581,13 +581,17 @@ namespace AgoRapide {
         /// TODO: Create better links, use <see cref="CoreMethod"/> or similar in order to get the REAL URL's used by the actual methods.
         /// 
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
-        /// 
-        /// TODO: BUILD UPON THIS. CENTRAL METHOD.
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         public override string ToHTMLTableRow(Request request) {
-            if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => p.Value.ToHTMLTableRow(request)));
+            if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => {
+                p.Value.IsChangeableByCurrentUser = IsChangeableByCurrentUser;
+                return p.Value.ToHTMLTableRow(request);
+            }));
+            if ("PhoneNumber#1".Equals(_keyDB)) {
+                var z = 1;
+            }
             var a = Key.Key.A;
             return "<tr><td>" +
 
