@@ -94,6 +94,7 @@
     <Compile Include="API\BaseView.cs" />
     <Compile Include="API\RouteSegmentClass.cs" />
     <Compile Include="Core\AgoRapideAttribute.cs" />
+    <Compile Include="Core\AgoRapideAttributeDynamic.cs" />
     <Compile Include="Core\AgoRapideAttributeEnriched.cs" />
     <Compile Include="Core\AgoRapideAttributeEnrichedT.cs" />
     <Compile Include="Core\BaseCore.cs" />

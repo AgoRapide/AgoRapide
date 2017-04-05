@@ -151,7 +151,7 @@ namespace AgoRapide.Core {
                 GetOrAdd(typeof(T), type => {
                     /// NOTE: Note how <see cref="EnumMapper.AllCoreP"/> itself is cached but that should not matter
                     /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
-                    var candidates = EnumMapper.AllCoreP.Where(cpa => cpa.Key.A.Type?.Equals(type) ?? false).ToList();
+                    var candidates = EnumMapper.AllCoreP.Where(key => key.Key.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
                         case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort();
                         case 1: return candidates[0];

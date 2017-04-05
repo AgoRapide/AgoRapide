@@ -56,7 +56,7 @@ namespace AgoRapide {
         /// TODO: Make id more specific because saving for instance will now fail 
         /// TODO: for multiple properties on same HTML page with same <see cref="KeyDB"/>
         /// </summary>
-        public string KeyHTML => KeyDB.ToString().Replace("#","_");
+        public string KeyHTML => KeyDB.ToString().Replace("#", "_");
 
         /// <summary>
         /// <see cref="DBField.cid"/>
@@ -193,6 +193,7 @@ namespace AgoRapide {
         /// </summary>
         /// <returns></returns>
         public static Property Create(
+            PropertyKey key,
             long id,
             DateTime created,
             long creatorId,
@@ -211,6 +212,7 @@ namespace AgoRapide {
             long? invalidatorId
             ) =>
                 new Property(dummy: null) {
+                    _key = key,
                     Id = id,
                     Created = created,
                     CreatorId = creatorId,

@@ -10,11 +10,12 @@ namespace AgoRapide.Core {
 
     /// <summary>
     /// Contains the actual <typeparamref name="T"/> enum that this class is an attribute for (<see cref="P"/>).
+    /// Apart from that no differences from <see cref="AgoRapideAttributeEnriched"/>.
     /// 
-    /// Apart from that no differences from <see cref="AgoRapideAttributeEnriched"/>
+    /// <see cref="AgoRapideAttributeEnrichedT{T}"/> contains attributes (C# code originated). 
+    /// <see cref="AgoRapideAttributeDynamic"/> contains attributes dynamically defined by final user (database originated). 
     /// 
     /// This class is assumed to have marginal use.
-    /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class AgoRapideAttributeEnrichedT<T> : AgoRapideAttributeEnriched where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
@@ -36,7 +37,7 @@ namespace AgoRapide.Core {
         /// TODO: Elaborate on this comment:
         /// Note that will use <see cref="CoreP"/> from <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> instead of that is set. 
         /// </param>
-        public AgoRapideAttributeEnrichedT(AgoRapideAttribute agoRapideAttribute, CoreP? coreP) {            
+        public AgoRapideAttributeEnrichedT(AgoRapideAttribute agoRapideAttribute, CoreP? coreP) {
             A = agoRapideAttribute;
             _coreP = coreP;
             if (!(A.Property is T)) throw new InvalidObjectTypeException(A.Property, typeof(T), nameof(A.Property) + ".\r\nDetails: " + ToString());

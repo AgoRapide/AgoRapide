@@ -331,8 +331,8 @@ namespace AgoRapide.API {
                     (!isPOST ? "" : (
                         nameof(postParameters) + ":\r\n" +
                         string.Join("\r\n", postParameters.Select(p => {
-                            var cpa = EnumMapper.GetAOrDefault(p.Item1);
-                            return p.key + (cpa.Key.CoreP == CoreP.None ? (" [Not recognized]" + ")") : "") + " = " + (cpa.Key.A.IsPassword ? "[WITHHELD]" : ("'" + p.value + "'"));
+                            var key = EnumMapper.GetAOrDefault(p.Item1);
+                            return p.key + (key.Key.CoreP == CoreP.None ? (" [Not recognized]" + ")") : "") + " = " + (key.Key.A.IsPassword ? "[WITHHELD]" : ("'" + p.value + "'"));
                         })))
                     )
             );

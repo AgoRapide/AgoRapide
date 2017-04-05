@@ -23,7 +23,7 @@ namespace AgoRapide {
         Description = "Represents a basic data object in your model like Person, Order, Product",
         DefinedForClass = "BaseEntityT" /// Necessary for <see cref="AgoRapideAttribute.IsInherited"/> to be set correctly. TODO: Turn into Type (will require more work for deducing <see cref="AgoRapideAttribute.IsInherited"/>). 
     )]
-    public class BaseEntityT : BaseEntity { 
+    public class BaseEntityT : BaseEntity {
 
         /// <summary>
         /// The entity which represents this entity. 
@@ -326,7 +326,7 @@ namespace AgoRapide {
                     retval.AppendLine("<h2>Properties you may add</h2>");
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
                     retval.AppendLine(string.Join("", notExisting.Select(p => {
-                        var property = Property.CreateTemplate(p.Value, this);
+                        var property = Property.CreateTemplate(p.Value.PropertyKeyAsIsManyParentOrTemplate, this);
                         property.IsChangeableByCurrentUser = true; /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                         return property.ToHTMLTableRow(request);
                     })));

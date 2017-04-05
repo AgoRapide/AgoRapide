@@ -59,6 +59,9 @@ namespace AgoRapide.Core {
         /// 
         /// Only relevant when attribute for an enum-value. 
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
+        /// 
+        /// Note that for dynamically originated attributes (see <see cref="AgoRapideAttributeDynamic"/>) this
+        /// value will actually be a string, not an <see cref="Enum"/>. 
         /// </summary>
         public object Property => _property ?? throw new NullReferenceException(nameof(_property) + ".\r\nDetails: " + ToString());
 
@@ -74,7 +77,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public Type Class { get; private set; }
 
-        [AgoRapide(Description= "The underlying (more closer to the core AgoRapide library) property that -" + nameof(AgoRapideAttributeEnriched) + "- will inherit values from.",
+        [AgoRapide(Description = "The underlying (more closer to the core AgoRapide library) property that -" + nameof(AgoRapideAttributeEnriched) + "- will inherit values from.",
             LongDescription =
                 "At the same time attributes for that property will be overridden by this -" + nameof(AgoRapideAttribute) + "- " +
                 "(conceptual similar to virtual overridden C# properties). " +
@@ -135,7 +138,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public string LongDescription { get; set; }
 
-        [AgoRapide(Description= "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
+        [AgoRapide(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
         public bool IsPassword { get; set; }
 
         [AgoRapide(
@@ -200,7 +203,13 @@ namespace AgoRapide.Core {
         /// 
         /// In the database they are stored with index #1, #2 like PhoneNumber#1, PhoneNumber#2 and so on.
         /// </summary>        
-        [AgoRapide(Description= "Signifies that several active current instances may exist (like PhoneNumber#1, PhoneNumber#2 for a customer for instance)")]
+        [AgoRapide(
+            Description = "Signifies that several active current instances may exist (like PhoneNumber#1, PhoneNumber#2 for a customer for instance)",
+            LongDescription =
+                "The -" + nameof(IDatabase) + "- implementation should be able to handle on-the-fly changes between TRUE and FALSE for this attribute. " +
+                "Going from FALSE to TRUE should result in #1 being added to the relevant existing keys in the database, and " +
+                "going from TRUE to FALSE should result in # being replaced by _ (resulting in PhoneNumber_1, PhoneNumber_2 and so on) "
+            )]
         public bool IsMany { get => _isMany; set { _isMany = value; _isManyIsSet = true; } }
 
         /// <summary>
@@ -227,7 +236,7 @@ namespace AgoRapide.Core {
         /// 
         /// Set this to the type of a class inheriting <see cref="IGroupDescriber"/>
         /// </summary>
-        [AgoRapide(Description= "Practical mechanism for describing properties with common properties through -" + nameof(IGroupDescriber) + "-")]
+        [AgoRapide(Description = "Practical mechanism for describing properties with common properties through -" + nameof(IGroupDescriber) + "-")]
         public Type Group { get; set; }
 
         /// <summary>

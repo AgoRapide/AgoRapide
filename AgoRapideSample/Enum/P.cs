@@ -52,7 +52,7 @@ namespace AgoRapideSample {
         /// <summary>
         /// Note how this is candidate for a <see cref="ITypeDescriber"/>
         /// </summary>
-        [AgoRapide(Group = typeof(PersonPropertiesDescriber), IsMany = true, Type = typeof(string))]
+        [AgoRapide(Group = typeof(PersonPropertiesDescriber), IsMany = false, Type = typeof(string))]
         PhoneNumber,
 
         [AgoRapide(Parents = new Type[] { typeof(Person) }, MinValueDbl = 1, ValidValues = new string[] { "A", "B" }, InvalidValues = new string[] { "C", "D" })]
@@ -113,7 +113,7 @@ namespace AgoRapideSample {
     }
 
     public static class Extensions {
-        public static PropertyKey A(this P p) => EnumMapper.GetA(p);
+        public static PropertyKey A(this P p) => EnumMapper.GetA(p).PropertyKey;
     }
 
     /// <summary>

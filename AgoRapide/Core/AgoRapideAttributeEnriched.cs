@@ -9,7 +9,11 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: Consider renaming into A (and likewise <see cref="AgoRapideAttributeEnrichedT{T}"/> into AT).
+    /// TODO: Consider renaming into A (since used quite often)
+    /// 
+    /// See subclasses 
+    /// <see cref="AgoRapideAttributeEnrichedT{T}"/> and
+    /// <see cref="AgoRapideAttributeDynamic"/> 
     /// 
     /// TODO: Consider implementing a separate class only for entity enum properties like <see cref="CoreP"/> and P 
     /// 
@@ -196,10 +200,10 @@ namespace AgoRapide.Core {
             if (A.InheritAndEnrichFromProperty != null) {
                 NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
                 if (A.Property.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.Property) + " (" + A.Property + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
-                var cpa = EnumMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
-                _coreP = cpa.Key.CoreP;
-                A.EnrichFrom(cpa.Key.A);
-                PExplained += " <- " + cpa.Key.PExplained;
+                var key = EnumMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
+                _coreP = key.Key.CoreP;
+                A.EnrichFrom(key.Key.A);
+                PExplained += " <- " + key.Key.PExplained;
             }
 
             /// Enrichment 2, from enum-"class" 
@@ -348,7 +352,7 @@ namespace AgoRapide.Core {
                     } else if (A.Type.IsEnum) {
                         ValidatorAndParser = value => {
                             /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="EnumMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
-                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var cpa)) return ParseResult.Create(this, cpa.Key.CoreP);
+                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var key)) return ParseResult.Create(this, key.Key.CoreP);
 
                             // All others enums are parsed in an ordinary manner
                             if (Util.EnumTryParse(A.Type, value, out var enumValue)) return ParseResult.Create(this, enumValue);
