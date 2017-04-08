@@ -439,28 +439,29 @@ namespace AgoRapide.Database {
             if (!PropertyKey.TryParse(keyDB, out var key, out var strErrorResponse, out var enumErrorResponse, out _, out var unrecognizedCoreP)) {
                 switch (enumErrorResponse) {
                     case PropertyKey.IsManyInconsistency.IsManyButIndexNotGiven:
-                        keyDB = keyDB + "#1";
+                        keyDB += "#1";
                         isManyCorrections.Add("UPDATE p SET " + DBField.key + " = '" + keyDB + "' WHERE " + DBField.id + " = " + id);
-                        Log(nameof(isManyCorrections) + ".Add(" + isManyCorrections[isManyCorrections.Count - 1]);
-                        break;
+                        Log(nameof(isManyCorrections) + ".Add(" + isManyCorrections[isManyCorrections.Count - 1]); break;
                     case PropertyKey.IsManyInconsistency.NotIsManyButIndexGiven:
                         keyDB = keyDB.Replace("#", "_");
                         isManyCorrections.Add("UPDATE p SET " + DBField.key + " = '" + keyDB + "' WHERE " + DBField.id + " = " + id);
                         Log(nameof(isManyCorrections) + ".Add(" + isManyCorrections[isManyCorrections.Count - 1]);
-                        break;
-                    default:
-                        if (unrecognizedCoreP != null && EnumMapper.TryAddA(unrecognizedCoreP.Value.unrecognizedCoreP, unrecognizedCoreP.Value.isMany,"Found as property " + id + " at " + DateTime.Now.ToString(DateTimeFormat.DateHourMin), out strErrorResponse)) {
-                            break; // OK. New mapping succeeded.
-                        } else { /// Note how errorResponse was changed by <see cref="EnumMapper.TryAddA"/> if that one was called above.
-                            throw new PropertyKeyNonStrict.InvalidPropertyKeyException(
-                               DBField.key + " invalid for " + DBField.id + " = " + id + ".\r\n" +
-                               "Possible resolution:\r\n" +
-                               "  DELETE FROM p WHERE " + DBField.id + " = " + id + "\r\n" +
-                               "Details: " + strErrorResponse
-                            );
-                        }
-
+                        unrecognizedCoreP = (keyDB, false); break;
                 }
+
+                if (unrecognizedCoreP != null) {
+                    if (EnumMapper.TryAddA(unrecognizedCoreP.Value.unrecognizedCoreP, unrecognizedCoreP.Value.isMany, "Found as property " + id + " at " + DateTime.Now.ToString(DateTimeFormat.DateHourMin), out strErrorResponse)) {
+                        // OK. New mapping succeeded.
+                    } else { /// Note how errorResponse was changed by <see cref="EnumMapper.TryAddA"/> if that one was called above.
+                        throw new PropertyKeyNonStrict.InvalidPropertyKeyException(
+                           DBField.key + " invalid for " + DBField.id + " = " + id + ".\r\n" +
+                           "Possible resolution:\r\n" +
+                           "  DELETE FROM p WHERE " + DBField.id + " = " + id + "\r\n" +
+                           "Details: " + strErrorResponse
+                        );
+                    }
+                }
+
                 if (!PropertyKey.TryParse(keyDB, out key, out strErrorResponse)) throw new PropertyKeyNonStrict.InvalidPropertyKeyException(nameof(keyDB) + " (" + keyDB + ") is still not a valid " + typeof(PropertyKey) + " despite changes.\r\nDetails: " + strErrorResponse);
                 if (!keyDB.Equals(key.ToString())) throw new PropertyKeyNonStrict.InvalidPropertyKeyException(nameof(keyDB) + " (" + keyDB + ") != " + nameof(key) + " (" + key.ToString() + ")");
             }
@@ -774,7 +775,8 @@ namespace AgoRapide.Database {
 
             if (key.Key.A.IsMany) {
                 var isManyParent = entity.Properties.GetOrAddIsManyParent(key);
-                if (key.Index == 0) {
+                var propertyKey = key as PropertyKey;
+                if (propertyKey == null || propertyKey.Index == 0) {
                     // This is understood as create new property with next available id
                     // Like Person/42/AddProperty/PhoneNumber/1234
                     var keyWithIndex = isManyParent.GetNextIsManyId();
@@ -783,7 +785,7 @@ namespace AgoRapide.Database {
                 } else {
                     // This corresponds to client knowing exact which id to use 
                     // Like Person/42/AddProperty/PhoneNumber#3/1234
-                    entityOrIsManyParentCreator(isManyParent, key.IndexAsCoreP);
+                    entityOrIsManyParentCreator(isManyParent, propertyKey.IndexAsCoreP);
                 }
             } else {
                 entityOrIsManyParentCreator(entity, key.Key.CoreP);

@@ -229,7 +229,11 @@ namespace AgoRapide.Database {
         /// <typeparam name="T"></typeparam>
         /// <param name="cid"><see cref="DBField.cid"/> </param>
         /// <param name="entity"></param>
-        /// <param name="p"></param>
+        /// <param name="key">
+        /// For <see cref="AgoRapideAttribute.IsMany"/> if <paramref name="key"/> is instance of <see cref="PropertyKey"/> 
+        /// then the implementator shall take into account <see cref="PropertyKey.Index"/>
+        /// If not it shall call <see cref="Property.GetNextIsManyId"/>. 
+        /// </param>
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
         /// <returns></returns>

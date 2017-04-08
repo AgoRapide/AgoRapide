@@ -104,6 +104,7 @@
     <Compile Include="Core\ITypeDescriber.cs" />
     <Compile Include="Core\ParseResult.cs" />
     <Compile Include="Core\PropertyKey.cs" />
+    <Compile Include="Core\PropertyKeyNonStrict.cs" />
     <Compile Include="Core\QueryId.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Configuration.cs" />

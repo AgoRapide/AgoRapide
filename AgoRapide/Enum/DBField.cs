@@ -62,8 +62,8 @@ namespace AgoRapide {
         [AgoRapide(
             Description = "The actual name of the property",
             LongDescription =
-                "Correponds to the actual enum used (like -" + nameof(CoreP) + "- or -P-)" +
-                "See also " + nameof(AgoRapideAttribute.IsMany) + "-properties",
+                "Correponds to the actual enum used (like -" + nameof(CoreP) + "- or -P-).\r\n" +
+                "See also -" + nameof(AgoRapideAttribute.IsMany) + "--properties",
             Type = typeof(string))]
         key = 5,
 

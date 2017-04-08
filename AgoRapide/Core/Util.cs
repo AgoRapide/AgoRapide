@@ -124,7 +124,7 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>> _tToCorePCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, object>>();
+        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKey)>> _tToCorePCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKey)>>();
         public static PropertyKey MapTToCoreP<T>() => TryMapTToCoreP<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
         public static bool TryMapTToCoreP<T>(out PropertyKey a) => TryMapTToCoreP<T>(out a, out _);
         /// <summary>
@@ -147,38 +147,36 @@ namespace AgoRapide.Core {
                 "(note for instance how the overload of " + nameof(BaseEntityT.PVM) + " with defaultValue-parameter " +
                 "looks very similar to " + nameof(BaseEntityT.PV) + " if you forget the explicit type parameter for the latter method)");
             var mapping = _tToCorePCache.
-                GetOrAdd(typeof(CoreP), type => new ConcurrentDictionary<Type, object>()).
+                GetOrAdd(typeof(CoreP), type => new ConcurrentDictionary<Type, (string, PropertyKey)>()).
                 GetOrAdd(typeof(T), type => {
                     /// NOTE: Note how <see cref="EnumMapper.AllCoreP"/> itself is cached but that should not matter
                     /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
                     var candidates = EnumMapper.AllCoreP.Where(key => key.Key.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
-                        case 0: return "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort();
-                        case 1: return candidates[0];
+                        case 0: return ("No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort(), null);
+                        case 1:
+                            var key = candidates[0];
+                            return (null, (key.PropertyKeyIsSet ? key.PropertyKey : key.PropertyKeyAsIsManyParentOrTemplate)); // Note how that last on may fail
                         default:
-                            return
+                            return (
                                 "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + ".\r\n" +
-                                "The actual mappings found where: " + string.Join(", ", candidates.Select(c => c.Key.PToString + " (" + nameof(CoreP) + "." + c.Key.CoreP + ")")) + ".";
+                                "The actual mappings found where: " + string.Join(", ", candidates.Select(c => c.Key.PToString + " (" + nameof(CoreP) + "." + c.Key.CoreP + ")")) + ".",
+                                null);
                     }
                 });
-            if (mapping is string) {
-                a = null;
-                errorResponse = (string)mapping;
-                return false;
-            }
-            a = mapping as PropertyKey ?? throw new InvalidObjectTypeException(mapping, typeof(PropertyKey));
-            errorResponse = null;
-            return true;
+            errorResponse = mapping.Item1;
+            a = mapping.Item2;
+            return a != null;
         }
 
         /// <summary>
         /// Encodings to be done 
-        /// before System.Web.HttpUtility.UrlEncode and
-        /// after  System.Web.HttpUtility.UrlDecode 
+        /// before <see cref="System.Web.HttpUtility.UrlEncode"/>  and
+        /// after  <see cref="System.Web.HttpUtility.UrlDecode"/> 
         /// (in order words preEncoding could also be called postDecoding)
         /// 
         /// By using these additional encodings you get a greater range of characters that can be 
-        /// used as parameters when using AgoRapide's REST API GET-syntax
+        /// used as parameters when using AgoRapide's REST API GET-syntax (instead of resorting to POST-syntax)
         /// </summary>
         public static List<(string unencoded, string encoded)> preEncoding = new List<(string unencoded, string encoded)> {
             ("+", "_PLUS_"),

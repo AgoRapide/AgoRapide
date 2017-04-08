@@ -47,6 +47,28 @@ namespace AgoRapide.Core {
     public class AgoRapideAttribute : Attribute {
 
         /// <summary>
+        /// Default empty constructor for all instances when originates from C# code
+        /// </summary>
+        public AgoRapideAttribute() {
+
+        }
+
+        /// <summary>
+        /// Constructor for when originates from database (See <see cref="EnumMapper.TryAddA"/>)
+        /// </summary>
+        public AgoRapideAttribute(
+            string property,
+            string description,
+            string longDescription,
+            bool isMany) {
+
+            _property = property;
+            Description = description;
+            LongDescription = longDescription;
+            IsMany = isMany;
+        }
+
+        /// <summary>
         /// Set by <see cref="GetNewDefaultInstance"/>. 
         /// 
         /// See also <see cref="IsInherited"/>. 
@@ -137,6 +159,9 @@ namespace AgoRapide.Core {
         /// See also <see cref="CoreP.LongDescription"/>
         /// </summary>
         public string LongDescription { get; set; }
+
+        private string _wholeDescription;
+        public string WholeDescription => _wholeDescription ?? (_wholeDescription = Description + "\r\n\r\n" + LongDescription);
 
         [AgoRapide(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
         public bool IsPassword { get; set; }

@@ -125,7 +125,6 @@ namespace AgoRapide {
 
         /// <summary>
         /// Only relevant when corresponding <see cref="AgoRapideAttribute.IsMany"/> for <see cref="Key"/>
-        /// Will usually correspond to <see cref="PropertyKey.Index"/> being 0.
         /// </summary>
         public bool IsIsManyParent { get; private set; }
         public void AssertIsManyParent() {
@@ -700,16 +699,16 @@ namespace AgoRapide {
                 var A = field.GetAgoRapideAttributeT();
                 var includeDescription = new Func<string>(() => {
                     switch (field) {
-                        case DBField.key: if (!string.IsNullOrEmpty(A.A.Description)) return A.A.Description.HTMLEncode(); return null;
-                        case DBField.strv: if (!string.IsNullOrEmpty(ValueA.Description)) return ValueA.Description.HTMLEncode(); return null;
+                        case DBField.key: if (!string.IsNullOrEmpty(Key.Key.A.WholeDescription)) return (Key.Key.A.WholeDescription).HTMLEncode(); return null;
+                        case DBField.strv: if (!string.IsNullOrEmpty(ValueA.WholeDescription)) return (ValueA.WholeDescription).HTMLEncode(); return null;
                         default: return null;
                     }
                 })();
 
                 retval.AppendLine("<tr><td>" +
-                    (string.IsNullOrEmpty(A.A.Description) ? "" : "<span title=\"" + A.A.Description.HTMLEncode() + "\">") +
+                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : "<span title=\"" + (A.A.WholeDescription).HTMLEncode() + "\">") +
                     field.ToString() +
-                    (string.IsNullOrEmpty(A.A.Description) ? "" : " (+)</span>") +
+                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : " (+)</span>") +
                     "</td><td>" +
                     (includeDescription == null ? "" : "<span title=\"" + includeDescription + "\">") +
                     (value?.HTMLEncodeAndEnrich(request) ?? "&nbsp;") +
@@ -719,9 +718,9 @@ namespace AgoRapide {
             var adderWithLink = new Action<DBField, long?>((field, value) => {
                 var A = field.GetAgoRapideAttributeT();
                 retval.AppendLine("<tr><td>" +
-                    (string.IsNullOrEmpty(A.A.Description) ? "" : "<span title=\"" + A.A.Description.HTMLEncode() + "\">") +
+                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : "<span title=\"" + (A.A.WholeDescription).HTMLEncode() + "\">") +
                     field.ToString() +
-                    (string.IsNullOrEmpty(A.A.Description) ? "" : " (+)</span>") +
+                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : " (+)</span>") +
                     "</td><td>" +
                     (value != null && value != 0 ?
                         (Util.EntityCache.TryGetValue((long)value, out var entity) ?

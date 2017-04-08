@@ -96,7 +96,7 @@ namespace AgoRapide {
             overriddenAttributes[typeof(T)] = new List<string>();
             Util.EnumGetValues<T>().ForEach(e => {
                 // TODO: WHY DOES THIS WORK FOR IsMany???
-                var a = new PropertyKey(new AgoRapideAttributeEnrichedT<T>(AgoRapideAttribute.GetAgoRapideAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
+                var a = new PropertyKeyNonStrict(new AgoRapideAttributeEnrichedT<T>(AgoRapideAttribute.GetAgoRapideAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
                 a.SetPropertyKeyAndPropertyKeyAsIsManyParentOrTemplate(); // HACK
                 if (_fromStringMaps.TryGetValue(e.ToString(), out var existing)) {
                     overriddenAttributes.GetValue(existing.Key.A.Property.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
@@ -145,7 +145,7 @@ namespace AgoRapide {
                         /// The new one came later as parameter to <see cref="MapEnum{T}"/> and should take precedence
                         allCoreP[e.Value.Key.CoreP] = e.Value;
                     }
-                }                
+                }
                 if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out AgoRapideAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
             _allCoreP = allCoreP.Values.ToList();
@@ -174,7 +174,7 @@ namespace AgoRapide {
                     "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
                     "(Hint: this is usually done in Startup.cs.)");
 
-       
+
         /// <summary>
         /// TODO: REMOVE THIS METHOD!
         /// </summary>
@@ -221,32 +221,41 @@ namespace AgoRapide {
                 /// NOTE: This is so because it is envisaged that the final user shall be able to 
                 /// NOTE: create new "enums" / <see cref="PropertyKey"/> in the system. 
                 /// NOTE: And since the corresponding <see cref="AgoRapideAttributeEnriched.PToString"/> 
-                /// NOTE: now being created will be "trusted" throughout the system, it must be asserted safe here.
+                /// NOTE: now being created will be "trusted" throughout the system, it must be asserted safe 
+                /// TODO: here at the origin.
                 strErrorResponse = nameof(_enum) + " (" + _enum + ") is not a valid C# identifier";
                 return false;
             }
 
-            var key = new PropertyKey( // TODO: WHY DOES THIS WORK FOR IsMany???
+            // TODO: This should not have been accepted for IsMany!
+            var key = new PropertyKeyNonStrict( 
                 new AgoRapideAttributeDynamic(
-                    new AgoRapideAttribute {
-                        Description = description,
-                        LongDescription = "This is a dynamically added 'enum' created by " + nameof(EnumMapper) + "." + System.Reflection.MethodBase.GetCurrentMethod().Name,
-                        IsMany = isMany
-                    },
+                    new AgoRapideAttribute(
+                        property: _enum,
+                        description: description,
+                        longDescription: "This is a dynamically added 'enum' created by " + nameof(EnumMapper) + "." + System.Reflection.MethodBase.GetCurrentMethod().Name,
+                        isMany: isMany
+                    ),
                     (CoreP)GetNextCorePId()
                 )
             );
+            key.SetPropertyKeyAndPropertyKeyAsIsManyParentOrTemplate();
             if (!_enum.Equals(key.Key.PToString)) throw new PropertyKey.InvalidPropertyKeyException(nameof(_enum) + " (" + _enum + ") != " + nameof(key.Key.PToString) + " (" + key.Key.PToString + ")");
 
             // _allCoreP.Add(key); Not needed (and not thread-safe either)
-            _fromStringMaps.TryAdd(key.Key.PToString, key);
+            if (!_fromStringMaps.TryAdd(key.Key.PToString, key)) {
+                // This could just be a thread issue. In other words we could choose to just ignore this exception. 
+                // or we could instead just do 
+                //   _fromStringMaps[key.Key.PToString] = key;
+                throw new PropertyKey.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + description);
+            }
 
             // TODO: STORE THIS IN DATABASE
             // TODO: THINK ABOUT THREAD ISSUES 
             // TODO: READ AT STARTUP!!! (Take into consideration later adding to C# code of _enum)
 
             strErrorResponse = null;
-            return true;                          
+            return true;
         }
 
         public static bool TryGetA(string _enum, out PropertyKeyNonStrict key) => _fromStringMaps.TryGetValue(_enum, out key);
