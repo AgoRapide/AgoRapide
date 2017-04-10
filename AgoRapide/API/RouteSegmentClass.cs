@@ -49,7 +49,7 @@ namespace AgoRapide.API {
         /// <summary>
         /// Typical example would be <see cref="CoreP.QueryId"/> like api/Person/{QueryId}
         /// </summary>
-        public PropertyKey Parameter { get; private set; }
+        public PropertyKeyNonStrict Parameter { get; private set; }
 
         /// <summary>
         /// Typical example would be Add like api/Person/Add
@@ -84,7 +84,7 @@ namespace AgoRapide.API {
                 return;
             }
 
-            if (segment.GetType().IsEnum) { // Turn into 
+            if (segment.GetType().IsEnum) { /// Turn into <see cref="PropertyKeyNonStrict"/>
                 if (EnumMapper.TryGetA(segment.ToString(), out var temp)) {
                     segment = temp;
                 } else {
@@ -92,7 +92,7 @@ namespace AgoRapide.API {
                 }
             }
 
-            Parameter = segment as PropertyKey;
+            Parameter = segment as PropertyKeyNonStrict;
             if (Parameter != null) {
                 SampleValues = new Func<List<string>>(() => {
                     var a = Parameter.Key.A;

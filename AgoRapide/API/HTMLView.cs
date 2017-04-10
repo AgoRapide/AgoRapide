@@ -159,7 +159,7 @@ namespace AgoRapide.API {
                     "Logout as " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
                     new IntegerQueryId(Request.CurrentUser.Id),
-                    CoreP.RejectCredentialsNextTime,
+                    CoreP.RejectCredentialsNextTime.A(),
                     true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreP.Value"/> is a string at this stage
                                     /// (<see cref = "CoreMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
                                     /// TODO: CONSIDER MAKING THIS EVEN SMARTER!

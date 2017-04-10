@@ -138,7 +138,7 @@ namespace AgoRapideSample {
                 Log("SQL_CREATE_TABLE\r\n\r\n" + AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE + "\r\n");
                 var db = BaseController.GetDatabase(GetType());
 
-                Log("Reading all " + typeof(AgoRapide.ApplicationPart)); // Important before we ask for startupAsApplicationPart
+                Log("Reading all " + typeof(AgoRapide.ClassAndMethod)); // Important before we ask for startupAsApplicationPart
                 AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.ClassAndMethod>(db, text => Log("(by " + typeof(AgoRapide.ApplicationPart) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
                 var startupAsApplicationPart = AgoRapide.ApplicationPart.GetOrAdd<AgoRapide.ClassAndMethod>(GetType(), System.Reflection.MethodBase.GetCurrentMethod().Name, db);

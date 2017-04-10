@@ -44,10 +44,10 @@ namespace AgoRapide.API {
             return GetResponse();
         }
 
-        public object GetOKResponseAsText(string text, string additionalMessage) {
+        public object GetOKResponseAsText(string value, string message) {
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(CoreP.Value.A(), text); /// TODO: USE BETTER <see cref="CoreP"/> than this!
-            Result.AddProperty(CoreP.Message.A(), additionalMessage);
+            Result.AddProperty(CoreP.Value.A(), value); /// TODO: USE BETTER <see cref="CoreP"/> than this!
+            Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
 
@@ -331,7 +331,7 @@ namespace AgoRapide.API {
                     (!isPOST ? "" : (
                         nameof(postParameters) + ":\r\n" +
                         string.Join("\r\n", postParameters.Select(p => {
-                            var key = EnumMapper.GetAOrDefault(p.Item1);
+                            if (!EnumMapper.TryGetA(p.key, out var key)) return p.key + " [Not recognized] = '" + p.value + "'";
                             return p.key + (key.Key.CoreP == CoreP.None ? (" [Not recognized]" + ")") : "") + " = " + (key.Key.A.IsPassword ? "[WITHHELD]" : ("'" + p.value + "'"));
                         })))
                     )

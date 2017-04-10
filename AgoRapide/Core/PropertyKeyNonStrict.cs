@@ -13,8 +13,9 @@ namespace AgoRapide.Core {
     /// TODO: Notice how connected everything is, starting with the need for describing <see cref="Property.Key"/>.
     /// TODO: this is assumed to be a suboptimal situation at present.
     /// 
-    /// TODO: The whole distinction between <see cref="PropertyKeyNonStrict"/> and <see cref="PropertyKey"/> is a bit messy as of Apr 2017
+    /// TODO: The whole distinction between <see cref="PropertyKeyNonStrict"/> and <see cref="Core.PropertyKey"/> is a bit messy as of Apr 2017
     /// TODO: Especially the hack with <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
+    /// TODO: There is also the question of creating a new subclass called PropertyKeyIsMany (and moving the Index-property there)
     /// </summary>
     [AgoRapide(
         Description =
@@ -47,7 +48,7 @@ namespace AgoRapide.Core {
         /// HACK. See <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
         /// Only relevant when originates from <see cref="EnumMapper"/>
         /// </summary>
-        public PropertyKey PropertyKeyAsIsManyParentOrTemplate => _propertyKeyAsIsManyParentOrTemplate ?? throw new NullReferenceException(nameof(_propertyKeyAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(EnumMapper) + ".\r\nDetails: " + ToString());
+        public PropertyKey PropertyKeyAsIsManyParentOrTemplate => _propertyKeyAsIsManyParentOrTemplate ?? throw new NullReferenceException(Util.BreakpointEnabler + nameof(_propertyKeyAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(EnumMapper) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// This is a hack to allow <see cref="Property.IsIsManyParent"/> and <see cref="Property.IsTemplateOnly"/> 

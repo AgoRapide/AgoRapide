@@ -299,21 +299,21 @@ namespace AgoRapide.Database {
             }
         }
 
-        public void OperateOnProperty(long operatorId, Property property, PropertyOperation operation, Result result) {
-            Log(nameof(operatorId) + ": " + operatorId + ", " + nameof(property) + ": " + property.Id + ", " + nameof(operation) + ": " + operation);
+        public void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result) {
+            Log(nameof(operatorId) + ": " + (operatorId?.ToString() ??  "[NULL]") + ", " + nameof(property) + ": " + property.Id + ", " + nameof(operation) + ": " + operation);
             property.AssertIdIsSet();
             Npgsql.NpgsqlCommand cmd;
             switch (operation) {
                 case PropertyOperation.SetValid:
                     cmd = new Npgsql.NpgsqlCommand("UPDATE p SET " +
                         DBField.valid + " = :" + DBField.valid + ", " + // TODO: Use the database engine's clock here instead?
-                        DBField.vid + " = " + operatorId + " " +
+                        DBField.vid + " = " + (operatorId?.ToString() ?? "NULL") + " " +
                         "WHERE " + DBField.id + " = " + property.Id, _cn1);
                     cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.valid.ToString(), NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = DateTime.Now }); break; // TODO: Use the database engine's clock here instead?
                 case PropertyOperation.SetInvalid:
                     cmd = new Npgsql.NpgsqlCommand("UPDATE p SET " +
                         DBField.invalid + " = :" + DBField.invalid + ", " + // TODO: Use the database engine's clock here instead?
-                        DBField.iid + " = " + operatorId + " " +
+                        DBField.iid + " = " + (operatorId?.ToString() ?? "NULL") + " " +
                         "WHERE " + DBField.id + " = " + property.Id, _cn1);
                     cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.invalid.ToString(), NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = DateTime.Now }); break; // TODO: Use the database engine's clock here instead?
                 default: throw new InvalidEnumException(operation);
@@ -450,7 +450,8 @@ namespace AgoRapide.Database {
                 }
 
                 if (unrecognizedCoreP != null) {
-                    if (EnumMapper.TryAddA(unrecognizedCoreP.Value.unrecognizedCoreP, unrecognizedCoreP.Value.isMany, "Found as property " + id + " at " + DateTime.Now.ToString(DateTimeFormat.DateHourMin), out strErrorResponse)) {
+                    if (EnumMapper.TryAddA(unrecognizedCoreP.Value.unrecognizedCoreP, unrecognizedCoreP.Value.isMany, 
+                        unrecognizedCoreP.Value.unrecognizedCoreP + " was found as property " + id + " at " + DateTime.Now.ToString(DateTimeFormat.DateHourMin), out strErrorResponse)) {
                         // OK. New mapping succeeded.
                     } else { /// Note how errorResponse was changed by <see cref="EnumMapper.TryAddA"/> if that one was called above.
                         throw new PropertyKeyNonStrict.InvalidPropertyKeyException(
@@ -745,7 +746,7 @@ namespace AgoRapide.Database {
             var entityOrIsManyParentCreator = new Action<BaseEntityT, CoreP>((entityOrIsManyParent, keyAsCoreP) => {
 
                 var keyToUse = key as PropertyKey; // Note use of "strict" variant here
-                if (keyToUse == null) keyToUse = key.PropertyKeyIsSet ? key.PropertyKey : throw new PropertyKey.InvalidPropertyKeyException("Unable to turn " + key + " (of type " + key.GetType() + ") into a " + typeof(PropertyKey) + " because " + nameof(key.PropertyKeyIsSet) + " is FALSE" + detailer.Result("\r\nDetails: "));
+                if (keyToUse == null) keyToUse = key.PropertyKeyIsSet ? key.PropertyKey : throw new PropertyKey.InvalidPropertyKeyException("Unable to turn " + key + " (of type " + key.GetType() + ") into a " + typeof(PropertyKey) + " because !" + nameof(key.PropertyKeyIsSet) + detailer.Result("\r\nDetails: "));
 
                 if (entityOrIsManyParent.Properties.TryGetValue(keyAsCoreP, out var existingProperty)) {
                     var existingValue = existingProperty.V<T>();
@@ -972,10 +973,10 @@ namespace AgoRapide.Database {
                 ExecuteNonQuerySQLStatements(isManyCorrections);
                 if (noLongerCurrent.Count > 0) {
                     Log("Calling " + nameof(OperateOnProperty) + " for " + noLongerCurrent.Count + " properties");
-                    var ids = new List<long> { // Distinguish between multiple or not (maybe not really important?)
+                    var ids = new List<long?> { // Distinguish between multiple or not (maybe not really important?)
                         0,
-                        GetId(System.Reflection.MethodBase.GetCurrentMethod().Name + "#1"),
-                        GetId(System.Reflection.MethodBase.GetCurrentMethod().Name + "#2"),
+                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "#1"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
+                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "#2"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
                     };
                     noLongerCurrent.ForEach(n => {
                         if (n.id < 1 || n.id > 2) throw new Exception("Invalid " + nameof(n.id) + " (" + n.id + ")");
@@ -1147,13 +1148,24 @@ OWNER TO agorapide;
             IsDisposed = true;
         }
 
+        protected long GetId([System.Runtime.CompilerServices.CallerMemberName] string caller = "") => GetIdNonStrict(caller) ?? throw new NullReferenceException(System.Reflection.MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetIdNonStrict) + " instead");
+        
         /// <summary>
         /// Returns id of class + method for use as <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> 
-        /// (note that usually you should use the "currentUser".id for this purpose)
+        /// (note that usually you should use the "currentUser".id for this purpose). 
+        /// 
+        /// Note how null is returned when <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
         /// </summary>
         /// <param name="caller"></param>
         /// <returns></returns>
-        protected long GetId([System.Runtime.CompilerServices.CallerMemberName] string caller = "") => ApplicationPart.GetOrAdd<ClassAndMethod>(GetType(), caller, this).Id;
+        protected long? GetIdNonStrict([System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
+            if (ApplicationPart.GetFromDatabaseInProgress) {
+                /// This typical happens when called from <see cref="ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates"/> because that one wants to
+                /// <see cref="PropertyOperation.SetInvalid"/> some <see cref="Property"/> for a <see cref="ClassAndMethod"/>.
+                return null;
+            }
+            return ApplicationPart.GetOrAdd<ClassAndMethod>(GetType(), caller, this).Id;
+        }
         /// <summary>
         /// </summary>
         /// <param name="text"></param>

@@ -10,7 +10,8 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
     /// <summary>
-    /// TODO: REMOVE. PUT FUNCTIONALITY INTO BaseEntity class (because this class is now no longer generic)
+    /// TODO: REMOVE. PUT FUNCTIONALITY INTO <see cref="BaseEntity"/> class (because this class is now no longer generic)
+    /// TODO: (or rather, do it the other way around, and delete the <see cref="BaseEntity"/> class since that one is very seldom referenced)
     /// 
     /// Also used internally by AgoRapide like <see cref="Parameters"/>, <see cref="Result"/>, 
     /// <see cref="ApplicationPart"/>, <see cref="APIMethod"/> and so on, in order to reuse the
@@ -229,8 +230,12 @@ namespace AgoRapide {
         /// <returns></returns>
         public virtual string ToHTMLDetailed(Request request) {
             var retval = new StringBuilder();
-            var result = this as Result; // NOTE: Pattern matching not possible here (erroneous suggestions by compiler included in v26228.9 of Visual Studio)
-            if (result != null && result.ResultCode == ResultCode.ok) {
+            if (new Func<bool>(() => { // Convoluted code due do erroneous suggestion by compiler to use Pattern matching (version as of March 2017)
+                switch (this) {
+                    case Result result: return result.ResultCode == ResultCode.ok;
+                    default: return false;
+                }
+            })()) { 
                 // Do not show type or name because it will only be confusing
             } else {
                 var description = GetType().GetAgoRapideAttributeForClass().Description;

@@ -742,7 +742,7 @@ namespace AgoRapide {
             // retval.AppendLine("<tr><td>" + nameof(DBField.key) + " (explained)</td><td>" + KeyA.PExplained + "</td></tr>\r\n");
 
             // TODO: Add helptext for this (or remove it).
-            retval.AppendLine("<tr><td>Index</td><td>" + (Key.Index > 0 ? Key.Index.ToString() : "&nbsp;") + "</td></tr>\r\n");
+            retval.AppendLine("<tr><td>Index</td><td>" + (Key.Key.A.IsMany ? Key.Index.ToString() : "&nbsp;") + "</td></tr>\r\n");
 
             adder(DBField.lngv, LngValue?.ToString());
             adder(DBField.dblv, DblValue?.ToString());

@@ -20,9 +20,15 @@ namespace AgoRapide {
         public static ConcurrentDictionary<string, ApplicationPart> AllApplicationParts = new ConcurrentDictionary<string, ApplicationPart>();
 
         /// <summary>
+        /// Hack for <see cref="IDatabase"/>-implementation in order for <see cref="GetOrAdd{T}"/> not to be called. 
+        /// (that is, in order for not to create <see cref="ClassAndMethod"/> unnecessarily just because <see cref="GetFromDatabase{T}"/> has not finished). 
+        /// </summary>
+        public static bool GetFromDatabaseInProgress;
+
+        /// <summary>
         /// Reads all entities of type <typeparamref name="T"/> from database.
         /// 
-        /// Must be called at startup like 
+        /// Must be called single threaded at startup like 
         ///   AgoRapide.ApplicationPart{P}.GetFromDatabase{AgoRapide.ApplicationPart{P}}
         ///  and
         ///   AgoRapide.ApplicationPart{P}.GetFromDatabase{AgoRapide.ApiMethod{P}}
@@ -30,14 +36,21 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public static void GetFromDatabase<T>(IDatabase db, Action<string> logger) where T : ApplicationPart, new() =>
-            db.GetAllEntities<T>().ForEach(ap => {
-                var key = ap.PV<string>(CoreP.Key.A());
-                if (!AllApplicationParts.TryAdd(key, ap)) {
-                    // This is a known weakness as of Jan 2017 since creation of ApplicationPart is not thread safe regarding database operations
-                    logger("Duplicate " + ap.GetType() + " found (" + key + "), suggestion: Keep " + AllApplicationParts[key].Id + " but delete " + ap.Id + " (since that is the one being ignored now)");
-                }
-            });
+        public static void GetFromDatabase<T>(IDatabase db, Action<string> logger) where T : ApplicationPart, new() {
+            try {
+                GetFromDatabaseInProgress = true;
+
+                db.GetAllEntities<T>().ForEach(ap => {
+                    var identifier = ap.PV<string>(CoreP.Identifier.A());
+                    if (!AllApplicationParts.TryAdd(identifier, ap)) {
+                        // This is a known weakness as of Jan 2017 since creation of ApplicationPart is not thread safe regarding database operations
+                        logger("Duplicate " + ap.GetType() + " found (" + identifier + "), suggestion: Keep " + AllApplicationParts[identifier].Id + " but delete " + ap.Id + " (since that is the one being ignored now)");
+                    }
+                });
+            } finally {
+                GetFromDatabaseInProgress = false;
+            }
+        }
 
 
         public static T GetOrAdd<T>(Type type, string member, IDatabase db) where T : ApplicationPart, new() => GetOrAdd<T>(type, member, db, enrichAndReturnThisObject: null);
@@ -77,30 +90,30 @@ namespace AgoRapide {
             // Note how choice of key (and name) may very well cause overlap (two different types with same member mapping to same ApplicationPart since
             // we are using ToStringShort which removes namespace information). This is considered an acceptable tradeoff in return of
             // getting a clear understandable name.
-            var key = type.ToStringShort() + (string.IsNullOrEmpty(member) ? "" : ".") + member; /// <see cref="EnumClass"/> may call us without member in which case full stop . is not needed
-            var retvalTemp = AllApplicationParts.GetOrAdd(key, k => {
+            var identifier = type.ToStringShort() + (string.IsNullOrEmpty(member) ? "" : ".") + member; /// <see cref="EnumClass"/> may call us without member in which case full stop . is not needed
+            var retvalTemp = AllApplicationParts.GetOrAdd(identifier, i => {
                 // Note that this operation is not thread-safe in the manner that the operation against the database
                 // may be executed multiple times (the superfluous result of this lambda will then just end up being ignored)
                 // (This is only a problem the first time (in the database lifetime) that a given type+member is being used)
                 // Duplicates found at application startup should be logged with instructions for deletion. 
                 var id = db.CreateProperty(
-                    cid: (typeof(ApplicationPart).ToStringShort() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name).Equals(k) ? (long?)null :
-                        // Careful, recursive call! Check how lines above and below matches each other and also matches code 'var key = type + "." + member' at start of method
+                    cid: (typeof(ApplicationPart).ToStringShort() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name).Equals(i) ? (long?)null :
+                        // Careful, recursive call! Check how lines above and below matches each other and also matches code 'var identifier = type + "." + member' at start of method
                         GetOrAdd<ClassAndMethod>(typeof(ApplicationPart), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id,
                     pid: null,
                     fid: null,
                     key: CoreP.Type.A(),
                     value: typeof(T).ToStringDB(),
                     result: null);
-                db.CreateProperty(id, id, null, CoreP.Name.A(), key, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
-                db.CreateProperty(id, id, null, CoreP.Key.A(), key, null);
+                db.CreateProperty(id, id, null, CoreP.Name.A(), identifier, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
+                db.CreateProperty(id, id, null, CoreP.Identifier.A(), identifier, null);
                 var a = type.GetAgoRapideAttributeForClass();
                 db.CreateProperty(id, id, null, CoreP.AccessLevelRead.A(), a.AccessLevelRead, null);
                 db.CreateProperty(id, id, null, CoreP.AccessLevelWrite.A(), a.AccessLevelWrite, null);
                 return db.GetEntityById<T>(id);
             });
-            if (!(retvalTemp is T)) throw new InvalidObjectTypeException(retvalTemp, typeof(T), nameof(key) + ": " + key + ", " + nameof(retvalTemp) + ": " + retvalTemp.ToString());
-            var retval = (T)retvalTemp;
+            var retval = retvalTemp as T;
+            if (retval == null) throw new InvalidObjectTypeException(retvalTemp, typeof(T), nameof(identifier) + ": " + identifier + ", " + nameof(retvalTemp) + ": " + retvalTemp.ToString());
             if (enrichAndReturnThisObject == null) return retval;
             enrichAndReturnThisObject.Id = retval.Id;
             enrichAndReturnThisObject.Created = retval.Created;

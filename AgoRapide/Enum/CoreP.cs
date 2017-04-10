@@ -38,8 +38,8 @@ namespace AgoRapide {
     /// See <see cref="CoreMethod"/> for example of the recommended approach to setting attributes when the type given (<see cref="AgoRapideAttribute.Type"/>) 
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
     /// </summary>
-    [AgoRapide(        
-        Description ="The core -" + nameof(EnumType.EntityPropertyEnum) + "-. All other -" + nameof(EnumType.EntityPropertyEnum) + "- are mapped to -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-.",
+    [AgoRapide(
+        Description = "The core -" + nameof(EnumType.EntityPropertyEnum) + "-. All other -" + nameof(EnumType.EntityPropertyEnum) + "- are mapped to -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-.",
         EnumType = EnumType.EntityPropertyEnum
     )]
     public enum CoreP {
@@ -127,7 +127,8 @@ namespace AgoRapide {
         QueryId,
 
         [AgoRapide(
-            Type = typeof(IntegerQueryId))]
+            Type = typeof(IntegerQueryId),
+            ValidValues = new string[] { "42" })]
         IntegerQueryId,
 
         [AgoRapide(
@@ -137,7 +138,11 @@ namespace AgoRapide {
         [AgoRapide(Description = "General identifier.", IsUniqueInDatabase = true, Parents = new Type[] { typeof(ApplicationPart) })]
         Identifier,
 
-        [AgoRapide(Type = typeof(PropertyKey))]
+        /// <summary>
+        /// Note how this is deliberately <see cref="PropertyKeyNonStrict"/> (and not <see cref="PropertyKey"/>) since there are many situations where it is practical to
+        /// allow <see cref="AgoRapideAttribute.IsMany"/> without <see cref="PropertyKey.Index"/> (<see cref="CoreMethod.UpdateProperty"/> for instance). 
+        /// </summary>
+        [AgoRapide(Type = typeof(PropertyKeyNonStrict))]
         Key,
 
         [AgoRapide(

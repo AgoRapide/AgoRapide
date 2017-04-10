@@ -9,6 +9,10 @@ using AgoRapide.Core;
 using AgoRapide.API;
 
 namespace AgoRapideSample {
+
+    /// <summary>
+    /// Contains methods that "must" always be implemented in your application. 
+    /// </summary>
     public class HomeController : BaseController {
 
         /// <summary>
@@ -45,7 +49,7 @@ namespace AgoRapideSample {
         [BasicAuthentication(AccessLevelUse = AccessLevel.User)]
         [Method(
             Description = "Returns all persons where one of -" + nameof(P.FirstName) + "-, -" + nameof(P.LastName) + "- or -" + nameof(P.Email) + "- matches {" + nameof(CoreP.GeneralQueryId) + "}",
-            S1 = nameof(CoreMethod.GeneralQuery), S2 = CoreP.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
+            S1 = nameof(GeneralQuery), S2 = CoreP.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
         public object GeneralQuery(string GeneralQueryId) {
             try {
                 if (!TryGetRequest(GeneralQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
@@ -103,7 +107,7 @@ namespace AgoRapideSample {
         [HttpGet]
         [HttpPost]
         [Method(
-            S1 = "AddFirstAdminUser", S2 = P.Email, S3 = P.Password, Description =
+            S1 = nameof(AddFirstAdminUser), S2 = P.Email, S3 = P.Password, Description =
             "Adds the first administrative user to the system (with -" + nameof(P) + "." + nameof(P.AccessLevelGiven) + "- = -" + nameof(AccessLevel) + "." + nameof(AccessLevel.Admin) + "-. " +
             "Only allowed if no entities of type -" + nameof(Person) + "- exists",
             ShowDetailedResult = true)]

@@ -142,7 +142,6 @@ namespace AgoRapide.Database {
 
         Property GetPropertyById(long id);
         bool TryGetPropertyById(long id, out Property property);
-        void OperateOnProperty(long operatorId, Property property, PropertyOperation operation, Result result);
 
         /// <summary>
         /// Gets all root properties of a given type. Result should be in increasing order.
@@ -210,7 +209,11 @@ namespace AgoRapide.Database {
         /// The implementation should assert (case insensitive) uniqueness of <paramref name="value"/> 
         /// when <see cref="AgoRapideAttribute.IsUniqueInDatabase"/> for <paramref name="key"/>
         /// </summary>
-        /// <param name="cid"><see cref="DBField.cid"/> </param>
+        /// <param name="cid">
+        /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
+        /// Use <see cref="ApplicationPart.GetOrAdd{T}"/> in order to get a <paramref name="cid"/>. 
+        /// <see cref="DBField.cid"/> 
+        /// </param>
         /// <param name="pid"><see cref="DBField.pid"/> </param>
         /// <param name="fid"><see cref="DBField.fid"/> </param>
         /// <param name="key">
@@ -238,6 +241,20 @@ namespace AgoRapide.Database {
         /// <param name="result">May be null</param>
         /// <returns></returns>
         void UpdateProperty<T>(long cid, BaseEntityT entity, PropertyKeyNonStrict key, T value, Result result);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="operatorId">
+        /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
+        /// Use <see cref="ApplicationPart.GetOrAdd{T}"/> in order to get a <paramref name="cid"/>. 
+        /// <paramref name="operatorId"/> will be used as either <see cref="DBField.vid"/> or <see cref="DBField.iid"/>. 
+        /// </param>
+        /// <param name="property"></param>
+        /// <param name="operation"></param>
+        /// <param name="result"></param>
+        void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
+
     }
 
     public class ExactOneEntityNotFoundException : ApplicationException {

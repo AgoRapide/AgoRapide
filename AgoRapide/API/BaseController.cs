@@ -210,7 +210,7 @@ namespace AgoRapide.API {
             method.A.A.AssertCoreMethod(CoreMethod.UpdateProperty);
             if (!TryGetRequest(id, key, value, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PVM<QueryId>();
-            var cpKey = request.Parameters.PVM<PropertyKey>();
+            var cpKey = request.Parameters.PVM<PropertyKeyNonStrict>();
             var strValue = request.Parameters.PV<string>(CoreP.Value.A());
             /// Validate value. Note how TryGetRequest was only able to validate value as string 
             /// because <see cref="CoreMethod.UpdateProperty"/> does not know anything about which values are valid for which keys.
@@ -218,8 +218,10 @@ namespace AgoRapide.API {
             if (!cpKey.Key.TryValidateAndParse(strValue, out var parseResult)) return request.GetErrorResponse(ResultCode.invalid_parameter_error, parseResult.ErrorResponse);
             var objValue = parseResult.Result.ADotTypeValue();
 
-            if (cpKey.Key.A.IsUniqueInDatabase) {
-                if (!DB.TryAssertUniqueness(cpKey, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
+            if (cpKey.Key.A.IsUniqueInDatabase) {            
+                /// TODO: Improve on error message here if call to <see cref="PropertyKeyNonStrict.PropertyKey"/> fails.
+                if (!DB.TryAssertUniqueness(cpKey.PropertyKey, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
+                /// Note that <see cref="IDatabase.CreateProperty"/> will also repeat the check above
             }
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, cpKey, objValue, request.Result));
@@ -272,7 +274,7 @@ namespace AgoRapide.API {
             if (newestFilePath == null) return request.GetErrorResponse(ResultCode.data_error, "No Exception found in folder " + logDirectory, "");
             return request.GetOKResponseAsText(
                 System.IO.File.ReadAllText(newestFilePath),
-                additionalMessage: "Exception found, dated " + newestTimeStamp.ToString(DateTimeFormat.DateHourMinSecMs) +
+                message: "Exception found, dated " + newestTimeStamp.ToString(DateTimeFormat.DateHourMinSecMs) +
                     (filePaths.Length < 100 ? "" : ". " +
                     "WARNING: There is a high number of Exception-files (" + filePaths.Length + ") in folder " + logDirectory + ". " +
                     "Old files should be deleted!")

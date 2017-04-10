@@ -34,6 +34,7 @@ namespace AgoRapide {
         /// Key is enum type which is mapped from. 
         /// Value is dictionary with values for each enum-value again. 
         /// Note how adding to this dictionary is supposed to be always done by a single thread through <see cref="MapEnum{T}"/>. 
+        /// TODO: NOT TRUE as of Apr 2016 as <see cref="TryAddA"/> also has to add properties to this collection.
         /// 
         /// Is in principle equivalent to <see cref="Extensions._agoRapideAttributeTCache"/> except that _that_ cache also contains 
         /// entries for non <see cref="AgoRapide.EnumType.EntityPropertyEnum"/> 
@@ -175,45 +176,56 @@ namespace AgoRapide {
                     "(Hint: this is usually done in Startup.cs.)");
 
 
-        /// <summary>
-        /// TODO: REMOVE THIS METHOD!
-        /// </summary>
-        /// <param name="_enum"></param>
-        /// <returns></returns>
-        public static PropertyKeyNonStrict GetAOrDefault(string _enum) => _fromStringMaps.TryGetValue(_enum, out var retval) ? retval : throw new NullReferenceException("Unable to return default, concept does not exist");
+        ///// <summary>
+        ///// TODO: REMOVE THIS METHOD!
+        ///// </summary>
+        ///// <param name="_enum"></param>
+        ///// <returns></returns>
+        //public static PropertyKeyNonStrict GetAOrDefault(string _enum) => _fromStringMaps.TryGetValue(_enum, out var retval) ? retval : throw new NullReferenceException(Util.BreakpointEnabler + "Unable to return default, concept does not exist");
         public static PropertyKeyNonStrict GetA(string _enum) => _fromStringMaps.GetValue(_enum);
+        ///// <summary>
+        ///// 
+        ///// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
+        ///// TODO: (corresponding functionality has been put into <see cref="PostgreSQLDatabase"/>.ReadOneProperty instead.
+        ///// TODO: (OR RATHER, THIS METHOD WAS REPLACED BY <see cref="TryAddA"/>)
+        ///// 
+        ///// Method that will always "succeed" in the sense that unknown values of <paramref name="_enum"/> will just be added. 
+        ///// 
+        ///// Preferred method when <paramref name="_enum"/> is not known in the C# code. 
+        ///// 
+        ///// Also to be used for hierarchically organise enums.
+        ///// 
+        ///// This is the method to use when reading from database (before initializing <see cref="Property"/>) 
+        ///// and also when dynamically adding properties. 
+        ///// 
+        ///// Note how unknown values are added automatically and also stored in database
+        ///// </summary>
+        ///// <param name="_enum"></param>
+        ///// <returns></returns>
+        //public static PropertyKeyNonStrict GetA(string _enum, IDatabase db) =>
+        //    _fromStringMaps.GetOrAdd(_enum, e => {
+        //        if (db == null) throw new NullReferenceException(nameof(db));
+        //        throw new NotImplementedException(
+        //            "Adding of properties to database not implemented as of March 2017. " +
+        //            "Verify as valid C# identifier. " +
+        //            "Set _allCoreP = null;" +
+        //            "TODO: Reuse " + nameof(EnumClass) + ". " +
+        //            "Store in database (check that not already exist, some reading from database must be done in Startup.cs). " +
+        //            "Corresponding AgoRapideAttribute properties to be stored in database. " +
+        //            "Also implement support for hierarchically organised enums where AgoRapideAttribute reflects all hierarchical levels");
+        //    });
+
+
         /// <summary>
+        /// TODO: Correct not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
         /// 
-        /// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
-        /// TODO: (corresponding functionality has been put into <see cref="PostgreSQLDatabase"/>.ReadOneProperty instead.
-        /// TODO: (OR RATHER, THIS METHOD WAS REPLACED BY <see cref="TryAddA"/>)
-        /// 
-        /// Method that will always "succeed" in the sense that unknown values of <paramref name="_enum"/> will just be added. 
-        /// 
-        /// Preferred method when <paramref name="_enum"/> is not known in the C# code. 
-        /// 
-        /// Also to be used for hierarchically organise enums.
-        /// 
-        /// This is the method to use when reading from database (before initializing <see cref="Property"/>) 
-        /// and also when dynamically adding properties. 
-        /// 
-        /// Note how unknown values are added automatically and also stored in database
+        /// Called from <see cref="PostgreSQLDatabase"/>.ReadOneProperty.
         /// </summary>
         /// <param name="_enum"></param>
+        /// <param name="isMany"></param>
+        /// <param name="description"></param>
+        /// <param name="strErrorResponse"></param>
         /// <returns></returns>
-        public static PropertyKeyNonStrict GetA(string _enum, IDatabase db) =>
-            _fromStringMaps.GetOrAdd(_enum, e => {
-                if (db == null) throw new NullReferenceException(nameof(db));
-                throw new NotImplementedException(
-                    "Adding of properties to database not implemented as of March 2017. " +
-                    "Verify as valid C# identifier. " +
-                    "Set _allCoreP = null;" +
-                    "TODO: Reuse " + nameof(EnumClass) + ". " +
-                    "Store in database (check that not already exist, some reading from database must be done in Startup.cs). " +
-                    "Corresponding AgoRapideAttribute properties to be stored in database. " +
-                    "Also implement support for hierarchically organised enums where AgoRapideAttribute reflects all hierarchical levels");
-            });
-
         public static bool TryAddA(string _enum, bool isMany, string description, out string strErrorResponse) {
             if (!System.CodeDom.Compiler.CodeDomProvider.CreateProvider("C#").IsValidIdentifier(_enum)) {
                 /// NOTE: Note how this check is extremely important in order to protect against 
@@ -250,6 +262,9 @@ namespace AgoRapide {
                 throw new PropertyKey.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + description);
             }
 
+            /// TODO: Correct not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
+            _enumMapsCache.GetValue(typeof(CoreP))[(int)key.Key.CoreP] = key;
+        
             // TODO: STORE THIS IN DATABASE
             // TODO: THINK ABOUT THREAD ISSUES 
             // TODO: READ AT STARTUP!!! (Take into consideration later adding to C# code of _enum)

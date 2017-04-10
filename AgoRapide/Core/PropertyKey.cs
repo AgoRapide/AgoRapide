@@ -7,6 +7,11 @@ using AgoRapide.Database;
 
 namespace AgoRapide.Core {
 
+    /// <summary>
+    /// TODO: The whole distinction between <see cref="PropertyKeyNonStrict"/> and <see cref="Core.PropertyKey"/> is a bit messy as of Apr 2017
+    /// TODO: Especially the hack with <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
+    /// TODO: There is also the question of creating a new subclass called PropertyKeyIsMany (and moving the Index-property there)
+    /// </summary>
     [AgoRapide(
         Description = 
         "Strict version of -" + nameof(PropertyKeyNonStrict) + "-. " +
@@ -17,9 +22,10 @@ namespace AgoRapide.Core {
         private int _index;
         /// <summary>
         /// Only allowed to read if 1 or greater. 
+        /// (Check for <see cref="AgoRapideAttribute.IsMany"/> before attempting to access this property)
+        /// TODO: Try to solve in a better manner by creating a subclass PropertyKeyIsMany or similar.
         /// </summary>
         public int Index {
-            // get => _index != IS_MANY_PARENT_OR_TEMPLATE_INDEX ? _index : throw new InvalidPropertyKeyException("Invalid to read " + nameof(Index) + " when value is " + nameof(IS_MANY_PARENT_OR_TEMPLATE_INDEX) + " = " + IS_MANY_PARENT_OR_TEMPLATE_INDEX + ". Details: " + Key.A.ToString()); // Careful not to call ToString() here.
             get => _index > 0 ? _index : throw new InvalidPropertyKeyException("Invalid to read " + nameof(Index) + " when not set.\r\nDetails: " + Key.A.ToString()); // Careful not to call ToString() here.
             protected set => _index = value;
         }
@@ -36,8 +42,9 @@ namespace AgoRapide.Core {
                     if (index <= 0) {
                         if (this is PropertyKey) {
                             throw new InvalidPropertyKeyException(
+                                /// TODO: As of Apr 2017 it is not possible to use <see cref="AgoRapideAttribute.IsMany"/> in connection with <see cref="CoreMethod.AddEntity"/>. 
                                 nameof(Index) + " missing for " + nameof(Key.A.IsMany) + " for " + ToString() + ".\r\n" +
-                                "Call constructor for " + nameof(PropertyKeyNonStrict) + " instead of you do not need a " + nameof(PropertyKey) + " instance now.\r\n" +
+                                "Possible resolution: You may call constructor for " + nameof(PropertyKeyNonStrict) + " instead of " + nameof(PropertyKey) + " if you do not need a " + nameof(PropertyKey) + " instance now.\r\n" +
                                 "Details: " + key.ToString());
                         }
                     }
@@ -86,7 +93,7 @@ namespace AgoRapide.Core {
             if (EnumMapper.TryGetA(value, out nonStrictAlternative)) {
                 if (nonStrictAlternative.Key.A.IsMany) {
                     key = null;
-                    strErrorResponse = IsManyInconsistency.IsManyButIndexNotGiven + " (meaning # was missing in " + nameof(value) + " (" + value + "))";
+                    strErrorResponse = IsManyInconsistency.IsManyButIndexNotGiven + " (meaning # was missing in " + nameof(value) + ". " + nameof(value) + " given was -" + value + "- but expected something like -" + value + "#3-))";
                     enumErrorResponse = IsManyInconsistency.IsManyButIndexNotGiven;
                     unrecognizedCoreP = null;
                     return false;
@@ -107,8 +114,7 @@ namespace AgoRapide.Core {
                 return false;
             }
 
-            var retval = EnumMapper.GetAOrDefault(t[0]);
-            if (retval.Key.CoreP == CoreP.None) {
+            if (!EnumMapper.TryGetA(t[0], out var retval)) { 
                 key = null;
                 strErrorResponse = "First part (" + t[0] + ") not a valid " + nameof(CoreP) + ".";
                 enumErrorResponse = IsManyInconsistency.None;

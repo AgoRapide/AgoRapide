@@ -112,7 +112,9 @@ namespace AgoRapide.Core {
                             break;
                     }
                 }
-                InvalidTypeException.AssertAssignable(obj.GetType(), A.Type, () => A.ToString());
+                throw new InvalidObjectTypeException(obj, A.Type,
+                    ((obj is CoreP && typeof(PropertyKeyNonStrict).IsAssignableFrom(A.Type)) ? "A common mistake is specifying " + typeof(CoreP) + " (like " + nameof(CoreP) + ".SomeValue) instead of " + typeof(PropertyKeyNonStrict) + " (like " + nameof(CoreP) + ".SomeValue." + nameof(Extensions.A) + "()).\r\n" : "") +
+                    A.ToString());
             }
             if (A.Type.Equals(typeof(DateTime))) return (obj as DateTime? ?? throw new NullReferenceException(nameof(obj) + " for " + A.ToString())).ToString(DateTimeFormat.DateHourMin);
             if (A.Type.Equals(typeof(double))) return (obj as double? ?? throw new NullReferenceException(nameof(obj) + " for " + A.ToString())).ToString2();

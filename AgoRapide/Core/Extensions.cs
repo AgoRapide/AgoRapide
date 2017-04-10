@@ -20,7 +20,15 @@ namespace AgoRapide.Core {
             if (dict.TryGetValue(key.Key.CoreP, out var retval)) {
                 retval.AssertIsManyParent();
             } else {
-                retval = dict[key.Key.CoreP] = Property.CreateIsManyParent(key.PropertyKeyAsIsManyParentOrTemplate); 
+                if (key.PropertyKeyIsSet) {
+                    retval = dict[key.Key.CoreP] = Property.CreateIsManyParent(key.PropertyKeyAsIsManyParentOrTemplate);
+                } else {
+                    /// Above is not sufficient for instance when <param name="key"/> does not originate from EnumMapper.
+                    /// Therefore we must to this instead:
+                    retval = dict[key.Key.CoreP] = Property.CreateIsManyParent(EnumMapper.GetA(key.Key.CoreP).PropertyKeyAsIsManyParentOrTemplate);
+                    // TODO: Code above is a bit slow performance wise (there are two dictionary look ups involved)
+                    /// TODO: Code above is run whenever an <see cref="AgoRapideAttribute.IsMany"/> property is read from database for instance.
+                }
             }
             return retval;
         }
@@ -348,7 +356,7 @@ namespace AgoRapide.Core {
         private static ConcurrentDictionary<Type, string> _toStringDBCache = new ConcurrentDictionary<Type, string>();
         /// <summary>
         /// Gives the minimum representation of type as string suitable for later reconstruction by <see cref="Type.GetType(string)"/> 
-        /// (that is with namespace and including the simple assembly name but nothing more)
+        /// (that is with namespace and including all relevant assembly names but nothing more)
         /// 
         /// The return value is considered SQL "safe" in the sense that it may be inserted directly into an SQL statement. 
         /// 
@@ -356,6 +364,13 @@ namespace AgoRapide.Core {
         /// 
         /// See also <see cref="ToStringShort(Type)"/> and <see cref="ToStringVeryShort(Type)"/>
         ///
+        /// -----------------------------------------------------------------
+        /// The historical reason for creating <see cref="Extensions.ToStringDB"/> and <see cref="Util.TryGetTypeFromString"/> was supporting
+        /// generics where generic arguments exist in a different assembly. 
+        /// After architectural change in March 2016 (mapping TO <see cref="CoreP"/> instead of FROM)
+        /// a lot of unnecessary generic code was eliminated. This did in practice eliminiate the complexity present in these methods now.
+        /// The following is therefore somewhat outdated:
+        /// -----------------------------------------------------------------
         /// Example of return value is:
         ///   ApplicationPart&lt;P&gt; : AgoRapide.ApplicationPart`1[AgoRapideSample.P,AgoRapideSample],AgoRapide
         /// (the part before : is what is returned by <see cref="ToStringShort(Type)"/> and serves as a human readable shorthand)
@@ -376,6 +391,7 @@ namespace AgoRapide.Core {
         /// In our case what is returned by this methdod (<see cref="ToStringDB(Type)"/> is something like mentioned above
         ///   AgoRapide.ApplicationPart`1[AgoRapideSample.P,AgoRapideSample],AgoRapide
         /// that is, we insert the assembly name where the type of the generic parameter resides, into the string.
+        /// -----------------------------------------------------------------
         /// 
         /// Note how caches result since operation is somewhat complicated.
         /// </summary>
@@ -543,13 +559,15 @@ namespace AgoRapide.Core {
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="AgoRapideAttribute.Parents"/> 
         /// with <see cref="AgoRapideAttribute.IsObligatory"/>. 
         /// 
+        /// Note that <see cref="AgoRapideAttribute.IsMany"/> combined with <see cref="AgoRapideAttribute.IsObligatory"/> will result in <see cref="PropertyKey.Index"/> #1 being used
+        /// 
         /// Has practical use when calling <see cref="IDatabase.CreateEntity"/>
         /// 
         /// Now how returns <see cref="PropertyKeyNonStrict.PropertyKey"/> from <see cref="GetChildProperties"/>.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKey> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.Key.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value.PropertyKey));
+        public static Dictionary<CoreP, PropertyKey> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.Key.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value.Key.A.IsMany ? new PropertyKey(e.Value.Key, 1) : e.Value.PropertyKey));
 
         private static ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKeyNonStrict>> _childPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKeyNonStrict>>();
         /// <summary>

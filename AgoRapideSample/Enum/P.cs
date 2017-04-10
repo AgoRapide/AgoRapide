@@ -79,6 +79,14 @@ namespace AgoRapideSample {
             AccessLevelWrite = AccessLevel.Anonymous)]
         Colour,
 
+        [AgoRapide(
+            Type = typeof(Colour),
+            Parents = new Type[] { typeof(Car) },
+            IsMany = true,
+            AccessLevelRead = AccessLevel.Anonymous,
+            AccessLevelWrite = AccessLevel.Anonymous)]
+        Colour2,
+
         #region CoreP
         /// This region changes names and meaning of <see cref="CoreP"/> values
 
