@@ -16,7 +16,7 @@ namespace AgoRapide {
     /// <see cref="ClassAndMethod"/><br>
     /// <see cref="EnumClass"/><br>
     /// </summary>
-    public abstract class ApplicationPart : BaseEntityTWithLogAndCount {
+    public abstract class ApplicationPart : BaseEntityWithLogAndCount {
         public static ConcurrentDictionary<string, ApplicationPart> AllApplicationParts = new ConcurrentDictionary<string, ApplicationPart>();
 
         /// <summary>
@@ -102,26 +102,30 @@ namespace AgoRapide {
                         GetOrAdd<ClassAndMethod>(typeof(ApplicationPart), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id,
                     pid: null,
                     fid: null,
-                    key: CoreP.Type.A(),
+                    key: CoreP.Type.A().PropertyKey,
                     value: typeof(T).ToStringDB(),
                     result: null);
-                db.CreateProperty(id, id, null, CoreP.Name.A(), identifier, null); // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
-                db.CreateProperty(id, id, null, CoreP.Identifier.A(), identifier, null);
                 var a = type.GetAgoRapideAttributeForClass();
-                db.CreateProperty(id, id, null, CoreP.AccessLevelRead.A(), a.AccessLevelRead, null);
-                db.CreateProperty(id, id, null, CoreP.AccessLevelWrite.A(), a.AccessLevelWrite, null);
+                new List<(CoreP coreP, object obj)> {
+                    (CoreP.Name, identifier ), // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
+                    (CoreP.Identifier, identifier),
+                    (CoreP.AccessLevelRead, a.AccessLevelRead),
+                    (CoreP.AccessLevelWrite, a.AccessLevelWrite)
+                }.ForEach(t => db.CreateProperty(id, id, null, t.coreP.A().PropertyKey, t.obj, null));
                 return db.GetEntityById<T>(id);
             });
             var retval = retvalTemp as T;
             if (retval == null) throw new InvalidObjectTypeException(retvalTemp, typeof(T), nameof(identifier) + ": " + identifier + ", " + nameof(retvalTemp) + ": " + retvalTemp.ToString());
             if (enrichAndReturnThisObject == null) return retval;
-            enrichAndReturnThisObject.Id = retval.Id;
-            enrichAndReturnThisObject.Created = retval.Created;
-            enrichAndReturnThisObject.RootProperty = retval.RootProperty;
-            if (enrichAndReturnThisObject.Properties == null) enrichAndReturnThisObject.Properties = new Dictionary<CoreP, Property>();
-            retval.Properties.ForEach(p => {
-                if (enrichAndReturnThisObject.Properties.ContainsKey(p.Key)) throw new KeyAlreadyExistsException<CoreP>(p.Key, nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
-                enrichAndReturnThisObject.Properties.AddValue2(p.Key, p.Value);
+            enrichAndReturnThisObject.Use(e => {
+                e.Id = retval.Id;
+                e.Created = retval.Created;
+                e.RootProperty = retval.RootProperty;
+                if (e.Properties == null) e.Properties = new Dictionary<CoreP, Property>();
+                retval.Properties.ForEach(p => {
+                    if (e.Properties.ContainsKey(p.Key)) throw new KeyAlreadyExistsException<CoreP>(p.Key, nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
+                    e.Properties.AddValue2(p.Key, p.Value);
+                });
             });
             return enrichAndReturnThisObject;
         }

@@ -12,7 +12,7 @@ namespace AgoRapide {
     /// Never stored in database. 
     /// 
     /// Note how many of the methods in the AgoRapide-library will log 
-    /// extensively to <see cref="BaseEntityTWithLogAndCount.LogInternal"/> in <see cref="Result"/>.
+    /// extensively to <see cref="BaseEntityWithLogAndCount.LogInternal"/> in <see cref="Result"/>.
     /// (meaning your server logs are not filled up with unnecessary clutter, but the system is still available to give an API client
     /// detailed information about problems). 
     /// 
@@ -21,7 +21,7 @@ namespace AgoRapide {
     /// Usually available as <see cref="ValidRequest.Result"/>
     /// </summary>  
     [AgoRapide(Description = "Communicates results of an API command back to client")]
-    public class Result : BaseEntityTWithLogAndCount { 
+    public class Result : BaseEntityWithLogAndCount { 
 
         public ResultCode ResultCode {
             get => PVM<ResultCode>();
@@ -46,8 +46,8 @@ namespace AgoRapide {
             }
         }
 
-        public BaseEntityT SingleEntityResult;
-        public List<BaseEntityT> MultipleEntitiesResult;
+        public BaseEntity SingleEntityResult;
+        public List<BaseEntity> MultipleEntitiesResult;
 
         // public override string Name => "Result summary of API call: " + ResultCode;
         public override string Name => ResultCode.ToString();
@@ -80,13 +80,13 @@ namespace AgoRapide {
                 // ToHTMLDetailed will return details needed. 
             }
 
-            /// Note how <see cref="BaseEntityT.ToHTMLDetailed"/> contains special code for <see cref="Result"/> hiding type and name
+            /// Note how <see cref="BaseEntity.ToHTMLDetailed"/> contains special code for <see cref="Result"/> hiding type and name
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
 
         /// <summary>
-        /// Note how <see cref="Result"/> is the only <see cref="BaseEntityT"/>-class having a method called <see cref="ToJSONDetailed"/>. 
-        /// (while all <see cref="BaseEntityT"/>-classes implement <see cref="BaseEntityT.ToJSONEntity"/>)
+        /// Note how <see cref="Result"/> is the only <see cref="BaseEntity"/>-class having a method called <see cref="ToJSONDetailed"/>. 
+        /// (while all <see cref="BaseEntity"/>-classes implement <see cref="BaseEntity.ToJSONEntity"/>)
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -99,7 +99,7 @@ namespace AgoRapide {
                 try {
                     json["SingleEntity"] = System.Web.Helpers.Json.Decode(encoded);
                 } catch (ArgumentException ex) {
-                    throw new JsonDecodeArgumentException(new List<BaseEntityT> { SingleEntityResult }, ex);
+                    throw new JsonDecodeArgumentException(new List<BaseEntity> { SingleEntityResult }, ex);
                 }
             } else if (MultipleEntitiesResult != null) {
                 // TODO: This is old "working" code that definitely can be improved upon somehow...
@@ -121,7 +121,7 @@ namespace AgoRapide {
                 }
             } else {
                 json = new System.Web.Helpers.DynamicJsonObject(new Dictionary<string, object>());
-                /// Note how actual result will be returned by <see cref="BaseEntityTWithLogAndCount.ToJSONEntity"/> 
+                /// Note how actual result will be returned by <see cref="BaseEntityWithLogAndCount.ToJSONEntity"/> 
             }
 
             /// Inserting <see cref="ResultCode"/> at "top" of JSON hierarchy makes for easier parsing. 
@@ -132,7 +132,7 @@ namespace AgoRapide {
                 try {
                     json["details"] = System.Web.Helpers.Json.Decode(encoded);
                 } catch (ArgumentException ex) {
-                    throw new JsonDecodeArgumentException(new List<BaseEntityT> { this }, ex);
+                    throw new JsonDecodeArgumentException(new List<BaseEntity> { this }, ex);
                 }
             }
             return new System.Web.Mvc.JsonResult { Data = json };
@@ -142,7 +142,7 @@ namespace AgoRapide {
         /// Handles problem with case-sensitive .NET dictionary keys being incompatible with case-insensitive JSON 
         /// </summary>
         public class JsonDecodeArgumentException : ApplicationException {
-            public JsonDecodeArgumentException(IEnumerable<BaseEntityT> entities, ArgumentException ex) : base(new Func<string>(() => {
+            public JsonDecodeArgumentException(IEnumerable<BaseEntity> entities, ArgumentException ex) : base(new Func<string>(() => {
                 var retval = new StringBuilder();
                 entities.ForEach(entity => {
                     entity.Properties.ForEach(p1 => {
@@ -152,7 +152,7 @@ namespace AgoRapide {
                             retval.Append("\r\n\r\n");
                             retval.Append("For " + entity.GetType() + " " + entity.Id + " (" + entity.Name + ") the key " + p1.Key + " is not unique in lowerCase (" + lowerCase + "). The following properties share the same key in lowerCase:\r\n");
                             identical.ForEach(i => {
-                                retval.Append(i.Key + ": " + i.Value.Value + "\r\n");
+                                retval.Append(i.Key + ": " + i.Value.V<string>() + "\r\n");
                             });
                             retval.Append("\r\n\r\n");
                         }

@@ -14,7 +14,7 @@ namespace AgoRapide {
     [AgoRapide(Description = 
         "Used by " + nameof(BaseController.AgoRapideGenericMethod) +" " +
         "in order to present possible methods that the client intended to call.")]
-    public class APIMethodCandidate : BaseEntityT { 
+    public class APIMethodCandidate : BaseEntity { 
 
         public APIMethod Method { get; private set; }
         public int LastMatchingSegmentNo { get; private set; }

@@ -57,7 +57,7 @@ namespace AgoRapide.API {
         /// See comment for <paramref name="method"/>. 
         /// </param>
         /// <returns></returns>
-        public object AgoRapideGenericMethod(APIMethod method, BaseEntityT currentUser) {
+        public object AgoRapideGenericMethod(APIMethod method, BaseEntity currentUser) {
             // Practical problem: For overloads for which there are allowed default values for
             // parameters we must be able to call the full version. That will be difficult to do 
             // from here. In other words, for the time being (Jan 2017) all such overloads
@@ -137,7 +137,7 @@ namespace AgoRapide.API {
                             // TODO: Order list by frequency of use and pick the most used methods
                             var retval = c.methods.Select(m => new APIMethodCandidate(request, m, c.lastMatchingSegmentNo)).Take(10).ToList();
                             request.Result.ResultCode = ResultCode.missing_parameter_error;
-                            request.Result.MultipleEntitiesResult = retval.Select(r => (BaseEntityT)r).ToList();
+                            request.Result.MultipleEntitiesResult = retval.Select(r => (BaseEntity)r).ToList();
                             request.Result.AddProperty(CoreP.Message.A(),
                                 "Your query URL is incomplete.\r\n" +
                                 "Details:\r\n" + c.explanation + "\r\n" +
@@ -162,7 +162,7 @@ namespace AgoRapide.API {
                     string.Join("\r\n", m.methods.Select(c => c.ToString())) + "\r\n?" +
                     "-----------\r\n" +
                     "See enclosed " + nameof(CoreP.SuggestedUrl) + " for documentation" + tip);
-                request.Result.MultipleEntitiesResult = m.methods.Select(maybe => (BaseEntityT)maybe).ToList();
+                request.Result.MultipleEntitiesResult = m.methods.Select(maybe => (BaseEntity)maybe).ToList();
 
                 /// Generate <see cref="CoreP.SuggestedUrl"/>:
                 // var docUrl = request.CreateAPIUrl("") does not work (will give us /api//HTML for example)
@@ -182,7 +182,7 @@ namespace AgoRapide.API {
             method.A.A.AssertCoreMethod(CoreMethod.AddEntity);
             if (!TryGetRequest(p1, p2, p3, p4, p5, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             foreach (var p in request.Parameters.Properties.Values.Where(p => p.Key.Key.A.IsUniqueInDatabase)) {
-                if (!DB.TryAssertUniqueness(p.Key, p.ADotTypeValue(), out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
+                if (!DB.TryAssertUniqueness(p.Key, p.Value, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
             }
             return request.GetOKResponseAsEntityId(method.EntityType, DB.CreateEntity(request.CurrentUser.Id, method.EntityType, request.Parameters, request.Result));
         }
@@ -216,7 +216,7 @@ namespace AgoRapide.API {
             /// because <see cref="CoreMethod.UpdateProperty"/> does not know anything about which values are valid for which keys.
             /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
             if (!cpKey.Key.TryValidateAndParse(strValue, out var parseResult)) return request.GetErrorResponse(ResultCode.invalid_parameter_error, parseResult.ErrorResponse);
-            var objValue = parseResult.Result.ADotTypeValue();
+            var objValue = parseResult.Result.Value;
 
             if (cpKey.Key.A.IsUniqueInDatabase) {            
                 /// TODO: Improve on error message here if call to <see cref="PropertyKeyNonStrict.PropertyKey"/> fails.
@@ -252,8 +252,8 @@ namespace AgoRapide.API {
             Log(nameof(id) + ": " + id);
             method.A.A.AssertCoreMethod(CoreMethod.History);
             if (!TryGetRequest(id, method, out var request, out var objErrorResponse)) return objErrorResponse;
-            if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<IntegerQueryId>(), AccessType.Read, useCache: false, entity: out BaseEntityT entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
-            return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntityT)p).ToList());
+            if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<IntegerQueryId>(), AccessType.Read, useCache: false, entity: out BaseEntity entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntity)p).ToList());
         }
 
         public object HandleCoreMethodExceptionDetails(APIMethod method) {
@@ -345,7 +345,7 @@ namespace AgoRapide.API {
             //    (p8 == null ? "" : ", " + nameof(p8) + ": " + p8) +
             //    (p9 == null ? "" : ", " + nameof(p9) + ": " + p9)
             //);
-            BaseEntityT currentUser = null;
+            BaseEntity currentUser = null;
             if (method.RequiresAuthorization) { // TODO: Put functionality for CurrentUser into TryGetRequest instead. ESPECIALLY LETTING TryGetCurrentUser CHECK AccessLevel looks weird
                 if (!TryGetCurrentUser(method, out currentUser, out errorResponse)) {
                     request = null;
@@ -443,7 +443,7 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected BaseEntityT CurrentUser(APIMethod method) => TryGetCurrentUser(method, out var currentUser, out _) ? currentUser : throw new UnauthorizedAccessException("Method: " + method.ToString());
+        protected BaseEntity CurrentUser(APIMethod method) => TryGetCurrentUser(method, out var currentUser, out _) ? currentUser : throw new UnauthorizedAccessException("Method: " + method.ToString());
 
         /// <summary>
         /// TODO: Put functionality for CurrentUser into TryGetRequest instead
@@ -460,20 +460,20 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="currentUser"></param>
         /// <returns></returns>
-        protected bool TryGetCurrentUser(APIMethod method, out BaseEntityT currentUser, out object accessDeniedResponse) {
+        protected bool TryGetCurrentUser(APIMethod method, out BaseEntity currentUser, out object accessDeniedResponse) {
             if (string.IsNullOrEmpty(User.Identity.Name)) throw new NoLoginPerformedException(
                 "User.Identity.Name was not set.\r\n" +
                 "Check that [" + typeof(AuthorizeAttribute) + "] or [OverrideAuthentication] + [BasicAuthentication] or similar has been added as necessary to action-methods in your controller and " +
                 "that you are not calling " + System.Reflection.MethodBase.GetCurrentMethod().Name + " from a method that does not require authorization");
             if (!long.TryParse(User.Identity.Name, out var entityId)) throw new Exception("Invalid User.Identity.Name (" + User.Identity.Name + ")");
-            BaseEntityT retval;
+            BaseEntity retval;
             if (Request.Properties.TryGetValue("AgoRapideCurrentUser", out var objCurrentUser)) {
                 // The authentication mechanism used has already read the current user for us
-                retval = objCurrentUser as BaseEntityT;
-                if (retval == null) throw new InvalidObjectTypeException(objCurrentUser, typeof(BaseEntityT));
+                retval = objCurrentUser as BaseEntity;
+                if (retval == null) throw new InvalidObjectTypeException(objCurrentUser, typeof(BaseEntity));
                 if (retval.Id != entityId) throw new Exception(nameof(retval) + "." + nameof(retval.Id) + " (" + retval.Id + ") != " + nameof(entityId) + " (" + entityId + ")");
             } else {
-                retval = DB.GetEntityById<BaseEntityT>(entityId);
+                retval = DB.GetEntityById<BaseEntity>(entityId);
                 DB.SwitchIfHasEntityToRepresent(ref retval);
             }
             if (retval.AccessLevelGiven < method.PV<AccessLevel>(CoreP.AccessLevelUse.A())) {

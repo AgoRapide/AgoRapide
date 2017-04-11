@@ -28,19 +28,33 @@ namespace AgoRapide.Core {
         public AgoRapideAttributeEnriched Key { get; protected set; }
 
         public PropertyKeyNonStrict(AgoRapideAttributeEnriched key) => Key = key;
-        
+
         private PropertyKey _propertyKey;
         /// <summary>
         /// HACK. Relevant when !<see cref="AgoRapideAttribute.IsMany"/>
         /// Only relevant when originates from <see cref="EnumMapper"/>
-        /// Constitues the "strict" version 
+        /// Constitutes the "strict" version of <see cref="PropertyKeyNonStrict"/>
         /// </summary>
-        public PropertyKey PropertyKey => _propertyKey ?? throw new NullReferenceException(
-            nameof(_propertyKey) + ". " +
-            "Most probably because this instance " + nameof(AgoRapideAttribute.IsMany) + " (" + Key.A.IsMany + ") = TRUE\r\n" +
-            "Maybe because this instance does not originate from " + nameof(EnumMapper) + ".\r\n" +
-            nameof(Key) + ":\r\n" + (Key?.ToString() ?? "[NULL]") + "\r\n\r\n" +
-            "Details: " + ToString());
+        public PropertyKey PropertyKey {
+            get {
+                if (_propertyKey != null) return _propertyKey;
+                switch (this) {
+                    case PropertyKey temp: return _propertyKey = temp; /// Hack, because often <see cref="PropertyKeyNonStrict.PropertyKey"/> is asked for even in cases when the caller already has a <see cref="PropertyKey"/> object (the caller "belives" it only has a <see cref="PropertyKeyNonStrict"/>  object)
+                    default:
+                        throw new NullReferenceException(
+                            nameof(_propertyKey) + ". " +
+                            "Possible reason: " +
+                            new Func<string>(() => {
+                                if (Key.A.IsMany) return nameof(AgoRapideAttribute.IsMany) + "(" + Key.A.IsMany + ") = TRUE";
+                                return "Maybe this instance does not originate from " + nameof(EnumMapper);
+                            })() +
+                            "Details: " + ToString() + "\r\n" +
+                            "More details: " + Key.ToString()
+                        );
+                }
+            }
+        }
+
         public bool PropertyKeyIsSet => _propertyKey != null;
 
         private PropertyKey _propertyKeyAsIsManyParentOrTemplate;

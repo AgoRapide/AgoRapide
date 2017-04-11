@@ -48,9 +48,9 @@ namespace AgoRapide {
         /// <summary>
         /// General type of entity.
         /// 
-        /// For <see cref="BaseEntityT"/> will usually correspond to <see cref="BaseEntityT.RootProperty"/>
+        /// For <see cref="BaseEntity"/> will usually correspond to <see cref="BaseEntity.RootProperty"/>
         /// 
-        /// Also added to <see cref="BaseEntityT.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
+        /// Also added to <see cref="BaseEntity.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
         /// </summary>
         [AgoRapide(
             Description = "Corresponds to C# / .NET Type-object.",
@@ -112,7 +112,7 @@ namespace AgoRapide {
         Name,
 
         /// <summary>
-        /// Added to <see cref="BaseEntityT.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
+        /// Added to <see cref="BaseEntity.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
         /// </summary>
         [AgoRapide(
             Description = "-" + nameof(DBField.id) + "- of entity as stored in database.",

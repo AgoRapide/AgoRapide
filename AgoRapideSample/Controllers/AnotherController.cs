@@ -67,7 +67,7 @@ namespace AgoRapideSample {
             try {
                 if (!TryGetRequest(IntegerQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
                 if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<IntegerQueryId>(), AccessType.Read, useCache: false, entity: out Car car, errorResponse: out var errorResponse)) return request.GetErrorResponse(errorResponse);
-                var allColours = car.PV<List<string>>(P.Colour2);
+                var allColours = car.PV<List<string>>(P.Colour2.A());
                 return request.GetOKResponseAsText("Hello", "");
             } catch (Exception ex) {
                 return HandleExceptionAndGenerateResponse(ex);

@@ -34,8 +34,8 @@ namespace AgoRapide {
         /// <summary>
         /// Note about AgoRapide concepts in general:
         /// This property <see cref="Origin"/> is an example of how to expose properties more clearly (doing it directly from outside using 
-        /// <see cref="BaseEntityT.PVM"/> and 
-        /// <see cref="BaseEntityT.AddPropertyM{T}(T)"/> 
+        /// <see cref="BaseEntity.PVM"/> and 
+        /// <see cref="BaseEntity.AddPropertyM{T}(T)"/> 
         /// would have worked just as well).
         /// 
         /// TODO: Make read-only!
@@ -373,6 +373,7 @@ namespace AgoRapide {
         public static APIMethod GetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType) => TryGetByCoreMethodAndEntityType(coreMethod, entityType, out var retval) ? retval : throw new MethodNotFoundException(coreMethod, entityType);
         protected static ConcurrentDictionary<string, APIMethod> _allMethodsByCoreMethodAndEntityType = new ConcurrentDictionary<string, APIMethod>();
         public static bool TryGetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType, out APIMethod method) => (method = _allMethodsByCoreMethodAndEntityType.GetOrAdd(coreMethod.ToString() + entityType.ToString(), k => {
+            if (typeof(Property).IsAssignableFrom(entityType)) entityType = typeof(Property); /// This adjustment is necessary in cases where entityType is an instance of <see cref="PropertyT{T}"/>.
             return AllMethods.SingleOrDefault(m => m.A.A.CoreMethod == coreMethod && entityType.Equals(m.EntityType), () => nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + entityType.ToStringShort());
         })) != null;
 
@@ -619,11 +620,11 @@ namespace AgoRapide {
             });
 
             types.ForEach(t => {
-                InvalidTypeException.AssertAssignable(t, typeof(BaseEntityT), null);
+                InvalidTypeException.AssertAssignable(t, typeof(BaseEntity), null);
                 var a = t.GetAgoRapideAttributeForClass();
                 if (
                     !t.IsAbstract &&
-                    !typeof(BaseEntityT).Equals(t) &&
+                    !typeof(BaseEntity).Equals(t) &&
                     !typeof(Property).IsAssignableFrom(t) && // "Independent" properties would be a meaningless concept
                     a.AccessLevelWrite < AccessLevel.System) addEntityCreator(t);
                 if (a.AccessLevelRead < AccessLevel.System) entityIndexCreator(t);
@@ -737,12 +738,10 @@ namespace AgoRapide {
             // TODO: Implement some kind of copying of properties in order to avoid this!
             // TODO: (or rather, solve the general problem of using generics with properties)
             method.A.Properties.Values.ForEach(p => {
-                if (p.Key.Key.A.Type == null) {
-                    throw new NullReferenceException("p.Key.Key.A.Type, details: " + p.ToString());
-                } else if (p.Key.Key.A.Type.Equals(typeof(bool))) {
+                if (typeof(bool).Equals(p.Key.Key.A.Type)) {
                     db.UpdateProperty(cid, method, p.Key, p.V<bool>(), result: null);
                     // TODO: Maybe replace this check with extension-method IsStoredAsStringInDatabase or similar...
-                } else if (p.Key.Key.A.Type.Equals(typeof(Type)) || p.Key.Key.A.Type.IsEnum || p.Key.Key.A.Type.Equals(typeof(string))) {
+                } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
                     var value = p.V<string>();
                     if (method.A.A.CoreMethod != CoreMethod.None) {
                         /// Add information about CoreMethod

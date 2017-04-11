@@ -131,8 +131,8 @@ namespace AgoRapide.Core {
         /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <see cref="CoreP"/> based on <see cref="AgoRapideAttribute.Type"/>. 
         /// Example: See how enum-"class" <see cref="CoreMethod"/> is linked to enum value <see cref="CoreP.CoreMethod"/>
         /// 
-        /// <see cref="BaseEntityT.PVM{T}"/>
-        /// <see cref="BaseEntityT.TryGetPVM{T}(out T)"/>
+        /// <see cref="BaseEntity.PVM{T}"/>
+        /// <see cref="BaseEntity.TryGetPVM{T}(out T)"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="a"></param>
@@ -142,10 +142,10 @@ namespace AgoRapide.Core {
             if (typeof(T).Equals(typeof(CoreP))) throw new InvalidTypeException(typeof(T),
                 "Attempt of mapping from " + typeof(T) + " to " + typeof(CoreP) + ". " +
                 "A common cause is mistakenly calling " +
-                nameof(BaseEntityT) + "." + nameof(BaseEntityT.PVM) + " / " + nameof(BaseEntityT) + "." + nameof(BaseEntityT.TryGetPVM) + " instead of " +
-                nameof(BaseEntityT) + "." + nameof(BaseEntityT.PV) + " / " + nameof(BaseEntityT) + "." + nameof(BaseEntityT.TryGetPV) + " " +
-                "(note for instance how the overload of " + nameof(BaseEntityT.PVM) + " with defaultValue-parameter " +
-                "looks very similar to " + nameof(BaseEntityT.PV) + " if you forget the explicit type parameter for the latter method)");
+                nameof(BaseEntity) + "." + nameof(BaseEntity.PVM) + " / " + nameof(BaseEntity) + "." + nameof(BaseEntity.TryGetPVM) + " instead of " +
+                nameof(BaseEntity) + "." + nameof(BaseEntity.PV) + " / " + nameof(BaseEntity) + "." + nameof(BaseEntity.TryGetPV) + " " +
+                "(note for instance how the overload of " + nameof(BaseEntity.PVM) + " with defaultValue-parameter " +
+                "looks very similar to " + nameof(BaseEntity.PV) + " if you forget the explicit type parameter for the latter method)");
             var mapping = _tToCorePCache.
                 GetOrAdd(typeof(CoreP), type => new ConcurrentDictionary<Type, (string, PropertyKey)>()).
                 GetOrAdd(typeof(T), type => {
@@ -401,12 +401,12 @@ namespace AgoRapide.Core {
         /// Note subtle point about the entity being stored in the cache, not the root-property (in other words, entity root-properties
         /// are not found in cache per se)
         /// </summary>
-        public static ConcurrentDictionary<long, BaseEntityT> EntityCache = new ConcurrentDictionary<long, BaseEntityT>();
+        public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
         /// TODO: Move <see cref="ResetEntityCache"/> into <see cref="AgoRapide.Database.IDatabase"/>?
         /// </summary>
-        public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntityT>();
+        public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 
         public static System.Security.Cryptography.MD5 MD5 = System.Security.Cryptography.MD5.Create();
         /// <summary>

@@ -9,7 +9,7 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
-    /// Extension on <see cref="BaseEntityT"/> with internal logging and counting of vital statistics.
+    /// Extension on <see cref="BaseEntity"/> with internal logging and counting of vital statistics.
     /// Useful for:
     /// 1) Long-lived classes like <see cref="ApplicationPart"/> where you want to record different kind of statistics for their use. 
     /// 2) Classes for which it is desireable to communicate details about their contents like <see cref="Result"/>. 
@@ -19,10 +19,10 @@ namespace AgoRapide {
     /// <see cref="ApplicationPart"/>, 
     /// <see cref="APIMethod"/>
     /// </summary>
-    public abstract class BaseEntityTWithLogAndCount : BaseEntityT { 
+    public abstract class BaseEntityWithLogAndCount : BaseEntity { 
         public StringBuilder LogData = new StringBuilder();
         /// <summary>
-        /// Note difference between <see cref="BaseCore.Log"/> and <see cref="BaseEntityTWithLogAndCount.LogInternal"/>
+        /// Note difference between <see cref="BaseCore.Log"/> and <see cref="BaseEntityWithLogAndCount.LogInternal"/>
         /// The former communicates via <see cref="BaseCore.LogEvent"/> and is usually meant for ordinary server logging to disk or similar while
         /// the latter is used for more short-lived in-memory only logging where really detailed information is desired.
         /// </summary>
@@ -51,7 +51,7 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Calls first <see cref="BaseEntityT.ToHTMLDetailed"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
+        /// Calls first <see cref="BaseEntity.ToHTMLDetailed"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -76,7 +76,7 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Calls first <see cref="BaseEntityT.ToJSONEntity"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
+        /// Calls first <see cref="BaseEntity.ToJSONEntity"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
         /// </summary>
         /// <returns></returns>
         public override JSONEntity0 ToJSONEntity(Request request) {
@@ -110,9 +110,9 @@ namespace AgoRapide {
     }
 
     ///// <summary>
-    ///// See <see cref="BaseEntityT.ToJSONEntity"/>
+    ///// See <see cref="BaseEntity.ToJSONEntity"/>
     ///// 
-    ///// Simpler version of a <see cref="BaseEntityT"/>-class, more suited for transfer to client as JSON-data.
+    ///// Simpler version of a <see cref="BaseEntity"/>-class, more suited for transfer to client as JSON-data.
     ///// 
     ///// Extend this class as needed. For examples see xxxx
     ///// </summary>

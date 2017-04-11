@@ -124,7 +124,7 @@ Note logging of parameter values (although exception message only says OverflowE
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.Anonymous
     )]
-    public class Car : BaseEntityT<P> {        
+    public class Car : BaseEntity<P> {        
     }
 ```
 ## Annotate an enum

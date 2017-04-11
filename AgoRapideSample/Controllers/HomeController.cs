@@ -28,7 +28,7 @@ namespace AgoRapideSample {
                 request.ForceHTMLResponse(); // It is much more user friendly to have HTML respons always here. If JSON is needed it can always be obtained by querying api/Method/All or similar.
                 // TODO: Replace this with dictionary with links
                 // TODO: Like AllMethods, AllClassAndMethod, AllEnumClass
-                return request.GetOKResponseAsMultipleEntities(APIMethod.AllMethods.Select(m => (BaseEntityT)m).ToList());
+                return request.GetOKResponseAsMultipleEntities(APIMethod.AllMethods.Select(m => (BaseEntity)m).ToList());
             } catch (Exception ex) {
                 return HandleExceptionAndGenerateResponse(ex);
             } finally {
@@ -66,7 +66,7 @@ namespace AgoRapideSample {
                 /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId"/>.
                 /// Note relatively expensive reading of whole <see cref="Person"/>-objects now. 
                 if (!DB.TryGetEntities(                    
-                    request.CurrentUser.RepresentedByEntity ?? request.CurrentUser, /// Note how search will always be done viewed from <see cref="BaseEntityT.RepresentedByEntity"/>
+                    request.CurrentUser.RepresentedByEntity ?? request.CurrentUser, /// Note how search will always be done viewed from <see cref="BaseEntity.RepresentedByEntity"/>
                     queryId,
                     AccessType.Read, useCache: true,
                     entities: out List<Person> persons,
@@ -86,7 +86,7 @@ namespace AgoRapideSample {
                         )
                     );
                     r.AddProperty(CoreP.Description.A(), p.Name);
-                    return (BaseEntityT)r;
+                    return (BaseEntity)r;
                 }).ToList());
             } catch (Exception ex) {
                 return HandleExceptionAndGenerateResponse(ex);

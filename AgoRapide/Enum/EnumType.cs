@@ -23,7 +23,7 @@ namespace AgoRapide {
 
         [AgoRapide(
             Description =
-                "Constitutes keys for -" + nameof(BaseEntityT) + "- -" + nameof(BaseEntityT.Properties) + "- collection. " +
+                "Constitutes keys for -" + nameof(BaseEntity) + "- -" + nameof(BaseEntity.Properties) + "- collection. " +
                 "In AgoRapide library called -" + nameof(CoreP) + "- (often called P in final application)",
             LongDescription = "All -" + nameof(EntityPropertyEnum) + "- map towards -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-")]
         EntityPropertyEnum,

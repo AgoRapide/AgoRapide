@@ -115,13 +115,13 @@
     <Compile Include="Entity\APIMethodCandidate.cs" />
     <Compile Include="Entity\ApplicationPart.cs" />
     <Compile Include="Entity\BaseEntity.cs" />
-    <Compile Include="Entity\BaseEntityT.cs" />
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />
     <Compile Include="Entity\ClassAndMethod.cs" />
     <Compile Include="Entity\EnumClass.cs" />
     <Compile Include="Entity\GeneralQueryResult.cs" />
     <Compile Include="Entity\Parameters.cs" />
     <Compile Include="Entity\Property.cs" />
+    <Compile Include="Entity\PropertyT.cs" />
     <Compile Include="Entity\Result.cs" />
     <Compile Include="Enum\AccessLevel.cs" />
     <Compile Include="Enum\AccessLocation.cs" />

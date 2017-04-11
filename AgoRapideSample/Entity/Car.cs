@@ -10,6 +10,6 @@ namespace AgoRapideSample {
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.Anonymous
     )]
-    public class Car : BaseEntityT {        
+    public class Car : BaseEntity {        
     }
 }

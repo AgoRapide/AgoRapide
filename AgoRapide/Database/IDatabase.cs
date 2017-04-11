@@ -24,7 +24,7 @@ namespace AgoRapide.Database {
         /// <param name="password"></param>
         /// <param name="currentUser"></param>
         /// <returns></returns>
-        bool TryVerifyCredentials(string username, string password, out BaseEntityT currentUser);
+        bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser);
 
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
@@ -38,7 +38,7 @@ namespace AgoRapide.Database {
         /// <param name="useCache"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out T entity, out ErrorResponse errorResponse) where T : BaseEntityT, new();
+        bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out T entity, out ErrorResponse errorResponse) where T : BaseEntity, new();
 
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
@@ -51,7 +51,7 @@ namespace AgoRapide.Database {
         /// <param name="accessTypeRequired"></param>
         /// <param name="useCache"></param>
         /// <returns></returns>
-        List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache) where T : BaseEntityT, new();
+        List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache) where T : BaseEntity, new();
 
         /// <summary>
         /// Generic alternative to <see cref="TryGetEntities"/>
@@ -64,7 +64,7 @@ namespace AgoRapide.Database {
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntityT, new();
+        bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new();
 
         /// <summary>
         /// TODO: We could consider having the whole <see cref="AgoRapide.API.Request"/> object as parameter here but
@@ -93,7 +93,7 @@ namespace AgoRapide.Database {
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntityT> entities, out ErrorResponse errorResponse);
+        bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse);
 
         /// <summary>
         /// See <see cref="CoreMethod.History"/>. 
@@ -103,7 +103,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        List<Property> GetEntityHistory(BaseEntityT entity);
+        List<Property> GetEntityHistory(BaseEntity entity);
 
         /// <summary>
         /// TODO: NOT YET IMPLEMENTED IN IMPLEMENTATION
@@ -113,12 +113,12 @@ namespace AgoRapide.Database {
         /// <param name="accessTypeRequired"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryVerifyAccess(BaseEntity currentUser, BaseEntityT entity, AccessType accessTypeRequired, out string errorResponse);
+        bool TryVerifyAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired, out string errorResponse);
 
-        T GetEntityById<T>(long id) where T : BaseEntityT, new();
-        T GetEntityById<T>(long id, bool useCache) where T : BaseEntityT, new();
-        BaseEntityT GetEntityById(long id, bool useCache, Type requiredType);
-        bool TryGetEntityById<T>(long id, bool useCache, out T entity) where T : BaseEntityT, new();
+        T GetEntityById<T>(long id) where T : BaseEntity, new();
+        T GetEntityById<T>(long id, bool useCache) where T : BaseEntity, new();
+        BaseEntity GetEntityById(long id, bool useCache, Type requiredType);
+        bool TryGetEntityById<T>(long id, bool useCache, out T entity) where T : BaseEntity, new();
         /// <summary>
         /// TODO: Rename into TryGetEntityDirect? 
         /// 
@@ -136,7 +136,7 @@ namespace AgoRapide.Database {
         /// <param name="requiredType"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        bool TryGetEntityById(long id, bool useCache, Type requiredType, out BaseEntityT entity);
+        bool TryGetEntityById(long id, bool useCache, Type requiredType, out BaseEntity entity);
 
         Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
 
@@ -155,13 +155,13 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        List<T> GetAllEntities<T>() where T : BaseEntityT, new();
+        List<T> GetAllEntities<T>() where T : BaseEntity, new();
 
-        long CreateEntity<T>(long cid, Result result) where T : BaseEntityT;
+        long CreateEntity<T>(long cid, Result result) where T : BaseEntity;
         long CreateEntity(long cid, Type entityType, Result result);
-        long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT;
+        long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntity;
         long CreateEntity(long cid, Type entityType, Parameters properties, Result result);
-        long CreateEntity<T>(long cid, IEnumerable<(PropertyKey key, object value)> properties, Result result) where T : BaseEntityT;
+        long CreateEntity<T>(long cid, IEnumerable<(PropertyKey key, object value)> properties, Result result) where T : BaseEntity;
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -188,7 +188,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        void SwitchIfHasEntityToRepresent(ref BaseEntityT entity);
+        void SwitchIfHasEntityToRepresent(ref BaseEntity entity);
 
         void AssertUniqueness(PropertyKey key, object value);
         /// <summary>
@@ -240,7 +240,7 @@ namespace AgoRapide.Database {
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        void UpdateProperty<T>(long cid, BaseEntityT entity, PropertyKeyNonStrict key, T value, Result result);
+        void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKeyNonStrict key, T value, Result result);
 
         /// <summary>
         /// 

@@ -44,13 +44,13 @@ namespace AgoRapide.Database {
             OpenConnection(out _cn1, "_cn1");
         }
 
-        public List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache) where T : BaseEntityT, new() {
+        public List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache) where T : BaseEntity, new() {
             id.AssertIsMultiple();
             if (!TryGetEntities(currentUser, id, accessTypeRequired, useCache, out List<T> entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
             return entities;
         }
 
-        public bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out T entity, out ErrorResponse errorResponse) where T : BaseEntityT, new() {
+        public bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out T entity, out ErrorResponse errorResponse) where T : BaseEntity, new() {
             id.AssertIsSingle();
             if (!TryGetEntities(currentUser, id, accessTypeRequired, useCache, out List<T> temp, out errorResponse)) {
                 entity = null;
@@ -61,7 +61,7 @@ namespace AgoRapide.Database {
             return true;
         }
 
-        public bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntityT, new() {
+        public bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new() {
             if (!TryGetEntities(currentUser, id, accessTypeRequired, useCache, typeof(T), out var temp, out errorResponse)) {
                 entities = null;
                 return false;
@@ -70,11 +70,11 @@ namespace AgoRapide.Database {
             return true;
         }
 
-        public bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntityT> entities, out ErrorResponse errorResponse) {
+        public bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
             Log(nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(useCache) + ": " + useCache + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
             switch (id) {
                 case IntegerQueryId integerId: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
-                    if (!TryGetEntityById(integerId.Id, useCache, requiredType, out BaseEntityT temp)) {
+                    if (!TryGetEntityById(integerId.Id, useCache, requiredType, out BaseEntity temp)) {
                         entities = null;
                         errorResponse = new ErrorResponse(ResultCode.data_error, requiredType.ToStringVeryShort() + " with " + nameof(id) + " " + id + " not found");
                         return false;
@@ -84,7 +84,7 @@ namespace AgoRapide.Database {
                         errorResponse = new ErrorResponse(ResultCode.access_error, strErrorResponse);
                         return false;
                     }
-                    entities = new List<BaseEntityT> { temp };
+                    entities = new List<BaseEntity> { temp };
                     errorResponse = null;
                     return true;
             }
@@ -100,7 +100,7 @@ namespace AgoRapide.Database {
                 // + "ORDER BY " + DBField.id
                 , _cn1
             );
-            if (requiredType.Equals(typeof(BaseEntityT))) throw new InvalidTypeException(requiredType, "Meaningless value because the query\r\n\r\n" + cmd.CommandText + "\r\n\r\nwill never return anything");
+            if (requiredType.Equals(typeof(BaseEntity))) throw new InvalidTypeException(requiredType, "Meaningless value because the query\r\n\r\n" + cmd.CommandText + "\r\n\r\nwill never return anything");
 
             AddIdParameters(id, cmd);
             // Log(cmd.CommandText);
@@ -134,7 +134,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public List<Property> GetEntityHistory(BaseEntityT entity) {
+        public List<Property> GetEntityHistory(BaseEntity entity) {
             Log(nameof(entity.Id) + ": " + entity.Id);
             var p = entity as Property;
             var cmd = p == null ?
@@ -144,7 +144,7 @@ namespace AgoRapide.Database {
             return ReadAllPropertyValues(cmd);
         }
 
-        void AssertAccess(BaseEntity currentUser, BaseEntityT entity, AccessType accessTypeRequired) {
+        void AssertAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired) {
             if (!TryVerifyAccess(currentUser, entity, accessTypeRequired, out var errorResponse)) throw new AccessViolationException(nameof(currentUser) + " " + currentUser.Id + " " + nameof(currentUser.AccessLevelGiven) + " " + currentUser.AccessLevelGiven + " insufficent for " + entity.Id + " (" + nameof(accessTypeRequired) + ": " + accessTypeRequired + "). Details: " + errorResponse);
         }
 
@@ -157,7 +157,7 @@ namespace AgoRapide.Database {
         /// <param name="entity"></param>
         /// <param name="accessTypeRequired"></param>
         /// <returns></returns>
-        public bool TryVerifyAccess(BaseEntity currentUser, BaseEntityT entity, AccessType accessTypeRequired, out string errorResponse) {
+        public bool TryVerifyAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired, out string errorResponse) {
             errorResponse = null;
             return true;
         }
@@ -178,11 +178,11 @@ namespace AgoRapide.Database {
                 })()) { Value = p.value });
             });
 
-        public T GetEntityById<T>(long id) where T : BaseEntityT, new() => GetEntityById<T>(id, useCache: false);
-        public T GetEntityById<T>(long id, bool useCache) where T : BaseEntityT, new() => TryGetEntityById(id, useCache, typeof(T), out var retval) ? (T)(object)retval : throw new ExactOneEntityNotFoundException(id);
-        public BaseEntityT GetEntityById(long id, bool useCache, Type requiredType) => TryGetEntityById(id, useCache, requiredType, out var retval) ? retval : throw new ExactOneEntityNotFoundException(id);
+        public T GetEntityById<T>(long id) where T : BaseEntity, new() => GetEntityById<T>(id, useCache: false);
+        public T GetEntityById<T>(long id, bool useCache) where T : BaseEntity, new() => TryGetEntityById(id, useCache, typeof(T), out var retval) ? (T)(object)retval : throw new ExactOneEntityNotFoundException(id);
+        public BaseEntity GetEntityById(long id, bool useCache, Type requiredType) => TryGetEntityById(id, useCache, requiredType, out var retval) ? retval : throw new ExactOneEntityNotFoundException(id);
 
-        public bool TryGetEntityById<T>(long id, bool useCache, out T entity) where T : BaseEntityT, new() {
+        public bool TryGetEntityById<T>(long id, bool useCache, out T entity) where T : BaseEntity, new() {
             if (!TryGetEntityById(id, useCache, typeof(T), out var retval)) {
                 entity = null;
                 return false;
@@ -191,7 +191,7 @@ namespace AgoRapide.Database {
             return true;
         }
 
-        public bool TryGetEntityById(long id, bool useCache, Type requiredType, out BaseEntityT entity) {
+        public bool TryGetEntityById(long id, bool useCache, Type requiredType, out BaseEntity entity) {
             Log(nameof(id) + ": " + id + ", " + nameof(useCache) + ": " + useCache + ", " + nameof(requiredType) + ": " + requiredType?.ToStringShort() ?? "[NULL]");
             if (id <= 0) throw new Exception("id <= 0 (" + id + ")");
             if (requiredType != null && typeof(Property).IsAssignableFrom(requiredType)) {
@@ -208,7 +208,7 @@ namespace AgoRapide.Database {
                     entity = null;
                     return false;
                 }
-                entity = entityTemp as BaseEntityT ?? throw new InvalidTypeException(entityTemp.GetType(), typeof(BaseEntityT));
+                entity = entityTemp as BaseEntity ?? throw new InvalidTypeException(entityTemp.GetType(), typeof(BaseEntity));
                 if (requiredType != null && !requiredType.IsAssignableFrom(entity.GetType())) throw new InvalidTypeException(entity.GetType(), requiredType, "Entity found in cache does not match required type");
                 return true;
             }
@@ -219,7 +219,7 @@ namespace AgoRapide.Database {
                 return false;
             }
             if (!root.Key.Key.CoreP.Equals(CoreP.Type)) {
-                if (requiredType.Equals(typeof(BaseEntityT))) {
+                if (requiredType.Equals(typeof(BaseEntity))) {
                     // OK, return what we have got. 
 
                     // TODO: Should we also cache single properties?
@@ -236,7 +236,7 @@ namespace AgoRapide.Database {
 
             var rootType = root.V<Type>();
             if (requiredType != null) {
-                InvalidTypeException.AssertAssignable(requiredType, typeof(BaseEntityT), () => "Regards parameter " + nameof(requiredType));
+                InvalidTypeException.AssertAssignable(requiredType, typeof(BaseEntity), () => "Regards parameter " + nameof(requiredType));
                 InvalidTypeException.AssertAssignable(rootType, requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match " + nameof(rootType) + " (" + rootType + " (as found in database as " + root.V<string>() + "))");
             }
 
@@ -244,7 +244,7 @@ namespace AgoRapide.Database {
             Log("System.Activator.CreateInstance(requiredType) (" + rootType.ToStringShort() + ")");
             // Note how "where T: new()" constraint helps to ensure that we have a parameter less constructor now
             // We could of course also check with rootType.GetConstructor first.
-            var retval = Activator.CreateInstance(rootType) as BaseEntityT ?? throw new InvalidTypeException(rootType, "Very unexpected since was just asserted OK");
+            var retval = Activator.CreateInstance(rootType) as BaseEntity ?? throw new InvalidTypeException(rootType, "Very unexpected since was just asserted OK");
 
             retval.Id = id;
             retval.RootProperty = root;
@@ -369,23 +369,23 @@ namespace AgoRapide.Database {
             return retval;
         }
 
-        public List<T> GetAllEntities<T>() where T : BaseEntityT, new() {
+        public List<T> GetAllEntities<T>() where T : BaseEntity, new() {
             Log(typeof(T).ToStringShort());
             var retval = GetRootPropertyIds(typeof(T)).Select(id => GetEntityById<T>(id)).ToList();
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
         }
 
-        public long CreateEntity<T>(long cid, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties: (IEnumerable<(PropertyKey key, object value)>)null, result: result);
+        public long CreateEntity<T>(long cid, Result result) where T : BaseEntity => CreateEntity(cid, typeof(T), properties: (IEnumerable<(PropertyKey key, object value)>)null, result: result);
         public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable<(PropertyKey key, object value)>)null, result: result);
-        public long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => (p.Key, p.ADotTypeValue())), result);
-        public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => (p.Key, p.ADotTypeValue())), result);
-        public long CreateEntity<T>(long cid, IEnumerable<(PropertyKey key, object value)> properties, Result result) where T : BaseEntityT => CreateEntity(cid, typeof(T), properties, result);
+        public long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntity => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => (p.Key, p.Value)), result);
+        public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => (p.Key, p.Value)), result);
+        public long CreateEntity<T>(long cid, IEnumerable<(PropertyKey key, object value)> properties, Result result) where T : BaseEntity => CreateEntity(cid, typeof(T), properties, result);
         public long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKey key, object value)> properties, Result result) {
             Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
-            InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntityT), detailer: null);
+            InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntity), detailer: null);
             var retval = new Result();
-            var pid = CreateProperty(cid, null, null, CoreP.Type.A(), entityType, result);
+            var pid = CreateProperty(cid, null, null, CoreP.Type.A().PropertyKey, entityType, result);
             if (properties != null) {
                 foreach (var v in properties) {
                     CreateProperty(cid, pid, null, v.key, v.value, result);
@@ -492,7 +492,7 @@ namespace AgoRapide.Database {
             // BE CAREFUL ABOUT PERFORMANCE (WHEN READING A LONG LIST OF PERSONS OR DEALS FOR INSTANCE)
             // (retval.CanHaveChildren) AddChildrenToProperty(retval);
 
-            retval.Initialize();
+            // retval.Initialize(); // Removed Apr 2017 (no longer needed)
 
             // TODO: FIX THIS!
             if (retval.ParentId == 0) {
@@ -514,7 +514,7 @@ namespace AgoRapide.Database {
         /// <param name="password"></param>
         /// <param name="currentUser"></param>
         /// <returns></returns>
-        public bool TryVerifyCredentials(string username, string password, out BaseEntityT currentUser) {
+        public bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser) {
             // Note how password is NOT logged.
             // Log(nameof(email) + ": " + email + ", " + nameof(password) + ": " + (string.IsNullOrEmpty(password) ? "[NULL_OR_EMPTY]" : " [SET]"));
 
@@ -732,7 +732,7 @@ namespace AgoRapide.Database {
             return id;
         }
 
-        public void UpdateProperty<T>(long cid, BaseEntityT entity, PropertyKeyNonStrict key, T value, Result result) {
+        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKeyNonStrict key, T value, Result result) {
             // Log(""); Note how we only log when property is actually created or updated
             var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
             if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
@@ -743,7 +743,7 @@ namespace AgoRapide.Database {
                 return retval;
             });
 
-            var entityOrIsManyParentCreator = new Action<BaseEntityT, CoreP>((entityOrIsManyParent, keyAsCoreP) => {
+            var entityOrIsManyParentCreator = new Action<BaseEntity, CoreP>((entityOrIsManyParent, keyAsCoreP) => {
 
                 var keyToUse = key as PropertyKey; // Note use of "strict" variant here
                 if (keyToUse == null) keyToUse = key.PropertyKeyIsSet ? key.PropertyKey : throw new PropertyKey.InvalidPropertyKeyException("Unable to turn " + key + " (of type " + key.GetType() + ") into a " + typeof(PropertyKey) + " because !" + nameof(key.PropertyKeyIsSet) + detailer.Result("\r\nDetails: "));
@@ -798,11 +798,11 @@ namespace AgoRapide.Database {
         /// See comments for <see cref="CoreP.EntityToRepresent"/>
         /// </summary>
         /// <param name="entity"></param>
-        public void SwitchIfHasEntityToRepresent(ref BaseEntityT entity) {
+        public void SwitchIfHasEntityToRepresent(ref BaseEntity entity) {
             if (entity.TryGetPV(CoreP.EntityToRepresent.A(), out long representedEntityId)) {
                 Log("entityId: " + entity.Id + ", switching to " + representedEntityId);
                 var representedByEntity = entity;
-                var entityToRepresent = GetEntityById<BaseEntityT>(representedEntityId);
+                var entityToRepresent = GetEntityById<BaseEntity>(representedEntityId);
                 // TODO: Should we add checks for AccessRights here? 
                 /// See comments for <see cref="CoreP.EntityToRepresent"/>
                 entityToRepresent.AddProperty(CoreP.RepresentedByEntity.A(), representedByEntity.Id);
@@ -1048,12 +1048,11 @@ namespace AgoRapide.Database {
                     var postfix = new Func<string>(() => {
                         switch (f) {
                             case DBField.id:
-                            case DBField.cid: return " NOT NULL,"; // Maybe use AgoRapideAttribute IsStrict for these?
+                            case DBField.cid: return " NOT NULL,"; 
                             case DBField.created: return " DEFAULT now(),"; // TODO: Should we add these as AgoRapideAttributes?
                             default: return ",";
                         }
                     })();
-                    if (a.A.Type == null) throw new NullReferenceException(nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " not defined for " + typeof(DBField) + "." + f.ToString());
                     if (a.A.Type.Equals(typeof(long))) return "bigint" + postfix;
                     if (a.A.Type.Equals(typeof(double))) return "double precision" + postfix;
                     if (a.A.Type.Equals(typeof(bool))) return "boolean" + postfix;

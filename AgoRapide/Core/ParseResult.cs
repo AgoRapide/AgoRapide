@@ -22,6 +22,8 @@ namespace AgoRapide.Core {
         /// (see code line
         ///    aDotTypeValue = KeyA.TryValidateAndParse(V<string>(), out var temp) ? temp.ObjResult : null;
         /// )
+        /// 
+        /// TODO: AFTER INTRODUCTION OF GENERIC <see cref="PropertyT{T}"/> there is a great chance that this member may be omitted. 
         /// </summary>
         public object ObjResult { get; private set; }
 
@@ -44,7 +46,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static ParseResult Create<T>(AgoRapideAttributeEnriched key, T objResult) =>
             new ParseResult(
-                Property.Create(
+                new PropertyT<T>(
                     new Func<PropertyKey>(() => {
                         if (!key.A.IsMany) return new PropertyKey(key); /// TODO: Clean up all handling of <see cref="PropertyKey"/> and <see cref="PropertyKeyNonStrict"/>
                         var retval = new PropertyKeyNonStrict(key);
@@ -57,7 +59,7 @@ namespace AgoRapide.Core {
                     //    throw new PropertyKey.InvalidPropertyKeyException(Util.BreakpointEnabler + "Unable to create for " + nameof(AgoRapideAttribute.IsMany) + ".\r\nDetails: " + nameof(objResult) + ": " + objResult.GetType() + " = " + objResult + "\r\n" + key.ToString())), 
                     objResult
                 ),
-                (object)objResult
+                (object)objResult /// TODO: AFTER INTRODUCTION OF GENERIC <see cref="PropertyT{T}"/> there is a great chance that this member may be omitted. 
             );
 
         private ParseResult(Property result, object objResult) {

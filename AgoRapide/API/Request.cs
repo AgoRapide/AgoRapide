@@ -22,7 +22,7 @@ namespace AgoRapide.API {
         /// <summary>
         /// May be null (for instance for anonymous requests)
         /// </summary>
-        public BaseEntityT CurrentUser { get; set; }
+        public BaseEntity CurrentUser { get; set; }
 
         public Result Result { get; } = new Result();
 
@@ -58,7 +58,7 @@ namespace AgoRapide.API {
         /// <param name="id"></param>
         /// <param name="entities"></param>
         /// <returns></returns>
-        public object GetOKResponseAsSingleEntityOrMultipleEntities(QueryId id, List<BaseEntityT> entities) {
+        public object GetOKResponseAsSingleEntityOrMultipleEntities(QueryId id, List<BaseEntity> entities) {
             if (id.IsSingle) {
                 if (entities.Count != 1) throw new InvalidCountException(nameof(id.IsSingle) + " && Count != 1 (" + entities.Count + ")");
                 return GetOKResponseAsSingleEntity(entities[0]);
@@ -67,13 +67,13 @@ namespace AgoRapide.API {
             }
         }
 
-        public object GetOKResponseAsSingleEntity(BaseEntityT entity) {
+        public object GetOKResponseAsSingleEntity(BaseEntity entity) {
             Result.ResultCode = ResultCode.ok;
             Result.SingleEntityResult = entity ?? throw new ArgumentNullException(nameof(entity));
             return GetResponse();
         }
 
-        public object GetOKResponseAsMultipleEntities(List<BaseEntityT> entities) {
+        public object GetOKResponseAsMultipleEntities(List<BaseEntity> entities) {
             Result.ResultCode = ResultCode.ok;
             Result.MultipleEntitiesResult = entities ?? throw new ArgumentNullException(nameof(entities));
             return GetResponse();
@@ -156,7 +156,7 @@ namespace AgoRapide.API {
         /// <param name="exceptionHasOccurred">
         /// <see cref="ExceptionHasOccurred"/>
         /// </param>
-        public Request(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntityT currentUser, bool exceptionHasOccurred) {
+        public Request(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntity currentUser, bool exceptionHasOccurred) {
             HttpRequestMessage = httpRequestMessage ?? throw new ArgumentNullException(nameof(httpRequestMessage));
             Method = method ?? throw new ArgumentNullException(nameof(method));
             CurrentUser = currentUser;
@@ -212,7 +212,7 @@ namespace AgoRapide.API {
         /// <param name="id"></param>
         /// <returns></returns>
         public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreMethod.EntityIndex, entityType, new IntegerQueryId(id));
-        public string CreateAPICommand(BaseEntityT entity) => CreateAPICommand(entity.GetType(), entity.Id);
+        public string CreateAPICommand(BaseEntity entity) => CreateAPICommand(entity.GetType(), entity.Id);
         public string CreateAPICommand(CoreMethod coreMethod, Type type, params object[] parameters) => APIMethod.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace AgoRapide.API {
         /// <param name="id"></param>
         /// <returns></returns>
         public string CreateAPIUrl(Type entityType, long id) => CreateAPIUrl(CreateAPICommand(entityType, id));
-        public string CreateAPIUrl(BaseEntityT entity) => CreateAPIUrl(CreateAPICommand(entity));
+        public string CreateAPIUrl(BaseEntity entity) => CreateAPIUrl(CreateAPICommand(entity));
         public string CreateAPIUrl(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
         public string CreateAPIUrl(string apiCommand) => Util.Configuration.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
@@ -490,6 +490,6 @@ namespace AgoRapide.API {
         /// <param name="currentUser"></param>
         /// <param name="parameters">
         /// </param>
-        public ValidRequest(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntityT currentUser, Parameters parameters) : base(httpRequestMessage, method, currentUser, exceptionHasOccurred: false) => Parameters = parameters;
+        public ValidRequest(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntity currentUser, Parameters parameters) : base(httpRequestMessage, method, currentUser, exceptionHasOccurred: false) => Parameters = parameters;
     }
 }

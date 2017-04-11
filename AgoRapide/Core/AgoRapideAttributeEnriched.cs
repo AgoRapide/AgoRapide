@@ -22,13 +22,13 @@ namespace AgoRapide.Core {
     /// 
     /// TODO: As of Jan 2017 there is still some work to be done in this class regarding parsing and validation
     ///
-    /// TODO: Make this inherit <see cref="BaseEntityT"/> and store Properties to database. In this manner we
+    /// TODO: Make this inherit <see cref="BaseEntity"/> and store Properties to database. In this manner we
     /// TODO: get HISTORICAL information about documentation (for each and every attribute of a property), giving us much
     /// TODO: better documentation of the application.    
     /// TODO: ACTUALLY, make this inherit <see cref="ApplicationPart"/> (with its own id against database)
     /// TODO: and with its own <see cref="CoreMethod"/> called AgoRapideAttribute.
     /// 
-    /// TODO: (AFTER IMPLEMENTING ABOVE) MOVE THIS TO ENTITY-FOLDER SINCE INHERITS <see cref="BaseEntityT"/> 
+    /// TODO: (AFTER IMPLEMENTING ABOVE) MOVE THIS TO ENTITY-FOLDER SINCE INHERITS <see cref="BaseEntity"/> 
     /// 
     /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
     /// </summary>
@@ -102,7 +102,6 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public string ConvertObjectToString(object obj) {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
-            if (A.Type == null) throw new NullReferenceException(nameof(A.Type) + " for " + A.ToString());
             if (!A.Type.IsAssignableFrom(obj.GetType())) {
                 if (typeof(ITypeDescriber).IsAssignableFrom(A.Type)) { /// Make exception if we succeed in parsing the value found.
                     switch (obj) {
@@ -212,7 +211,7 @@ namespace AgoRapide.Core {
             /// (see <see cref="CoreP.CoreMethod"/> / <see cref="CoreMethod"/> for example)
             /// (note how both enrichment 2 and 4 is based on <see cref="AgoRapideAttribute.Type"/>)
             /// -----------------------------------------
-            if (A.Type == null) {
+            if (!A.TypeIsSet) {
                 // Nothing to enrich from 
             } else {
                 A.Type.GetAgoRapideAttributeForClass().Use(a => {
@@ -240,7 +239,7 @@ namespace AgoRapide.Core {
             /// Enrichment 4, from <see cref="ITypeDescriber"/>
             /// (note how both enrichment 2 and 4 is based on <see cref="AgoRapideAttribute.Type"/>)
             /// -----------------------------------------
-            if (A.Type != null && typeof(ITypeDescriber).IsAssignableFrom(A.Type)) {
+            if (A.TypeIsSet && typeof(ITypeDescriber).IsAssignableFrom(A.Type)) {
                 var methodName = nameof(IGroupDescriber.EnrichAttribute); /// Note that <see cref="ITypeDescriber"/> itself is "empty".
                 try {
                     var method = A.Type.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static) ?? throw new InvalidTypeException(A.Type, "Does not have a public static method called " + methodName);
@@ -261,7 +260,7 @@ namespace AgoRapide.Core {
             /// Enrichment 5, autonomous 
             /// (deduced from already known information)
             /// -----------------------------------------
-            if (A.ValidValues == null && A.Type != null) {
+            if (A.ValidValues == null && A.TypeIsSet) {
                 if (A.Type.IsEnum) {
                     A.ValidValues = Util.EnumGetNames(A.Type).ToArray();
                     if (A.SampleValues != null) {
@@ -276,11 +275,11 @@ namespace AgoRapide.Core {
                 }
             }
 
-            if (Cleaner == null && A.Type != null) {
+            if (Cleaner == null && A.TypeIsSet) {
                 if (
-                    A.Type.Equals(typeof(int)) || // TODO: Can we use switch in C# 7.0 here?
+                    A.Type.Equals(typeof(int)) ||
                     A.Type.Equals(typeof(long)) ||
-                    A.Type.Equals(typeof(string))  // TODO: Switch is unnecessary anyway, code below is identical to code within the final else anyway...
+                    A.Type.Equals(typeof(string))  // TODO: Code below is identical to code within the final else anyway...
                     ) {
                     Cleaner = value => value?.Trim();
                 } else if (A.Type.Equals(typeof(bool))) {
@@ -313,65 +312,67 @@ namespace AgoRapide.Core {
                 typeof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.RegExpValidator) + "\r\n" +
                 "Details: " + A.ToString());
 
+            if (!A.TypeIsSet) {
+                A.Type = typeof(string);
+            }
+
             /// Note how ValidatorAndParser-objects are duplicated for each and every <see cref="CoreP"/>, P and so on. 
             // This is assumed to be of little significance however as the number of such enum values is quite limited. 
             if (ValidatorAndParser != null) {
                 /// OK, was most probably set through Enrichment 4, from <see cref="ITypeDescriber"/>
             } else {
-                if (A.Type == null && A.ValidValues != null) {
-                    // Assume type string now. 
-                    // TODO: Or should we throw exception instead?
-                    A.Type = typeof(string);
-                }
-                if (A.Type == null) {
+                if (typeof(string).Equals(A.Type)) {
+                    ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? ParseResult.Create(this, value) : ParseResult.Create(
+                        "Invalid as " + A.Type + " (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
+                } else if (typeof(int).Equals(A.Type)) {
+                    throw new TypeIntNotSupportedByAgoRapideException(A.ToString());
+                    // ValidatorAndParser = value => int.TryParse(value, out var intValue) ? new ParseResult(new Property(P, intValue), intValue) : new ParseResult("Illegal as int");
+                } else if (typeof(long).Equals(A.Type)) {
+                    ValidatorAndParser = value => long.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        "Invalid as " + A.Type);
+                } else if (typeof(double).Equals(A.Type)) {
                     ValidatorAndParser = value => {
                         throw new NotImplementedException(
-                            "Validator for " + PExplained + " is not implemented because no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " was given.\r\n" +
+                            "Validator for type " + A.Type.ToStringShort() + " is NotYetImplemented.\r\n" +
                             "Details: " + A.ToString());
                     };
-                } else {
-                    if (A.Type.Equals(typeof(string))) {
-                        ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? ParseResult.Create(this, value) : ParseResult.Create("Illegal as string (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
-                    } else if (A.Type.Equals(typeof(int))) {
-                        throw new TypeIntNotSupportedByAgoRapideException(A.ToString());
-                        // ValidatorAndParser = value => int.TryParse(value, out var intValue) ? new ParseResult(new Property(P, intValue), intValue) : new ParseResult("Illegal as int");
-                    } else if (A.Type.Equals(typeof(long))) {
-                        ValidatorAndParser = value => long.TryParse(value, out var lngValue) ? ParseResult.Create(this, lngValue) : ParseResult.Create("Illegal as long");
-                    } else if (A.Type.Equals(typeof(double))) {
-                        ValidatorAndParser = value => {
-                            throw new NotImplementedException(
-                                "Validator for type " + A.Type.ToStringShort() + " is NotYetImplemented.\r\n" +
-                                "Details: " + A.ToString());
-                        };
-                    } else if (A.Type.Equals(typeof(bool))) {
-                        ValidatorAndParser = value => bool.TryParse(value, out var blnValue) ? ParseResult.Create(this, blnValue) : ParseResult.Create("Illegal as boolean, use '" + true.ToString() + "' or '" + false.ToString() + "'");
-                    } else if (A.Type.Equals(typeof(DateTime))) {
-                        var validFormats = Util.Configuration.ValidDateFormatsByResolution.GetValue2(A.DateTimeFormat);
-                        ValidatorAndParser = value => DateTime.TryParseExact(value, validFormats, Util.Configuration.Culture, System.Globalization.DateTimeStyles.None, out var dtmValue) ? ParseResult.Create(this, dtmValue) : ParseResult.Create(
-                            "Invalid as " + A.Type + ".\r\n" +
-                            "Must be in one of the following formats:\r\n" +
-                            string.Join(", ", validFormats) + "\r\n");
-                    } else if (A.Type.IsEnum) {
-                        ValidatorAndParser = value => {
-                            /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="EnumMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
-                            if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var key)) return ParseResult.Create(this, key.Key.CoreP);
+                } else if (typeof(bool).Equals(A.Type)) {
+                    ValidatorAndParser = value => bool.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        "Invalid as " + A.Type + ", use '" + true.ToString() + "' or '" + false.ToString() + "'");
+                } else if (typeof(DateTime).Equals(A.Type)) {
+                    var validFormats = Util.Configuration.ValidDateFormatsByResolution.GetValue2(A.DateTimeFormat);
+                    ValidatorAndParser = value => DateTime.TryParseExact(value, validFormats, Util.Configuration.Culture, System.Globalization.DateTimeStyles.None, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        "Invalid as " + A.Type + ".\r\n" +
+                        "Must be in one of the following formats:\r\n" +
+                        string.Join(", ", validFormats) + "\r\n");
+                } else if (typeof(Type).Equals(A.Type)) {
+                    ValidatorAndParser = value => Util.TryGetTypeFromString(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        "Invalid as " + A.Type + " (must be in a format understood by " + nameof(Util) + "." + nameof(Util.TryGetTypeFromString) + ")");
+                } else if (typeof(Uri).Equals(A.Type)) {
+                    ValidatorAndParser = value => (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var temp)) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        "Invalid as " + A.Type);
+                    // TODO: Add any additional desired supported types to this list.
+                } else if (A.Type.IsEnum) {
+                    ValidatorAndParser = value => {
+                        /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="EnumMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
+                        if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var key)) return ParseResult.Create(this, key.Key.CoreP);
 
-                            // All others enums are parsed in an ordinary manner
-                            if (Util.EnumTryParse(A.Type, value, out var enumValue)) return ParseResult.Create(this, enumValue);
-                            return ParseResult.Create(
-                                "Invalid as " + A.Type + ".\r\n" +
-                                "Must be one of the following values:\r\n" +
-                                string.Join(", ", A.ValidValues) + "\r\n"
-                            );
-                        };
-                    } else {
-                        // TODO: Try something like a general TryParse through reflection
-                        ValidatorAndParser = value => {
-                            throw new NotImplementedException(
-                                "Validator for type " + A.Type.ToStringShort() + " is not implemented because that type is unknown.\r\n" +
-                                "Details: " + A.ToString());
-                        };
-                    }
+                        /// All others enums are parsed in an ordinary manner. 
+                        /// NOTE: <see cref="ParseResult.Result"/> now will be <see cref="PropertyT{T}"/> of generic type _OBJECT_.
+                        if (Util.EnumTryParse(A.Type, value, out var temp)) return ParseResult.Create(this, temp);
+                        return ParseResult.Create(
+                            "Invalid as " + A.Type + ".\r\n" +
+                            "Must be one of the following values:\r\n" +
+                            string.Join(", ", A.ValidValues) + "\r\n"
+                        );
+                    };
+                } else {
+                    // TODO: Try something like a general TryParse through reflection
+                    ValidatorAndParser = value => {
+                        throw new NotImplementedException(
+                            "Validator for type " + A.Type.ToStringShort() + " is not implemented because that type is unknown.\r\n" +
+                            "Details: " + A.ToString());
+                    };
                 }
             }
         }

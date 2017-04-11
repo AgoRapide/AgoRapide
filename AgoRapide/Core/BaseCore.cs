@@ -16,7 +16,7 @@ namespace AgoRapide.Core {
         public event Action<string> LogEvent;
 
         /// <summary>
-        /// Note difference between <see cref="BaseCore.Log"/> and <see cref="BaseEntityTWithLogAndCount.LogInternal"/>
+        /// Note difference between <see cref="BaseCore.Log"/> and <see cref="BaseEntityWithLogAndCount.LogInternal"/>
         /// The former communicates via <see cref="BaseCore.LogEvent"/> and is usually meant for ordinary server logging to disk or similar while
         /// the latter is used for more short-lived in-memory only logging where really detailed information is desired.
         /// </summary>

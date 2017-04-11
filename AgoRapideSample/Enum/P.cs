@@ -121,7 +121,7 @@ namespace AgoRapideSample {
     }
 
     public static class Extensions {
-        public static PropertyKey A(this P p) => EnumMapper.GetA(p).PropertyKey;
+        public static PropertyKeyNonStrict A(this P p) => EnumMapper.GetA(p);
     }
 
     /// <summary>
@@ -150,7 +150,7 @@ namespace AgoRapideSample {
     /// This class is maybe a bit over-engineered (and still not complete) but it illustrates in detail how your classes may cooperate with the
     /// AgoRapide validation mechanism.
     /// 
-    /// You may use it strongly typed like <see cref="BaseEntityT.PV{NorwegianPostalCode}"/>
+    /// You may use it strongly typed like <see cref="BaseEntity.PV{NorwegianPostalCode}"/>
     /// 
     /// Please note that you could also have solved the whole validation issue by just having 
     /// used <see cref="AgoRapideAttribute.RegExpValidator"/> in this case, something which would have been a lot simpler.

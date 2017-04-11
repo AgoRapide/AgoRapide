@@ -15,7 +15,7 @@ namespace AgoRapide {
         Description = "Communicates result of -" + nameof(CoreMethod.GeneralQuery) + "-",
         AccessLevelRead = AccessLevel.User // For JSON to work something must be specified here
     )]
-    public class GeneralQueryResult : BaseEntityT {
+    public class GeneralQueryResult : BaseEntity {
 
         public override string ToHTMLTableHeading(Request request) => "<tr><th>Result</th></tr>";
 
