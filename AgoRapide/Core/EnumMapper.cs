@@ -132,7 +132,7 @@ namespace AgoRapide {
                     /// TODO: We must also replace for "manually" given <see cref="CoreP"/>
                     _fromStringMaps.GetValue(e.ToString(), () => nameof(o) + ": " + o)
                 );
-                Extensions.SetAgoRapideAttribute(o, dict.ToDictionary(e => e.Key, e => e.Value.Key));
+                Extensions.SetAgoRapideAttribute(o, dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: true);
                 _enumMapsCache[o] = dict;
             });
             var enumMapForCoreP = _enumMapsCache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
@@ -150,6 +150,8 @@ namespace AgoRapide {
                 if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out AgoRapideAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
             _allCoreP = allCoreP.Values.ToList();
+            /// Repeat for <see cref="CoreP"/> since it most probably was changed above (new values mapped to it)
+            Extensions.SetAgoRapideAttribute(typeof(CoreP), _enumMapsCache.GetValue(typeof(CoreP)).ToDictionary(e => e.Key, e => e.Value.Key), strict: false);            
         }
 
         /// <summary>
@@ -215,7 +217,6 @@ namespace AgoRapide {
         //            "Also implement support for hierarchically organised enums where AgoRapideAttribute reflects all hierarchical levels");
         //    });
 
-
         /// <summary>
         /// TODO: Correct not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
         /// 
@@ -262,9 +263,14 @@ namespace AgoRapide {
                 throw new PropertyKey.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + description);
             }
 
-            /// TODO: Correct not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
-            _enumMapsCache.GetValue(typeof(CoreP))[(int)key.Key.CoreP] = key;
-        
+            /// TODO: Correct this not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
+            var dict = _enumMapsCache.GetValue(typeof(CoreP));
+            dict[(int)key.Key.CoreP] = key;
+            /// Important. Although for the most <see cref="EnumMapper"/> will be used for <see cref="CoreP"/> there are some
+            /// cases, especially for extension methods like <see cref="Extensions.AddValue2"/> 
+            /// where <see cref="Extensions.GetAgoRapideAttributeT{T}"/> is called directly.
+            Extensions.SetAgoRapideAttribute(typeof(CoreP), dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: false);
+
             // TODO: STORE THIS IN DATABASE
             // TODO: THINK ABOUT THREAD ISSUES 
             // TODO: READ AT STARTUP!!! (Take into consideration later adding to C# code of _enum)

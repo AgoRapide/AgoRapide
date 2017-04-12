@@ -10,6 +10,18 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
+    [AgoRapide(EnumType = EnumType.DataEnum)]
+    public enum Colour {
+        None,
+
+        [AgoRapide(Description = "Bjørn's favourite colour")]
+        Red,
+
+        Green,
+
+        Blue
+    }
+
     /// <summary>
     /// Also used internally by AgoRapide like <see cref="Parameters"/>, <see cref="Result"/>, 
     /// <see cref="ApplicationPart"/>, <see cref="APIMethod"/> and so on, in order to reuse the
@@ -240,6 +252,8 @@ namespace AgoRapide {
 
         /// <summary>
         /// Adds the property to this entity (in-memory operation only, does not create anything in database)
+        /// 
+        /// Note how accepts either single values or complete List for <see cref="AgoRapideAttribute.IsMany"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
@@ -247,14 +261,35 @@ namespace AgoRapide {
         public void AddProperty<T>(PropertyKeyNonStrict key, T value) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (value == null) throw new ArgumentNullException(nameof(value));
-            if (key.Key.A.IsMany) throw new NotImplementedException(nameof(key.Key.A.IsMany));
-            // property.Initialize(); Removed Apr 2017
-            // TODO: Decide if Properties = ... is as wanted. Maybe structure better how Properties is initialized
-            (Properties ?? (Properties = new Dictionary<CoreP, Property>())).AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKey, value) {
-                ParentId = Id,
-                Parent = this
-            });
+            if (Properties == null) Properties = new Dictionary<CoreP, Property>(); // TODO: Maybe structure better how Properties is initialized
+            if (key.Key.A.IsMany) {
+                var temp = this as Property;
+                var isManyParent = temp != null && temp.IsIsManyParent ? temp : null;
+                if (isManyParent != null) { // We are an IsMany parent, add at next available id.
+                    if (key is PropertyKey) throw new PropertyKey.InvalidPropertyKeyException(nameof(key) + " as " + nameof(PropertyKey) + " not allowed (" + nameof(PropertyKey.Index) + " not allowed)");
+                    isManyParent.Properties.Add(isManyParent.GetNextIsManyId().IndexAsCoreP, new PropertyT<T>(key.PropertyKey, value)); /// Note how <see cref="PropertyT{T}.PropertyT"/> will fail if value is a List now (not corresponding to <see cref="AgoRapideAttribute.IsMany"/>)
+                } else {
+                    var t = typeof(T);
+                    if (t.IsGenericType) {
+                        Properties.AddValue2(key.Key.CoreP, Util.ConvertListToIsManyParent(this, key, value, () => ToString()));
+                    } else {
+                        isManyParent = Properties.GetOrAddIsManyParent(key);
+                        var id = isManyParent.GetNextIsManyId();
+                        // We can not do this:
+                        // isManyParent.Properties.Add(id.IndexAsCoreP, new PropertyT<T>(id, value));
+                        // but must do this:
+                        /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
+                        isManyParent.AddPropertyForIsManyParent(id.IndexAsCoreP, new PropertyT<T>(id, value)); // Important in order for cached _value to be reset
+                    }
+                }
+            } else {
+                Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKey, value) {
+                    ParentId = Id,
+                    Parent = this
+                });
+            }
         }
+
 
         /// <summary>
         /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntity.InvalidPropertyException{T}"/>

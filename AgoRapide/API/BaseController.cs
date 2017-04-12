@@ -290,7 +290,14 @@ namespace AgoRapide.API {
         /// <returns></returns>
         protected APIMethod GetMethod([System.Runtime.CompilerServices.CallerMemberName] string caller = "") => APIMethod.GetByControllerAndMethodName(GetType(), caller);
 
-        protected bool TryGetRequest(out ValidRequest request, out object errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => TryGetRequest(null, null, null, null, null, null, null, null, null, null, out request, out errorResponse, caller);
+        /// <summary>
+        /// Made public for documentation purposes.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="errorResponse"></param>
+        /// <param name="caller"></param>
+        /// <returns></returns>
+        public bool TryGetRequest(out ValidRequest request, out object errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => TryGetRequest(null, null, null, null, null, null, null, null, null, null, out request, out errorResponse, caller);
         protected bool TryGetRequest(APIMethod method, out ValidRequest request, out object errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => TryGetRequest(null, null, null, null, null, null, null, null, null, method, out request, out errorResponse, caller);
         protected bool TryGetRequest(string p1, out ValidRequest request, out object errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => TryGetRequest(p1, null, null, null, null, null, null, null, null, null, out request, out errorResponse, caller);
         protected bool TryGetRequest(string p1, APIMethod method, out ValidRequest request, out object errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => TryGetRequest(p1, null, null, null, null, null, null, null, null, method, out request, out errorResponse, caller);

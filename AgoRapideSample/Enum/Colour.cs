@@ -7,15 +7,15 @@ using AgoRapide.Core;
 
 namespace AgoRapideSample {
 
-    [AgoRapide(EnumType = EnumType.DataEnum)]
-    public enum Colour {
-        None,
+    //[AgoRapide(EnumType = EnumType.DataEnum)]
+    //public enum Colour {
+    //    None,
 
-        [AgoRapide(Description = "Bjørn's favourite colour")]
-        Red,
+    //    [AgoRapide(Description = "Bjørn's favourite colour")]
+    //    Red,
 
-        Green,
+    //    Green,
 
-        Blue
-    }
+    //    Blue
+    //}
 }

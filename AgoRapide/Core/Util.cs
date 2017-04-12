@@ -473,6 +473,36 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
+        /// Converts a generic list into a <see cref="Property.IsIsManyParent"/>
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="list">Any </param>
+        /// <param name="detailer">May be null</param>
+        /// <returns></returns>
+        public static Property ConvertListToIsManyParent(BaseEntity parent, PropertyKeyNonStrict key, object list, Func<string> detailer) {
+            var t = list?.GetType() ?? throw new NullReferenceException(nameof(list));
+            Property.AssertList(t, key, () => detailer());
+            // Replace all existing values with values in list.
+            var retval = Property.CreateIsManyParent(key);
+            foreach (var v in (System.Collections.IList)list) {
+                var id = retval.GetNextIsManyId();
+                var property = (Property)System.Activator.CreateInstance(
+                    typeof(PropertyT<>).MakeGenericType(new Type[] { key.Key.A.Type }),
+                    id,
+                    v
+                );
+                property.ParentId = parent.Id;
+                property.Parent = parent;
+                // We can not do this:
+                // isManyParent.Properties.Add(id.IndexAsCoreP, test);
+                // but must do this:
+                /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
+                retval.AddPropertyForIsManyParent(id.IndexAsCoreP, property); // Important in order for cached _value to be reset
+            }
+            return retval;
+        }
+
+        /// <summary>
         /// Exists in order to facilitate placement of breakpoints in expressions in addition to statements
         /// 
         /// Insert this wherever you throw an exception in expressions, especially when using the ? operator
@@ -480,8 +510,7 @@ namespace AgoRapide.Core {
         /// 
         /// At regular intervals you can remove all uses of this method in the code.
         /// </summary>
-        public static string BreakpointEnabler => "";
-        
+        public static string BreakpointEnabler => "";        
     }
 
     public class IllegalPasswordException : Exception {

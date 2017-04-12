@@ -141,26 +141,8 @@ namespace AgoRapide.Core {
         /// </summary>
         public Func<string, ParseResult> ValidatorAndParser { get; set; }
 
-        /// <summary>
-        /// TODO: We could add an overload AgoRapideAttribute.TryValidate with Property as parameter instead
-        /// TODO: This could be smarter by not attempting to call validator for already set
-        /// TODO: long, double, DateTime values
-        ///
-        /// Note that <see cref="TryValidateAndParse"/> returns TRUE if no <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/> is available
-        /// TODO: This is not good enough. FALSE would be a better result (unless TProperty is string)
-        /// 
-        /// TODO: IMPLEMENT CHAINING OF VALIDATING!
-        /// 
-        // TODO: Try to MAKE A.TryValidateAndParse GENERIC in order for it to return a more strongly typed result.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="result">Will always be set</param>
-        /// <returns></returns>
         public bool TryValidateAndParse(string value, out ParseResult result) {
             A.AssertProperty();
-            /// TODO: This is not good enough. We should not accept not having a validator and parser...
-            // if (ValidatorAndParser == null) { result = new ParseResult(new Property(P, value)); return true; }
-            // Therefore we do this:
             if (ValidatorAndParser == null) throw new NullReferenceException(nameof(ValidatorAndParser) + ". Details: " + ToString());
             result = ValidatorAndParser(value);
             if (result.ErrorResponse != null) result = ParseResult.Create("Validation failed for " + PToString + " = '" + value + "'.\r\nDetails: " + result.ErrorResponse);
@@ -168,7 +150,6 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// TODO: Try to MAKE A.TryValidateAndParse GENERIC in order for it to return a more strongly typed result.
         /// </summary>
         /// <param name="value"></param>
         /// <param name="result">Will always be set, regardless of TRUE / FALSE as return value</param>
@@ -182,8 +163,6 @@ namespace AgoRapide.Core {
             if (!retval && originalValue != null && !originalValue.Equals(value)) {
                 result = ParseResult.Create(result.ErrorResponse + ".\r\nValue was unsuccessfully first cleaned up from originalValue '" + originalValue + "'");
             }
-            var a = ("A", "b");
-
             return retval;
         }
 

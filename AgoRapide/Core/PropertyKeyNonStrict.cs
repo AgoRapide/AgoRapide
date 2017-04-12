@@ -42,13 +42,16 @@ namespace AgoRapide.Core {
                     case PropertyKey temp: return _propertyKey = temp; /// Hack, because often <see cref="PropertyKeyNonStrict.PropertyKey"/> is asked for even in cases when the caller already has a <see cref="PropertyKey"/> object (the caller "belives" it only has a <see cref="PropertyKeyNonStrict"/>  object)
                     default:
                         throw new NullReferenceException(
+                            Util.BreakpointEnabler +
                             nameof(_propertyKey) + ". " +
                             "Possible reason: " +
                             new Func<string>(() => {
                                 if (Key.A.IsMany) return nameof(AgoRapideAttribute.IsMany) + "(" + Key.A.IsMany + ") = TRUE";
                                 return "Maybe this instance does not originate from " + nameof(EnumMapper);
                             })() +
+                            "\r\n" +
                             "Details: " + ToString() + "\r\n" +
+                            "\r\n" +
                             "More details: " + Key.ToString()
                         );
                 }

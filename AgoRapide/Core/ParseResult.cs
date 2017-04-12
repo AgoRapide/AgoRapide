@@ -13,6 +13,9 @@ namespace AgoRapide.Core {
     /// </summary>
     public class ParseResult {
 
+        /// <summary>
+        /// Note HACK <see cref="Property.SetKey"/> which can be used to improve this value.
+        /// </summary>
         public Property Result { get; private set; }
 
         /// <summary>

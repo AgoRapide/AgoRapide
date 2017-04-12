@@ -53,7 +53,7 @@ namespace AgoRapide.API {
 
         /// <summary>
         /// Calls either <see cref="GetOKResponseAsSingleEntity"/> or <see cref="GetOKResponseAsMultipleEntities"/> according to 
-        /// <see cref="QueryId.IsSingle"/>
+        /// <see cref="QueryId.IsSingle"/>, that is gives a response according to how it must be assumed the client expects it.
         /// </summary>
         /// <param name="id"></param>
         /// <param name="entities"></param>
@@ -67,15 +67,19 @@ namespace AgoRapide.API {
             }
         }
 
-        public object GetOKResponseAsSingleEntity(BaseEntity entity) {
+        public object GetOKResponseAsSingleEntity(BaseEntity entity) => GetOKResponseAsSingleEntity(entity, null);
+        public object GetOKResponseAsSingleEntity(BaseEntity entity, string message) {
             Result.ResultCode = ResultCode.ok;
             Result.SingleEntityResult = entity ?? throw new ArgumentNullException(nameof(entity));
+            if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
 
-        public object GetOKResponseAsMultipleEntities(List<BaseEntity> entities) {
+        public object GetOKResponseAsMultipleEntities(List<BaseEntity> entities) => GetOKResponseAsMultipleEntities(entities, null);
+        public object GetOKResponseAsMultipleEntities(List<BaseEntity> entities, string message) {
             Result.ResultCode = ResultCode.ok;
             Result.MultipleEntitiesResult = entities ?? throw new ArgumentNullException(nameof(entities));
+            if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
 
@@ -140,12 +144,6 @@ namespace AgoRapide.API {
         }
 
         public override string ToString() => "Url: " + URL + ", Method: " + (Method?.ToString() ?? "[NULL]") + ", CurrentUser: " + (CurrentUser?.ToString() ?? "[NULL]");
-
-        ///// <summary>
-        ///// Initializes minimum version of Request. Will be marked <see cref="Request.IsIncomplete"/>. 
-        ///// </summary>
-        ///// <param name="httpRequestMessage"></param>
-        //public Request(System.Net.Http.HttpRequestMessage httpRequestMessage) : this(httpRequestMessage, null) { }
 
         /// <summary>
         /// Initializes minimum version of Request. Will be marked <see cref="Request.IsIncomplete"/>. 

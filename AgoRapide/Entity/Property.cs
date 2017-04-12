@@ -10,14 +10,49 @@ using AgoRapide.Database; // Used by XML-links
 namespace AgoRapide {
 
     /// <summary>
-    /// You should normally not directly call initializations methods here (like <see cref="Create{T}(TProperty, T)"/>)  
-    /// but instead rely on methods like <see cref="IDatabase.TryGetPropertyById"/> and <see cref="BaseEntity.AddProperty"/>
-    /// in order to ensure correct population of fields like <see cref="ParentId"/> and <see cref="Parent"/>.
+    /// See also generic sub class <see cref="PropertyT{T}"/> 
+    /// 
+    /// Properties are created and validated through the following paths:
+    /// 
+    /// 1) Creation in database (<see cref="IDatabase.CreateProperty"/>)
+    ///    Note that this does not involve the <see cref="Property"/>-class at all.
+    /// 
+    /// 2) When originating from database (<see cref="IDatabase.TryGetPropertyById"/>): 
+    /// 
+    ///    Through <see cref="Property.Create"/> which 
+    ///    
+    ///    either 
+    ///    
+    ///    a) Calls <see cref="PropertyT{T}.PropertyT"/>) directly 
+    ///       (which happens whenever value itself does not originate from <see cref="DBField.strv"/> 
+    ///       or when <see cref="AgoRapideAttribute.Type"/> is <see cref="string"/>)
+    ///       
+    ///    or
+    ///    
+    ///    b) Calls <see cref="AgoRapideAttributeEnriched.TryValidateAndParse"/> / <see cref="ParseResult.Create{T}"/> 
+    ///       which again calls <see cref="PropertyT{T}.PropertyT"/>
+    ///    
+    /// 3) When received by API (<see cref="BaseController.TryGetRequest"/>):
+    /// 
+    ///    Through <see cref="AgoRapideAttributeEnriched.TryValidateAndParse"/> 
+    ///    which calls <see cref="ParseResult.Create{T}"/> 
+    ///    which again calls <see cref="PropertyT{T}.PropertyT"/>) 
+    ///    
+    /// 4) Directly in C# code, ordinary properties (<see cref="BaseEntity.AddProperty{T}"/>
+    /// 
+    ///    Through direct call to <see cref="PropertyT{T}.PropertyT"/>
+    ///    
+    /// 5) Template and <see cref="AgoRapideAttribute.IsMany"/> parent.
+    /// 
+    ///    Through <see cref="Property.CreateTemplate"/> and <see cref="Property.CreateIsManyParent"/>
+    ///    TODO: This is not considered an optimal solution as of Apr 2017
+    ///    TODO: Make a class called PropertyTemplate instead of using <see cref="IsTemplateOnly" />
+    ///    TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
+    /// 
+    /// Subclass: <see cref="PropertyT{T}"/>
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
     /// <see cref="IDatabase.TryGetEntities{T}"/> 
-    /// 
-    /// Subclass: <see cref="PropertyT{T}"/>
     /// </summary>
     [AgoRapide(
         Description = "Represents a single property of a -" + nameof(BaseEntity) + "-.",
@@ -56,6 +91,20 @@ namespace AgoRapide {
         /// TODO: for multiple properties on same HTML page with same <see cref="KeyDB"/>
         /// </summary>
         public string KeyHTML => KeyDB.ToString().Replace("#", "_");
+
+        /// <summary>
+        /// Improves on <see cref="ParseResult.Result"/>
+        /// 
+        /// HACK: Solves problem of <see cref="AgoRapideAttributeEnriched.TryValidateAndParse"/> / <see cref="ParseResult.Create"/> 
+        /// HACK: only being aware of <see cref="AgoRapideAttributeEnriched"/>, 
+        /// HACK: not <see cref="PropertyKey"/> 
+        /// HACK: when generating <see cref="ParseResult.Result"/>
+        /// </summary>
+        /// <param name="key"></param>
+        public void SetKey(PropertyKey key) {
+            _key = key;
+            _keyDB = null;
+        }
 
         protected string _stringValue;
 
@@ -134,6 +183,8 @@ namespace AgoRapide {
 
         /// <summary>
         /// Example: If PhoneNumber#1 and PhoneNumber#2 exists then PhoneNumber#3 will be returned. 
+        /// 
+        /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
         /// </summary>
         /// <returns></returns>
         public PropertyKey GetNextIsManyId() {
@@ -142,6 +193,17 @@ namespace AgoRapide {
                 id++; if (id > 1000) throw new AgoRapideAttribute.IsManyException("id " + id + ", limit is (somewhat artificially) set to 1000. " + ToString());
             }
             return new PropertyKey(Key.Key, id);
+        }
+
+        /// <summary>
+        /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="property"></param>
+        public void AddPropertyForIsManyParent(CoreP key, Property property) {
+            AssertIsManyParent();
+            Properties.AddValue2(key, property);
+            _value = null; /// Important since <see cref="TryGetV{T}"/> caches last value found for a given type
         }
 
         /// <summary>
@@ -179,20 +241,28 @@ namespace AgoRapide {
 
         /// <summary>
         /// See <see cref="IsIsManyParent"/> for documentation. 
-        /// TODO: Make a class called PropertyTemplate instead of using <see cref="IsIsManyParent" />
+        /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static Property CreateIsManyParent(PropertyKey a) => new Property(dummy: null) {
-            IsIsManyParent = true,
-            _key = a,
-            Properties = new Dictionary<CoreP, Property>()
-        };
+        public static Property CreateIsManyParent(PropertyKeyNonStrict key) {
+            var strictKey = key.PropertyKeyIsSet ?
+                key.PropertyKeyAsIsManyParentOrTemplate :
+                /// Above is not sufficient for instance when <param name="key"/> does not originate from EnumMapper.
+                /// Therefore we must to this instead:
+                EnumMapper.GetA(key.Key.CoreP).PropertyKeyAsIsManyParentOrTemplate;
+            // TODO: Code above is a bit slow performance wise (there are two dictionary look ups involved)
+            /// TODO: Code above is run whenever an <see cref="AgoRapideAttribute.IsMany"/> property is read from database for instance.
+
+            return new Property(dummy: null) {
+                IsIsManyParent = true,
+                _key = strictKey,
+                Properties = new Dictionary<CoreP, Property>()
+            };
+        }
 
         /// <summary>
         /// Used when reading from database.
-        /// 
-        /// Note that does NOT call <see cref="Initialize"/>. 
         /// 
         /// Note how internally creates a <see cref="PropertyT{T}"/> object. 
         /// </summary>
@@ -218,7 +288,6 @@ namespace AgoRapide {
             ) {
 
             var retval = new Func<Property>(() => {
-                // TODO: DECIDE WHAT TO USE. String representation found in Initialize or in TryGetV
                 if (lngValue != null) return new PropertyT<long>(key, (long)lngValue, lngValue.ToString());
                 if (dblValue != null) return new PropertyT<double>(key, (double)dblValue, ((double)dblValue).ToString2());
                 if (blnValue != null) return new PropertyT<bool>(key, (bool)blnValue, ((bool)blnValue).ToString());
@@ -233,7 +302,9 @@ namespace AgoRapide {
                         "  DELETE FROM p WHERE " + DBField.id + " = " + id + "\r\n" +
                         "Details: " + key.Key.ToString());
                 }
-                return parseResult.Result;
+                var r = parseResult.Result;
+                r.SetKey(key); // HACK
+                return r;
             })();
 
             retval.Id = id;
@@ -260,131 +331,65 @@ namespace AgoRapide {
         public object Value => _value ?? throw new NullReferenceException(nameof(_value) + "Details: " + ToString());
 
         public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + _stringValue + "' to " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
+        /// <summary>
+        /// TODO: Decide what "Try" really means. 
+        /// TODO: Consider never returning false, that is, rename this method into V instead and stop using the "Try"-concept. 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public bool TryGetV<T>(out T value) {
             if (_value != null && _value is T) { value = (T)_value; return true; } // Note how "as T" is not possible to use here
-
             var t = typeof(T);
 
-            if (typeof(string).Equals(t)) { value = (T)(object)(_stringValue ?? throw new NullReferenceException(nameof(_stringValue))); return true; }
+            if (IsIsManyParent) {
+                if (typeof(string).Equals(t)) {
+                    value = (T)(_value = string.Join(", ", Properties.Select(p => p.Value.V<string>()))); // Note caching in _value
+                    return true;
+                }
+                if (typeof(List<string>).Equals(t)) {
+                    value = (T)(_value = Properties.Select(p => p.Value.V<string>()).ToList()); // Note caching in _value
+                    return true;
+                }
+                if (typeof(List<object>).Equals(t)) {
+                    value = (T)(_value = Properties.Select(p => p.Value.Value).ToList()); // Note caching in _value
+                    return true;
+                }
+                if (t.IsGenericType) {
+                    AssertList(t, Key, () => ToString());
+                    var iList = (System.Collections.IList)System.Activator.CreateInstance(t);
+                    Properties.ForEach(p => {
+                        // InvalidTypeException.AssertAssignable(p.Value.Value.GetType(), Key.Key.A.Type, () => p.ToString());
+                        iList.Add(p.Value.Value);
+                    });
+                    _value = iList; // Note caching in _value
+                    value = (T)_value;
+                    return true;
+                }
+            } else {
+                if (typeof(string).Equals(t)) {
+                    value = (T)(object)(_stringValue ?? throw new NullReferenceException(nameof(_stringValue) + ". Details: " + ToString()));
+                    return true;
+                }
+            }
 
-            //if (typeof(object).Equals(t)) {
-            //    if (_ADotTypeValue != null) { value = (T)_ADotTypeValue; return true; } // TODO: Check validity of all this!
-            //    if (LngValue != null) { value = (T)(object)LngValue; return true; }
-            //    if (DblValue != null) { value = (T)(object)DblValue; return true; }
-            //    if (BlnValue != null) { value = (T)(object)BlnValue; return true; }
-            //    if (DtmValue != null) { value = (T)(object)DtmValue; return true; }
-            //    if (StrValue != null) { value = (T)(object)StrValue; return true; }
-            //    throw new InvalidTypeException(
-            //        "Unable to find object.\r\n" +
-            //        "Details:\r\n" + ToString());
-            //}
-
-            //if (typeof(long).Equals(t)) {
-            //    if (LngValue != null) { value = (T)(_ADotTypeValue = LngValue); return true; };
-            //    value = default(T); return false;
-            //}
-            //if (typeof(int).Equals(t)) throw new TypeIntNotSupportedByAgoRapideException(ToString());
-
-            //if (typeof(double).Equals(t)) {
-            //    if (DblValue != null) { value = (T)(_ADotTypeValue = DblValue); return true; };
-            //    value = default(T); return false;
-            //}
-            //if (typeof(bool).Equals(t)) {
-            //    if (BlnValue != null) { value = (T)(_ADotTypeValue = BlnValue); return true; };
-            //    value = default(T); return false;
-            //}
-            //if (typeof(DateTime).Equals(t)) {
-            //    if (DtmValue != null) { value = (T)(_ADotTypeValue = DtmValue); return true; };
-            //    value = default(T); return false;
-            //}
-            //if (typeof(string).Equals(t)) {
-            //    // TODO: CLEAN UP THIS. WHAT TO RETURN NOW? 
-            //    //if (StrValue != null) return (T)(object)StrValue;
-
-            //    //// TODO: DECIDE WHAT TO USE. String representation found in Initialize or in TryGetV
-            //    // TODO: THIS IS NOT GOOD. The ToString-representation is not very helpful in a lot of cases (Type, DateTime and so on(
-            //    //if (_ADotTypeValue != null) { value = (T)(object)_ADotTypeValue.ToString(); return true; };
-
-            //    /// TODO: WHAT IS THE MEANING OF SETTING <see cref="_ADotTypeValue"/> now?
-            //    /// TODO: WHAT IS THE PURPOSE OF SETTING IT TO A STRING? A STRING IS NOT WHAT IT IS SUPPOSED TO BE?
-            //    if (LngValue != null) { value = (T)(_ADotTypeValue = LngValue.ToString()); return true; }; /// TODO: Introduce a <see cref="AgoRapideAttribute"/>.LngFormat property here
-            //    if (DblValue != null) { value = (T)(_ADotTypeValue = ((double)DblValue).ToString2()); return true; }; /// TODO: Introduce a <see cref="AgoRapideAttribute"/>.DblFormat property here
-            //    if (DtmValue != null) { value = (T)(_ADotTypeValue = ((DateTime)DtmValue).ToString(Key.Key.A.DateTimeFormat)); return true; };
-            //    if (BlnValue != null) { value = (T)(_ADotTypeValue = BlnValue.ToString()); return true; }; // TODO: Better ToString here!
-            //    if (GeoValue != null) { value = (T)(_ADotTypeValue = GeoValue); return true; };
-            //    if (StrValue != null) { value = (T)(_ADotTypeValue = StrValue); return true; };
-
-            //    if (_ADotTypeValue != null) { // TODO: Is this code relevant? Should not the specific value have been set anyway?
-            //        // The ToString-representation is not very helpful in some cases (Type, DateTime and so on
-            //        // Therefore we check for those first
-            //        if (_ADotTypeValue is double) { value = (T)(object)((double)_ADotTypeValue).ToString2(); return true; }
-            //        if (_ADotTypeValue is DateTime) { value = (T)(object)((DateTime)_ADotTypeValue).ToString(DateTimeFormat.DateHourMin); return true; }
-            //        // For all others we accept the default ToString conversion.
-            //        value = (T)(object)_ADotTypeValue.ToString(); return true;
-            //    };
-
-            //    // TODO: REPLACE WITH KIND OF "NO KNOWN TYPE OF PROPERTY VALUE FOUND"                
-            //    throw new InvalidPropertyException("Unable to find string value. Details: " + ToString());
-            //    // Do not return default(T) because we should always be able to convert a property to string
-            //    // value = default(T); return false;                
-            //}
-            //if (typeof(Type).Equals(t)) {
-            //    // TODO: Move typeof(Type).Equals(t) into AgoRapideAttribute.TryValidateAndParse instead. 
-            //    if (Util.TryGetTypeFromString(StrValue, out var temp)) { value = (T)(_ADotTypeValue = temp); return true; }
-            //    value = default(T); return false;
-            //}
-
-            //if (typeof(Uri).Equals(t)) {
-            //    // TODO: Move typeof(Uri).Equals(t) into AgoRapideAttribute.TryValidateAndParse instead.                 
-            //    if (Uri.TryCreate(StrValue, UriKind.RelativeOrAbsolute, out var temp)) { value = (T)(_ADotTypeValue = temp); return true; }
-            //    value = default(T); return false;
-            //}
-
-            //if (StrValue != null) {
-            //    // TODO: Try to MAKE A.TryValidateAndParse GENERIC in order for it to return a more strongly typed result.
-            //    // TODO: Use that again to change its result-mechanism, not returning a property.
-            //    if (Key.Key.TryValidateAndParse(StrValue, out var result)) {
-            //        /// Note that TryValidateAndParse returns TRUE if no ValidatorAndParser is available
-            //        /// TODO: This is not good enough. FALSE would be a better result (unless TProperty is string)
-            //        /// TODO: because result.Result will now be set to a String value
-            //        /// TODO: Implement some kind of test here and clean up the whole mechanism
-            //        if (result.Result.StrValue != null) {
-            //            throw new InvalidPropertyException(
-            //                "Unable to cast '" + StrValue + "' to " + t + ", " +
-            //                "ended up with " + result.Result.StrValue.GetType() + ".\r\n" +
-            //                (Key.Key.ValidatorAndParser != null ?
-            //                    "Very unexpected since " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was set" :
-            //                    "Most probably because " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was not set"
-            //                ) + ".\r\n" +
-            //                "Details: " + ToString());
-            //        }
-            //        if (!(result.Result.ADotTypeValue() is T)) throw new InvalidPropertyException(
-            //            "Unable to cast '" + StrValue + "' to " + t + ", " +
-            //            "ended up with " + result.Result.ADotTypeValue().GetType() + " (value: '" + result.Result.ADotTypeValue().ToString() + ").\r\n" +
-            //            (Key.Key.ValidatorAndParser == null ?
-            //                "Very unexpected since " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " was not set" :
-            //                "Most probably because " + nameof(AgoRapideAttributeEnriched.ValidatorAndParser) + " returns the wrong type of object"
-            //            ) + ".\r\n" +
-            //            "Details: " + ToString());
-            //        value = (T)(_ADotTypeValue = result.Result.ADotTypeValue()); return true;
-            //    }
-            //    // TODO: Move typeof(Type).Equals(t) into AgoRapideAttribute.TryValidateAndParse instead. 
-            //    value = default(T); return false;
-            //}
-
-            //// This code for enum-parsing does not belong here but in the A.TryValidateAndParse above
-            ////if (A.A.Type != null && t.Equals(A.A.Type)) {
-            ////    if (A.A.Type.IsEnum) {
-            ////        Util.EnumTryParse(A.A.Type, Value, out _ADotTypeValue);
-            ////        value = _ADotTypeValue == null ? default(T) : (T)_ADotTypeValue;
-            ////        return _ADotTypeValue != null;
-            ////    } else {
-            ////        throw new NotImplementedException("T: " + typeof(T).ToString() + ", A.A.Type: " + A.A.Type?.ToString() ?? "[NULL]");
-            ////    }
-            ////}
-            throw new NotImplementedException("T: " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Details:" + ToString());
-
+            /// TODO: Consider never returning false, that is, rename this method into V instead and stop using the "Try"-concept. 
+            value = default(T);
+            return false;
+            // throw new NotImplementedException("T: " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Details:" + ToString());
             // TODO: Decide how to implement different types. Exception or not?
+        }
+
+        /// <summary>
+        /// Asserts that <paramref name="type"/> is a generic List 
+        /// compatible with <see cref="Key"/> (compatible with <see cref="AgoRapideAttribute.Type"/>)
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="key"></param>
+        public static void AssertList(Type type, PropertyKeyNonStrict key, Func<string> detailer) {
+            if (!type.GetGenericTypeDefinition().Equals(typeof(List<>))) throw new InvalidTypeException(type, "Only GetGenericTypeDefinition List is allowed for IsGenericType" + detailer.Result("\r\nDetails: "));
+            if (type.GenericTypeArguments.Length != 1) throw new InvalidTypeException(type, "Only 1 GenericTypeArguments allowed, not " + type.GenericTypeArguments.Length + detailer.Result("\r\nDetails: "));
+            InvalidTypeException.AssertAssignable(type.GenericTypeArguments[0], key.Key.A.Type, () => "Generic type requested was " + type + detailer.Result("\r\nDetails: "));
         }
 
         private AgoRapideAttribute _valueAttribute;
@@ -535,7 +540,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 3, Save button or SELECT
                 // --------------------
-                (!IsChangeableByCurrentUser ? "&nbsp;" :
+                (!IsChangeableByCurrentUser || Parent == null ? "&nbsp;" : /// Note check for <see cref="Parent"/>, we need that for calling API
                     (a.ValidValues == null ?
                         (
                             // Ordinary textbox was presented. Add button.
@@ -543,7 +548,7 @@ namespace AgoRapide {
                             /// Note: Corresponding Javascript method being called here is currently generated in <see cref="HTMLView.GetHTMLStart"/>
 
                             /// TODO: An alternative to the above would be to 
-                            /// TODO: aonsider making <see cref="APIMethod"/> create Javascript such as this automatically...
+                            /// TODO: consider making <see cref="APIMethod"/> create Javascript such as this automatically...
                             /// TODO: In other words, call the <see cref="APIMethod"/> for <see cref="CoreMethod.UpdateProperty"/> 
                             /// TODO: in order to get the Javascript required here, instead of generating it as done immediately below:
                             "<input " +

@@ -10,47 +10,16 @@ using AgoRapide.Database; // Used by XML-links
 namespace AgoRapide {
 
     /// <summary>
-    /// You should normally not use constructors here (like <see cref="Create{T}(TProperty, T)"/>)  
-    /// but instead rely on methods like <see cref="IDatabase.TryGetPropertyById"/> and <see cref="BaseEntity.AddProperty"/>
-    /// in order to ensure correct population of fields like <see cref="ParentId"/> and <see cref="Parent"/>.
+    /// See <see cref="Property"/> for overview and detailed documentation about properties. 
+    /// 
+    /// Note that <typeparamref name="T"/> does not necessarily have to correspond to <see cref="AgoRapideAttribute.Type"/>.
+    /// See <see cref="PropertyT{T}.PropertyT"/> for details.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [AgoRapide(Description =
         "Generic sub-class of -" + nameof(Property) + "- which is meant to hide some complexity " +
         "and ease the understanding of the super class -" + nameof(Property) + "-.")]
     public class PropertyT<T> : Property {
-
-        ///// <summary>
-        ///// Now how <see cref="BaseEntity.AddProperty)"/> is preferred when adding property to entity
-        ///// 
-        ///// Note that does NOT call <see cref="Initialize"/> 
-        ///// 
-        ///// (since further setting av properties like <see cref="ParentId"/> is most probably needed first)
-        ///// </summary>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="key"></param>
-        ///// <param name="value"></param>
-        ///// <returns></returns>
-        //public static PropertyT<T> Create(PropertyKey a, T value) {
-        //    if (a == null) throw new ArgumentNullException(nameof(a));
-        //    if (value == null) throw new ArgumentNullException(nameof(value));
-        //    var t = typeof(T);
-        //    if (typeof(long).Equals(t)) return new Property(dummy: null) { _key = a, LngValue = (long)(object)value };
-        //    if (typeof(int).Equals(t)) throw new TypeIntNotSupportedByAgoRapideException(nameof(value) + ": " + value);
-        //    if (typeof(double).Equals(t)) return new Property(dummy: null) { _key = a, DblValue = (double)(object)value };
-        //    if (typeof(bool).Equals(t)) return new Property(dummy: null) { _key = a, BlnValue = (bool)(object)value };
-        //    if (typeof(DateTime).Equals(t)) return new Property(dummy: null) { _key = a, DtmValue = (DateTime)(object)value };
-        //    if (typeof(string).Equals(t)) return new Property(dummy: null) { _key = a, StrValue = (string)(object)value };
-
-        //    if (a.Key.A.Type == null) throw new NullReferenceException(
-        //          "There is no " + nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " " +
-        //          "defined for enum " + a.Key.A.Property.GetType() + "." + a.Key.A.Property + ". " +
-        //          "Unable to assert whether " + typeof(T) + " (or rather " + value.GetType() + ") is valid for this enum");
-
-        //    InvalidTypeException.AssertAssignable(typeof(T), a.Key.A.Type, () => nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " for " + a.Key.PExplained + " !IsAssignableFrom " + typeof(T));
-
-        //    return new Property(dummy: null) { _key = a, _ADotTypeValue = value };
-        //}
 
         /// <summary>
         /// Do not use directly. Use through <see cref="ParseResult.Create{T}"/> and <see cref="BaseEntity.AddProperty{T}"/>
@@ -62,11 +31,15 @@ namespace AgoRapide {
         /// <summary>
         /// Preferred overload if <paramref name="strValue"/> is known by caller. 
         /// 
-        /// Note that <see cref="T"/> equal to <see cref="object"/> is tolerated, and in most cases quite OK since the generic
-        /// subclass <see cref="PropertyT{T}"/> is little used in AgoRapide anyway.
         /// </summary>
         /// <param name="key"></param>
-        /// <param name="value"></param>
+        /// <param name="value">
+        /// Note that <see cref="T"/> equal to <see cref="object"/> is tolerated, and in most cases quite OK since the generic
+        /// subclass <see cref="PropertyT{T}"/> is little used in AgoRapide anyway.
+        /// 
+        /// Note that it is possible to use <see cref="string"/> as generic parameter here even when
+        /// <see cref="AgoRapideAttribute.Type"/> is something different that <see cref="string"/>. 
+        /// </param>
         /// <param name="strValue">
         /// </param>
         public PropertyT(PropertyKey key, T value, string strValue) : base(dummy: null) {

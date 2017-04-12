@@ -20,15 +20,7 @@ namespace AgoRapide.Core {
             if (dict.TryGetValue(key.Key.CoreP, out var retval)) {
                 retval.AssertIsManyParent();
             } else {
-                if (key.PropertyKeyIsSet) {
-                    retval = dict[key.Key.CoreP] = Property.CreateIsManyParent(key.PropertyKeyAsIsManyParentOrTemplate);
-                } else {
-                    /// Above is not sufficient for instance when <param name="key"/> does not originate from EnumMapper.
-                    /// Therefore we must to this instead:
-                    retval = dict[key.Key.CoreP] = Property.CreateIsManyParent(EnumMapper.GetA(key.Key.CoreP).PropertyKeyAsIsManyParentOrTemplate);
-                    // TODO: Code above is a bit slow performance wise (there are two dictionary look ups involved)
-                    /// TODO: Code above is run whenever an <see cref="AgoRapideAttribute.IsMany"/> property is read from database for instance.
-                }
+                retval = dict[key.Key.CoreP] = Property.CreateIsManyParent(key);
             }
             return retval;
         }
@@ -192,7 +184,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException(Util.BreakpointEnabler + "Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\nDetails: "));
         }
 
         public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null);  // What we really would want is "where T : Enum"
@@ -644,9 +636,11 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Only to be called at application startup from <see cref="EnumMapper."/>. 
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="attributes"></param>
-        public static void SetAgoRapideAttribute(Type type, Dictionary<int, AgoRapideAttributeEnriched> attributes) {
-            if (_agoRapideAttributeTCache.ContainsKey(type)) throw new KeyAlreadyExistsException(type, nameof(_agoRapideAttributeTCache), "All -" + nameof(EnumType.EntityPropertyEnum) + "- are supposed to be found by " + nameof(EnumMapper.MapEnum) + " before " + nameof(GetAgoRapideAttributeT) + " is being called");
+        /// <param name="strict">If true then will throw exception if already exists.</param>
+        public static void SetAgoRapideAttribute(Type type, Dictionary<int, AgoRapideAttributeEnriched> attributes, bool strict) {
+            if (strict && _agoRapideAttributeTCache.ContainsKey(type)) throw new KeyAlreadyExistsException(type, nameof(_agoRapideAttributeTCache), "All -" + nameof(EnumType.EntityPropertyEnum) + "- are supposed to be found by " + nameof(EnumMapper.MapEnum) + " before " + nameof(GetAgoRapideAttributeT) + " is being called");
             _agoRapideAttributeTCache[type] = attributes;
         }
 
@@ -730,5 +724,15 @@ namespace AgoRapide.Core {
         /// <param name="action"></param>
         public static void Use<T>(this T obj, Action<T> action) => action(obj);
         public static T2 Use<T1, T2>(this T1 obj, Func<T1, T2> func) => func(obj);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="key"></param>
+        /// <param name="detailer">May be null</param>
+        /// <returns></returns>
+        public static Property ToIsManyParent<T>(this List<T> list, BaseEntity parent, PropertyKeyNonStrict key, Func<string> detailer) => Util.ConvertListToIsManyParent(parent, key, list, detailer);
     }
 }
