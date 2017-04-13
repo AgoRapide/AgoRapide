@@ -83,26 +83,25 @@ namespace AgoRapide {
         /// </param>
         /// <returns></returns>
         public static T GetOrAdd<T>(Type type, string member, IDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
-            // TODO: REMOVE COMMENT!
-            // This check is unneccesary as long as ApplicationPart is abstract
-            // if (typeof(T).Equals(typeof(ApplicationPart))) throw new InvalidTypeException(typeof(T), "Illegal T, use one of the subclasses");
-
             // Note how choice of key (and name) may very well cause overlap (two different types with same member mapping to same ApplicationPart since
             // we are using ToStringShort which removes namespace information). This is considered an acceptable tradeoff in return of
             // getting a clear understandable name.
-            var identifier = type.ToStringShort() + (string.IsNullOrEmpty(member) ? "" : ".") + member; /// <see cref="EnumClass"/> may call us without member in which case full stop . is not needed
+            var identifier = type.ToStringShort() + (string.IsNullOrEmpty(member) ? "" : "_") +
+               (member?.Replace("<", "_").Replace(">", "_") ?? ""); // Replace of < and > is necessary because of lambdas / anonymous methods 
             var retvalTemp = AllApplicationParts.GetOrAdd(identifier, i => {
+                InvalidIdentifierException.AssertValidIdentifier(i); // TODO: As of Apr 2017 this will fail for abstract types.
+
                 // Note that this operation is not thread-safe in the manner that the operation against the database
                 // may be executed multiple times (the superfluous result of this lambda will then just end up being ignored)
                 // (This is only a problem the first time (in the database lifetime) that a given type+member is being used)
                 // Duplicates found at application startup should be logged with instructions for deletion. 
                 var id = db.CreateProperty(
-                    cid: (typeof(ApplicationPart).ToStringShort() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name).Equals(i) ? (long?)null :
+                    cid: (typeof(ApplicationPart).ToStringShort() + "_" + System.Reflection.MethodBase.GetCurrentMethod().Name.Replace("<", "_").Replace(">", "_")).Equals(i) ? (long?)null :
                         // Careful, recursive call! Check how lines above and below matches each other and also matches code 'var identifier = type + "." + member' at start of method
                         GetOrAdd<ClassAndMethod>(typeof(ApplicationPart), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id,
                     pid: null,
                     fid: null,
-                    key: CoreP.Type.A().PropertyKey,
+                    key: CoreP.RootProperty.A().PropertyKey,
                     value: typeof(T).ToStringDB(),
                     result: null);
                 var a = type.GetAgoRapideAttributeForClass();

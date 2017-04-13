@@ -87,7 +87,7 @@ namespace AgoRapide {
         /// <param name="routeSegments"></param>
         /// <param name="routeTemplate"></param>
         public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<PropertyKeyNonStrict> parameters, string routeTemplate) {
-            EntityType = entityType ?? throw new NullReferenceException(nameof(entityType));
+            _entityType = entityType ?? throw new NullReferenceException(nameof(entityType));
             A = new MethodAttributeT(methodAttribute) ?? throw new NullReferenceException(nameof(methodAttribute));
             HttpMethods = httpMethods ?? throw new NullReferenceException(nameof(httpMethods));
             RouteSegments = routeSegments ?? throw new NullReferenceException(nameof(routeSegments));
@@ -180,7 +180,7 @@ namespace AgoRapide {
                         // The second mistake (EntityType.IsEnum) less common
                         (EntityType.IsEnum ? ("Did you write typeof(" + EntityType.ToStringShort() + ") when you really intended " + nameof(CoreP) + "." + EntityType.ToStringVeryShort() + "?\r\n") : "") +
                         detailer2());
-                    EntityType = s.Type;
+                    _entityType = s.Type;
                 } else if (s.Parameter != null) {
                     var p = s.Parameter.Key;
                     if (p.A.Parents != null && EntityType != null && !p.IsParentFor(EntityType)) throw new MethodInitialisationException(
@@ -320,21 +320,8 @@ namespace AgoRapide {
         /// <returns></returns>
         public static string InsertDocumentationURLs(string text) => throw new NotImplementedException();
 
-        ///// <summary>
-        ///// TODO: MOVE TO SEPARATE DOCUMENTATOR CLASS!
-        ///// 
-        ///// Returns complete HTML link to documentation
-        ///// 
-        ///// TODO: CLEAN UP USE OF INDEXES HERE!
-        ///// </summary>
-        ///// <param name="methodName"></param>
-        ///// <returns></returns>
-        //public static string Link(string methodName) {
-        //    // public static string Link(string methodName) => (_methodsNameIndex.TryGetValue(methodName, out var route)) ? route.DocumentationLink : throw new Exception("Method '" + methodName + " not found in collection MethodsToDocument");
-        //    throw new NotImplementedException();
-        //}
-
-        public Type EntityType { get; private set; }
+        private Type _entityType;
+        public Type EntityType => _entityType ?? (_entityType = TryGetPV<Type>(CoreP.EntityType.A(), out var retval) ? retval : null); // Set in-memory, later read from database
 
         public List<PropertyKeyNonStrict> Parameters { get; private set; }
 
@@ -517,7 +504,19 @@ namespace AgoRapide {
                         Description =
                             "Shows entities of type " + t.ToStringShort() + " as identified by {" + CoreP.QueryId + "}.\r\n" +
                             "Usually {" + CoreP.QueryId + "} will be an integer but note how even multiple entities may be identified.",
-                        AccessLevelUse = t.GetAgoRapideAttributeForClass().AccessLevelRead // Use of method equals reading of entity
+                        AccessLevelUse = t.Equals(typeof(BaseEntity)) ?
+
+                            /// NOTE: SOME entities may have <see cref="AccessLevel.Anonymous"/> and therefore the method itself must be 
+                            /// NOTE: available for <see cref="AccessLevel.Anonymous"/>. The rationale is that we want to be able to link with
+                            /// NOTE: api/Entity/{QueryId} whenever we see a <see cref="CoreP.DBId"/>-property without knowing what type of entity it is.
+                            /// ----
+                            /// TODO: Complete <see cref="IDatabase.TryVerifyAccess"/> in order for this to not be a security problem.
+                            /// ----
+                            /// NOTE: As of Apr 2017 similar exception has not been made for other <see cref="CoreMethod"/>.
+                            AccessLevel.Anonymous :
+
+                            // In all other cases use of method equals reading of entity and we can se access equivalent to that set for the entity class
+                            t.GetAgoRapideAttributeForClass().AccessLevelRead
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
@@ -627,7 +626,7 @@ namespace AgoRapide {
                     !typeof(BaseEntity).Equals(t) &&
                     !typeof(Property).IsAssignableFrom(t) && // "Independent" properties would be a meaningless concept
                     a.AccessLevelWrite < AccessLevel.System) addEntityCreator(t);
-                if (a.AccessLevelRead < AccessLevel.System) entityIndexCreator(t);
+                if (a.AccessLevelRead < AccessLevel.System || typeof(BaseEntity).Equals(t)) entityIndexCreator(t);
                 if (a.AccessLevelRead < AccessLevel.System) historyCreator(t); // Must appear before addPropertyCreator
                 if (a.AccessLevelWrite < AccessLevel.System) updatePropertyCreator(t);
                 if (a.AccessLevelWrite < AccessLevel.System) propertyOperationCreator(t);
@@ -655,17 +654,27 @@ namespace AgoRapide {
             }
             var cid = GetOrAdd<ClassAndMethod>(typeof(APIMethod), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id;
 
-            if (origin == APIMethodOrigin.Autogenerated) { // Create an id that makes it easy to understand where the C# code for this method resides                
-                GetOrAdd(typeof(APIMethod), typeof(BaseController).ToStringVeryShort() + ".HandleCoreMethod" + method.A.A.CoreMethod + "_for_" + method.EntityType.ToStringVeryShort() + "_(" + origin + ")", db, enrichAndReturnThisObject: method);
-            } else {
-                GetOrAdd(typeof(APIMethod), method.Controller.ToStringVeryShort() + "." + method.ControllerMethod.Name, db, enrichAndReturnThisObject: method);
-            }
+            //if (origin == APIMethodOrigin.Autogenerated) { // Create an id that makes it easy to understand where the C# code for this method resides                
+            //    GetOrAdd(typeof(APIMethod), typeof(BaseController).ToStringVeryShort() + ".HandleCoreMethod" + method.A.A.CoreMethod + "_for_" + method.EntityType.ToStringVeryShort() + "_(" + origin + ")", db, enrichAndReturnThisObject: method);
+            //} else {
+            //    GetOrAdd(typeof(APIMethod), method.Controller.ToStringVeryShort() + "." + method.ControllerMethod.Name, db, enrichAndReturnThisObject: method);
+            //}
+            var identifier = new Func<string>(() => {
+                switch (method.A.A.CoreMethod) {
+                    case CoreMethod.RootIndex:
+                    case CoreMethod.GenericMethod: return method.A.A.CoreMethod.ToString();
+                    default: return method.RouteTemplates[0].Replace("/", "_").Replace("{", "_").Replace("}", "_");
+                }
+            })();
+            InvalidIdentifierException.AssertValidIdentifier(identifier); // 
+            GetOrAdd(typeof(APIMethod), identifier, db, enrichAndReturnThisObject: method);
 
             void updater<T>(CoreP key, T value)
             { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
                 db.UpdateProperty(cid, method, key.A(), value, result: null);
             }
 
+            if (method._entityType != null) updater(CoreP.EntityType, method._entityType);
             switch (method.A.A.CoreMethod) {
                 case CoreMethod.RootIndex: updater(CoreP.Name, "(" + method.A.A.CoreMethod + ")"); break;
                 case CoreMethod.GenericMethod: updater(CoreP.Name, method.RouteTemplates[0] + " (" + method.A.A.CoreMethod + ")"); break;
@@ -674,7 +683,7 @@ namespace AgoRapide {
             updater(CoreP.APIMethodOrigin, origin);
             updater(CoreP.RouteTemplate, method.RouteTemplates[0]);
             if (origin == APIMethodOrigin.Autogenerated) {
-                // Do not set implementator
+                updater(CoreP.Implementator, nameof(BaseController) + ".HandleCoreMethod" + method.A.A.CoreMethod);
             } else {
                 updater(CoreP.Implementator, method.Controller.ToStringShort() + "." + method.ControllerMethod.Name);
             }
@@ -771,12 +780,13 @@ namespace AgoRapide {
             _allMethods.Add(method);
         }
 
-        public override string ToHTMLTableHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(CoreMethod) + "</th><th>" + nameof(EntityType) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
+        public override string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(CoreMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
             PV(CoreP.CoreMethod.A(), CoreMethod.None).Use(c => c == CoreMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
+            PV<AccessLevel>(CoreP.AccessLevelUse.A()) + "</td><td>" +
             PV(CoreP.Description.A(), "[NO DESCRIPTION AVAILABLE]").HTMLEncodeAndEnrich(request) + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
@@ -785,7 +795,7 @@ namespace AgoRapide {
         }
 
         public class MethodNotFoundException : ApplicationException {
-            public MethodNotFoundException(CoreMethod coreMethod, Type entityType) : this(nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + entityType.ToStringShort()) { }
+            public MethodNotFoundException(CoreMethod coreMethod, Type entityType) : this(Util.BreakpointEnabler + nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + entityType.ToStringShort()) { }
             public MethodNotFoundException(string message) : base(message) { }
         }
 

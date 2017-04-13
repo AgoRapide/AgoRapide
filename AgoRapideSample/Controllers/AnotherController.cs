@@ -71,7 +71,7 @@ namespace AgoRapideSample {
         public object CarIsManyExample(string IntegerQueryId) {
             try {
                 if (!TryGetRequest(IntegerQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
-                if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<IntegerQueryId>(), AccessType.Read, useCache: false, entity: out Car car, errorResponse: out var errorResponse)) return request.GetErrorResponse(errorResponse);
+                if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, useCache: false, entity: out Car car, errorResponse: out var errorResponse)) return request.GetErrorResponse(errorResponse);
 
                 var v1 = "All colours (variant 1): " + string.Join(", ", car.PV<List<Colour>>(P.Colour2.A()).Select(c => c.ToString()));
                 var v2 = "All colours (variant 2): " + car.PV<string>(P.Colour2.A());

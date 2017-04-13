@@ -9,11 +9,13 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
 
     /// <summary>
+    /// Attribute originating from C# code.
+    /// 
     /// Contains the actual <typeparamref name="T"/> enum that this class is an attribute for (<see cref="P"/>).
     /// Apart from that no differences from <see cref="AgoRapideAttributeEnriched"/>.
     /// 
-    /// <see cref="AgoRapideAttributeEnrichedT{T}"/> contains attributes (C# code originated). 
-    /// <see cref="AgoRapideAttributeDynamic"/> contains attributes dynamically defined by final user (database originated). 
+    /// <see cref="AgoRapideAttributeEnrichedT{T}"/>: Attribute originating from C# code.
+    /// <see cref="AgoRapideAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// This class is assumed to have marginal use.
     /// </summary>

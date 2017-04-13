@@ -510,7 +510,7 @@ namespace AgoRapide.Core {
         /// 
         /// At regular intervals you can remove all uses of this method in the code.
         /// </summary>
-        public static string BreakpointEnabler => "";        
+        public static string BreakpointEnabler => "";
     }
 
     public class IllegalPasswordException : Exception {
@@ -589,6 +589,14 @@ namespace AgoRapide.Core {
         public InvalidObjectTypeException(object _object, Type typeExpected) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead")) { }
         public InvalidObjectTypeException(object _object, Type typeExpected, string message) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead.\r\nDetails: " + message)) { }
         public InvalidObjectTypeException(object _object, string message) : base(GetMessage(_object, message)) { }
+    }
+
+    public class InvalidIdentifierException : ApplicationException {
+        public static System.CodeDom.Compiler.CodeDomProvider CSharpCodeDomProvider = System.CodeDom.Compiler.CodeDomProvider.CreateProvider("C#");
+        public static void AssertValidIdentifier(string identifier) {
+            if (!CSharpCodeDomProvider.IsValidIdentifier(identifier)) throw new InvalidIdentifierException(identifier);
+        }
+        public InvalidIdentifierException(string identifier) : base(nameof(identifier) + " '" + identifier + "' is not valid as a C# identifier") { }
     }
 
     public class InvalidTypeException : ApplicationException {

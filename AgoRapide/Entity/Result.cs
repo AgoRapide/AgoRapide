@@ -66,7 +66,7 @@ namespace AgoRapide {
                 } else {
                     retval.AppendLine("<p>" + MultipleEntitiesResult.Count + " entities</p>"); // of type " + MultipleEntitiesResult.First().GetType().ToStringShort() + "</p>");
                     retval.AppendLine("<table>");
-                    retval.AppendLine(MultipleEntitiesResult.First().ToHTMLTableHeading(request));
+                    retval.AppendLine(MultipleEntitiesResult.First().ToHTMLTableRowHeading(request));
                     // TODO: Assert that all are of equal type, so that heading is known to be correct.
                     // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                     retval.AppendLine(string.Join("", MultipleEntitiesResult.OrderBy(e => e.Name).Select(e => e.ToHTMLTableRow(request))));

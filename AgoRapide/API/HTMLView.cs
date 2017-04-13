@@ -132,7 +132,7 @@ namespace AgoRapide.API {
                     CoreMethod.EntityIndex,
                     nameof(Request.CurrentUser) + ": " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
-                    new IntegerQueryId(Request.CurrentUser.Id)
+                    new QueryIdInteger(Request.CurrentUser.Id)
                     ) +
                 "</p>"
             ) +
@@ -144,7 +144,7 @@ namespace AgoRapide.API {
                     CoreMethod.PropertyOperation,
                     "End representation as " + Request.CurrentUser.Name,
                     typeof(Property),
-                    new IntegerQueryId( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreP.EntityToRepresent"/> no longer exists for CurrentUser.
+                    new QueryIdInteger( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreP.EntityToRepresent"/> no longer exists for CurrentUser.
                         (Request.CurrentUser.RepresentedByEntity.Properties.TryGetValue(CoreP.EntityToRepresent, out var p) ? p.Id : 0)),
                     PropertyOperation.SetInvalid
                     ) +
@@ -158,7 +158,7 @@ namespace AgoRapide.API {
                     CoreMethod.UpdateProperty,
                     "Logout as " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
-                    new IntegerQueryId(Request.CurrentUser.Id),
+                    new QueryIdInteger(Request.CurrentUser.Id),
                     CoreP.RejectCredentialsNextTime.A(),
                     true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreP.Value"/> is a string at this stage
                                     /// (<see cref = "CoreMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
@@ -175,8 +175,7 @@ namespace AgoRapide.API {
             "<br>\r\n" +
             "<p><a href=\"" + Request.JSONUrl + "\">JSON format for this request</a></p>\r\n<p>" +
             (Request.CurrentUser != null ? "" :
-                "You are not logged in. Access is limited to the following methods:<br>\r\n" +
-                    string.Join("<br>", APIMethod.AllMethods.Where(m => !m.RequiresAuthorization).Select(m => Request.CreateAPILink(m)))
+                "You are not logged in. Access is limited to methods with " + nameof(CoreP.AccessLevelUse) + " = " + nameof(AccessLevel.Anonymous) 
             ) +
             "</body>\r\n" +
             "</html>\r\n";

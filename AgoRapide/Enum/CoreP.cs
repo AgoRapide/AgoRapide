@@ -46,23 +46,32 @@ namespace AgoRapide {
         None,
 
         /// <summary>
+        /// For <see cref="BaseEntity"/> will correspond to <see cref="BaseEntity.RootProperty"/>
+        /// 
+        /// Should not be used in database for other purposes than storing an entity root property. 
+        /// </summary>
+        [AgoRapide(
+            Description = "The root property of a -" + nameof(BaseEntity) + "-",
+            Type = typeof(Type), Parents = new Type[] { typeof(BaseEntity) }, CanHaveChildren = true)]
+        RootProperty,
+
+        /// <summary>
         /// General type of entity.
         /// 
-        /// For <see cref="BaseEntity"/> will usually correspond to <see cref="BaseEntity.RootProperty"/>
-        /// 
-        /// Also added to <see cref="BaseEntity.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
+        /// Added to <see cref="BaseEntity.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
         /// </summary>
         [AgoRapide(
             Description = "Corresponds to C# / .NET Type-object.",
-            Type = typeof(Type), Parents = new Type[] { typeof(GeneralQueryResult) }, CanHaveChildren = true)]
-        Type,
+            Type = typeof(Type))]
+        // Type = typeof(Type), Parents = new Type[] { typeof(GeneralQueryResult) })]
+        EntityType,
 
-        /// <summary>
-        [AgoRapide(
-            Description = "The root property of an entity. Added to entity object by -" + nameof(IDatabase.TryGetEntityById) + "-.",
-            Type = typeof(Property), CanHaveChildren = true)]
-        /// </summary>
-        RootProperty,
+        ///// <summary>
+        //[AgoRapide(
+        //    Description = "The root property of an entity. Added to entity object by -" + nameof(IDatabase.TryGetEntityById) + "-.",
+        //    Type = typeof(Property), CanHaveChildren = true)]
+        ///// </summary>
+        //RootProperty,
 
         [AgoRapide(
             Description = "The unique property identifying users in your system.",
@@ -127,15 +136,23 @@ namespace AgoRapide {
         QueryId,
 
         [AgoRapide(
-            Type = typeof(IntegerQueryId),
+            Type = typeof(QueryIdInteger),
             ValidValues = new string[] { "42" })]
         IntegerQueryId,
 
         [AgoRapide(
-            Type = typeof(PropertyValueQueryId))]
+            Type = typeof(QueryIdKeyOperatorValue))]
         PropertyAndValueQueryId,
 
-        [AgoRapide(Description = "General identifier.", IsUniqueInDatabase = true, Parents = new Type[] { typeof(ApplicationPart) })]
+        [AgoRapide(
+            Description =
+                "General identifier. Used by -" + nameof(Request.CreateAPILink) + "-.",
+            LongDescription =
+                "Values chosen should be compatible with HTTP GET URLs. " +
+                "(best approach is most probably to make values valid C# identifiers.)",
+            IsUniqueInDatabase = true,
+            AccessLevelRead = AccessLevel.Anonymous,
+            Parents = new Type[] { typeof(ApplicationPart) })]
         Identifier,
 
         /// <summary>
@@ -329,10 +346,11 @@ namespace AgoRapide {
         [AgoRapide(Parents = new Type[] { typeof(APIMethod) }, Type = typeof(string))]
         RouteTemplate,
 
-        /// <summary>
-        /// Controller + method which implements method.
-        /// </summary>
-        [AgoRapide(Parents = new Type[] { typeof(APIMethod) }, Type = typeof(string))]
+        [AgoRapide(
+            Description = "The Controller class + the method within that class which implements a given method.",
+            Parents = new Type[] { typeof(APIMethod) },
+            AccessLevelRead = AccessLevel.Anonymous,
+            Type = typeof(string))]
         Implementator,
 
         /// <summary>

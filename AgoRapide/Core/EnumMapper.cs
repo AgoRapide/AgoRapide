@@ -26,7 +26,7 @@ namespace AgoRapide {
         /// <summary>
         /// Returns all <see cref="CoreP"/> including additional ones mapped from other enums. 
         /// 
-        /// Will not contain <see cref="AgoRapideAttributeDynamic"/> (since all use of <see cref="AllCoreP"/> is based on C# originated needs, not database originated needs)
+        /// Will not contain <see cref="AgoRapideAttributeEnrichedDyn"/> (since all use of <see cref="AllCoreP"/> is based on C# originated needs, not database originated needs)
         /// </summary>
         public static List<PropertyKeyNonStrict> AllCoreP => _allCoreP ?? throw new NullReferenceException(nameof(AllCoreP) + ". Most probably because no corresponding call was made to " + nameof(MapEnumFinalize));
 
@@ -228,7 +228,7 @@ namespace AgoRapide {
         /// <param name="strErrorResponse"></param>
         /// <returns></returns>
         public static bool TryAddA(string _enum, bool isMany, string description, out string strErrorResponse) {
-            if (!System.CodeDom.Compiler.CodeDomProvider.CreateProvider("C#").IsValidIdentifier(_enum)) {
+            if (!InvalidIdentifierException.CSharpCodeDomProvider.IsValidIdentifier(_enum)) {
                 /// NOTE: Note how this check is extremely important in order to protect against 
                 /// NOTE: both SQL injection attacks and scripting attacks on HTML web pages. 
                 /// NOTE: This is so because it is envisaged that the final user shall be able to 
@@ -242,7 +242,7 @@ namespace AgoRapide {
 
             // TODO: This should not have been accepted for IsMany!
             var key = new PropertyKeyNonStrict( 
-                new AgoRapideAttributeDynamic(
+                new AgoRapideAttributeEnrichedDyn(
                     new AgoRapideAttribute(
                         property: _enum,
                         description: description,

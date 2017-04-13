@@ -73,7 +73,7 @@ namespace AgoRapide.Database {
         public bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
             Log(nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(useCache) + ": " + useCache + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
             switch (id) {
-                case IntegerQueryId integerId: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
+                case QueryIdInteger integerId: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
                     if (!TryGetEntityById(integerId.Id, useCache, requiredType, out BaseEntity temp)) {
                         entities = null;
                         errorResponse = new ErrorResponse(ResultCode.data_error, requiredType.ToStringVeryShort() + " with " + nameof(id) + " " + id + " not found");
@@ -93,8 +93,8 @@ namespace AgoRapide.Database {
                 "SELECT DISTINCT(pid) FROM p WHERE\r\n" +
                 /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all sub-classes.
                 DBField.pid + " IN\r\n" +
-                "(SELECT " + DBField.id + " FROM p WHERE " + DBField.key + " = '" + CoreP.Type + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
-                // string.IsNullOrEmpty(id.SQLWhereStatement) er aktuelt for når id er All.
+                "(SELECT " + DBField.id + " FROM p WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
+                // Check string.IsNullOrEmpty(id.SQLWhereStatement) is relevant when id is "All".
                 id.SQLWhereStatement + (string.IsNullOrEmpty(id.SQLWhereStatement) ? "" : " AND\r\n") +
                 DBField.invalid + " IS NULL "
                 // + "ORDER BY " + DBField.id
@@ -218,7 +218,7 @@ namespace AgoRapide.Database {
                 entity = null;
                 return false;
             }
-            if (!root.Key.Key.CoreP.Equals(CoreP.Type)) {
+            if (!root.Key.Key.CoreP.Equals(CoreP.RootProperty)) {
                 if (requiredType.Equals(typeof(BaseEntity))) {
                     // OK, return what we have got. 
 
@@ -226,7 +226,7 @@ namespace AgoRapide.Database {
                     entity = root;
                     return true;
                 }
-                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.Type).Key.PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.RootProperty).Key.PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
@@ -260,14 +260,6 @@ namespace AgoRapide.Database {
             });
             retval.Properties.AddValue(CoreP.RootProperty, root);
             retval.AddProperty(CoreP.DBId.A(), id);
-
-            // We can not use the short representation because Property will (if asked like V<Type> or similar), try
-            // to reconstruct the actual type.
-            // retval.AddProperty(M(CoreP.Type), retval.GetType().ToStringShort());
-            // Instead we must use the full representation:
-
-            /// Unnecessary because root itself will contain the type.
-            // retval.AddProperty(M(CoreP.Type), retval.GetType().ToStringDB()); 
 
             Util.EntityCache[id] = retval; // Note how entity itself is stored in cache, not root-property
             entity = retval;
@@ -350,7 +342,7 @@ namespace AgoRapide.Database {
             Log(nameof(type) + ": " + type.ToStringShort());
             var cmd = new Npgsql.NpgsqlCommand(
                 "SELECT " + DBField.id + " FROM p WHERE " +
-                DBField.key + " = '" + CoreP.Type.A().Key.PToString + "' AND " +
+                DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
                 DBField.strv + " = '" + type.ToStringDB() + "' AND " +
                 DBField.invalid + " IS NULL " +
                 "ORDER BY " + DBField.id + " ASC", _cn1);
@@ -385,7 +377,7 @@ namespace AgoRapide.Database {
             Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
             InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntity), detailer: null);
             var retval = new Result();
-            var pid = CreateProperty(cid, null, null, CoreP.Type.A().PropertyKey, entityType, result);
+            var pid = CreateProperty(cid, null, null, CoreP.RootProperty.A().PropertyKey, entityType, result);
             if (properties != null) {
                 foreach (var v in properties) {
                     CreateProperty(cid, pid, null, v.key, v.value, result);
@@ -959,12 +951,12 @@ namespace AgoRapide.Database {
                     if (p.Key.Key.A.IsMany) {
                         var isManyParent = dict.GetOrAddIsManyParent(p.Key);
                         if (isManyParent.Properties.TryGetValue(p.Key.IndexAsCoreP, out var toBeOverwritten)) {
-                            noLongerCurrent.Add((toBeOverwritten, 1)); // #1 when calling GetId
+                            noLongerCurrent.Add((toBeOverwritten, 1)); // _1 when calling GetId
                         }
                         isManyParent.Properties[p.Key.IndexAsCoreP] = p;
                     } else {
                         if (dict.TryGetValue(p.Key.Key.CoreP, out var toBeOverwritten)) {
-                            noLongerCurrent.Add((toBeOverwritten, 2)); // #2 when calling GetId
+                            noLongerCurrent.Add((toBeOverwritten, 2)); // _2 when calling GetId
                         }
                         dict[p.Key.Key.CoreP] = p;
                     }
@@ -975,8 +967,8 @@ namespace AgoRapide.Database {
                     Log("Calling " + nameof(OperateOnProperty) + " for " + noLongerCurrent.Count + " properties");
                     var ids = new List<long?> { // Distinguish between multiple or not (maybe not really important?)
                         0,
-                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "#1"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
-                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "#2"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
+                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "_1"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
+                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "_2"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
                     };
                     noLongerCurrent.ForEach(n => {
                         if (n.id < 1 || n.id > 2) throw new Exception("Invalid " + nameof(n.id) + " (" + n.id + ")");

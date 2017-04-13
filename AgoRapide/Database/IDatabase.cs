@@ -71,9 +71,9 @@ namespace AgoRapide.Database {
         /// TODO: on the other hand that could couple the API and Database too tightly together.
         /// 
         /// Returns false / <paramref name="errorResponse"/> if nothing found but <paramref name="id"/> indicates that something was expected 
-        /// returned, for instance when <see cref="IntegerQueryId"/> or <see cref="QueryId.IsSingle"/>
+        /// returned, for instance when <see cref="QueryIdInteger"/> or <see cref="QueryId.IsSingle"/>
         /// 
-        /// With <paramref name="id"/> as <see cref="PropertyValueQueryId"/> then true is returned even if only an empty list was found. 
+        /// With <paramref name="id"/> as <see cref="QueryIdKeyOperatorValue"/> then true is returned even if only an empty list was found. 
         /// 
         /// Throws exception (usually through <see cref="IDatabase.TryGetEntityById"/>) if entity not corresponding to <typeparamref name="T"/> is found. 
         /// 
@@ -278,31 +278,6 @@ namespace AgoRapide.Database {
         public InvalidPasswordException(T property, string message) : this(property, message, null) { }
         public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetAgoRapideAttributeT().PExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
     }
-
-    ///// <summary>
-    ///// TOOD: Do not confuse <see cref="AgoRapide.Database.InvalidPropertyKeyException"/> and <see cref="PropertyKey.InvalidPropertyKeyException"/>,
-    ///// TODO: RENAME ONE OF THESE INTO SOMETHING ELSE
-    ///// 
-    ///// TODO: Maybe remove this altogether. 
-    ///// 
-    ///// TODO: Most probably we can get away with this method by instead just silently mapping unknown string
-    ///// TODO: values to <see cref="CoreP"/> in <see cref="EnumMapper"/>
-    ///// </summary>
-    //public class InvalidPropertyKeyException : ApplicationException { 
-    //    /// <summary>
-    //    /// </summary>
-    //    /// <param name="key">May be null</param>
-    //    public InvalidPropertyKeyException(string key) : this(key, null) { }
-    //    /// <summary>
-    //    /// </summary>
-    //    /// <param name="key">May be null</param>
-    //    /// <param name="id"></param>
-    //    public InvalidPropertyKeyException(string key, long? id) : base(
-    //        "The key " + (key ?? "[NULL]") + " is not recognized as a valid " + typeof(PropertyKey) + "-enum " +
-    //        ((key?.Contains("#") ?? false) ? ("(it was also most probably just checked that it is not a valid " + nameof(PropertyKey) + "-property either)") : "") +
-    //        (id != null ? ("Possible resolution: Set Property with id " + id + " as no-longer-current in database or delete altogether with SQL-code DELETE FROM p WHERE id = " + id) : "")
-    //        ) { } // TODO: Add link to APIMethod for set-no-longer-current.
-    //}
 
     public class PropertyNotFoundException : ApplicationException {
         public PropertyNotFoundException(long id) : base("Property with id '" + id + "' not found") { }

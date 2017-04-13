@@ -32,7 +32,7 @@ namespace AgoRapide {
         /// <summary>
         /// Will be used then the request URL ends with <see cref="Configuration.HTMLPostfixIndicator"/> ("/HTML")
         /// 
-        /// See also <see cref="HTMLView"/>, <see cref="BaseEntity.ToHTMLTableHeading"/>, <see cref="BaseEntity.ToHTMLTableRow"/>, <see cref="BaseEntity.ToHTMLDetailed"/>
+        /// See also <see cref="HTMLView"/>, <see cref="BaseEntity.ToHTMLTableRowHeading"/>, <see cref="BaseEntity.ToHTMLTableRow"/>, <see cref="BaseEntity.ToHTMLDetailed"/>
         /// </summary>
         HTML,
     }

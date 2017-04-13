@@ -55,15 +55,15 @@ namespace AgoRapideSample {
                 if (!TryGetRequest(GeneralQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
 
                 /// TODO: PostgreSQL specific? Where do we want to add this?
-                /// TODO: Should we add a WILDCARD-parameter to <see cref="PropertyValueQueryId"/>.
+                /// TODO: Should we add a WILDCARD-parameter to <see cref="QueryIdKeyOperatorValue"/>.
                 if (!GeneralQueryId.EndsWith("%")) GeneralQueryId += "%";
 
-                QueryId queryId = new PropertyValueQueryId(new List<AgoRapideAttributeEnriched> {
+                QueryId queryId = new QueryIdKeyOperatorValue(new List<AgoRapideAttributeEnriched> {
                     P.FirstName.A().Key,  // Add all keys that you consider
                     P.LastName.A().Key,   // relevant for a general query here
                     P.Email.A().Key       // (remember to optimize database correspondingly, like using partial indexes in PostgreSQL)
                 }, Operator.ILIKE, GeneralQueryId);
-                /// TODO: Add a LIMIT parameter to <see cref="PropertyValueQueryId"/>.
+                /// TODO: Add a LIMIT parameter to <see cref="QueryIdKeyOperatorValue"/>.
                 /// Note relatively expensive reading of whole <see cref="Person"/>-objects now. 
                 if (!DB.TryGetEntities(                    
                     request.CurrentUser.RepresentedByEntity ?? request.CurrentUser, /// Note how search will always be done viewed from <see cref="BaseEntity.RepresentedByEntity"/>
@@ -82,7 +82,7 @@ namespace AgoRapideSample {
                         request.CreateAPIUrl(
                             CoreMethod.UpdateProperty, 
                             typeof(Person),  /// Note important point here, do NOT set <see cref="CoreP.EntityToRepresent"/> for <see cref="CoreP.EntityToRepresent"/>!
-                            new IntegerQueryId(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
+                            new QueryIdInteger(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
                         )
                     );
                     r.AddProperty(CoreP.Description.A(), p.Name);

@@ -209,7 +209,7 @@ namespace AgoRapide.API {
         /// <param name="entityType"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreMethod.EntityIndex, entityType, new IntegerQueryId(id));
+        public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreMethod.EntityIndex, entityType, new QueryIdInteger(id));
         public string CreateAPICommand(BaseEntity entity) => CreateAPICommand(entity.GetType(), entity.Id);
         public string CreateAPICommand(CoreMethod coreMethod, Type type, params object[] parameters) => APIMethod.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
 
@@ -231,7 +231,15 @@ namespace AgoRapide.API {
         /// <param name="entity"></param>
         /// <returns></returns>
         public string CreateAPILink(BaseEntity entity) => CreateAPILink(entity, entity.Name);
-        public string CreateAPILink(BaseEntity entity, string linkText) => CreateAPILink(CoreMethod.EntityIndex, linkText, entity.GetType(), new IntegerQueryId(entity.Id));
+        public string CreateAPILink(BaseEntity entity, string linkText) =>
+            CreateAPILink(CoreMethod.EntityIndex, linkText, entity.GetType(),
+                (entity.Properties!=null && entity.Properties.TryGetValue(CoreP.Identifier, out var p) ?
+                    (QueryId)new QueryIdIdentifier(p.V<string>()) : /// Using identifier looks much better in links. Especially good for documentation where names stay the same but id's may change  (like "Property/{QueryId}" to identify an <see cref="APIMethod"/> for instance)
+                    // (QueryId)new QueryIdInteger(entity.Id) :
+                    (QueryId)new QueryIdInteger(entity.Id)
+                )
+            );
+        
         public string CreateAPILink(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(coreMethod, null, null, type, parameters);
         public string CreateAPILink(CoreMethod coreMethod, string linkText, Type type, params object[] parameters) => CreateAPILink(coreMethod, linkText, null, type, parameters);
         //public string CreateAPILink(CoreMethod coreMethod, Type type, string linkText, params object[] parameters) => CreateAPILink(CreateAPICommand(coreMethod, type, parameters), linkText, null);

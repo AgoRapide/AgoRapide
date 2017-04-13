@@ -9,11 +9,12 @@ using AgoRapide;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: Use <see cref="AgoRapideAttribute"/> itself on this class in order to describe the different
-    /// TODO: elements instead of using XML comments.
-    /// 
+    /// Usually not used directly but as member class of <see cref="AgoRapideAttributeEnriched"/>
     /// 
     /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
+    /// 
+    /// TODO: Use more concept like <see cref="IsManyIsSet"/> in order for <see cref="EnrichFrom"/> to know
+    /// TODO: which values to enrich.
     /// 
     /// Use for describing either
     /// 
@@ -37,13 +38,6 @@ namespace AgoRapide.Core {
     /// or
     /// 
     /// 3) (not implemented as of Feb 2017) All kind of classes. TODO: This class itself for instance.
-    /// 
-    /// TODO: For <see cref="AgoRapideAttribute"/> we could use a boolean-enum of None, True and False. 
-    /// TODO: for bool attributes since bool? is not allowed. 
-    /// TODO: THIS COULD SOLVE THE DILEMMA OF OVERWRITING FALSE WITH TRUE IN <see cref="AgoRapideAttribute.EnrichFrom"/>
-    /// TODO: This idea could also be related to the idea of making an immutable copy of <see cref="AgoRapideAttribute"/>
-    /// TODO: (this copy could have user-friendly bool-values instead of an enum)
-    /// TODO: (the whole change could be without breaking code at the client side)
     /// </summary>
     public class AgoRapideAttribute : Attribute {
 
@@ -83,7 +77,7 @@ namespace AgoRapide.Core {
         /// Only relevant when attribute for an enum-value. 
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
         /// 
-        /// Note that for dynamically originated attributes (see <see cref="AgoRapideAttributeDynamic"/>) this
+        /// Note that for dynamically originated attributes (see <see cref="AgoRapideAttributeEnrichedDyn"/>) this
         /// value will actually be a string, not an <see cref="Enum"/>. 
         /// </summary>
         public object Property => _property ?? throw new NullReferenceException(nameof(_property) + ".\r\nDetails: " + ToString());

@@ -37,6 +37,10 @@ namespace AgoRapide {
     /// </summary>
     [AgoRapide(
         Description = "Represents a basic data object in your model like Person, Order, Product",
+
+        /// Do not do this. Make exception for <see cref="CoreP.AccessLevelUse"/> for <see cref="CoreMethod.EntityIndex"/> instead
+        // AccessLevelRead = AccessLevel.Anonymous, /// Necessary for <see cref="CoreMethod.EntityIndex"/> to accept all kind of queries. 
+
         DefinedForClass = nameof(BaseEntity) /// Necessary for <see cref="AgoRapideAttribute.IsInherited"/> to be set correctly. TODO: Turn into Type (will require more work for deducing <see cref="AgoRapideAttribute.IsInherited"/>). 
     )]
     public class BaseEntity : BaseCore {
@@ -102,7 +106,7 @@ namespace AgoRapide {
         /// <summary>
         /// <see cref="RootProperty"/>.Id is same as (<see cref="BaseEntity.Id"/>. 
         /// 
-        /// <see cref="RootProperty"/>.<see cref="Property.KeyT"/> will usually correspond to <see cref="CoreP.Type"/>
+        /// <see cref="RootProperty"/>.<see cref="Property.KeyT"/> will usually correspond to <see cref="CoreP.RootProperty"/>
         /// 
         /// Note: Not relevant for <see cref="Property"/>
         /// </summary>
@@ -290,7 +294,6 @@ namespace AgoRapide {
             }
         }
 
-
         /// <summary>
         /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntity.InvalidPropertyException{T}"/>
         /// </summary>
@@ -299,7 +302,7 @@ namespace AgoRapide {
             public InvalidPropertyException(CoreP p, string value) : base("The value found for " + typeof(CoreP) + "." + p + " (" + value + ") is not valid for " + typeof(T)) { }
         }
 
-        public virtual string ToHTMLTableHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(Created) + "</th></tr>";
+        public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
@@ -449,7 +452,7 @@ namespace AgoRapide {
                     retval.Properties.Add(i.Value.Key.Key.PToString, i.Value.ToJSONProperty());
                 });
                 // Note that we do not bother with Type when Properties is not set
-                if (!retval.Properties.ContainsKey(nameof(CoreP.Type))) retval.Properties.Add(nameof(CoreP.Type), new JSONProperty0 { Value = GetType().ToStringShort() });
+                if (!retval.Properties.ContainsKey(nameof(CoreP.RootProperty))) retval.Properties.Add(nameof(CoreP.RootProperty), new JSONProperty0 { Value = GetType().ToStringShort() });
             }
             // TODO: ADD THIS:
             // AddUserChangeablePropertiesToSimpleEntity(retval);

@@ -8,10 +8,11 @@ using AgoRapide.Core;
 namespace AgoRapide.API {
     /// <summary>
     /// TODO: MOVE TO FOLDER "Entity"? OR, LET BE WHERE IS, since have entities all over the place now.
-    /// 
-    /// Slightly refined version of <see cref="MethodAttribute"/> in order to use against database and as API-result itself.
-    /// (since inherits <see cref="BaseEntity"/>
     /// </summary>
+    [AgoRapide(Description = 
+        "Slightly refined version of -" + nameof(MethodAttribute) + "- in order to use " +
+        "against database and " +
+        "as API-result itself (since inherits -" + nameof(BaseEntity) + "-)")]
     public class MethodAttributeT : ApplicationPart {
         public MethodAttribute A { get; private set; }
 

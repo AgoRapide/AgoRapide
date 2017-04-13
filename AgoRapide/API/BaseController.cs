@@ -227,7 +227,7 @@ namespace AgoRapide.API {
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, cpKey, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
             request.Result.AddProperty(CoreP.Message.A(), nameof(entities) + ".Count: " + entities.Count);
             return request.GetResponse();
@@ -242,7 +242,7 @@ namespace AgoRapide.API {
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case IntegerQueryId integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
             request.Result.AddProperty(CoreP.Message.A(), nameof(properties) + ".Count: " + properties.Count);
             return request.GetResponse();
@@ -252,7 +252,7 @@ namespace AgoRapide.API {
             Log(nameof(id) + ": " + id);
             method.A.A.AssertCoreMethod(CoreMethod.History);
             if (!TryGetRequest(id, method, out var request, out var objErrorResponse)) return objErrorResponse;
-            if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<IntegerQueryId>(), AccessType.Read, useCache: false, entity: out BaseEntity entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, useCache: false, entity: out BaseEntity entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntity)p).ToList());
         }
 

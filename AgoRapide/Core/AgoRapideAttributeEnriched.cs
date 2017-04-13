@@ -9,18 +9,15 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: Consider renaming into A (since used quite often)
+    /// Extends on <see cref="AgoRapideAttribute"/> because that class is very limited since it is an <see cref="Attribute"/>-class.  
     /// 
     /// See subclasses 
-    /// <see cref="AgoRapideAttributeEnrichedT{T}"/> and
-    /// <see cref="AgoRapideAttributeDynamic"/> 
-    /// 
-    /// TODO: Consider implementing a separate class only for entity enum properties like <see cref="CoreP"/> and P 
-    /// 
-    /// Extends on <see cref="AgoRapideAttribute"/> because that class is very limited since it is an <see cref="Attribute"/>-class.  
-    /// See also subclass <see cref="AgoRapideAttributeEnrichedT{T}"/>.
+    /// <see cref="AgoRapideAttributeEnrichedT{T}"/>: Attribute originating from C# code.
+    /// <see cref="AgoRapideAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// TODO: As of Jan 2017 there is still some work to be done in this class regarding parsing and validation
+    /// 
+    /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
     ///
     /// TODO: Make this inherit <see cref="BaseEntity"/> and store Properties to database. In this manner we
     /// TODO: get HISTORICAL information about documentation (for each and every attribute of a property), giving us much
@@ -29,8 +26,6 @@ namespace AgoRapide.Core {
     /// TODO: and with its own <see cref="CoreMethod"/> called AgoRapideAttribute.
     /// 
     /// TODO: (AFTER IMPLEMENTING ABOVE) MOVE THIS TO ENTITY-FOLDER SINCE INHERITS <see cref="BaseEntity"/> 
-    /// 
-    /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
     /// </summary>
     public abstract class AgoRapideAttributeEnriched {
 

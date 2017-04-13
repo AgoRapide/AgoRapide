@@ -17,7 +17,7 @@ namespace AgoRapide {
     )]
     public class GeneralQueryResult : BaseEntity {
 
-        public override string ToHTMLTableHeading(Request request) => "<tr><th>Result</th></tr>";
+        public override string ToHTMLTableRowHeading(Request request) => "<tr><th>Result</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             "<a href=\"" + PV<string>(CoreP.SuggestedUrl.A()) + "\">" + PV<string>(CoreP.Description.A()).HTMLEncode() + "</a>" +

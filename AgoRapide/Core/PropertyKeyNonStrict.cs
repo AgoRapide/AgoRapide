@@ -42,7 +42,6 @@ namespace AgoRapide.Core {
                     case PropertyKey temp: return _propertyKey = temp; /// Hack, because often <see cref="PropertyKeyNonStrict.PropertyKey"/> is asked for even in cases when the caller already has a <see cref="PropertyKey"/> object (the caller "belives" it only has a <see cref="PropertyKeyNonStrict"/>  object)
                     default:
                         throw new NullReferenceException(
-                            Util.BreakpointEnabler +
                             nameof(_propertyKey) + ". " +
                             "Possible reason: " +
                             new Func<string>(() => {
@@ -65,7 +64,7 @@ namespace AgoRapide.Core {
         /// HACK. See <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
         /// Only relevant when originates from <see cref="EnumMapper"/>
         /// </summary>
-        public PropertyKey PropertyKeyAsIsManyParentOrTemplate => _propertyKeyAsIsManyParentOrTemplate ?? throw new NullReferenceException(Util.BreakpointEnabler + nameof(_propertyKeyAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(EnumMapper) + ".\r\nDetails: " + ToString());
+        public PropertyKey PropertyKeyAsIsManyParentOrTemplate => _propertyKeyAsIsManyParentOrTemplate ?? throw new NullReferenceException(nameof(_propertyKeyAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(EnumMapper) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// This is a hack to allow <see cref="Property.IsIsManyParent"/> and <see cref="Property.IsTemplateOnly"/> 

@@ -330,6 +330,23 @@ namespace AgoRapide {
         /// </summary>
         public object Value => _value ?? throw new NullReferenceException(nameof(_value) + "Details: " + ToString());
 
+        /// <summary>
+        /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public string ValueHTML(Request request) {
+            var v = V<string>();
+            switch (Key.Key.CoreP) {
+                case CoreP.Identifier: return request.CreateAPILink(CoreMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
+                case CoreP.DBId: return request.CreateAPILink(CoreMethod.EntityIndex, v, 
+                    (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreMethod.EntityIndex, Parent.GetType(), out _) ? 
+                        Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
+                        typeof(BaseEntity)), new QueryIdInteger(V<long>()));
+                default: return v.HTMLEncodeAndEnrich(request);
+            }
+        }
+
         public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + _stringValue + "' to " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
         /// <summary>
         /// TODO: Decide what "Try" really means. 
@@ -479,7 +496,7 @@ namespace AgoRapide {
             (_key == null ? "" : (", " + nameof(Key.Key.A.Type) + ": " + (_key.Key.A.Type?.ToString() ?? "[NULL]"))) + ", " +
             GetType() + ".\r\n";
 
-        public override string ToHTMLTableHeading(Request request) => HTMLTableHeading;
+        public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
         public const string HTMLTableHeading = "<tr><th>Key</th><th>Value</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
 
         /// <summary>
@@ -521,7 +538,7 @@ namespace AgoRapide {
                 (IsTemplateOnly || string.IsNullOrEmpty(ValueA.Description) ? "" : "<span title=\"" + ValueA.Description.HTMLEncode() + "\">") +
                 ((!IsChangeableByCurrentUser || a.ValidValues != null) ?
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
-                    (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : V<string>().HTMLEncodeAndEnrich(request))) :
+                    (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML(request))) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
                         "<input " + // TODO: Vary size according to attribute.
                             "id=\"input_" + KeyHTML + "\"" +
@@ -649,21 +666,11 @@ namespace AgoRapide {
             adderWithLink(DBField.fid, ForeignId);
             adder(DBField.key, KeyDB);
 
-            // This one really was not necessary since we use KeyDB above
-            // retval.AppendLine("<tr><td>" + nameof(DBField.key) + " (explained)</td><td>" + KeyA.PExplained + "</td></tr>\r\n");
-
             // TODO: Add helptext for this (or remove it).
             retval.AppendLine("<tr><td>Index</td><td>" + (Key.Key.A.IsMany ? Key.Index.ToString() : "&nbsp;") + "</td></tr>\r\n");
 
             /// TODO: Maybe keep information about from which <see cref="DBField"/> <see cref="_stringValue"/> originated?
             retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue?.HTMLEncode() ?? "[NULL[]") + "</td></tr>\r\n");
-
-            //adder(DBField.lngv, LngValue?.ToString());
-            //adder(DBField.dblv, DblValue?.ToString());
-            //adder(DBField.blnv, BlnValue?.ToString());
-            //adder(DBField.dtmv, DtmValue?.ToString());
-            //adder(DBField.geov, GeoValue?.ToString());
-            //adder(DBField.strv, StrValue?.ToString());
 
             // retval.AppendLine("<tr><td>" + nameof(DBField.strv) + " (explained)</td><td>" + ValueA.Description + "</td></tr>\r\n");
             adder(DBField.valid, Valid?.ToString(DateTimeFormat.DateHourMinSec));
@@ -672,12 +679,12 @@ namespace AgoRapide {
             adderWithLink(DBField.iid, InvalidatorId);
             retval.AppendLine("</table>");
             var cmds = new List<string>();
-            request.CreateAPICommand(CoreMethod.History, GetType(), new IntegerQueryId(Id)).Use(cmd => {
+            request.CreateAPICommand(CoreMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
                 retval.AppendLine("<p>" + request.CreateAPILink(cmd, "History") + "</p>");
                 cmds.Add(cmd);
             });
             Util.EnumGetValues<PropertyOperation>().ForEach(o => {
-                request.CreateAPICommand(CoreMethod.PropertyOperation, GetType(), new IntegerQueryId(Id), o).Use(cmd => {
+                request.CreateAPICommand(CoreMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
                     retval.AppendLine("<p>" + request.CreateAPILink(cmd, o.ToString()) + "</p>");
                     cmds.Add(cmd);
                 });

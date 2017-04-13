@@ -158,7 +158,7 @@ namespace AgoRapideSample {
                 // ---------------------
 
                 Log("Looking for " + AgoRapide.CoreP.IsAnonymous + " persons");
-                var queryId = new AgoRapide.Core.PropertyValueQueryId(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.IsAnonymous).Key, AgoRapide.Core.Operator.EQ, true);
+                var queryId = new AgoRapide.Core.QueryIdKeyOperatorValue(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.IsAnonymous).Key, AgoRapide.Operator.EQ, true);
                 if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
                     Log(AgoRapide.CoreP.IsAnonymous + " person not found, creating one");
                     AgoRapide.Core.Util.Configuration.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(

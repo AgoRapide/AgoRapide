@@ -84,7 +84,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="API\APIMethodDocumentator.cs" />
     <Compile Include="API\APIMethodMapper.cs" />
     <Compile Include="API\BaseController.cs" />
     <Compile Include="API\HTMLView.cs" />
@@ -94,8 +93,8 @@
     <Compile Include="API\BaseView.cs" />
     <Compile Include="API\RouteSegmentClass.cs" />
     <Compile Include="Core\AgoRapideAttribute.cs" />
-    <Compile Include="Core\AgoRapideAttributeDynamic.cs" />
     <Compile Include="Core\AgoRapideAttributeEnriched.cs" />
+    <Compile Include="Core\AgoRapideAttributeEnrichedDyn.cs" />
     <Compile Include="Core\AgoRapideAttributeEnrichedT.cs" />
     <Compile Include="Core\BaseCore.cs" />
     <Compile Include="Core\EnumMapper.cs" />
@@ -106,6 +105,9 @@
     <Compile Include="Core\PropertyKey.cs" />
     <Compile Include="Core\PropertyKeyNonStrict.cs" />
     <Compile Include="Core\QueryId.cs" />
+    <Compile Include="Core\QueryIdIdentifier.cs" />
+    <Compile Include="Core\QueryIdInteger.cs" />
+    <Compile Include="Core\QueryIdKeyOperatorValue.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Configuration.cs" />
     <Compile Include="Core\Extensions.cs" />
@@ -135,6 +137,7 @@
     <Compile Include="Enum\Environment.cs" />
     <Compile Include="Enum\HTTPMethod.cs" />
     <Compile Include="API\MethodAttribute.cs" />
+    <Compile Include="Enum\Operator.cs" />
     <Compile Include="Enum\PropertyOperation.cs" />
     <Compile Include="Enum\ResponseFormat.cs" />
     <Compile Include="Enum\ResultCode.cs" />

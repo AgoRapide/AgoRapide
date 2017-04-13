@@ -26,11 +26,11 @@ namespace AgoRapide.Core {
         /// TODO: Try to solve in a better manner by creating a subclass PropertyKeyIsMany or similar.
         /// </summary>
         public int Index {
-            get => _index > 0 ? _index : throw new InvalidPropertyKeyException(Util.BreakpointEnabler + "Invalid to read " + nameof(Index) + " when not set.\r\nDetails: " + Key.A.ToString()); // Careful not to call ToString() here.
+            get => _index > 0 ? _index : throw new InvalidPropertyKeyException("Invalid to read " + nameof(Index) + " when not set.\r\nDetails: " + Key.A.ToString()); // Careful not to call ToString() here.
             protected set => _index = value;
         }
 
-        public CoreP IndexAsCoreP => (CoreP)(object)(int.MaxValue - (_index > 0 ? _index : throw new InvalidPropertyKeyException(Util.BreakpointEnabler + nameof(Index) + " not set. Details: " + Key.ToString())));
+        public CoreP IndexAsCoreP => (CoreP)(object)(int.MaxValue - (_index > 0 ? _index : throw new InvalidPropertyKeyException(nameof(Index) + " not set. Details: " + Key.ToString())));
 
         public PropertyKey(AgoRapideAttributeEnriched key) : this(key, 0) { }
         public PropertyKey(AgoRapideAttributeEnriched key, int index) : base(key) {
