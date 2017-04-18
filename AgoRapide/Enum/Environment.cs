@@ -25,7 +25,7 @@ namespace AgoRapide {
             "\r\n" +
             "And last, you may use Environment for\r\n" +
             "4) To (the traditional understanding) characterize the runtime environment the application runs in\r\n" +
-            "    (see -" + nameof(Configuration.Environment) + "-)\r\n",
+            "    (see -" + nameof(ConfigurationAttribute.Environment) + "-)\r\n",
         EnumType = EnumType.DataEnum
     )]
     public enum Environment {

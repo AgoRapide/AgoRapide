@@ -61,13 +61,13 @@ namespace AgoRapideSample {
         /// <param name="appBuilder"></param>
         public void Configuration(Owin.IAppBuilder appBuilder) {
             try {
-                var logPath = @"c:\p\Logfiles\AgoRapideSample\AgoRapideLog_[DATE_HOUR].txt";
+                var logPath = @"c:\p\Logfiles\AgoRapideSample\AgoRapideLogX_[DATE_HOUR].txt";
 
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl and rootPath
-                AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(
+                AgoRapide.Core.Util.Configuration = new AgoRapide.Configuration(new AgoRapide.Core.ConfigurationAttribute(
                     logPath: logPath,
-                    rootUrl: AgoRapide.Core.Util.Configuration.RootUrl
-                );
+                    rootUrl: AgoRapide.Core.Util.Configuration.A.RootUrl
+                ));
 
                 Log("");
                 var environment = GetEnvironment();
@@ -86,7 +86,7 @@ namespace AgoRapideSample {
                 Log("environment: " + environment.environment);
 
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl and rootPath
-                AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(
+                AgoRapide.Core.Util.Configuration = new AgoRapide.Configuration(new AgoRapide.Core.ConfigurationAttribute(
                     logPath: logPath,
                     rootUrl: rootUrl
                 ) {
@@ -100,10 +100,11 @@ namespace AgoRapideSample {
                     // ...
                     // Note how may change a lot of other configuration parameters here, as needed
                     // ...
-                };
+                });
 
                 void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.EnumMapper.MapEnum<T>(s => Log(nameof(AgoRapide.EnumMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
                 mapper1<AgoRapide.CoreP>();
+                mapper1<AgoRapide.Core.ConfigurationAttribute.ConfigurationKey>();
                 mapper1<P>();
                 /// Add all your <see cref="AgoRapide.EnumType.EntityPropertyEnum"/> at bottom of list, 
                 /// that is in order of going outwards from inner AgoRapide library towards your final application
@@ -113,7 +114,7 @@ namespace AgoRapideSample {
 
                 var systemUser = new Person();
                 systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.AccessLevelGiven), AgoRapide.AccessLevel.System);
-                AgoRapide.Core.Util.Configuration.SystemUser = systemUser;
+                AgoRapide.Core.Util.Configuration.A.SystemUser = systemUser;
 
                 Log("Going through all " + typeof(P) + " attributes in order to expose any issues at once");
                 AgoRapide.Core.Util.EnumGetValues<P>().ForEach(p => AgoRapide.Core.Extensions.GetAgoRapideAttributeT(p));
@@ -159,9 +160,9 @@ namespace AgoRapideSample {
 
                 Log("Looking for " + AgoRapide.CoreP.IsAnonymous + " persons");
                 var queryId = new AgoRapide.Core.QueryIdKeyOperatorValue(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.IsAnonymous).Key, AgoRapide.Operator.EQ, true);
-                if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
+                if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.A.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
                     Log(AgoRapide.CoreP.IsAnonymous + " person not found, creating one");
-                    AgoRapide.Core.Util.Configuration.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(
+                    AgoRapide.Core.Util.Configuration.A.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(
                         cid: startupAsApplicationPart.Id,
                         properties: new Dictionary<AgoRapide.CoreP, object> {
                             { AgoRapide.CoreP.Name, "anonymous"},
@@ -171,10 +172,18 @@ namespace AgoRapideSample {
                         }.Select(e => (AgoRapide.Core.Extensions.A(e.Key).PropertyKey, e.Value)).ToList(),
                         result: null));
                 } else {
-                    AgoRapide.Core.Util.Configuration.AnonymousUser = anonymousUser;
+                    AgoRapide.Core.Util.Configuration.A.AnonymousUser = anonymousUser;
                 }
+
                 // ---------------------
 
+                Log("Reading all (or rather the single) " + typeof(AgoRapide.Configuration));
+                AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.Configuration>(db, text => Log("(by " + typeof(AgoRapide.Configuration) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
+
+                Log("Writing configuration to database");
+                AgoRapide.Core.Util.Configuration.ConnectWithDatabase(db);
+
+                // ---------------------
                 Log("Reading all " + typeof(AgoRapide.APIMethod));
                 AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.APIMethod>(db, text => Log("(by " + typeof(AgoRapide.ApplicationPart) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
@@ -192,6 +201,7 @@ namespace AgoRapideSample {
 
                 AgoRapide.APIMethod.CreateAutogeneratedMethods(
                     types: new List<Type> {
+                        typeof(AgoRapide.Configuration), 
                         typeof(AgoRapide.BaseEntity),
                         typeof(AgoRapide.APIMethod),
                         typeof(AgoRapide.ClassAndMethod),
@@ -213,8 +223,8 @@ namespace AgoRapideSample {
                 if (AgoRapide.APIMethod.IgnoredMethods.Count > 0) {
                     /// Note that we do not delete from the database in cases like this
                     /// (in general as of Feb 2017 we do not have deletion of <see cref="AgoRapide.ApplicationPart"/> no longer in the C# code)
-                    Log("In addition the following methods are present in the C# code but where ignored because the " + nameof(AgoRapide.Environment) + " does not match the current one (" + AgoRapide.Core.Util.Configuration.Environment + "):\r\n\r\n" +
-                        string.Join("\r\n", AgoRapide.APIMethod.IgnoredMethods.Select(r => r.ToString() + " (" + nameof(r.A.A.Environment) + ": " + r.A.A.Environment + ")")) + "\r\n");
+                    Log("In addition the following methods are present in the C# code but where ignored because the " + nameof(AgoRapide.Environment) + " does not match the current one (" + AgoRapide.Core.Util.Configuration.A.Environment + "):\r\n\r\n" +
+                        string.Join("\r\n", AgoRapide.APIMethod.IgnoredMethods.Select(r => r.ToString() + " (" + nameof(r.A.Environment) + ": " + r.A.Environment + ")")) + "\r\n");
                 }
 
                 // ---------------------
@@ -323,7 +333,7 @@ namespace AgoRapideSample {
                             "with " + nameof(exactMatch.Value.method.Origin) + " " + exactMatch.Value.method.Origin + " " +
                             "and " + nameof(exactMatch.Value.method.RequiresAuthorization) + " " + exactMatch.Value.method.RequiresAuthorization + ". " +
                             "This is not logical, as such an URL should not result in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " being called");
-                        generatePrincipal((Person)AgoRapide.Core.Util.Configuration.AnonymousUser); // Careful with casting here. Must match creation of anonymous user in Startup.Configuration
+                        generatePrincipal((Person)AgoRapide.Core.Util.Configuration.A.AnonymousUser); // Careful with casting here. Must match creation of anonymous user in Startup.Configuration
                     }
                 } else {
                     var credArray = System.Text.Encoding.GetEncoding("UTF-8").GetString(Convert.FromBase64String(headers.Authorization.Parameter)).Split(':');

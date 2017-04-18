@@ -21,7 +21,7 @@ namespace AgoRapideSample {
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Method(CoreMethod = CoreMethod.RootIndex)]
+        [APIMethod(CoreMethod = CoreMethod.RootIndex)]
         public object RootIndex() {
             try {
                 if (!TryGetRequest(out var request, out var completeErrorResponse)) return completeErrorResponse;
@@ -47,7 +47,7 @@ namespace AgoRapideSample {
         [HttpGet]
         [OverrideAuthentication]
         [BasicAuthentication(AccessLevelUse = AccessLevel.User)]
-        [Method(
+        [APIMethod(
             Description = "Returns all persons where one of -" + nameof(P.FirstName) + "-, -" + nameof(P.LastName) + "- or -" + nameof(P.Email) + "- matches {" + nameof(CoreP.GeneralQueryId) + "}",
             S1 = nameof(GeneralQuery), S2 = CoreP.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
         public object GeneralQuery(string GeneralQueryId) {
@@ -106,7 +106,7 @@ namespace AgoRapideSample {
         /// <returns></returns>
         [HttpGet]
         [HttpPost]
-        [Method(
+        [APIMethod(
             S1 = nameof(AddFirstAdminUser), S2 = P.Email, S3 = P.Password, Description =
             "Adds the first administrative user to the system (with -" + nameof(P) + "." + nameof(P.AccessLevelGiven) + "- = -" + nameof(AccessLevel) + "." + nameof(AccessLevel.Admin) + "-. " +
             "Only allowed if no entities of type -" + nameof(Person) + "- exists",
@@ -122,16 +122,16 @@ namespace AgoRapideSample {
                 var persons = DB.GetRootPropertyIds(typeof(Person));  // TODO: This is costly! Check in a less costly manner!
                 // TODO: If client has forgot admin credentials, give instructions for recovery. Like sending e-mail, deleting
                 // TODO: password from database or deleting all properties for admin-user.
-                var au = Util.Configuration.AnonymousUser;
-                if (au == null) throw new Exception(nameof(Util.Configuration.AnonymousUser) + " not set up correctly (null)");
-                if (au.Id <= 0) throw new Exception(nameof(Util.Configuration.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + ": " + au.Id + ")");
-                if (!au.GetType().Equals(typeof(Person))) throw new Exception(nameof(Util.Configuration.AnonymousUser) + " not set up correctly (type: " + au.GetType() + ")");
+                var au = Util.Configuration.A.AnonymousUser;
+                if (au == null) throw new Exception(nameof(Util.Configuration.A.AnonymousUser) + " not set up correctly (null)");
+                if (au.Id <= 0) throw new Exception(nameof(Util.Configuration.A.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + ": " + au.Id + ")");
+                if (!au.GetType().Equals(typeof(Person))) throw new Exception(nameof(Util.Configuration.A.AnonymousUser) + " not set up correctly (type: " + au.GetType() + ")");
                 // Check above is in order for Count > 1 below to work out
                 if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "Admin user already exists. There is no need for calling this method.");
-                if (persons[0] != au.Id) throw new Exception(nameof(Util.Configuration.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
+                if (persons[0] != au.Id) throw new Exception(nameof(Util.Configuration.A.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
                 // ------------------------------
                 request.Parameters.AddProperty(CoreP.AccessLevelGiven.A(), AccessLevel.Admin);
-                request.Result.LogInternal("Note how this API-method gives you a high level of details in the generated result because -" + nameof(MethodAttribute) + "." + nameof(MethodAttribute.ShowDetailedResult) + "- = true", GetType());
+                request.Result.LogInternal("Note how this API-method gives you a high level of details in the generated result because -" + nameof(APIMethodAttribute) + "." + nameof(APIMethodAttribute.ShowDetailedResult) + "- = true", GetType());
                 return request.GetOKResponseAsEntityId(typeof(Person), DB.CreateEntity<Person>(GetId(), request.Parameters, request.Result), null);
             } catch (Exception ex) {
                 return HandleExceptionAndGenerateResponse(ex);
@@ -149,7 +149,7 @@ namespace AgoRapideSample {
         [HttpPost]
         [OverrideAuthentication]
         [BasicAuthentication(AccessLevelUse = AccessLevel.User)] // Stricter access like administrative access will be considered further downstream (by AgoRapideGenericMethod)
-        [Method(CoreMethod = CoreMethod.GenericMethod)]
+        [APIMethod(CoreMethod = CoreMethod.GenericMethod)]
         public object GenericMethod() {
             try {
                 var method = GetMethod();
@@ -169,7 +169,7 @@ namespace AgoRapideSample {
         [OverrideAuthentication]
         [BasicAuthentication(AccessLevelUse = AccessLevel.Admin)]
         [HttpGet]
-        [Method(CoreMethod = CoreMethod.ExceptionDetails, S1 = nameof(ExceptionDetails), AccessLevelUse = AccessLevel.Admin)]
+        [APIMethod(CoreMethod = CoreMethod.ExceptionDetails, S1 = nameof(ExceptionDetails), AccessLevelUse = AccessLevel.Admin)]
         public object ExceptionDetails() {
             try {
                 return HandleCoreMethodExceptionDetails(GetMethod());

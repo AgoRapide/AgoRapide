@@ -9,7 +9,7 @@ using AgoRapide.Core;
 namespace AgoRapide.API {
 
     /// <summary>
-    /// Originates from <see cref="MethodAttribute.S1"/> to <see cref="MethodAttribute.S9"/>
+    /// Originates from <see cref="APIMethodAttribute.S1"/> to <see cref="APIMethodAttribute.S9"/>
     /// 
     /// Typical example:
     ///   [MethodAttribute(S1 = typeof(Person), S2 = "Add", S3 = P.first_name, S4 = P.last_name)]
@@ -24,7 +24,7 @@ namespace AgoRapide.API {
     public class RouteSegmentClass {
 
         /// <summary>
-        /// Explains from which of <see cref="MethodAttribute.S1"/> ... <see cref="MethodAttribute.S9"/> segment originates.
+        /// Explains from which of <see cref="APIMethodAttribute.S1"/> ... <see cref="APIMethodAttribute.S9"/> segment originates.
         /// </summary>
         public string SegmentName { get; private set; }
 

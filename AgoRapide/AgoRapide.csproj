@@ -84,11 +84,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\APIMethodAttribute.cs" />
     <Compile Include="API\APIMethodMapper.cs" />
     <Compile Include="API\BaseController.cs" />
     <Compile Include="API\HTMLView.cs" />
     <Compile Include="API\JSONView.cs" />
-    <Compile Include="API\MethodAttributeT.cs" />
     <Compile Include="API\Request.cs" />
     <Compile Include="API\BaseView.cs" />
     <Compile Include="API\RouteSegmentClass.cs" />
@@ -97,6 +97,7 @@
     <Compile Include="Core\AgoRapideAttributeEnrichedDyn.cs" />
     <Compile Include="Core\AgoRapideAttributeEnrichedT.cs" />
     <Compile Include="Core\BaseCore.cs" />
+    <Compile Include="Core\ConfigurationAttribute.cs" />
     <Compile Include="Core\EnumMapper.cs" />
     <Compile Include="Core\ErrorResponse.cs" />
     <Compile Include="Core\IGroupDescriber.cs" />
@@ -109,7 +110,6 @@
     <Compile Include="Core\QueryIdInteger.cs" />
     <Compile Include="Core\QueryIdKeyOperatorValue.cs" />
     <Compile Include="Core\Util.cs" />
-    <Compile Include="Core\Configuration.cs" />
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Database\IDatabase.cs" />
     <Compile Include="Database\PostgreSQLDatabase.cs" />
@@ -119,6 +119,7 @@
     <Compile Include="Entity\BaseEntity.cs" />
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />
     <Compile Include="Entity\ClassAndMethod.cs" />
+    <Compile Include="Entity\Configuration.cs" />
     <Compile Include="Entity\EnumClass.cs" />
     <Compile Include="Entity\GeneralQueryResult.cs" />
     <Compile Include="Entity\Parameters.cs" />
@@ -136,8 +137,8 @@
     <Compile Include="Enum\EnumType.cs" />
     <Compile Include="Enum\Environment.cs" />
     <Compile Include="Enum\HTTPMethod.cs" />
-    <Compile Include="API\MethodAttribute.cs" />
     <Compile Include="Enum\Operator.cs" />
+    <Compile Include="Enum\PriorityOrder.cs" />
     <Compile Include="Enum\PropertyOperation.cs" />
     <Compile Include="Enum\ResponseFormat.cs" />
     <Compile Include="Enum\ResultCode.cs" />

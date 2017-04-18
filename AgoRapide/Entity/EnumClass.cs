@@ -8,6 +8,13 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
 
+    //public class Enum {
+    //    public static string A => "B";
+    //}
+
+        /// <summary>
+        /// TODO: DELETE THIS. Replace with Key (other EnumClass goes into <see cref="ClassAndMethod"/>)
+        /// </summary>
     [AgoRapide(
         Description = "Represents an Enum with values",
         AccessLevelRead = AccessLevel.Anonymous,

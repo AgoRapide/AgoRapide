@@ -9,12 +9,11 @@ using AgoRapide.Core;
 namespace AgoRapide {
 
     /// <summary>
-    /// Operators as used by <see cref="QueryId"/>
-    /// 
     /// TODO: Support IS (like IS NULL)
-    /// 
-    /// See also <see cref="Extensions.ToSQLString(Operator)"/>
     /// </summary>
+    [AgoRapide(Description = 
+        "Operators as used by -" + nameof(QueryId) + "-. " +
+        "See also -" + nameof(Extensions.ToSQLString) + "-.")]
     public enum Operator {
         None,
         IN,
@@ -23,13 +22,9 @@ namespace AgoRapide {
         LT,
         GEQ,
         LEQ,
-        /// <summary>
-        /// Case sensitive string wildcard comparision as implemented by PostgreSQL database engine.
-        /// </summary>
+        [AgoRapide(Description = "Case sensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
         LIKE,
-        /// <summary>
-        /// Case insensitive string wildcard comparision as implemented by PostgreSQL database engine.
-        /// </summary>
+        [AgoRapide(Description = "Case insensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
         ILIKE
     }
 }

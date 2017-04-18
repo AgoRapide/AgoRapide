@@ -28,6 +28,9 @@ namespace AgoRapide {
         [AgoRapide(Description = "\"Starting point\" for API. Will usually return HTML-format regardless of -" + nameof(ResponseFormat) + "- requested by client")]
         RootIndex,
 
+        [AgoRapide(Description ="Access to -" + nameof(Configuration) + "-.")]
+        Configuration,
+
         /// <summary>
         /// Describes methods like api/APIMethod/{id}, api/Person/{id} and so on. Also used for api/Property/{id}
         /// See <see cref="BaseController.HandleCoreMethodEntityIndex"/>

@@ -27,7 +27,7 @@ namespace AgoRapideSample {
         /// <param name="SomeNumber"></param>
         /// <returns></returns>
         [HttpGet]
-        [Method(
+        [APIMethod(
             Description = "Doubles the number given (every time)",
             S1 = nameof(DemoDoubler), S2 = P.SomeNumber)]
         public object DemoDoubler(string SomeNumber) {
@@ -43,7 +43,7 @@ namespace AgoRapideSample {
         }
 
         [HttpGet]
-        [Method(
+        [APIMethod(
             Environment = AgoRapide.Environment.Development, // This method will not show up on your Production-server.
             Description = "Triples the number given (every time)",
             S1 = nameof(DemoTripler), S2 = P.SomeNumber)]
@@ -65,7 +65,7 @@ namespace AgoRapideSample {
         /// <param name="IntegerQueryId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Method(
+        [APIMethod(
             Description = "Demonstrates use of " + nameof(AgoRapideAttribute.IsMany) + ". Call with id of a Car-object",
             S1 = nameof(CarIsManyExample), S2 = CoreP.IntegerQueryId)]
         public object CarIsManyExample(string IntegerQueryId) {

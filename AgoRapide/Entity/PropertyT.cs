@@ -44,8 +44,7 @@ namespace AgoRapide {
         /// </param>
         public PropertyT(PropertyKey key, T value, string strValue) : base(dummy: null) {
             _key = key ?? throw new ArgumentNullException(nameof(key));
-            if (value == null) throw new ArgumentNullException(nameof(value));
-            _value = value;
+            _value = (object)value ?? throw new ArgumentNullException(nameof(value)); 
             _genericValue = value;
 
             if (typeof(string).Equals(typeof(T))) {
@@ -70,7 +69,7 @@ namespace AgoRapide {
                 /// been easy for it again to have that as an incoming parameter. But that string value would not necessarily be
                 /// the same as <paramref name="value"/>.ToString() (the actual parser being used may accept very different input)
 
-                // switch (value) // TODO: Why can we switchon value directly? http://stackoverflow.com/questions/41436399/expression-of-type-t-cannot-be-handled-by-a-pattern-of-type-x
+                // switch (value) // Wondering why we can not switch on value directly? See http://stackoverflow.com/questions/41436399/expression-of-type-t-cannot-be-handled-by-a-pattern-of-type-x
                 var objValue = (object)value;
                 switch (objValue) {
                     case double dblValue: return dblValue.ToString2();

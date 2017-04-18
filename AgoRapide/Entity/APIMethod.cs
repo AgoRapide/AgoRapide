@@ -61,7 +61,7 @@ namespace AgoRapide {
         /// </summary>
         public System.Reflection.MethodInfo ControllerMethod { get; private set; }
 
-        public MethodAttributeT A { get; private set; }
+        public APIMethodAttribute A { get; private set; }
 
         /// <summary>
         /// TODO: When <see cref="AgoRapideAttribute.IsMany"/> support is finished remove this specific method
@@ -86,9 +86,9 @@ namespace AgoRapide {
         /// <param name="httpMethods"></param>
         /// <param name="routeSegments"></param>
         /// <param name="routeTemplate"></param>
-        public APIMethod(Type entityType, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<PropertyKeyNonStrict> parameters, string routeTemplate) {
-            _entityType = entityType ?? throw new NullReferenceException(nameof(entityType));
-            A = new MethodAttributeT(methodAttribute) ?? throw new NullReferenceException(nameof(methodAttribute));
+        public APIMethod(Type entityType, APIMethodAttribute methodAttribute, List<HTTPMethod> httpMethods, List<RouteSegmentClass> routeSegments, List<PropertyKeyNonStrict> parameters, string routeTemplate) {
+            _entityType = entityType; /// Null is relevant for <see cref="CoreMethod.Configuration"/> ?? throw new NullReferenceException(nameof(entityType));
+            A = methodAttribute ?? throw new NullReferenceException(nameof(methodAttribute));
             HttpMethods = httpMethods ?? throw new NullReferenceException(nameof(httpMethods));
             RouteSegments = routeSegments ?? throw new NullReferenceException(nameof(routeSegments));
             Parameters = parameters ?? throw new NullReferenceException(nameof(parameters));
@@ -102,59 +102,59 @@ namespace AgoRapide {
         /// <param name="controllerMethod"></param>
         /// <param name="methodAttribute"></param>
         /// <param name="httpMethods"></param>
-        public APIMethod(Type controller, System.Reflection.MethodInfo controllerMethod, MethodAttribute methodAttribute, List<HTTPMethod> httpMethods) {
+        public APIMethod(Type controller, System.Reflection.MethodInfo controllerMethod, APIMethodAttribute methodAttribute, List<HTTPMethod> httpMethods) {
             Controller = controller ?? throw new ArgumentNullException(nameof(controller));
             if (!Controller.ToStringShort().EndsWith("Controller")) throw new InvalidControllernameException("'" + controller.ToStringShort() + "' does not end with 'Controller'");
             ControllerMethod = controllerMethod ?? throw new ArgumentNullException(nameof(controllerMethod));
-            A = new MethodAttributeT(methodAttribute);
+            A = methodAttribute ?? throw new NullReferenceException(nameof(methodAttribute));
             HttpMethods = httpMethods ?? throw new ArgumentNullException(nameof(httpMethods));
 
             var detailer1 = new Func<string>(() => "\r\nerrorDetails: " + ToString());
 
             RouteSegments = new List<RouteSegmentClass>();
-            if (A.A.S1 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S1), A.A.S1, detailer1));
-            if (A.A.S2 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S2), A.A.S2, detailer1));
-            if (A.A.S3 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S3), A.A.S3, detailer1));
-            if (A.A.S4 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S4), A.A.S4, detailer1));
-            if (A.A.S5 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S5), A.A.S5, detailer1));
-            if (A.A.S6 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S6), A.A.S6, detailer1));
-            if (A.A.S7 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S7), A.A.S7, detailer1));
-            if (A.A.S8 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S8), A.A.S8, detailer1));
-            if (A.A.S9 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.A.S9), A.A.S9, detailer1));
+            if (A.S1 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S1), A.S1, detailer1));
+            if (A.S2 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S2), A.S2, detailer1));
+            if (A.S3 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S3), A.S3, detailer1));
+            if (A.S4 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S4), A.S4, detailer1));
+            if (A.S5 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S5), A.S5, detailer1));
+            if (A.S6 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S6), A.S6, detailer1));
+            if (A.S7 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S7), A.S7, detailer1));
+            if (A.S8 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S8), A.S8, detailer1));
+            if (A.S9 != null) RouteSegments.Add(new RouteSegmentClass(nameof(A.S9), A.S9, detailer1));
 
-            switch (A.A.CoreMethod) {
+            switch (A.CoreMethod) {
                 case CoreMethod.RootIndex:
                 case CoreMethod.GenericMethod:
                     if (RouteSegments.Count > 0) throw new MethodAttributeInitialisationException(
-                        nameof(RouteSegments) + " (like S1, S2, S3 ...) are not allowed for " + typeof(CoreMethod) + "." + A.A.CoreMethod + ". " +
+                        nameof(RouteSegments) + " (like S1, S2, S3 ...) are not allowed for " + typeof(CoreMethod) + "." + A.CoreMethod + ". " +
                         nameof(RouteSegments) + ".Count: " + RouteSegments.Count + ". " +
                         detailer1.Result("Details: "));
-                    if (!string.IsNullOrEmpty(A.A.RouteTemplate)) throw new MethodAttributeInitialisationException(
-                        nameof(A.A.RouteTemplate) + " is not allowed for " + typeof(CoreMethod) + "." + A.A.CoreMethod + ". " +
-                        nameof(A.A.RouteTemplate) + ": " + A.A.RouteTemplate + ". " +
-                        (A.A.CoreMethod == CoreMethod.GenericMethod ? ("For " + A.A.CoreMethod + " it will default to " + typeof(Configuration) + "." + nameof(Configuration.GenericMethodRouteTemplate) + " = " + Util.Configuration.GenericMethodRouteTemplate) : "") + ". " +
+                    if (!string.IsNullOrEmpty(A.RouteTemplate)) throw new MethodAttributeInitialisationException(
+                        nameof(A.RouteTemplate) + " is not allowed for " + typeof(CoreMethod) + "." + A.CoreMethod + ". " +
+                        nameof(A.RouteTemplate) + ": " + A.RouteTemplate + ". " +
+                        (A.CoreMethod == CoreMethod.GenericMethod ? ("For " + A.CoreMethod + " it will default to " + typeof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.GenericMethodRouteTemplate) + " = " + Util.Configuration.A.GenericMethodRouteTemplate) : "") + ". " +
                         detailer1()); break;
                 default:
                     break;// OK
             }
 
-            if (!string.IsNullOrEmpty(A.A.RouteTemplate)) {
+            if (!string.IsNullOrEmpty(A.RouteTemplate)) {
                 // TODO: Implement parsing of traditional WebAPI template
-                throw new NotImplementedException(nameof(MethodAttribute) + "." + nameof(MethodAttribute.RouteTemplate) + ", " + detailer1());
+                throw new NotImplementedException(nameof(APIMethodAttribute) + "." + nameof(APIMethodAttribute.RouteTemplate) + ", " + detailer1());
             }
 
             Parameters = new List<PropertyKeyNonStrict>();
 
             if (RouteSegments.Count == 0) {
-                switch (A.A.CoreMethod) {
+                switch (A.CoreMethod) {
                     case CoreMethod.RootIndex:
                         RouteTemplates = new List<string> { "" };
                         return; // Initialization is now complete.
                     case CoreMethod.GenericMethod:
-                        RouteTemplates = new List<string> { Util.Configuration.GenericMethodRouteTemplate }; // Usually "{*url}"
+                        RouteTemplates = new List<string> { Util.Configuration.A.GenericMethodRouteTemplate }; // Usually "{*url}"
                         return; // Initialization is now complete.
                     default:
-                        throw new MethodInitialisationException("No " + nameof(MethodAttribute) + "." + nameof(A.A.RouteTemplate) + ", no " + nameof(RouteSegments) + " and unknown " + nameof(CoreMethod) + " (" + A.A.CoreMethod + "). Possible resolution: Remove attribute " + A.GetType().ToString() + " if not needed" + detailer1());
+                        throw new MethodInitialisationException("No " + nameof(APIMethodAttribute) + "." + nameof(A.RouteTemplate) + ", no " + nameof(RouteSegments) + " and unknown " + nameof(CoreMethod) + " (" + A.CoreMethod + "). Possible resolution: Remove attribute " + A.GetType().ToString() + " if not needed" + detailer1());
                 }
             }
 
@@ -247,7 +247,7 @@ namespace AgoRapide {
         /// REST URL syntax as used by Microsoft .NET WebAPI like Person/Add/{first_name}/{last_name}
         /// For <see cref="CoreMethod.GenericMethod"/> it is usually {*url} 
         /// 
-        /// Note that <see cref="Util.Configuration"/>.<see cref="Configuration.ApiPrefix"/> (normally "api/") is not present here. 
+        /// Note that <see cref="Util.Configuration"/>.<see cref="ConfigurationAttribute.ApiPrefix"/> (normally "api/") is not present here. 
         /// It is added later by <see cref="APIMethodMapper.MapHTTPRoutes"/>
         /// </summary>
         public List<string> RouteTemplates { get; private set; }
@@ -280,7 +280,7 @@ namespace AgoRapide {
             (RouteTemplates != null && RouteTemplates.Count > 0 ? (RouteTemplates[0] + ", ") : "") +
             (Controller != null ? (Controller.ToStringShort() + ".") : "") +
             (ControllerMethod != null ? (ControllerMethod.Name + ", ") : "") +
-            (A != null && A.A.CoreMethod != CoreMethod.None ? (nameof(CoreMethod) + "." + A.A.CoreMethod) : "");
+            (A != null && A.CoreMethod != CoreMethod.None ? (nameof(CoreMethod) + "." + A.CoreMethod) : "");
 
         public class MethodInitialisationException : ApplicationException {
             public MethodInitialisationException(string message) : base(message) { }
@@ -335,7 +335,7 @@ namespace AgoRapide {
         public static List<APIMethod> AllMethods => _allMethods ?? throw new NullReferenceException(nameof(_allMethods) + ", Call " + nameof(CreateSemiAutogeneratedMethods) + " first");
 
         /// <summary>
-        /// Methods ignored because <see cref="MethodAttribute.Environment"/> does not match current <see cref="Configuration.Environment"/>
+        /// Methods ignored because <see cref="APIMethodAttribute.Environment"/> does not match current <see cref="ConfigurationAttribute.Environment"/>
         /// </summary>
         public static List<APIMethod> IgnoredMethods = new List<APIMethod>();
 
@@ -359,13 +359,27 @@ namespace AgoRapide {
 
         public static APIMethod GetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType) => TryGetByCoreMethodAndEntityType(coreMethod, entityType, out var retval) ? retval : throw new MethodNotFoundException(coreMethod, entityType);
         protected static ConcurrentDictionary<string, APIMethod> _allMethodsByCoreMethodAndEntityType = new ConcurrentDictionary<string, APIMethod>();
-        public static bool TryGetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType, out APIMethod method) => (method = _allMethodsByCoreMethodAndEntityType.GetOrAdd(coreMethod.ToString() + entityType.ToString(), k => {
-            if (typeof(Property).IsAssignableFrom(entityType)) entityType = typeof(Property); /// This adjustment is necessary in cases where entityType is an instance of <see cref="PropertyT{T}"/>.
-            return AllMethods.SingleOrDefault(m => m.A.A.CoreMethod == coreMethod && entityType.Equals(m.EntityType), () => nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + entityType.ToStringShort());
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coreMethod"></param>
+        /// <param name="entityType">May be null, for instance for <see cref="CoreMethod.ExceptionDetails"/></param>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool TryGetByCoreMethodAndEntityType(CoreMethod coreMethod, Type entityType, out APIMethod method) => (method = _allMethodsByCoreMethodAndEntityType.GetOrAdd(coreMethod.ToString() + "_" + (entityType?.ToString() ?? ""), k => {
+            //if (coreMethod == CoreMethod.Configuration) {
+            //    var a = 1;
+            //}
+            if (entityType != null && typeof(Property).IsAssignableFrom(entityType)) entityType = typeof(Property); /// This adjustment is necessary in cases where entityType is an instance of <see cref="PropertyT{T}"/>.
+            //if (entityType != null && CoreMethod.EntityIndex.Equals(coreMethod)) {
+            //    coreMethod = CoreMethod.Configuration;
+            //    entityType = null; /// Typical example when <see cref="Property"/> uses <see cref="Property.Parent"/> in order to create link to the parent
+            //}
+            return AllMethods.SingleOrDefault(m => m.A.CoreMethod == coreMethod && ((entityType == null && m.EntityType == null) || (entityType != null && entityType.Equals(m.EntityType))), () => nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + (entityType?.ToStringShort() ?? "[NULL]"));
         })) != null;
 
         /// <summary>
-        /// This consists of the values for <see cref="MethodAttribute.S1"/> to <see cref="MethodAttribute.S9"/>. Set by <see cref="CreateSemiAutogeneratedMethods"/>
+        /// This consists of the values for <see cref="APIMethodAttribute.S1"/> to <see cref="APIMethodAttribute.S9"/>. Set by <see cref="CreateSemiAutogeneratedMethods"/>
         /// </summary>
         public List<RouteSegmentClass> RouteSegments { get; private set; }
 
@@ -384,7 +398,7 @@ namespace AgoRapide {
             _allMethods = new List<APIMethod>();
             controllers.ForEach(controller => {
                 controller.GetMethods().ForEach(methodInfo => {
-                    var ma = Attribute.GetCustomAttribute(methodInfo, typeof(MethodAttribute)) as MethodAttribute;
+                    var ma = Attribute.GetCustomAttribute(methodInfo, typeof(APIMethodAttribute)) as APIMethodAttribute;
                     if (ma == null) return; // OK, just ignore this method
                     var detailer1 = new Func<string>(() => ". errorDetails: " + controller.ToString() + "." + methodInfo.Name);
 
@@ -475,7 +489,7 @@ namespace AgoRapide {
                 obligatoryParameters.ForEach(p => routeSegments.Add(new RouteSegmentClass(p.Value.Key.PToString, p.Value, detailer)));
                 var method = new APIMethod(
                     entityType: t,
-                    methodAttribute: new MethodAttribute {
+                    methodAttribute: new APIMethodAttribute {
                         CoreMethod = CoreMethod.AddEntity,
                         Description =
                             "Adds an entity of type " + t.ToStringShort() + ".",
@@ -499,7 +513,7 @@ namespace AgoRapide {
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.EntityIndex + " attempt for " + t.ToStringDB());
                 var method = new APIMethod(
                     entityType: t,
-                    methodAttribute: new MethodAttribute {
+                    methodAttribute: new APIMethodAttribute {
                         CoreMethod = CoreMethod.EntityIndex,
                         Description =
                             "Shows entities of type " + t.ToStringShort() + " as identified by {" + CoreP.QueryId + "}.\r\n" +
@@ -538,7 +552,7 @@ namespace AgoRapide {
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.UpdateProperty + " attempt for " + t.ToStringDB());
                 var method = new APIMethod(
                     entityType: t,
-                    methodAttribute: new MethodAttribute {
+                    methodAttribute: new APIMethodAttribute {
                         CoreMethod = CoreMethod.UpdateProperty,
                         Description =
                             "Adds property for entities of type " + t.ToStringShort() + " as identified by {" + CoreP.QueryId + "}.\r\n" +
@@ -569,7 +583,7 @@ namespace AgoRapide {
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.PropertyOperation + " attempt for " + t.ToStringDB());
                 var method = new APIMethod(
                     entityType: t,
-                    methodAttribute: new MethodAttribute {
+                    methodAttribute: new APIMethodAttribute {
                         CoreMethod = CoreMethod.PropertyOperation,
                         Description =
                             "Operates on property as identified by {" + CoreP.QueryId + "} with {" + nameof(PropertyOperation) + "} one of " + string.Join(", ", Util.EnumGetValues<PropertyOperation>()) + ".\r\n" +
@@ -597,7 +611,7 @@ namespace AgoRapide {
                 var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.History + " attempt for " + t.ToStringDB());
                 var method = new APIMethod(
                     entityType: t,
-                    methodAttribute: new MethodAttribute {
+                    methodAttribute: new APIMethodAttribute {
                         CoreMethod = CoreMethod.History,
                         Description =
                             "Shows history for entity identified by {" + CoreP.IntegerQueryId + "}.",
@@ -618,6 +632,31 @@ namespace AgoRapide {
                 connector(method, true);
             });
 
+
+            /// Creates <see cref="CoreMethod.Configuration"/>
+            {
+                var detailer = new Func<string>(() => APIMethodOrigin.Autogenerated + " " + CoreMethod.Configuration);
+                var method = new APIMethod(
+                    entityType: null,
+                    methodAttribute: new APIMethodAttribute {
+                        CoreMethod = CoreMethod.Configuration,
+                        Description = CoreMethod.Configuration.GetAgoRapideAttributeT().A.Description,
+                        AccessLevelUse = AccessLevel.Admin
+                    },
+                    /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
+                    httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
+                        routeSegments: new List<RouteSegmentClass> {
+                        new RouteSegmentClass(CoreMethod.Configuration.ToString(), CoreMethod.Configuration.ToString(), detailer)
+                    },
+                    parameters: new List<PropertyKeyNonStrict>(),
+                    routeTemplate: CoreMethod.Configuration.ToString()
+                    );
+                // TODO: Create a configuration parameter deciding whether API-documentation should be available without authorization.
+                // TODO: We could also change this between production and test, for instance tightening down access to 
+                // TODO: API-documentation in test, while having anonymous access in production, hiding new features until launched.
+                connector(method, true);
+            }
+
             types.ForEach(t => {
                 InvalidTypeException.AssertAssignable(t, typeof(BaseEntity), null);
                 var a = t.GetAgoRapideAttributeForClass();
@@ -634,7 +673,7 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Filters (ignores) if <see cref="MethodAttribute.Environment"/> does not match <see cref="Configuration.Environment"/>
+        /// Filters (ignores) if <see cref="APIMethodAttribute.Environment"/> does not match <see cref="ConfigurationAttribute.Environment"/>
         /// (but adds to <see cref="IgnoredMethods"/> first)
         /// 
         /// "Connect" this method to the database, giving it an id and fetching historical data
@@ -648,42 +687,38 @@ namespace AgoRapide {
             if (method == null) throw new NullReferenceException(nameof(method));
             if (db == null) throw new NullReferenceException(nameof(db));
 
-            if (method.A.A.Environment < Util.Configuration.Environment) {
+            if (method.A.Environment < Util.Configuration.A.Environment) {
                 IgnoredMethods.Add(method);
                 return;
             }
             var cid = GetOrAdd<ClassAndMethod>(typeof(APIMethod), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id;
 
-            //if (origin == APIMethodOrigin.Autogenerated) { // Create an id that makes it easy to understand where the C# code for this method resides                
-            //    GetOrAdd(typeof(APIMethod), typeof(BaseController).ToStringVeryShort() + ".HandleCoreMethod" + method.A.A.CoreMethod + "_for_" + method.EntityType.ToStringVeryShort() + "_(" + origin + ")", db, enrichAndReturnThisObject: method);
-            //} else {
-            //    GetOrAdd(typeof(APIMethod), method.Controller.ToStringVeryShort() + "." + method.ControllerMethod.Name, db, enrichAndReturnThisObject: method);
-            //}
             var identifier = new Func<string>(() => {
-                switch (method.A.A.CoreMethod) {
+                switch (method.A.CoreMethod) {
                     case CoreMethod.RootIndex:
-                    case CoreMethod.GenericMethod: return method.A.A.CoreMethod.ToString();
+                    case CoreMethod.GenericMethod: return method.A.CoreMethod.ToString();
                     default: return method.RouteTemplates[0].Replace("/", "_").Replace("{", "_").Replace("}", "_");
                 }
             })();
             InvalidIdentifierException.AssertValidIdentifier(identifier); // 
             GetOrAdd(typeof(APIMethod), identifier, db, enrichAndReturnThisObject: method);
 
+            /// TODO: Duplicate code in <see cref="APIMethod.FilterConnectWithDatabaseAndAddMethod"/> and <see cref="Configuration.ConnectWithDatabase"/>
             void updater<T>(CoreP key, T value)
             { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
                 db.UpdateProperty(cid, method, key.A(), value, result: null);
             }
 
             if (method._entityType != null) updater(CoreP.EntityType, method._entityType);
-            switch (method.A.A.CoreMethod) {
-                case CoreMethod.RootIndex: updater(CoreP.Name, "(" + method.A.A.CoreMethod + ")"); break;
-                case CoreMethod.GenericMethod: updater(CoreP.Name, method.RouteTemplates[0] + " (" + method.A.A.CoreMethod + ")"); break;
+            switch (method.A.CoreMethod) {
+                case CoreMethod.RootIndex: updater(CoreP.Name, "(" + method.A.CoreMethod + ")"); break;
+                case CoreMethod.GenericMethod: updater(CoreP.Name, method.RouteTemplates[0] + " (" + method.A.CoreMethod + ")"); break;
                 default: updater(CoreP.Name, method.RouteTemplates[0]); break;
             }
             updater(CoreP.APIMethodOrigin, origin);
             updater(CoreP.RouteTemplate, method.RouteTemplates[0]);
             if (origin == APIMethodOrigin.Autogenerated) {
-                updater(CoreP.Implementator, nameof(BaseController) + ".HandleCoreMethod" + method.A.A.CoreMethod);
+                updater(CoreP.Implementator, nameof(BaseController) + ".HandleCoreMethod" + method.A.CoreMethod);
             } else {
                 updater(CoreP.Implementator, method.Controller.ToStringShort() + "." + method.ControllerMethod.Name);
             }
@@ -737,9 +772,10 @@ namespace AgoRapide {
             }
 
             /// TODO: Add <see cref="PropertyOperation.SetInvalid"/> if already exists a <see cref="CoreP.SuggestedUrl"/>
-            if (suggestedUrls.Count > 0) updater(CoreP.SuggestedUrl, string.Join("\r\n", suggestedUrls.Select(s => Util.Configuration.BaseUrl + s)));
+            if (suggestedUrls.Count > 0) updater(CoreP.SuggestedUrl, string.Join("\r\n", suggestedUrls.Select(s => Util.Configuration.A.BaseUrl + s)));
 
             // Update all MethodAttribute properties
+            /// TODO: Duplicate code in <see cref="APIMethod.FilterConnectWithDatabaseAndAddMethod"/> and <see cref="Configuration.ConnectWithDatabase"/>
             // TDOO: MOVE THIS TO A MORE GENERAL PLACE (Into BaseEntity for instance?
             //
             // TODO: BIG WEAKNESS HERE. We do not know the generic value of what we are asking for
@@ -752,11 +788,11 @@ namespace AgoRapide {
                     // TODO: Maybe replace this check with extension-method IsStoredAsStringInDatabase or similar...
                 } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
                     var value = p.V<string>();
-                    if (method.A.A.CoreMethod != CoreMethod.None) {
+                    if (method.A.CoreMethod != CoreMethod.None) {
                         /// Add information about CoreMethod
                         /// TODO: This is very similar to <see cref="AgoRapideAttribute.EnrichFrom"/> 
                         /// TODO: We should use some of the same mechanism there.
-                        var coreA = method.A.A.CoreMethod.GetAgoRapideAttributeT();
+                        var coreA = method.A.CoreMethod.GetAgoRapideAttributeT();
                         if (p.Key.Key.CoreP.Equals(CoreP.Description) && !string.IsNullOrEmpty(coreA.A.Description)) { // TODO: Do this in a more streamlined manner!
                             if (string.IsNullOrEmpty(value)) {
                                 value = coreA.A.Description;

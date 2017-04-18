@@ -78,7 +78,7 @@ namespace AgoRapide {
             IsUniqueInDatabase = true,
             IsObligatory = true,
             Type = typeof(string),
-            PriorityOrder = -1)]
+            PriorityOrder = PriorityOrder.Important)]
         Username,
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace AgoRapide {
         [AgoRapide(
             Description = "Generic property for naming objects.",
             Type = typeof(string),
-            PriorityOrder = -1)]
+            PriorityOrder = PriorityOrder.Important)]
         Name,
 
         /// <summary>
@@ -151,6 +151,7 @@ namespace AgoRapide {
                 "Values chosen should be compatible with HTTP GET URLs. " +
                 "(best approach is most probably to make values valid C# identifiers.)",
             IsUniqueInDatabase = true,
+            PriorityOrder = PriorityOrder.Important,
             AccessLevelRead = AccessLevel.Anonymous,
             Parents = new Type[] { typeof(ApplicationPart) })]
         Identifier,
@@ -167,14 +168,14 @@ namespace AgoRapide {
             Type = typeof(string))]
         Value,
 
-        /// <summary>
-        /// TODO: COMPLETE IMPLEMENTATION OF THIS CONCEPT
-        /// </summary>
-        [AgoRapide(
-            Description = "A single enum value.",
-            IsMany = true,
-            Parents = new Type[] { typeof(EnumClass) }, Type = typeof(string))]
-        EnumValue,
+        ///// <summary>
+        ///// TODO: COMPLETE IMPLEMENTATION OF THIS CONCEPT
+        ///// </summary>
+        //[AgoRapide(
+        //    Description = "A single enum value.",
+        //    IsMany = true,
+        //    Parents = new Type[] { typeof(EnumClass) }, Type = typeof(string))]
+        //EnumValue,
 
         /// <summary>
         /// See <see cref="IDatabase.SwitchIfHasEntityToRepresent"/>
@@ -203,7 +204,7 @@ namespace AgoRapide {
         AuthResult,
 
         /// <summary>
-        /// Note how will be removed by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when <see cref="ResultCode.ok"/> and not <see cref="MethodAttribute.ShowDetailedResult"/>
+        /// Note how will be removed by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when <see cref="ResultCode.ok"/> and not <see cref="APIMethodAttribute.ShowDetailedResult"/>
         /// </summary>
         [AgoRapide(
             Description = "General log (will not show up in result if considered not needed).",
@@ -280,7 +281,7 @@ namespace AgoRapide {
                 "Will often accompany a -" + nameof(AgoRapide.ResultCode.missing_parameter_error) + "- or -" + nameof(AgoRapide.ResultCode.invalid_parameter_error) + "-. " +
                 "Used in " + nameof(APIMethod) + " for giving samples. " +
                 "Also useful for suggesting follow-up API-calls. ",
-            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = -1)]
+            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
         SuggestedUrl,
 
         /// <summary>
@@ -300,7 +301,7 @@ namespace AgoRapide {
         ExceptionDetailsUrl,
 
         /// <summary>
-        /// See <see cref="MethodAttribute.CoreMethod"/>. 
+        /// See <see cref="APIMethodAttribute.CoreMethod"/>. 
         /// 
         /// Note how we DO NOT set any <see cref="AgoRapideAttribute.Description"/> description here, but instead rely
         /// on the <see cref="AgoRapideAttribute.Description"/> set for <see cref="AgoRapide.CoreMethod"/>. 
@@ -321,25 +322,25 @@ namespace AgoRapide {
         RequiresAuthorization,
 
         /// <summary>
-        /// See <see cref="MethodAttribute.Environment"/>. 
+        /// See <see cref="APIMethodAttribute.Environment"/>. 
         /// </summary>
         [AgoRapide(Type = typeof(Environment))]
         Environment,
 
         /// <summary>
-        /// See <see cref="MethodAttribute.Description"/>. 
+        /// See <see cref="APIMethodAttribute.Description"/>. 
         /// </summary>
-        [AgoRapide(Parents = new Type[] { typeof(APIMethod), typeof(GeneralQueryResult) }, Type = typeof(string), AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = -1)]
+        [AgoRapide(Parents = new Type[] { typeof(APIMethod), typeof(GeneralQueryResult) }, Type = typeof(string), AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
         Description,
 
         /// <summary>
-        /// See <see cref="MethodAttribute.LongDescription"/>
+        /// See <see cref="APIMethodAttribute.LongDescription"/>
         /// </summary>
         [AgoRapide(Parents = new Type[] { typeof(APIMethod) }, Type = typeof(string), AccessLevelRead = AccessLevel.Anonymous)]
         LongDescription,
 
         /// <summary>
-        /// Does not originate from <see cref="MethodAttribute.RouteTemplate"/> but from
+        /// Does not originate from <see cref="APIMethodAttribute.RouteTemplate"/> but from
         /// <see cref="APIMethod.RouteTemplates"/>[0]
         /// TODO: Document better!
         /// </summary>
@@ -354,7 +355,7 @@ namespace AgoRapide {
         Implementator,
 
         /// <summary>
-        /// See <see cref="MethodAttribute.ShowDetailedResult"/>
+        /// See <see cref="APIMethodAttribute.ShowDetailedResult"/>
         /// </summary>
         [AgoRapide(Parents = new Type[] { typeof(APIMethod) }, Type = typeof(bool))]
         ShowDetailedResult,

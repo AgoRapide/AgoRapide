@@ -94,7 +94,7 @@ namespace AgoRapide {
         /// 
         /// A typical code example for this would be 
         ///   public override AccessLevel AccessLevelGiven => PV(P.AccessLevelGiven, defaultValue: AccessLevel.User)
-        /// <see cref="Request.CurrentUser"/> (<see cref="BaseEntity.AccessLevelGiven"/>) must by equal to <see cref="MethodAttribute.AccessLevel"/> or HIGHER in order for access to be granted to <see cref="APIMethod"/>
+        /// <see cref="Request.CurrentUser"/> (<see cref="BaseEntity.AccessLevelGiven"/>) must by equal to <see cref="APIMethodAttribute.AccessLevel"/> or HIGHER in order for access to be granted to <see cref="APIMethod"/>
         /// </summary>
         public virtual AccessLevel AccessLevelGiven => AccessLevel.None;
         /// <summary>
@@ -385,7 +385,7 @@ namespace AgoRapide {
             if (addableProperties.Count == 0) {
                 // Give hint about situation if considered relevant (because AgoRapide mechanism may be somewhat confusing at first)
 
-                if (Util.Configuration.Environment == Environment.Production) {
+                if (Util.Configuration.A.Environment == Environment.Production) {
                     /// The hint given below is a <see cref="Environment.Development"/> / <see cref="Environment.Test"/> issue only. 
                 } else if (request.CurrentUser == null) {
                     /// It is quite expected that <see cref="AccessType.Write"/> is not allowed now

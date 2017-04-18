@@ -16,12 +16,12 @@ namespace AgoRapide {
     /// (meaning your server logs are not filled up with unnecessary clutter, but the system is still available to give an API client
     /// detailed information about problems). 
     /// 
-    /// See also <see cref="MethodAttribute.ShowDetailedResult"/>
+    /// See also <see cref="APIMethodAttribute.ShowDetailedResult"/>
     /// 
     /// Usually available as <see cref="ValidRequest.Result"/>
     /// </summary>  
     [AgoRapide(Description = "Communicates results of an API command back to client")]
-    public class Result : BaseEntityWithLogAndCount { 
+    public class Result : BaseEntityWithLogAndCount {
 
         public ResultCode ResultCode {
             get => PVM<ResultCode>();
@@ -34,7 +34,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="request"></param>
         private void AdjustAccordingToResultCodeAndMethod(Request request) {
-            if (ResultCode == ResultCode.ok && !request.Method.A.A.ShowDetailedResult) {
+            if (ResultCode == ResultCode.ok && !request.Method.A.ShowDetailedResult) {
                 if (Properties != null && Properties.ContainsKey(CoreP.Log)) Properties.Remove(CoreP.Log);
             }
             if (ResultCode != ResultCode.ok) {
@@ -42,7 +42,7 @@ namespace AgoRapide {
                 if (!Properties.ContainsKey(CoreP.APIDocumentationUrl)) AddProperty(CoreP.APIDocumentationUrl.A(), request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
             }
             if (ResultCode == ResultCode.exception_error) {
-                AddProperty(CoreP.ExceptionDetailsUrl.A(), request.CreateAPIUrl(Util.Configuration.ExceptionDetailsAPISyntax));
+                AddProperty(CoreP.ExceptionDetailsUrl.A(), request.CreateAPIUrl(CoreMethod.ExceptionDetails));
             }
         }
 

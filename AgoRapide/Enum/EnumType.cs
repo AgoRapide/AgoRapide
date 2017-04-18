@@ -18,9 +18,12 @@ namespace AgoRapide {
 
         None,
 
-        [AgoRapide(Description = "Provides a central repository of explanation of terms that are not present in the C# code. ")]
+        [AgoRapide(Description = "Provides a central repository of explanation of terms that are not present in the C# code.")]
         DocumentationOnlyEnum,
 
+        /// <summary>
+        /// TODO: Rename into KeyEnum
+        /// </summary>
         [AgoRapide(
             Description =
                 "Constitutes keys for -" + nameof(BaseEntity) + "- -" + nameof(BaseEntity.Properties) + "- collection. " +
@@ -28,6 +31,9 @@ namespace AgoRapide {
             LongDescription = "All -" + nameof(EntityPropertyEnum) + "- map towards -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-")]
         EntityPropertyEnum,
 
+        /// <summary>
+        /// TODO: Rename into ValueEnum. 
+        /// </summary>
         [AgoRapide(
             Description = "\"Ordinary\" enums used for indicating range of valid values for a given key")]
         DataEnum

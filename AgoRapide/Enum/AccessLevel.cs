@@ -13,6 +13,8 @@ namespace AgoRapide {
     /// See corresponding <see cref="CoreP.AccessLevelGiven"/>, <see cref="CoreP.AccessLevelUse"/>, <see cref="CoreP.AccessLevelRead"/> and <see cref="CoreP.AccessLevelWrite"/>
     /// 
     /// See also <see cref="AccessType"/> and <see cref="AccessLocation"/>
+    /// 
+    /// TODO: Consider adding something "past" <see cref="System"/> like Denied or similar (so that even the system itself will not try to make changes)
     /// </summary>
     [AgoRapide(
         Description =
@@ -39,6 +41,6 @@ namespace AgoRapide {
 
         Admin,
 
-        System
+        System            
     }
 }

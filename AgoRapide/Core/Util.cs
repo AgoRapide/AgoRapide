@@ -14,19 +14,17 @@ namespace AgoRapide.Core {
     /// </summary>
     public static class Util {
 
-        public static string DEFAULT_LOG_NAME => "AgoRapideLog_[DATE_HOUR].txt";
-
         /// <summary>
         /// You should definitely set this instance yourself at startup because 
         /// this default instance has two major fault:
         /// 1) The automatic generated links to API methods will not work at all since we do not
-        ///    have any sensible value for <see cref="Configuration.RootUrl"/>.
+        ///    have any sensible value for <see cref="ConfigurationAttribute.RootUrl"/>.
         /// 2) Logging will most probably not work
         /// </summary>
-        public static Configuration Configuration { get; set; } = new Configuration(
+        public static Configuration Configuration { get; set; } = new Configuration(new ConfigurationAttribute(
             logPath: @"c:\AgoRapideLog_[DATE_HOUR].txt", // TODO: Find a better default value than this
             rootUrl: "[RootUrlNotSetInAgoRapideConfiguration]"
-        );
+        ));
 
         private static ConcurrentDictionary<Type, List<string>> _enumNamesCache = new ConcurrentDictionary<Type, List<string>>();
         /// <summary>
@@ -37,7 +35,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static List<string> EnumGetNames(Type type) => _enumNamesCache.GetOrAdd(type, t => {
             NotOfTypeEnumException.AssertEnum(t);
-            return Enum.GetNames(type).Where(s => !"None".Equals(s)).ToList();
+            return System.Enum.GetNames(type).Where(s => !"None".Equals(s)).ToList();
         });
 
         private static ConcurrentDictionary<Type, List<object>> _enumValuesCache = new ConcurrentDictionary<Type, List<object>>();
@@ -215,14 +213,14 @@ namespace AgoRapide.Core {
         private static long exceptionSerialNo = 0;
         /// <summary>
         /// Logs exception on disk, both in ordinary logfile (summary) and in separate file (detailed)
-        /// Uses <see cref="Configuration.LogPath"/> as given through <see cref="Util.Configuration"/>
+        /// Uses <see cref="ConfigurationAttribute.LogPath"/> as given through <see cref="Util.Configuration"/>
         /// 
         /// Fails silently if fails to write information to disk
         /// </summary>
         /// <param name="ex"></param>
         /// <returns></returns>
         public static void LogException(Exception ex) {
-            var logPath = Configuration.LogPath;
+            var logPath = Configuration.A.LogPath;
             if (string.IsNullOrWhiteSpace(logPath)) {
                 // Will most probably not happen since Configuration.LogPath has a default value
                 // Give up totally. You might want to add some code here
@@ -345,14 +343,14 @@ namespace AgoRapide.Core {
         private static string InsertDateTimeIntoLogPath(string logPath) => logPath.Replace("[DATE]", DateTime.Now.ToString("yyyy-MM-dd")).Replace("[DATE_HOUR]", DateTime.Now.ToString("yyyy-MM-dd_HH")); // Note "hard coded" date formats since the resulting filename has to be guaranteed to be valid
 
         /// <summary>
-        /// Logs a specific event (parameter text) to <see cref="Configuration.LogPath"/> given through <see cref="Util.Configuration"/>
+        /// Logs a specific event (parameter text) to <see cref="ConfigurationAttribute.LogPath"/> given through <see cref="Util.Configuration"/>
         /// 
         /// Note delayed logging through separate thread. This might be a concern in cases where the application terminates abruptly 
         /// because you risk loosing log information explaining events leading up to the application terminating. 
         /// </summary>
         /// <param name="text"></param>
         public static void Log(string text) {
-            var logPath = Configuration.LogPath;
+            var logPath = Configuration.A.LogPath;
             if (string.IsNullOrWhiteSpace(logPath)) {
                 // Will most probably not happen since Configuration.LogPath has a default value
                 // Give up totally. You might want to add some code here
@@ -365,7 +363,7 @@ namespace AgoRapide.Core {
                 text + "\r\n";
             lock (lastLogData) {
                 lastLogData.AddLast(logText);
-                if (lastLogData.Count > Configuration.LAST_LOG_DATA_MAX_SIZE) lastLogData.RemoveFirst();
+                if (lastLogData.Count > Configuration.A.LAST_LOG_DATA_MAX_SIZE) lastLogData.RemoveFirst();
             }
 
             logQueue.Enqueue((logPath, logText));

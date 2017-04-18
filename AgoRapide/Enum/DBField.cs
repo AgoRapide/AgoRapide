@@ -8,8 +8,6 @@ using AgoRapide.Core;
 namespace AgoRapide {
 
     /// <summary>
-    /// 
-    /// 
     /// TODO: Add information about for which fields to add indexes
     /// TODO: Possible by adding a field to <see cref="AgoRapideAttribute"/>
     /// 
@@ -22,7 +20,7 @@ namespace AgoRapide {
     /// </summary>
     [AgoRapide( 
         Description = "Describes the different fields in the database. Mostly used for documentation. Also used for generating database schema. ",
-        EnumType = EnumType.DataEnum)]
+        EnumType = EnumType.DataEnum)] /// TODO: Consider turning into <see cref="EnumType.EntityPropertyEnum"/> (after that has been renamed into KeyEnum)
     public enum DBField {
 
         /// <summary>

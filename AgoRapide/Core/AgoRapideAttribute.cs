@@ -4,7 +4,6 @@ using AgoRapide;
 using System.Collections.Generic;
 using System.ComponentModel;
 using AgoRapide.Database;
-using AgoRapide;
 
 namespace AgoRapide.Core {
 
@@ -23,8 +22,7 @@ namespace AgoRapide.Core {
     ///    <see cref="AgoRapideAttributeT"/>-class which again contains this class as a member.
     ///    
     ///    Values are populated directly from the C# code using <see cref="System.ComponentModel"/> like
-    ///       [Description("Example")] 
-    ///       [AgoRapideAttribute(EntityType = typeof(string), LongDescription = "Long description")]
+    ///       [AgoRapideAttribute(EntityType = typeof(string), Description = "Description", LongDescription = "Long description")]
     ///       ActualEnumValue
     ///       
     /// or
@@ -101,22 +99,7 @@ namespace AgoRapide.Core {
                 "The value will often correspond to a -" + nameof(CoreP) + "- value")]
         public object InheritAndEnrichFromProperty { get; set; }
 
-        /// <summary>
-        ///  
-        /// 
-        /// </summary>
-        [AgoRapide(
-            Description =
-                "Used for general sorting. " +
-                "A lower value (think like 1'st order of priority, 2'nd order of priority) will put object higher up (make more visible) in a typical AgoRapide sorted list",
-            LongDescription =
-                "Recommended values are:\r\n" +
-                "-1 for important,\r\n" +
-                "0 (default) for 'ordinary' and\r\n" +
-                "1 for not important.\r\n" +
-                "In this manner it will be relatively easy to emphasize or deemphasize single properties without having to give values for all the other properties.\r\n" +
-                "Eventually expand to -2, -3 or 2, 3 as needed. ")]
-        public int PriorityOrder { get; set; }
+        public PriorityOrder PriorityOrder { get; set; }
 
         /// <summary>
         /// TODO: Implement automatic creation of uniqueness index in database in Startup.cs
@@ -134,8 +117,6 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// Note that you may set Description through either [Description("...")] or [PropertyAttribute(Description = "...")]. The last one takes precedence. 
-        /// 
         /// Note: If <see cref="Type"/> is one of your own classes / enums, or one of the AgoRapide classes / enums 
         /// then you are recommended to not set <see cref="Description"/> / <see cref="LongDescription"/> for the enum value  
         /// but instead rely on using <see cref="AgoRapideAttribute"/> belonging to the enum / class given by <see cref="Type"/>
@@ -378,7 +359,7 @@ namespace AgoRapide.Core {
         public string DefinedForClass { get; set; }
 
         /// <summary>
-        /// Only relevant when attribute for a class. 
+        /// Only relevant when attribute for an enum. 
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
         /// </summary>
         public EnumType EnumType { get; set; }
@@ -400,9 +381,13 @@ namespace AgoRapide.Core {
             public NoAttributesDefinedException(string message, Exception inner) : base(message, inner) { }
         }
 
+        /// <summary>
+        /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
+        /// 
+        /// TODO: Fix this for other than KeyAttribute.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString() => "Enum: " + (_property?.ToString() ?? "[NULL]") + "\r\nDescription:\r\n" + Description + "\r\nLongDescription:\r\n" + LongDescription;
-
-        // public DData.Unit Unit { get; set; }
 
         /// <summary>
         /// Typically used by for instance <see cref= "GetAgoRapideAttribute" /> when no attribute found for property.
@@ -471,16 +456,6 @@ namespace AgoRapide.Core {
                 }
             })();
             retval._property = _enum;
-            if (string.IsNullOrEmpty(retval.Description)) {  // You may set Description through either [Description("...")] or Description = "..."
-                retval.Description = new Func<string>(() => { // So if not found as Description = "...", try as [Description("...")] instead
-                    var attributes = field.GetCustomAttributes(typeof(DescriptionAttribute), true);
-                    switch (attributes.Length) {
-                        case 0: return "";
-                        case 1: return ((DescriptionAttribute)attributes[0]).Description;
-                        default: throw new Exception("attributes.Length > 1. Multiple " + typeof(DescriptionAttribute) + " defined for " + type.ToStringVeryShort() + "." + _enum.ToString()); // Should have been stopped by the compiler
-                    }
-                })();
-            }
             return retval;
         }
 

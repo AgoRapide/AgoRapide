@@ -339,9 +339,10 @@ namespace AgoRapide {
             var v = V<string>();
             switch (Key.Key.CoreP) {
                 case CoreP.Identifier: return request.CreateAPILink(CoreMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
-                case CoreP.DBId: return request.CreateAPILink(CoreMethod.EntityIndex, v, 
-                    (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreMethod.EntityIndex, Parent.GetType(), out _) ? 
-                        Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
+                case CoreP.DBId:
+                    return request.CreateAPILink(CoreMethod.EntityIndex, v,
+       (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreMethod.EntityIndex, Parent.GetType(), out _) ?
+           Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
                         typeof(BaseEntity)), new QueryIdInteger(V<long>()));
                 default: return v.HTMLEncodeAndEnrich(request);
             }
@@ -417,9 +418,10 @@ namespace AgoRapide {
         public AgoRapideAttribute ValueA => _valueAttribute ?? (_valueAttribute = new Func<AgoRapideAttribute>(() => {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
             if (_value.GetType().IsEnum) return _value.GetAgoRapideAttribute();
-            var t = _value as Type;
-            if (t != null) return t.GetAgoRapideAttributeForClass();
-            return DefaultAgoRapideAttribute;
+            switch (_value) {
+                case Type t: return t.GetAgoRapideAttributeForClass();
+                default: return DefaultAgoRapideAttribute;
+            }
         })());
 
         /// <summary>
@@ -427,45 +429,6 @@ namespace AgoRapide {
         /// Therefore the requester should not change this instance after "receiving" it. 
         /// </summary>
         public static AgoRapideAttribute DefaultAgoRapideAttribute = AgoRapideAttribute.GetNewDefaultInstance();
-
-        ///// <summary>
-        ///// Will validate according to attributes defined
-        ///// Returns itself for fluent purposes
-        ///// </summary>
-        ///// <returns></returns>
-        //public Property Initialize() {
-        //    new Action(() => {
-        //        // TODO: DECIDE WHAT TO USE. String representation found in Initialize or in TryGetV
-        //        if (LngValue != null) { Value = LngValue.ToString(); return; }
-        //        if (DblValue != null) { Value = ((double)DblValue).ToString2(); return; }
-        //        if (BlnValue != null) { Value = ((bool)BlnValue).ToString(); return; }
-        //        if (DtmValue != null) { Value = ((DateTime)DtmValue).ToString(Key.Key.A.DateTimeFormat); return; }
-        //        if (StrValue != null) { Value = StrValue; return; }
-        //        if (_ADotTypeValue != null) { Value = _ADotTypeValue.ToString(); return; } // TODO: Better ToString here!
-        //        if (true.Equals(Key.Key.A.IsStrict)) {
-        //            // TODO: Try to MAKE A.TryValidateAndParse GENERIC in order for it to return a more strongly typed result.
-        //            if (!Key.Key.TryValidateAndParse(Value, out var parseResult)) throw new InvalidPropertyException(parseResult.ErrorResponse + ". Details: " + ToString());
-        //            // TODO: This is difficult. Result._ADotTypeValue is most probably not set
-        //            _ADotTypeValue = parseResult.Result._ADotTypeValue;
-        //            // TODOk: FIX!!!
-        //        }
-        //        // We could parse at once, but it might never be needed so it is better to let TryGetV do it later
-        //        // else if (A.Type == null && A.Type.IsEnum) {
-        //        //    if (A.TryValidateAndParse(Value, out var parsedValue, out _)) _ADotTypeValue = parsedValue;
-        //        //}
-        //        // TODO: REPLACE WITH KIND OF "NO KNOWN TYPE OF PROPERTY VALUE FOUND"
-        //        throw new InvalidPropertyException("Unable to find string value for " + ToString());
-        //    })();
-        //    if (Key.Key.ValidatorAndParser != null) {
-        //        // We could consider running the validator now if it was not already run, 
-        //        // but it would be quite meaningless
-        //        // if it is a standard TryParse for Long for instance, because LngValue is already set
-
-        //        // TODO: Consider distinguishing between SyntactivalValidator and RangeValidator
-        //        // TODO: In other words, validate for range 1-10 (after we have checked that is a long)
-        //    }
-        //    return this;
-        //}
 
         /// <summary>
         /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntity.InvalidPropertyException{T}"/>
@@ -487,12 +450,6 @@ namespace AgoRapide {
             nameof(KeyDB) + ": " + (_keyDB ?? "[NULL]") + ", " +
             nameof(Key.Key.CoreP) + ": " + (_key?.Key.PExplained ?? "[NULL]") + ", " +
             nameof(_stringValue) + ": " + (_stringValue ?? "[NULL]") + ", " +
-            //nameof(LngValue) + ": " + (LngValue?.ToString() ?? "[NULL]") + ", " +
-            //nameof(DblValue) + ": " + (DblValue?.ToString() ?? "[NULL]") + ", " +
-            //nameof(BlnValue) + ": " + (BlnValue?.ToString() ?? "[NULL]") + ", " +
-            //nameof(DtmValue) + ": " + (DtmValue?.ToString() ?? "[NULL]") + ", " +
-            //nameof(GeoValue) + ": " + (GeoValue?.ToString() ?? "[NULL]") + ", " +
-            //nameof(StrValue) + ": " + (StrValue ?? "[NULL]") +
             (_key == null ? "" : (", " + nameof(Key.Key.A.Type) + ": " + (_key.Key.A.Type?.ToString() ?? "[NULL]"))) + ", " +
             GetType() + ".\r\n";
 
@@ -527,15 +484,12 @@ namespace AgoRapide {
                 // --------------------
                 // Column 1, Key
                 // --------------------
-                (string.IsNullOrEmpty(a.Description) ? "" : "<span title=\"" + a.Description.HTMLEncode() + "\">") +
-                (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) +
-                (string.IsNullOrEmpty(a.Description) ? "" : " (+)</span>") +
+                (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) +
                 "</td><td>" +
 
                 // --------------------
                 // Column 2, Value
                 // --------------------
-                (IsTemplateOnly || string.IsNullOrEmpty(ValueA.Description) ? "" : "<span title=\"" + ValueA.Description.HTMLEncode() + "\">") +
                 ((!IsChangeableByCurrentUser || a.ValidValues != null) ?
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
                     (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML(request))) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
@@ -550,8 +504,7 @@ namespace AgoRapide {
                         ">" +
                         "</label>"
                     )
-                ) +
-                (IsTemplateOnly || string.IsNullOrEmpty(ValueA.Description) ? "" : " (+)</span>") +
+                ).HTMLEncloseWithinTooltip(IsTemplateOnly ? "" : ValueA.Description) +
                 "</td><td>" +
 
                 // --------------------
@@ -634,21 +587,15 @@ namespace AgoRapide {
                 })();
 
                 retval.AppendLine("<tr><td>" +
-                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : "<span title=\"" + (A.A.WholeDescription).HTMLEncode() + "\">") +
-                    field.ToString() +
-                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : " (+)</span>") +
+                    field.ToString().HTMLEncloseWithinTooltip(A.A.WholeDescription) +
                     "</td><td>" +
-                    (includeDescription == null ? "" : "<span title=\"" + includeDescription + "\">") +
-                    (value?.HTMLEncodeAndEnrich(request) ?? "&nbsp;") +
-                    (includeDescription == null ? "" : " (+)</span>") +
+                    (value?.HTMLEncodeAndEnrich(request) ?? "&nbsp;").HTMLEncloseWithinTooltip(includeDescription) +
                     "</td></tr>");
             });
             var adderWithLink = new Action<DBField, long?>((field, value) => {
                 var A = field.GetAgoRapideAttributeT();
                 retval.AppendLine("<tr><td>" +
-                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : "<span title=\"" + (A.A.WholeDescription).HTMLEncode() + "\">") +
-                    field.ToString() +
-                    (string.IsNullOrEmpty(A.A.WholeDescription) ? "" : " (+)</span>") +
+                    field.ToString().HTMLEncloseWithinTooltip(A.A.WholeDescription) +
                     "</td><td>" +
                     (value != null && value != 0 ?
                         (Util.EntityCache.TryGetValue((long)value, out var entity) ?

@@ -58,14 +58,14 @@ namespace AgoRapide.API {
             "<title>AgoRapide HTML " +
             (Request.CurrentUser == null ? "" : "(" + Request.CurrentUser.Name + ")") +
             "</title>\r\n" +
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + Util.Configuration.RootUrl + Util.Configuration.CSSRelativePath + "\">\r\n" +
-            string.Join("", Util.Configuration.ScriptRelativePaths.Select(s => "<script src=\"" + Util.Configuration.RootUrl + s + "\"></script>\r\n")) +
+            "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + Util.Configuration.A.RootUrl + Util.Configuration.A.CSSRelativePath + "\">\r\n" +
+            string.Join("", Util.Configuration.A.ScriptRelativePaths.Select(s => "<script src=\"" + Util.Configuration.A.RootUrl + s + "\"></script>\r\n")) +
                 "</head>\r\n" +
             "<body>\r\n" +
             "<div style=\"display:none\" id=\"hiddenDiv\"></div>" + // Dummy element used for JQuery html / text conversion
 
             // TODO: Make this static. 
-            "<h1><a href=\"" + Util.Configuration.RootUrl + "\">AgoRapide</a></h1>\r\n" +
+            "<h1><a href=\"" + Util.Configuration.A.RootUrl + "\">AgoRapide</a></h1>\r\n" +
 
             // TODO: Make this static. 
             // TODO: Find better name for #generalQueryResult

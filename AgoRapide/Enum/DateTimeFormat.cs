@@ -12,28 +12,16 @@ namespace AgoRapide {
 
         None,
 
-        /// <summary>
-        /// Example: yyyy-MM-dd HH:mm:ss.fff
-        /// <see cref="Configuration.DateAndHourMinSecMsFormat"/> corresponds to <see cref="DateTimeFormat.DateHourMinSecMs"/> 
-        /// </summary>
+        [AgoRapide(Description = "Example: yyyy-MM-dd HH:mm:ss.fff. -" + nameof(ConfigurationAttribute.DateAndHourMinSecMsFormat) + "- corresponds to -" + nameof(DateTimeFormat.DateHourMinSecMs) + "-.")]
         DateHourMinSecMs,
 
-        /// <summary>
-        /// Example: yyyy-MM-dd HH:mm:ss
-        /// <see cref="Configuration.DateAndHourMinSecFormat"/> corresponds to <see cref="DateTimeFormat.DateHourMinSec"/> 
-        /// </summary>
+        [AgoRapide(Description = "Example: yyyy-MM-dd HH:mm:ss. -" + nameof(ConfigurationAttribute.DateAndHourMinSecFormat) + "- corresponds to -" + nameof(DateTimeFormat.DateHourMinSec) + "-.")]
         DateHourMinSec,
 
-        /// <summary>
-        /// Example: yyyy-MM-dd HH:mm
-        /// <see cref="Configuration.DateAndHourMinFormat"/> corresponds to <see cref="DateTimeFormat.DateHourSec"/> 
-        /// </summary>
+        [AgoRapide(Description = "Example: yyyy-MM-dd HH:mm. -" + nameof(ConfigurationAttribute.DateAndHourMinFormat) + "- corresponds to -" + nameof(DateTimeFormat.DateHourMin) + "-.")]
         DateHourMin,
 
-        /// <summary>
-        /// Example: yyyy-MM-dd
-        /// <see cref="Configuration.DateOnlyFormat"/> corresponds to <see cref="DateTimeFormat.DateOnly"/> 
-        /// </summary>
+        [AgoRapide(Description = "Example: yyyy-MM-dd HH:mm. -" + nameof(ConfigurationAttribute.DateOnlyFormat) + "- corresponds to -" + nameof(DateTimeFormat.DateOnly) + "-.")]
         DateOnly
     }
 }

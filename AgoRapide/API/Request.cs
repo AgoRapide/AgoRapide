@@ -36,7 +36,7 @@ namespace AgoRapide.API {
         public object GetOKResponseAsEntityId(Type entityType, long id, string message) {
             if (!string.IsNullOrEmpty(message)) message += ". ";
             message += "Id: " + id;
-            if (!string.IsNullOrEmpty(Method.A.A.Description)) message += ". The following was executed: " + Method.A.A.Description;
+            if (!string.IsNullOrEmpty(Method.A.Description)) message += ". The following was executed: " + Method.A.Description;
             Result.ResultCode = ResultCode.ok;
             Result.AddProperty(CoreP.DBId.A(), id);
             Result.AddProperty(CoreP.SuggestedUrl.A(), CreateAPIUrl(entityType, id));
@@ -131,7 +131,7 @@ namespace AgoRapide.API {
         /// <see cref="GetOKResponseAsEntityId"/>, <see cref="GetAccessDeniedResponse"/>, <see cref="GetErrorResponse"/> or similar 
         /// which again will call this method. 
         /// 
-        /// Note how <see cref="Request.GetResponse"/> removes <see cref="CoreP.Log"/> from <see cref="ResultCode.ok"/> result if not <see cref="MethodAttribute.ShowDetailedResult"/>
+        /// Note how <see cref="Request.GetResponse"/> removes <see cref="CoreP.Log"/> from <see cref="ResultCode.ok"/> result if not <see cref="APIMethodAttribute.ShowDetailedResult"/>
         /// </summary>
         /// <returns></returns>
         public object GetResponse() {
@@ -198,7 +198,7 @@ namespace AgoRapide.API {
         public string JSONUrl => _JSONUrl ?? (_JSONUrl = new Func<string>(() => {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return URL;
-                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.HTMLPostfixIndicator.Length);
+                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.A.HTMLPostfixIndicator.Length);
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
@@ -211,6 +211,13 @@ namespace AgoRapide.API {
         /// <returns></returns>
         public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreMethod.EntityIndex, entityType, new QueryIdInteger(id));
         public string CreateAPICommand(BaseEntity entity) => CreateAPICommand(entity.GetType(), entity.Id);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coreMethod"></param>
+        /// <param name="type">May be null, for instance for <see cref="CoreMethod.ExceptionDetails"/></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         public string CreateAPICommand(CoreMethod coreMethod, Type type, params object[] parameters) => APIMethod.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
 
         /// <summary>
@@ -221,9 +228,10 @@ namespace AgoRapide.API {
         /// <returns></returns>
         public string CreateAPIUrl(Type entityType, long id) => CreateAPIUrl(CreateAPICommand(entityType, id));
         public string CreateAPIUrl(BaseEntity entity) => CreateAPIUrl(CreateAPICommand(entity));
+        public string CreateAPIUrl(CoreMethod coreMethod) => CreateAPIUrl(coreMethod, null);
         public string CreateAPIUrl(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
-        public string CreateAPIUrl(string apiCommand) => Util.Configuration.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
+        public string CreateAPIUrl(string apiCommand) => Util.Configuration.A.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.A.HTMLPostfixIndicator : "");
 
         /// <summary>
         /// Creates API link for <see cref="CoreMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}
@@ -304,12 +312,12 @@ namespace AgoRapide.API {
                 urlSegments.RemoveAt(urlSegments.Count - 1); // Corresponds to Util.Configuration.HTMLPostfixIndicator
             }
 
-            if (!string.IsNullOrEmpty(Util.Configuration.ApiPrefix) && Util.Configuration.ApiPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
-                var prefix = Util.Configuration.ApiPrefixToLower;
+            if (!string.IsNullOrEmpty(Util.Configuration.A.ApiPrefix) && Util.Configuration.A.ApiPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
+                var prefix = Util.Configuration.A.ApiPrefixToLower;
                 var prefixWithoutTrailingSlash = prefix.Substring(0, prefix.Length - 1);
                 while (!urlSegments[0].ToLower().Equals(prefixWithoutTrailingSlash)) {
                     urlSegments.RemoveAt(0);
-                    if (urlSegments.Count == 0) throw new MethodMatchingException(nameof(Configuration) + "." + nameof(Configuration.ApiPrefix) + ": '" + prefixWithoutTrailingSlash + "' not present in " + nameof(urlSegments) + " but '" + prefix + "' was found in " + url);
+                    if (urlSegments.Count == 0) throw new MethodMatchingException(nameof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.ApiPrefix) + ": '" + prefixWithoutTrailingSlash + "' not present in " + nameof(urlSegments) + " but '" + prefix + "' was found in " + url);
                 }
                 urlSegments.RemoveAt(0);
             } else {
@@ -350,7 +358,7 @@ namespace AgoRapide.API {
             // (since not then would have been picked up by the ordinary ASP .NET routing mechanism. 
 
             var lastList = APIMethod.AllMethods.Where(m => {
-                switch (m.A.A.CoreMethod) {
+                switch (m.A.CoreMethod) {
                     case CoreMethod.GenericMethod:
                     case CoreMethod.RootIndex: return false;
                     default: return true;
@@ -476,7 +484,7 @@ namespace AgoRapide.API {
             public MethodMatchingException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
+        public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.A.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
     }
 
     /// <summary>

@@ -439,10 +439,10 @@ namespace AgoRapide.Core {
         public static string ToString(this DateTime dateTime, DateTimeFormat resolution) {
             switch (resolution) {
                 case DateTimeFormat.None:
-                case DateTimeFormat.DateHourMinSecMs: return dateTime.ToString(Util.Configuration.DateAndHourMinSecMsFormat);
-                case DateTimeFormat.DateHourMinSec: return dateTime.ToString(Util.Configuration.DateAndHourMinSecFormat);
-                case DateTimeFormat.DateHourMin: return dateTime.ToString(Util.Configuration.DateAndHourMinFormat);
-                case DateTimeFormat.DateOnly: return dateTime.ToString(Util.Configuration.DateOnlyFormat);
+                case DateTimeFormat.DateHourMinSecMs: return dateTime.ToString(Util.Configuration.A.DateAndHourMinSecMsFormat);
+                case DateTimeFormat.DateHourMinSec: return dateTime.ToString(Util.Configuration.A.DateAndHourMinSecFormat);
+                case DateTimeFormat.DateHourMin: return dateTime.ToString(Util.Configuration.A.DateAndHourMinFormat);
+                case DateTimeFormat.DateOnly: return dateTime.ToString(Util.Configuration.A.DateOnlyFormat);
                 default: throw new InvalidEnumException(resolution);
             }
         }
@@ -645,6 +645,7 @@ namespace AgoRapide.Core {
         }
 
         public static PropertyKeyNonStrict A(this CoreP coreP) => EnumMapper.GetA(coreP);
+        public static PropertyKeyNonStrict A(this ConfigurationAttribute.ConfigurationKey configurationKey) => EnumMapper.GetA(configurationKey);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {
@@ -710,10 +711,18 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static string HTMLEncodeAndEnrich(this string _string, Request request) {
             if (_string.StartsWith("http://") || _string.StartsWith("https://")) {
-                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (request.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.HTMLPostfixIndicator) ? Util.Configuration.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
+                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (request.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.A.HTMLPostfixIndicator) ? Util.Configuration.A.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
             }
             return HTMLEncode(_string).Replace("\r\n", "\r\n<br>");
         }
+
+        /// <summary>
+        /// Encloses <paramref name="html"/> within a HTML span with title <paramref name="tooltip"/>
+        /// </summary>
+        /// <param name="html"></param>
+        /// <param name="tooltip">May be null or empty in which case only <paramref name="html"/> will be returned</param>
+        /// <returns></returns>
+        public static string HTMLEncloseWithinTooltip(this string html, string tooltip) => string.IsNullOrEmpty(tooltip) ? html : "<span title=\"" + tooltip.HTMLEncode() + "\">" + html + " (+)</span>";
 
         /// <summary>
         /// Convenience method that shortens down code in cases where an instance of an object must be 

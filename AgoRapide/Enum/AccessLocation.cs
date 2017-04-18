@@ -32,12 +32,12 @@ namespace AgoRapide {
         Entity,
 
         [AgoRapide(
-            Description = "For a type (through -" + nameof(AgoRapideAttribute) + "- for that type).",
+            Description = "Access for a type (through -" + nameof(AgoRapideAttribute) + "- for that type).",
             LongDescription = "Responsibility of -" + nameof(Extensions.GetChildPropertiesForUser) + "-.")]
         Type,
 
         [AgoRapide(Description =
-            "For a TProperty / -" + nameof(CoreP) + "- (through -" + nameof(AgoRapideAttribute) + "- for that TProperty / -" + nameof(CoreP) + "-\r\n" +
+            "Access for a " + nameof(CoreP) + "- or en enum mapped to -" + nameof(CoreP) + "- (through -" + nameof(AgoRapideAttribute) + "- for that -" + nameof(CoreP) + "-\r\n" +
             "Typical example here would be -" + nameof(APIMethod) + "- with -" + nameof(AccessType.Read) + "- set to -" + nameof(AccessLevel.Anonymous) + "- and -" + nameof(AccessType.Write) + "- set to -" + nameof(AccessLevel.System) + "-.",
             LongDescription = "Responsibility of -" + nameof(Extensions.GetChildPropertiesForUser) + "-.")]
         Property
