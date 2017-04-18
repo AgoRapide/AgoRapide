@@ -4,15 +4,15 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
 
-    [AgoRapide(EnumType = EnumType.DataEnum)]
+    [Enum(EnumTypeY = EnumType.DataEnum)]
     public enum AccessType {
 
         None,
 
-        [AgoRapide(Description = "Equivalent to -" + nameof(CoreP.AccessLevelUse) + "- and -" + nameof(CoreP.AccessLevelRead) + "-")]
+        [EnumMember(Description = "Equivalent to -" + nameof(CoreP.AccessLevelUse) + "- and -" + nameof(CoreP.AccessLevelRead) + "-")]
         Read,
 
-        [AgoRapide(Description = "Equivalent to -" + nameof(CoreP.AccessLevelWrite) + "-")]
+        [EnumMember(Description = "Equivalent to -" + nameof(CoreP.AccessLevelWrite) + "-")]
         Write
     }
 }

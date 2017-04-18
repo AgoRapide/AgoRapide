@@ -11,7 +11,7 @@ namespace AgoRapide {
     /// <summary>
     /// TODO: Support IS (like IS NULL)
     /// </summary>
-    [AgoRapide(Description = 
+    [Enum(Description = 
         "Operators as used by -" + nameof(QueryId) + "-. " +
         "See also -" + nameof(Extensions.ToSQLString) + "-.")]
     public enum Operator {
@@ -22,9 +22,9 @@ namespace AgoRapide {
         LT,
         GEQ,
         LEQ,
-        [AgoRapide(Description = "Case sensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
+        [EnumMember(Description = "Case sensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
         LIKE,
-        [AgoRapide(Description = "Case insensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
+        [EnumMember(Description = "Case insensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
         ILIKE
     }
 }

@@ -20,7 +20,7 @@ namespace AgoRapide {
     /// 
     /// Usually available as <see cref="ValidRequest.Result"/>
     /// </summary>  
-    [AgoRapide(Description = "Communicates results of an API command back to client")]
+    [Class(Description = "Communicates results of an API command back to client")]
     public class Result : BaseEntityWithLogAndCount {
 
         public ResultCode ResultCode {

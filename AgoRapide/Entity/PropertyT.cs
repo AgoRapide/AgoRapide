@@ -16,7 +16,7 @@ namespace AgoRapide {
     /// See <see cref="PropertyT{T}.PropertyT"/> for details.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    [AgoRapide(Description =
+    [Class(Description =
         "Generic sub-class of -" + nameof(Property) + "- which is meant to hide some complexity " +
         "and ease the understanding of the super class -" + nameof(Property) + "-.")]
     public class PropertyT<T> : Property {

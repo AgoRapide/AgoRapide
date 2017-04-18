@@ -7,6 +7,10 @@ using AgoRapide.Core;
 using AgoRapide.API;
 
 namespace AgoRapide {
+
+    /// <summary>
+    /// TODO: Move to Core-folder (no need to collect all <see cref="BaseEntity"/> in one place.
+    /// </summary>
     [AgoRapide(
         Description = "Represents a class plus a method within that class in your application like \"{className}.{methodName}\"",
         LongDescription =

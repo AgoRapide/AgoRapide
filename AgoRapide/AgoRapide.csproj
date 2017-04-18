@@ -96,12 +96,17 @@
     <Compile Include="Core\AgoRapideAttributeEnriched.cs" />
     <Compile Include="Core\AgoRapideAttributeEnrichedDyn.cs" />
     <Compile Include="Core\AgoRapideAttributeEnrichedT.cs" />
+    <Compile Include="Core\BaseAttribute.cs" />
     <Compile Include="Core\BaseCore.cs" />
+    <Compile Include="Core\ClassAttribute.cs" />
     <Compile Include="Core\ConfigurationAttribute.cs" />
+    <Compile Include="Core\EnumAttribute.cs" />
     <Compile Include="Core\EnumMapper.cs" />
+    <Compile Include="Core\EnumMemberAttribute.cs" />
     <Compile Include="Core\ErrorResponse.cs" />
     <Compile Include="Core\IGroupDescriber.cs" />
     <Compile Include="Core\ITypeDescriber.cs" />
+    <Compile Include="Core\ClassMemberAttribute.cs" />
     <Compile Include="Core\ParseResult.cs" />
     <Compile Include="Core\PropertyKey.cs" />
     <Compile Include="Core\PropertyKeyNonStrict.cs" />

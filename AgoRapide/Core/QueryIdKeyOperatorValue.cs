@@ -8,7 +8,7 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: To be extended. Parsing for instance does not work for the moment.
     /// </summary>
-    [AgoRapide(Description = 
+    [Class(Description = 
         "The general form of -" + nameof(QueryId) + "-. " +
         "Typical example would be : WHERE LastName LIKE 'John%'")]
     public class QueryIdKeyOperatorValue : QueryId {

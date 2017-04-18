@@ -10,11 +10,11 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
-    [AgoRapide(EnumType = EnumType.DataEnum)]
+    [Enum(EnumTypeY = EnumType.DataEnum)]
     public enum Colour {
         None,
 
-        [AgoRapide(Description = "Bjørn's favourite colour")]
+        [EnumMember(Description = "Bjørn's favourite colour")]
         Red,
 
         Green,
@@ -35,7 +35,7 @@ namespace AgoRapide {
     /// (it is felt unnecessary for entity classes to do logging). 
     /// Note however <see cref="BaseEntityWithLogAndCount.LogInternal"/> 
     /// </summary>
-    [AgoRapide(
+    [Class(
         Description = "Represents a basic data object in your model like Person, Order, Product",
 
         /// Do not do this. Make exception for <see cref="CoreP.AccessLevelUse"/> for <see cref="CoreMethod.EntityIndex"/> instead
@@ -323,7 +323,7 @@ namespace AgoRapide {
             })()) {
                 // Do not show type or name because it will only be confusing
             } else {
-                var description = GetType().GetAgoRapideAttributeForClass().Description;
+                var description = GetType().GetClassAttribute().Description;
                 retval.AppendLine("<h1>Type: " +
                     (string.IsNullOrEmpty(description) ? "" : "<span title=\"" + description.HTMLEncode() + "\">") +
                     GetType().ToStringVeryShort().HTMLEncode() +
@@ -396,7 +396,7 @@ namespace AgoRapide {
                 } else {
 
                     /// In all other cases, give hint about access
-                    var a = GetType().GetAgoRapideAttributeForClass();
+                    var a = GetType().GetClassAttribute();
                     var childProperties = GetType().GetChildProperties();
 
                     // TODO: Create general mechanism for adding links to HTML text like this (links are indicated with starting -'s and trailing -'s.)
@@ -405,8 +405,8 @@ namespace AgoRapide {
                         "There are no " + nameof(addableProperties) + " for this entity for " + request.CurrentUser.Name.HTMLEncode() + " (" + nameof(request.CurrentUser.AccessLevelGiven) + " = " + request.CurrentUser.AccessLevelGiven + ")." +
                         "<br><br>\r\n" +
                         (a.IsDefault || a.IsInherited ?
-                            ("Most probably because there are no -" + nameof(AgoRapideAttribute) + "- (with -" + nameof(AgoRapideAttribute.AccessLevelWrite) + "-) defined for -" + GetType().ToString() + "- meaning -" + nameof(AgoRapideAttribute.AccessLevelWrite) + "- defaults to -" + a.AccessLevelWrite + "-.") :
-                            ("[" + nameof(AgoRapideAttribute) + "(" + nameof(AgoRapideAttribute.AccessLevelWrite) + " = " + a.AccessLevelWrite + "...)] for -" + GetType().ToStringShort() + "-.")
+                            ("Most probably because there are no -" + nameof(ClassAttribute) + "- (with -" + nameof(ClassAttribute.AccessLevelWrite) + "-) defined for -" + GetType().ToString() + "- meaning -" + nameof(ClassAttribute.AccessLevelWrite) + "- defaults to -" + a.AccessLevelWrite + "-.") :
+                            ("[" + nameof(ClassAttribute) + "(" + nameof(ClassAttribute.AccessLevelWrite) + " = " + a.AccessLevelWrite + "...)] for -" + GetType().ToStringShort() + "-.")
                         ) +
                         "<br><br>\r\n" +
                         "In order to have any " + nameof(addableProperties) + " you must in general (for all the relevant enum values of -" + typeof(CoreP) + "-) " +

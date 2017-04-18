@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.Database;
 
-namespace AgoRapide {
+namespace AgoRapide.Core {
 
     /// <summary>
     /// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all

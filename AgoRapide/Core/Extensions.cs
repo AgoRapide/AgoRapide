@@ -484,17 +484,17 @@ namespace AgoRapide.Core {
                 /// (see also <see cref="IDatabase.TryGetEntities"/> which has the main responsibility for <see cref="AccessLocation.Relation"/>). 
             } else {
                 /// Implementing <see cref="AccessLocation.Entity"/>.
-                var aType = type.GetAgoRapideAttributeForClass(); // Used to get default values
+                var classAttribute = type.GetClassAttribute(); // Used to get default values
 
                 switch (accessType) {
                     case AccessType.Read:
-                        if (accessLevelGiven < entity.PV(CoreP.AccessLevelRead.A(), aType.AccessLevelRead)) {
+                        if (accessLevelGiven < entity.PV(CoreP.AccessLevelRead.A(), classAttribute.AccessLevelRead)) {
                             /// TODO: Implement access through relations (not implemented as of March 2017)
                             return new Dictionary<CoreP, PropertyKeyNonStrict>();
                         }
                         break;
                     case AccessType.Write:
-                        if (accessLevelGiven < entity.PV(CoreP.AccessLevelWrite.A(), aType.AccessLevelRead)) {
+                        if (accessLevelGiven < entity.PV(CoreP.AccessLevelWrite.A(), classAttribute.AccessLevelRead)) {
                             /// TODO: Implement access through relations (not implemented as of March 2017)
                             return new Dictionary<CoreP, PropertyKeyNonStrict>();
                         }
@@ -527,10 +527,10 @@ namespace AgoRapide.Core {
                 var r = new Dictionary<CoreP, PropertyKeyNonStrict>();
 
                 /// Implementing <see cref="AccessLocation.Type"/>. 
-                var aType = type.GetAgoRapideAttributeForClass();
+                var classAttribute = type.GetClassAttribute();
                 switch (accessType) { /// Check if access at all is allowed (Typically like <see cref="APIMethod"/>' <see cref="AgoRapideAttribute"/> having <see cref="AccessType.Write"/> set to <see cref="AccessLevel.System"/>)
-                    case AccessType.Read: if (accessLevelGiven < aType.AccessLevelRead) return r; break;
-                    case AccessType.Write: if (accessLevelGiven < aType.AccessLevelWrite) return r; break;
+                    case AccessType.Read: if (accessLevelGiven < classAttribute.AccessLevelRead) return r; break;
+                    case AccessType.Write: if (accessLevelGiven < classAttribute.AccessLevelWrite) return r; break;
                     default: throw new InvalidEnumException(accessType, key);
                 }
 
@@ -576,18 +576,25 @@ namespace AgoRapide.Core {
         public static Dictionary<CoreP, PropertyKeyNonStrict> GetChildProperties(this Type type) =>
              _childPropertiesCache.GetOrAdd(type, t => EnumMapper.AllCoreP.Where(key => key.Key.IsParentFor(type)).ToDictionary(key => key.Key.CoreP, key => key));
 
-        private static ConcurrentDictionary<Type, AgoRapideAttribute> _agoRapideAttributeForClassCache = new ConcurrentDictionary<Type, AgoRapideAttribute>();
+        private static ConcurrentDictionary<Type, ClassAttribute> _classAttributeCache = new ConcurrentDictionary<Type, ClassAttribute>();
         /// <summary>
-        /// Returns <see cref="AgoRapideAttribute"/> for a class (or enum-"class") itself. 
-        ///    
         /// Note use of caching. 
-        /// 
-        /// See <see cref="AgoRapideAttribute.GetAgoRapideAttribute(Type)"/> for documentation. 
+        /// See <see cref="ClassAttribute.GetAttribute"/> for documentation. 
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static AgoRapideAttribute GetAgoRapideAttributeForClass(this Type type) => _agoRapideAttributeForClassCache.GetOrAdd(type, t => AgoRapideAttribute.GetAgoRapideAttribute(t));
-        // public static AgoRapideAttribute GetAgoRapideAttribute(this Type type) => _allAgoRapideAttributeForClass.GetOrAdd(type, t => (AgoRapideAttribute)(Attribute.GetCustomAttribute(t, typeof(AgoRapideAttribute)) ?? AgoRapideAttribute.GetNewDefaultInstance()));
+        public static ClassAttribute GetClassAttribute(this Type type) => _classAttributeCache.GetOrAdd(type, t => ClassAttribute.GetAttribute(t));
+
+        private static ConcurrentDictionary<Type, EnumAttribute> _enumAttributeCache = new ConcurrentDictionary<Type, EnumAttribute>();
+        /// <summary>
+        /// Note use of caching. 
+        /// See <see cref="EnumAttribute.GetAttribute"/> for documentation. 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static EnumAttribute GetEnumAttribute(this Type type) => _enumAttributeCache.GetOrAdd(type, t => EnumAttribute.GetAttribute(t));
+
+        public static EnumMemberAttribute GetEnumMemberAttribute(this object _enum) => throw new NotImplementedException();
 
         private static ConcurrentDictionary<Type, ConcurrentDictionary<string, AgoRapideAttribute>> _agoRapideAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, AgoRapideAttribute>>();
         /// <summary>

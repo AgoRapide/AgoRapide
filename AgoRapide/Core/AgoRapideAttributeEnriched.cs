@@ -188,9 +188,9 @@ namespace AgoRapide.Core {
             if (!A.TypeIsSet) {
                 // Nothing to enrich from 
             } else {
-                A.Type.GetAgoRapideAttributeForClass().Use(a => {
+                A.Type.GetClassAttribute().Use(a => {
                     if (a.IsDefault) return; // Nothing interesting / nothing of value
-                    A.EnrichFrom(a); /// Some of the properties for <see cref="AgoRapideAttribute"/> are not relevant in this case, like <see cref="IsMany"/>
+                    A.EnrichFrom(a); 
                     PExplained += " (also enriched from type " + A.Type.ToStringShort() + ")";
                 });
             }
@@ -203,7 +203,7 @@ namespace AgoRapide.Core {
                     ((IGroupDescriber)Activator.CreateInstance(A.Group)).EnrichAttribute(this);
                     PExplained += " (also enriched from " + nameof(IGroupDescriber) + " " + A.Group.ToStringShort() + ")";
                 } catch (Exception ex) {
-                    throw new AgoRapideAttributeException(
+                    throw new BaseAttribute.AttributeException(
                         "Unable to initialize instance of " + A.Group + " given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + ".\r\n" +
                         "Most probably because " + A.Group + " does not have a default constructor without any arguments\r\n" +
                         "Details:\r\n" + A.ToString(), ex);
@@ -220,7 +220,7 @@ namespace AgoRapide.Core {
                     method.Invoke(null, new object[] { this });
                     PExplained += " (also enriched from " + nameof(ITypeDescriber) + " " + A.Type.ToStringShort() + ")";
                 } catch (Exception ex) {
-                    throw new AgoRapideAttributeException(
+                    throw new BaseAttribute.AttributeException(
                         "Unable to invoke \r\n" + A.Type.ToStringShort() + "'s\r\n" +
                         "   public static void method " + methodName + "\r\n" +
                         "given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Type) + " to " + typeof(CoreP).ToString() + "." + A.Property + "\r\n" +
@@ -238,7 +238,7 @@ namespace AgoRapide.Core {
                 if (A.Type.IsEnum) {
                     A.ValidValues = Util.EnumGetNames(A.Type).ToArray();
                     if (A.SampleValues != null) {
-                        throw new AgoRapideAttributeException(
+                        throw new BaseAttribute.AttributeException( // TODO: Check validity of this
                             "It is illegal (unnecessary) to combine " + nameof(A.SampleValues) + " with Type.IsEnum (" + A.Type.ToStringShort() + ") " +
                             "because " + nameof(A.ValidValues) + " can be used instead.\r\n" +
                             "Details:\r\n" + A.ToString());

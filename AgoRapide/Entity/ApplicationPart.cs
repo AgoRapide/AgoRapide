@@ -107,7 +107,7 @@ namespace AgoRapide {
                     key: CoreP.RootProperty.A().PropertyKey,
                     value: typeof(T).ToStringDB(),
                     result: null);
-                var a = type.GetAgoRapideAttributeForClass();
+                var a = type.GetClassAttribute();
                 new List<(CoreP coreP, object obj)> {
                     (CoreP.Name, identifier ), // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
                     (CoreP.Identifier, identifier),

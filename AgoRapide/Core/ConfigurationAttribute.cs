@@ -24,8 +24,8 @@ namespace AgoRapide.Core {
     /// will not change the cached value. Therefore always do a full initialization of this class at once at startup, and do not change
     /// any values afterwards after accessing any cached value. 
     /// </summary>
-    [AgoRapide(Description = "General attributes for a -" + nameof(Configuration) + "-.")]
-    public class ConfigurationAttribute { /// NOTE: This class does NOT inherit <see cref="Attribute"/> in spite of its name.
+    [Class(Description = "General attributes for a -" + nameof(Configuration) + "-.")]
+    public class ConfigurationAttribute { /// NOTE: This class does NOT inherit <see cref="BaseAttribute"/> in spite of its name.
 
         /// <summary>
         /// Example: @"c:\p\Logfiles\AgoRapide\AgoRapideLog_[DATE_HOUR].txt"
@@ -284,6 +284,8 @@ namespace AgoRapide.Core {
         /// 
         /// TODO: Similar code in both <see cref="APIMethodAttribute.Properties"/> and <see cref="ConfigurationAttribute.Properties"/>
         /// TODO: (and all other similar classes)
+        /// 
+        /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
         /// </summary>
         public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
             var retval = new PropertyT<string>(CoreP.Value.A().PropertyKey, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
@@ -291,6 +293,8 @@ namespace AgoRapide.Core {
             // Note how we are not adding None-values since they will be considered invalid at later reading from database.
             if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);
 
+            /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
+            /// TODO: Read MemberAttribute for each property in class and add those as child properties to each property added here.
             retval.AddProperty(ConfigurationKey.LogPath.A(), LogPath);
             retval.AddProperty(ConfigurationKey.RootUrl.A(), RootUrl);
 

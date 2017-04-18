@@ -10,8 +10,10 @@ namespace AgoRapide {
 
     /// <summary>
     /// Never stored in database.
+    /// 
+    /// TODO: Move to API-folder (no need to collect all <see cref="BaseEntity"/> in one place.
     /// </summary>
-    [AgoRapide(Description = 
+    [Class(Description = 
         "Used by " + nameof(BaseController.AgoRapideGenericMethod) +" " +
         "in order to present possible methods that the client intended to call.")]
     public class APIMethodCandidate : BaseEntity { 

@@ -29,13 +29,13 @@ namespace AgoRapide {
 
         Anonymous,
 
-        [AgoRapide(Description = "Access is given for to all entities that are registered as users in the system")]
+        [EnumMember(Description = "Access is given for to all entities that are registered as users in the system")]
         User,
 
         /// <summary>
         /// TODO: Elaborate on this. Is this needed in addition to <see cref="AccessLocation.Relation"/>???
         /// </summary>
-        [AgoRapide(Description = "A relation has to exist between the current user and the entity in question.",
+        [EnumMember(Description = "A relation has to exist between the current user and the entity in question.",
             LongDescription = "Either the current user IS the entity or there is some kind of relation giving access (like a parent-child relationship for instance).")]
         Relation,
 

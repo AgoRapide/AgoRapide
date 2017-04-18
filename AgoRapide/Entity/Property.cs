@@ -341,9 +341,9 @@ namespace AgoRapide {
                 case CoreP.Identifier: return request.CreateAPILink(CoreMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
                 case CoreP.DBId:
                     return request.CreateAPILink(CoreMethod.EntityIndex, v,
-       (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreMethod.EntityIndex, Parent.GetType(), out _) ?
-           Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
-                        typeof(BaseEntity)), new QueryIdInteger(V<long>()));
+                       (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreMethod.EntityIndex, Parent.GetType(), out _) ?
+                            Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
+                            typeof(BaseEntity)), new QueryIdInteger(V<long>()));
                 default: return v.HTMLEncodeAndEnrich(request);
             }
         }
@@ -410,16 +410,21 @@ namespace AgoRapide {
             InvalidTypeException.AssertAssignable(type.GenericTypeArguments[0], key.Key.A.Type, () => "Generic type requested was " + type + detailer.Result("\r\nDetails: "));
         }
 
-        private AgoRapideAttribute _valueAttribute;
+        private BaseAttribute _valueA;
         /// <summary>
-        /// Returns attributes for the value itself. 
-        /// Usually used for giving helptext for the value. 
+        /// Returns attributes for <see cref="Value"/>. 
+        /// Should only be used for giving helptext for the value. 
         /// </summary>
-        public AgoRapideAttribute ValueA => _valueAttribute ?? (_valueAttribute = new Func<AgoRapideAttribute>(() => {
+        public BaseAttribute ValueA => _valueA ?? (_valueA = new Func<BaseAttribute>(() => {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
-            if (_value.GetType().IsEnum) return _value.GetAgoRapideAttribute();
+            var type = _value.GetType();
+            if (type.IsEnum) {
+                return type.GetEnumAttribute().EnumTypeY == EnumType.EntityPropertyEnum ?
+                    (BaseAttribute)type.GetAgoRapideAttribute() :
+                    (BaseAttribute)type.GetEnumMemberAttribute();
+            }
             switch (_value) {
-                case Type t: return t.GetAgoRapideAttributeForClass();
+                case Type t: return t.GetClassAttribute();
                 default: return DefaultAgoRapideAttribute;
             }
         })());
@@ -428,7 +433,7 @@ namespace AgoRapide {
         /// Use with caution. Note how the same instance is returned always. 
         /// Therefore the requester should not change this instance after "receiving" it. 
         /// </summary>
-        public static AgoRapideAttribute DefaultAgoRapideAttribute = AgoRapideAttribute.GetNewDefaultInstance();
+        public static BaseAttribute DefaultAgoRapideAttribute = BaseAttribute.GetNewDefaultInstance();
 
         /// <summary>
         /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntity.InvalidPropertyException{T}"/>

@@ -8,8 +8,8 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
 
-    [AgoRapide(
-        EnumType = EnumType.DocumentationOnlyEnum,
+    [Enum(
+        EnumTypeY = EnumType.DocumentationOnlyEnum,
         Description = 
             "Categories different types of enum used in AgoRapide. " + 
             "This enum -" + nameof(EnumType) + "- is itself a -" + nameof(EnumType.DocumentationOnlyEnum) + "-"
@@ -18,13 +18,13 @@ namespace AgoRapide {
 
         None,
 
-        [AgoRapide(Description = "Provides a central repository of explanation of terms that are not present in the C# code.")]
+        [EnumMember(Description = "Provides a central repository of explanation of terms that are not present in the C# code.")]
         DocumentationOnlyEnum,
 
         /// <summary>
         /// TODO: Rename into KeyEnum
         /// </summary>
-        [AgoRapide(
+        [EnumMember(
             Description =
                 "Constitutes keys for -" + nameof(BaseEntity) + "- -" + nameof(BaseEntity.Properties) + "- collection. " +
                 "In AgoRapide library called -" + nameof(CoreP) + "- (often called P in final application)",
@@ -34,7 +34,7 @@ namespace AgoRapide {
         /// <summary>
         /// TODO: Rename into ValueEnum. 
         /// </summary>
-        [AgoRapide(
+        [EnumMember(
             Description = "\"Ordinary\" enums used for indicating range of valid values for a given key")]
         DataEnum
     }

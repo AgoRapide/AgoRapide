@@ -8,43 +8,19 @@ using AgoRapide.Database;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// Usually not used directly but as member class of <see cref="AgoRapideAttributeEnriched"/>
-    /// 
-    /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
-    /// 
     /// TODO: Use more concept like <see cref="IsManyIsSet"/> in order for <see cref="EnrichFrom"/> to know
     /// TODO: which values to enrich.
     /// 
-    /// Use for describing either
-    /// 
-    /// 1) (most common) actual enum values.
-    ///    Usually accessed through <see cref="Extensions.GetAgoRapideAttributeT{T}(T)"/> which returns the more refined class
-    ///    <see cref="AgoRapideAttributeT"/>-class which again contains this class as a member.
-    ///    
-    ///    Values are populated directly from the C# code using <see cref="System.ComponentModel"/> like
-    ///       [AgoRapideAttribute(EntityType = typeof(string), Description = "Description", LongDescription = "Long description")]
-    ///       ActualEnumValue
-    ///       
-    /// or
-    /// 
-    /// 2) (less common) enum-"classes". 
-    ///    (instead of XML-comments like this). 
-    ///    See example for how this has been done for <see cref="CoreMethod"/>). 
-    ///    Usually accessed through <see cref="Extensions.GetAgoRapideAttributeForClass(Type)"/>. 
-    ///    Some of the properties for <see cref="AgoRapideAttribute"/> are not relevant in this case, like <see cref="IsMany"/>
-    /// 
-    /// or
-    /// 
-    /// 3) (not implemented as of Feb 2017) All kind of classes. TODO: This class itself for instance.
+    /// Usually accessed through <see cref="Extensions.GetAgoRapideAttributeT{T}(T)"/> which returns the more refined class
+    /// <see cref="AgoRapideAttributeT"/>-class which again contains this class as a member.
     /// </summary>
-    public class AgoRapideAttribute : Attribute {
+    [Enum(Description = "Describes an enum member (enum value) of type -" + nameof(EnumType.EntityPropertyEnum) + "-. Super class -" + nameof(EnumMemberAttribute) + "- describes enum values NOT of type -" + nameof(EnumType.EntityPropertyEnum) + "-")]
+    public class AgoRapideAttribute : ClassMemberAttribute {
 
         /// <summary>
         /// Default empty constructor for all instances when originates from C# code
         /// </summary>
-        public AgoRapideAttribute() {
-
-        }
+        public AgoRapideAttribute() { }
 
         /// <summary>
         /// Constructor for when originates from database (See <see cref="EnumMapper.TryAddA"/>)
@@ -60,13 +36,6 @@ namespace AgoRapide.Core {
             LongDescription = longDescription;
             IsMany = isMany;
         }
-
-        /// <summary>
-        /// Set by <see cref="GetNewDefaultInstance"/>. 
-        /// 
-        /// See also <see cref="IsInherited"/>. 
-        /// </summary>
-        public bool IsDefault { get; private set; }
 
         private object _property;
         /// <summary>
@@ -84,15 +53,7 @@ namespace AgoRapide.Core {
             if (Property == null) throw new NullReferenceException(nameof(Property) + " for " + ToString());
         }
 
-        /// <summary>
-        /// The actual class that we are an attribute for. 
-        /// 
-        /// Only relevant when attribute for a class (type) or enum-"class".
-        /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
-        /// </summary>
-        public Type Class { get; private set; }
-
-        [AgoRapide(Description = "The underlying (more closer to the core AgoRapide library) property that -" + nameof(AgoRapideAttributeEnriched) + "- will inherit values from.",
+        [ClassMember(Description = "The underlying (more closer to the core AgoRapide library) property that -" + nameof(AgoRapideAttributeEnriched) + "- will inherit values from.",
             LongDescription =
                 "At the same time attributes for that property will be overridden by this -" + nameof(AgoRapideAttribute) + "- " +
                 "(conceptual similar to virtual overridden C# properties). " +
@@ -116,33 +77,10 @@ namespace AgoRapide.Core {
             if (!IsUniqueInDatabase) throw new UniquenessException("!" + nameof(IsUniqueInDatabase) + ". Details: " + ToString());
         }
 
-        /// <summary>
-        /// Note: If <see cref="Type"/> is one of your own classes / enums, or one of the AgoRapide classes / enums 
-        /// then you are recommended to not set <see cref="Description"/> / <see cref="LongDescription"/> for the enum value  
-        /// but instead rely on using <see cref="AgoRapideAttribute"/> belonging to the enum / class given by <see cref="Type"/>
-        /// For an example see how it is implemented for <see cref="CoreP.CoreMethod"/> and <see cref="AgoRapide.CoreMethod"/>
-        /// 
-        /// See also <see cref="CoreP.Description"/>
-        /// </summary>
-        public string Description { get; set; }
-
-        /// <summary>
-        /// Note: If <see cref="Type"/> is one of your own classes / enums, or one of the AgoRapide classes / enums 
-        /// then you are recommended to not set <see cref="Description"/> / <see cref="LongDescription"/> for the enum value  
-        /// but instead rely on using <see cref="AgoRapideAttribute"/> belonging to the enum / class given by <see cref="Type"/>
-        /// For an example see how it is implemented for <see cref="CoreP.CoreMethod"/> and <see cref="AgoRapide.CoreMethod"/>
-        /// 
-        /// See also <see cref="CoreP.LongDescription"/>
-        /// </summary>
-        public string LongDescription { get; set; }
-
-        private string _wholeDescription;
-        public string WholeDescription => _wholeDescription ?? (_wholeDescription = string.IsNullOrEmpty(LongDescription) ? Description : (Description + "\r\n\r\n" + LongDescription));
-
-        [AgoRapide(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
+        [ClassMember(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
         public bool IsPassword { get; set; }
 
-        [AgoRapide(
+        [ClassMember(
             Description =
                 "TRUE if property has to exist for -" + nameof(Parents) + "-",
             LongDescription =
@@ -150,7 +88,7 @@ namespace AgoRapide.Core {
                 "Note that -" + nameof(IsMany) + "- combined with -" + nameof(IsObligatory) + "- will result in -" + nameof(PropertyKey.Index) + "-#1 being used")]
         public bool IsObligatory { get; set; }
 
-        [AgoRapide(Description = "Instructs -" + nameof(AgoRapide.Property.Create) + "- to generate a -" + nameof(PropertyT<string>) + "- object if -" + nameof(AgoRapideAttributeEnriched.TryValidateAndParse) + "- fails")]
+        [ClassMember(Description = "Instructs -" + nameof(AgoRapide.Property.Create) + "- to generate a -" + nameof(PropertyT<string>) + "- object if -" + nameof(AgoRapideAttributeEnriched.TryValidateAndParse) + "- fails")]
         public bool IsNotStrict { get; set; }
 
         /// <summary>
@@ -236,7 +174,7 @@ namespace AgoRapide.Core {
         /// 
         /// Set this to the type of a class inheriting <see cref="IGroupDescriber"/>
         /// </summary>
-        [AgoRapide(Description = "Practical mechanism for describing properties with common properties through -" + nameof(IGroupDescriber) + "-")]
+        [ClassMember(Description = "Practical mechanism for describing properties with common properties through -" + nameof(IGroupDescriber) + "-")]
         public Type Group { get; set; }
 
         private Type _type;
@@ -346,40 +284,15 @@ namespace AgoRapide.Core {
         public string[] SampleValues { get; set; }
 
         /// <summary>
-        /// Only relevant when attribute for a class. 
-        /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
-        /// 
-        /// Indicates for which class this attribute was defined. 
-        /// Needed in order to deduce <see cref="IsInherited"/>. 
-        /// 
-        /// Value must be equivalent to <see cref="Extensions.ToStringVeryShort(Type)"/>
-        /// 
-        /// TODO: Turn into Type (will require more work for deducing <see cref="IsInherited"/>)
-        /// </summary>
-        public string DefinedForClass { get; set; }
-
-        /// <summary>
         /// Only relevant when attribute for an enum. 
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
         /// </summary>
         public EnumType EnumType { get; set; }
 
-        /// <summary>
-        /// Only relevant when attribute for a class. 
-        /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
-        /// 
-        /// Indicates if attribute was defined for a super class and not the actual class. 
-        /// 
-        /// Set by <see cref="GetAgoRapideAttribute(Type)"/>
-        /// 
-        /// Depends on <see cref="DefinedForClass"/> being set for super class. 
-        /// </summary>
-        public bool IsInherited { get; private set; }
-
-        public class NoAttributesDefinedException : ApplicationException {
-            public NoAttributesDefinedException(string message) : base(message) { }
-            public NoAttributesDefinedException(string message, Exception inner) : base(message, inner) { }
-        }
+        //public class NoAttributesDefinedException : ApplicationException {
+        //    public NoAttributesDefinedException(string message) : base(message) { }
+        //    public NoAttributesDefinedException(string message, Exception inner) : base(message, inner) { }
+        //}
 
         /// <summary>
         /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
@@ -389,36 +302,11 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public override string ToString() => "Enum: " + (_property?.ToString() ?? "[NULL]") + "\r\nDescription:\r\n" + Description + "\r\nLongDescription:\r\n" + LongDescription;
 
-        /// <summary>
-        /// Typically used by for instance <see cref= "GetAgoRapideAttribute" /> when no attribute found for property.
-        /// </summary>
-        /// <returns></returns>
-        public static AgoRapideAttribute GetNewDefaultInstance() => new AgoRapideAttribute { IsDefault = true };
-
-        /// <summary>
-        /// Returns <see cref="AgoRapideAttribute"/> for a class (or enum-"class") itself. 
-        /// 
-        /// Some of the properties for <see cref="AgoRapideAttribute"/> are not relevant in this case, like <see cref="IsMany"/>. 
-        /// Note (for "ordinary" classes) how you will inherit attributes for the base class if no attribute defined for <paramref name="type"/>. 
-        /// (<see cref="IsInherited"/> will indicate this assumed that <see cref="DefinedForClass"/> has been set correctly)
-        /// 
-        /// Usually called from <see cref="Extensions.GetAgoRapideAttributeForClass(Type)"/>
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static AgoRapideAttribute GetAgoRapideAttribute(Type type) {
-            var retval = (AgoRapideAttribute)GetCustomAttribute(type, typeof(AgoRapideAttribute));
-            if (retval == null) return GetNewDefaultInstance();
-            if (string.IsNullOrEmpty(retval.DefinedForClass) || type.ToStringVeryShort().Equals(retval.DefinedForClass)) {
-                return retval;
-            }
-            /// Create whole new instance and set <see cref="IsInherited"/> for it. 
-            var newRetval = GetNewDefaultInstance();
-            newRetval.EnrichFrom(retval); /// TODO: Ensure that code in <see cref="EnrichFrom"/> is up-to-date (last checked Feb 2017)
-            newRetval.IsDefault = false;
-            newRetval.IsInherited = true;
-            return newRetval;
-        }
+        ///// <summary>
+        ///// Typically used by for instance <see cref= "GetAgoRapideAttribute" /> when no attribute found.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static AgoRapideAttribute GetNewDefaultInstance() => new AgoRapideAttribute { IsDefault = true };
 
         /// <summary>
         /// TOOD: ------------
@@ -440,19 +328,28 @@ namespace AgoRapide.Core {
             // TODO: Consider moving more of this code into AgoRapideAttribute-class
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type); // TODO: Necessary? Most possibly YES!
+            if (type.GetEnumAttribute().EnumTypeY != EnumType.EntityPropertyEnum) throw new InvalidObjectTypeException(_enum, EnumType.EntityPropertyEnum + " required here");
             var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type.ToStringShort() + "." + _enum.ToString() + " is most probably not defined.");
 
             var retval = new Func<AgoRapideAttribute>(() => {
                 var attributes = field.GetCustomAttributes(typeof(AgoRapideAttribute), true);
                 switch (attributes.Length) {
                     case 0:
-                        return GetNewDefaultInstance();
+                        /// TODO: Duplicate code!
+                        var tester = new Action<Type>(t => {
+                            object found = field.GetCustomAttributes(t, true);
+                            if (found != null) throw new IncorrectAttributeTypeUsedException(found, typeof(EnumMemberAttribute), type + "." + _enum);
+                        });
+                        tester(typeof(ClassAttribute));
+                        tester(typeof(ClassMemberAttribute));
+                        tester(typeof(EnumAttribute));
+                        tester(typeof(EnumMemberAttribute));
+                        // tester(typeof(AgoRapideAttribute));
+                        return new AgoRapideAttribute { IsDefault = true };
                     case 1:
-                        var r = (AgoRapideAttribute)attributes[0];
-                        if (r.IsDefault) throw new AgoRapideAttributeException(nameof(IsDefault) + " is not allowed set \"manually\". Remove use of " + nameof(IsDefault) + " for " + type.ToStringVeryShort() + "." + _enum.ToString()); // This exception should never happen anyway because IsDefault is read only
-                        return r;
+                        return (AgoRapideAttribute)attributes[0];
                     default:
-                        throw new AgoRapideAttributeException(nameof(attributes) + ".Length > 1 (" + attributes.Length + ") for " + type.ToStringVeryShort() + "." + _enum.ToString());
+                        throw new AttributeException(nameof(attributes) + ".Length > 1 (" + attributes.Length + ") for " + type.ToStringVeryShort() + "." + _enum.ToString());
                 }
             })();
             retval._property = _enum;
@@ -553,10 +450,28 @@ namespace AgoRapide.Core {
 
             if (DateTimeFormat == DateTimeFormat.None) DateTimeFormat = other.DateTimeFormat;
         }
-    }
 
-    public class AgoRapideAttributeException : ApplicationException {
-        public AgoRapideAttributeException(string message) : base(message) { }
-        public AgoRapideAttributeException(string message, Exception inner) : base(message, inner) { }
+        /// <summary>
+        /// This method facilitates the following:
+        /// --------------------------
+        /// Note how we DO NOT set any <see cref="AgoRapideAttribute.Description"/> for <see cref="CoreP.CoreMethod"/> 
+        /// but instead rely on the <see cref="ClassAttribute.Description"/> set here. 
+        /// This comment describes the recommended approach to setting attributes when the type given (<see cref="AgoRapideAttribute.Type"/>) 
+        /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
+        /// --------------------------
+        /// </summary>
+        /// <param name="other"></param>
+        public void EnrichFrom(ClassAttribute other) {
+            if (string.IsNullOrEmpty(Description)) {
+                Description = other.Description;
+            } else {
+                Description += (Description.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(other.Description) + ": " + other.Description;
+            }
+            if (string.IsNullOrEmpty(LongDescription)) {
+                LongDescription = other.LongDescription;
+            } else {
+                LongDescription += (LongDescription.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(other.LongDescription) + ": " + other.LongDescription;
+            }
+        }
     }
 }

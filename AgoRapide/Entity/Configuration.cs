@@ -11,6 +11,11 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
+    /// <summary>
+    /// TODO: Move to API-folder (no need to collect all <see cref="BaseEntity"/> in one place.
+    /// 
+    /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
+    /// </summary>
     [AgoRapide(AccessLevelRead = AccessLevel.Admin, AccessLevelWrite = AccessLevel.System)]
     public class Configuration : ApplicationPart {
 

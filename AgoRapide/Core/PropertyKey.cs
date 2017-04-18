@@ -146,7 +146,7 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        [AgoRapide(Description = "See -" + nameof(AgoRapideAttribute.IsMany) + "-")]
+        [Class(Description = "See -" + nameof(AgoRapideAttribute.IsMany) + "-")]
         public enum IsManyInconsistency {
             None,
             NotIsManyButIndexGiven,

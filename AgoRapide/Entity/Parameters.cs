@@ -11,7 +11,7 @@ namespace AgoRapide {
     /// <summary>
     /// Never stored in database. 
     /// </summary>
-    [AgoRapide(Description = "Incoming parameters to an API call. Offered through -" + nameof(ValidRequest) + "-")]
+    [Class(Description = "Incoming parameters to an API call. Offered through -" + nameof(ValidRequest) + "-")]
     public class Parameters : BaseEntity { 
         public Parameters(Dictionary<CoreP, Property> parameters) => Properties = parameters;        
         public override string Name => "Collection of parameters to API call";
