@@ -66,7 +66,7 @@ namespace AgoRapideSample {
         /// <returns></returns>
         [HttpGet]
         [APIMethod(
-            Description = "Demonstrates use of " + nameof(AgoRapideAttribute.IsMany) + ". Call with id of a Car-object",
+            Description = "Demonstrates use of " + nameof(PropertyKeyAttribute.IsMany) + ". Call with id of a Car-object",
             S1 = nameof(CarIsManyExample), S2 = CoreP.IntegerQueryId)]
         public object CarIsManyExample(string IntegerQueryId) {
             try {

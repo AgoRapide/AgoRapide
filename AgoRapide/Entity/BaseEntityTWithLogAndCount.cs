@@ -38,7 +38,7 @@ namespace AgoRapide {
         /// TODO: Consider if Counts can be implemented straight from Properties collection
         /// TODO: At least, let the ToHTML-method transfer all counts to Properties collection
         /// 
-        /// TODO: Consider adding IsCount to <see cref="AgoRapideAttribute"/>. 
+        /// TODO: Consider adding IsCount to <see cref="PropertyKeyAttribute"/>. 
         /// TODO: This could transfer <see cref="Counts"/> values to / from database automatically. 
         /// </summary>
         /// <param name="id"></param>

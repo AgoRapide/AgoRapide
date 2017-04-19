@@ -33,8 +33,8 @@ namespace AgoRapide.API {
         /// 
         /// Will either be 
         /// 1) A single-element List corresponding directly to <see cref="Type"/>, <see cref="RouteSegment"/>, <see cref="String"/> or 
-        /// 2) The <see cref="AgoRapideAttribute.SampleValues"/> relevant for <see cref="Parameter"/>
-        ///    (in "worst case", if <see cref="AgoRapideAttribute.SampleValues"/> is null or empty then a single-element List consisting of 
+        /// 2) The <see cref="PropertyKeyAttribute.SampleValues"/> relevant for <see cref="Parameter"/>
+        ///    (in "worst case", if <see cref="PropertyKeyAttribute.SampleValues"/> is null or empty then a single-element List consisting of 
         ///    "[No sample value defined for ...]" will be given.
         /// (in other words this property will always have at least one non-null value defined, but note how for instance 
         /// <see cref="CoreP.Password"/>) is deliberately set up with a blank value)
@@ -66,7 +66,7 @@ namespace AgoRapide.API {
         /// <param name="segment">
         /// Must match one of 
         /// <see cref="Type"/> (<see cref="System.Type"/>), 
-        /// <see cref="Parameter"/> (<see cref="PropertyKey"/>) or 
+        /// <see cref="Parameter"/> (<see cref="PropertyKeyWithIndex"/>) or 
         /// <see cref="String"/> (<see cref="System.String"/>). 
         /// See <see cref="InvalidRouteSegmentClassException"/> for details. 
         /// </param>
@@ -88,7 +88,7 @@ namespace AgoRapide.API {
                 if (EnumMapper.TryGetA(segment.ToString(), out var temp)) {
                     segment = temp;
                 } else {
-                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(EnumMapper) + " as an -" + nameof(EnumType.EntityPropertyEnum) + "-");
+                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(EnumMapper) + " as an -" + nameof(EnumType.PropertyKey) + "-");
                 }
             }
 
@@ -175,7 +175,7 @@ namespace AgoRapide.API {
             public InvalidRouteSegmentClassException(string message) : base(
                 "A " + nameof(RouteSegmentClass) + " must have one of the following types:\r\n\r\n" +
                 "-" + typeof(Type).ToString() + ",\r\n" +
-                "-" + typeof(PropertyKey).ToString() + " (or an -" + nameof(EnumType.EntityPropertyEnum) + "-),\r\n" +
+                "-" + typeof(PropertyKeyWithIndex).ToString() + " (or an -" + nameof(EnumType.PropertyKey) + "-),\r\n" +
                 "-" + typeof(string).ToString() + ".\r\n\r\nThis does not correspond to the following:\r\n" + message) { }
         }
     }

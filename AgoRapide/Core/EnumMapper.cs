@@ -13,8 +13,8 @@ namespace AgoRapide.Core {
     /// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
     /// TODO: (corresponding functionality has been put into <see cref="PostgreSQLDatabase"/>.ReadOneProperty instead.
     /// </summary>
-    [AgoRapide(
-        Description = "Helper class matching -" + nameof(EnumType.EntityPropertyEnum) + "- (like P) used in your project to -" + nameof(CoreP) + "-",
+    [PropertyKey(
+        Description = "Helper class matching -" + nameof(EnumType.PropertyKey) + "- (like P) used in your project to -" + nameof(CoreP) + "-",
         LongDescription = "Note especially -" + nameof(GetA) + "- which is able to store in database any new string values found"
     )]
     public static class EnumMapper {
@@ -26,7 +26,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Returns all <see cref="CoreP"/> including additional ones mapped from other enums. 
         /// 
-        /// Will not contain <see cref="AgoRapideAttributeEnrichedDyn"/> (since all use of <see cref="AllCoreP"/> is based on C# originated needs, not database originated needs)
+        /// Will not contain <see cref="PropertyKeyAttributeEnrichedDyn"/> (since all use of <see cref="AllCoreP"/> is based on C# originated needs, not database originated needs)
         /// </summary>
         public static List<PropertyKeyNonStrict> AllCoreP => _allCoreP ?? throw new NullReferenceException(nameof(AllCoreP) + ". Most probably because no corresponding call was made to " + nameof(MapEnumFinalize));
 
@@ -37,7 +37,7 @@ namespace AgoRapide.Core {
         /// TODO: NOT TRUE as of Apr 2016 as <see cref="TryAddA"/> also has to add properties to this collection.
         /// 
         /// Is in principle equivalent to <see cref="Extensions._agoRapideAttributeTCache"/> except that _that_ cache also contains 
-        /// entries for non <see cref="AgoRapide.EnumType.EntityPropertyEnum"/> 
+        /// entries for non <see cref="AgoRapide.EnumType.PropertyKey"/> 
         /// (while _this_ cache, <see cref="_enumMapsCache"/> only contains entires for entity property enums)
         /// </summary>
         private static Dictionary<Type, Dictionary<int, PropertyKeyNonStrict>> _enumMapsCache = new Dictionary<Type, Dictionary<int, PropertyKeyNonStrict>>();
@@ -97,8 +97,8 @@ namespace AgoRapide.Core {
             overriddenAttributes[typeof(T)] = new List<string>();
             Util.EnumGetValues<T>().ForEach(e => {
                 // TODO: WHY DOES THIS WORK FOR IsMany???
-                var a = new PropertyKeyNonStrict(new AgoRapideAttributeEnrichedT<T>(AgoRapideAttribute.GetAgoRapideAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
-                a.SetPropertyKeyAndPropertyKeyAsIsManyParentOrTemplate(); // HACK
+                var a = new PropertyKeyNonStrict(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAgoRapideAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
+                a.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); // HACK
                 if (_fromStringMaps.TryGetValue(e.ToString(), out var existing)) {
                     overriddenAttributes.GetValue(existing.Key.A.Property.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
                         existing.Key.A.Property.GetType().ToStringShort() + "." + existing.Key.A.Property + " replaced by " + typeof(T).ToStringShort() + "." + e);
@@ -147,7 +147,7 @@ namespace AgoRapide.Core {
                         allCoreP[e.Value.Key.CoreP] = e.Value;
                     }
                 }
-                if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out AgoRapideAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
+                if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out PropertyKeyAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
             _allCoreP = allCoreP.Values.ToList();
             /// Repeat for <see cref="CoreP"/> since it most probably was changed above (new values mapped to it)
@@ -232,8 +232,8 @@ namespace AgoRapide.Core {
                 /// NOTE: Note how this check is extremely important in order to protect against 
                 /// NOTE: both SQL injection attacks and scripting attacks on HTML web pages. 
                 /// NOTE: This is so because it is envisaged that the final user shall be able to 
-                /// NOTE: create new "enums" / <see cref="PropertyKey"/> in the system. 
-                /// NOTE: And since the corresponding <see cref="AgoRapideAttributeEnriched.PToString"/> 
+                /// NOTE: create new "enums" / <see cref="PropertyKeyWithIndex"/> in the system. 
+                /// NOTE: And since the corresponding <see cref="PropertyKeyAttributeEnriched.PToString"/> 
                 /// NOTE: now being created will be "trusted" throughout the system, it must be asserted safe 
                 /// TODO: here at the origin.
                 strErrorResponse = nameof(_enum) + " (" + _enum + ") is not a valid C# identifier";
@@ -242,8 +242,8 @@ namespace AgoRapide.Core {
 
             // TODO: This should not have been accepted for IsMany!
             var key = new PropertyKeyNonStrict( 
-                new AgoRapideAttributeEnrichedDyn(
-                    new AgoRapideAttribute(
+                new PropertyKeyAttributeEnrichedDyn(
+                    new PropertyKeyAttribute(
                         property: _enum,
                         description: description,
                         longDescription: "This is a dynamically added 'enum' created by " + nameof(EnumMapper) + "." + System.Reflection.MethodBase.GetCurrentMethod().Name,
@@ -252,15 +252,15 @@ namespace AgoRapide.Core {
                     (CoreP)GetNextCorePId()
                 )
             );
-            key.SetPropertyKeyAndPropertyKeyAsIsManyParentOrTemplate();
-            if (!_enum.Equals(key.Key.PToString)) throw new PropertyKey.InvalidPropertyKeyException(nameof(_enum) + " (" + _enum + ") != " + nameof(key.Key.PToString) + " (" + key.Key.PToString + ")");
+            key.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
+            if (!_enum.Equals(key.Key.PToString)) throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(_enum) + " (" + _enum + ") != " + nameof(key.Key.PToString) + " (" + key.Key.PToString + ")");
 
             // _allCoreP.Add(key); Not needed (and not thread-safe either)
             if (!_fromStringMaps.TryAdd(key.Key.PToString, key)) {
                 // This could just be a thread issue. In other words we could choose to just ignore this exception. 
                 // or we could instead just do 
                 //   _fromStringMaps[key.Key.PToString] = key;
-                throw new PropertyKey.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + description);
+                throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + description);
             }
 
             /// TODO: Correct this not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>

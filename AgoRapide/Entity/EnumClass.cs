@@ -15,7 +15,7 @@ namespace AgoRapide {
         /// <summary>
         /// TODO: DELETE THIS. Replace with Key (other EnumClass goes into <see cref="ClassAndMethod"/>)
         /// </summary>
-    [AgoRapide(
+    [PropertyKey(
         Description = "Represents an Enum with values",
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
@@ -30,7 +30,7 @@ namespace AgoRapide {
             Register<CoreP>(); 
             Register<AccessLevel>();
             Register<APIMethodOrigin>();
-            Register<CoreMethod>();
+            Register<CoreAPIMethod>();
             Register<DateTimeFormat>();
             Register<DBField>();
             Register<Environment>();

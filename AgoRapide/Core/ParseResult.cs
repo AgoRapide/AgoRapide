@@ -36,24 +36,24 @@ namespace AgoRapide.Core {
         public string ErrorResponse { get; private set; }
 
         /// <summary>
-        /// Typically called from <see cref="AgoRapideAttributeEnriched.ValidatorAndParser"/>. 
+        /// Typically called from <see cref="PropertyKeyAttributeEnriched.ValidatorAndParser"/>. 
         /// 
         /// TODO: Ensure that correct constructor for <see cref="Property"/> will be called.
         /// 
-        /// TODO: As of Apr 2017 <see cref="AgoRapideAttribute.IsMany"/> is not supported for <paramref name="key"/>
-        /// TODO: (Unable to create a <see cref="Property"/>-object because a <see cref="PropertyKey"/> will be needed).
+        /// TODO: As of Apr 2017 <see cref="PropertyKeyAttribute.IsMany"/> is not supported for <paramref name="key"/>
+        /// TODO: (Unable to create a <see cref="Property"/>-object because a <see cref="PropertyKeyWithIndex"/> will be needed).
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <param name="objResult"></param>
         /// <returns></returns>
-        public static ParseResult Create<T>(AgoRapideAttributeEnriched key, T objResult) =>
+        public static ParseResult Create<T>(PropertyKeyAttributeEnriched key, T objResult) =>
             new ParseResult(
                 new PropertyT<T>(
-                    new Func<PropertyKey>(() => {
-                        if (!key.A.IsMany) return new PropertyKey(key); /// TODO: Clean up all handling of <see cref="PropertyKey"/> and <see cref="PropertyKeyNonStrict"/>
+                    new Func<PropertyKeyWithIndex>(() => {
+                        if (!key.A.IsMany) return new PropertyKeyWithIndex(key); /// TODO: Clean up all handling of <see cref="PropertyKeyWithIndex"/> and <see cref="PropertyKeyNonStrict"/>
                         var retval = new PropertyKeyNonStrict(key);
-                        retval.SetPropertyKeyAndPropertyKeyAsIsManyParentOrTemplate(); 
+                        retval.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); 
                         return retval.PropertyKeyAsIsManyParentOrTemplate; // Note that this may be just delaying throwing of the inevitable exception
                     })(),
                     // TODO: Alternative to code above.

@@ -18,24 +18,26 @@ namespace AgoRapide {
 
         None,
 
-        [EnumMember(Description = "Provides a central repository of explanation of terms that are not present in the C# code.")]
+        [EnumValue(
+            Description = "Provides a central repository of explanation of terms that are not present in the C# code.",
+            LongDescription = "Corresponding -" + nameof(BaseAttribute) + "- is -" + nameof(EnumAttribute) + "- / -" + nameof(EnumValueAttribute) + "-. "
+        )]
         DocumentationOnlyEnum,
 
-        /// <summary>
-        /// TODO: Rename into KeyEnum
-        /// </summary>
-        [EnumMember(
+        [EnumValue(
+            Description = "\"Ordinary\" enums used for indicating range of valid values for a given key",
+            LongDescription = "Corresponding -" + nameof(BaseAttribute) + "- is -" + nameof(EnumAttribute) + "- / -" + nameof(EnumValueAttribute) + "-. "
+        )]
+        EnumValue,
+
+        [EnumValue(
             Description =
                 "Constitutes keys for -" + nameof(BaseEntity) + "- -" + nameof(BaseEntity.Properties) + "- collection. " +
                 "In AgoRapide library called -" + nameof(CoreP) + "- (often called P in final application)",
-            LongDescription = "All -" + nameof(EntityPropertyEnum) + "- map towards -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-")]
-        EntityPropertyEnum,
+            LongDescription = 
+                "Corresponding -" + nameof(BaseAttribute) + "- is -" + nameof(EnumAttribute) + "- / -" + nameof(PropertyKeyAttribute) + "-. " +
+                "All -" + nameof(PropertyKey) + "- map towards -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-")]
+        PropertyKey
 
-        /// <summary>
-        /// TODO: Rename into ValueEnum. 
-        /// </summary>
-        [EnumMember(
-            Description = "\"Ordinary\" enums used for indicating range of valid values for a given key")]
-        DataEnum
     }
 }

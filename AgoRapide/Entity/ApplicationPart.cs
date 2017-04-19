@@ -104,7 +104,7 @@ namespace AgoRapide {
                         GetOrAdd<ClassAndMethod>(typeof(ApplicationPart), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id,
                     pid: null,
                     fid: null,
-                    key: CoreP.RootProperty.A().PropertyKey,
+                    key: CoreP.RootProperty.A().PropertyKeyWithIndex,
                     value: typeof(T).ToStringDB(),
                     result: null);
                 var a = type.GetClassAttribute();
@@ -113,7 +113,7 @@ namespace AgoRapide {
                     (CoreP.Identifier, identifier),
                     (CoreP.AccessLevelRead, a.AccessLevelRead),
                     (CoreP.AccessLevelWrite, a.AccessLevelWrite)
-                }.ForEach(t => db.CreateProperty(id, id, null, t.coreP.A().PropertyKey, t.obj, null));
+                }.ForEach(t => db.CreateProperty(id, id, null, t.coreP.A().PropertyKeyWithIndex, t.obj, null));
                 return db.GetEntityById<T>(id);
             });
             var retval = retvalTemp as T;

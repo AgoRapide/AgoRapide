@@ -21,7 +21,7 @@ namespace AgoRapideSample {
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [APIMethod(CoreMethod = CoreMethod.RootIndex)]
+        [APIMethod(CoreMethod = CoreAPIMethod.RootIndex)]
         public object RootIndex() {
             try {
                 if (!TryGetRequest(out var request, out var completeErrorResponse)) return completeErrorResponse;
@@ -49,7 +49,7 @@ namespace AgoRapideSample {
         [BasicAuthentication(AccessLevelUse = AccessLevel.User)]
         [APIMethod(
             Description = "Returns all persons where one of -" + nameof(P.FirstName) + "-, -" + nameof(P.LastName) + "- or -" + nameof(P.Email) + "- matches {" + nameof(CoreP.GeneralQueryId) + "}",
-            S1 = nameof(GeneralQuery), S2 = CoreP.GeneralQueryId, CoreMethod = CoreMethod.GeneralQuery)]
+            S1 = nameof(GeneralQuery), S2 = CoreP.GeneralQueryId, CoreMethod = CoreAPIMethod.GeneralQuery)]
         public object GeneralQuery(string GeneralQueryId) {
             try {
                 if (!TryGetRequest(GeneralQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
@@ -58,7 +58,7 @@ namespace AgoRapideSample {
                 /// TODO: Should we add a WILDCARD-parameter to <see cref="QueryIdKeyOperatorValue"/>.
                 if (!GeneralQueryId.EndsWith("%")) GeneralQueryId += "%";
 
-                QueryId queryId = new QueryIdKeyOperatorValue(new List<AgoRapideAttributeEnriched> {
+                QueryId queryId = new QueryIdKeyOperatorValue(new List<PropertyKeyAttributeEnriched> {
                     P.FirstName.A().Key,  // Add all keys that you consider
                     P.LastName.A().Key,   // relevant for a general query here
                     P.Email.A().Key       // (remember to optimize database correspondingly, like using partial indexes in PostgreSQL)
@@ -76,11 +76,11 @@ namespace AgoRapideSample {
                 if (persons.Count == 0) return request.GetErrorResponse(ResultCode.data_error, "No persons found for query '" + GeneralQueryId + "'");
                 return request.GetOKResponseAsMultipleEntities(persons.Select(p => {
                     var r = new GeneralQueryResult();
-                    r.AddProperty(CoreP.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="AgoRapideAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
+                    r.AddProperty(CoreP.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="PropertyKeyAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
                     r.AddProperty(
                         CoreP.SuggestedUrl.A(), 
                         request.CreateAPIUrl(
-                            CoreMethod.UpdateProperty, 
+                            CoreAPIMethod.UpdateProperty, 
                             typeof(Person),  /// Note important point here, do NOT set <see cref="CoreP.EntityToRepresent"/> for <see cref="CoreP.EntityToRepresent"/>!
                             new QueryIdInteger(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
                         )
@@ -149,7 +149,7 @@ namespace AgoRapideSample {
         [HttpPost]
         [OverrideAuthentication]
         [BasicAuthentication(AccessLevelUse = AccessLevel.User)] // Stricter access like administrative access will be considered further downstream (by AgoRapideGenericMethod)
-        [APIMethod(CoreMethod = CoreMethod.GenericMethod)]
+        [APIMethod(CoreMethod = CoreAPIMethod.GenericMethod)]
         public object GenericMethod() {
             try {
                 var method = GetMethod();
@@ -169,7 +169,7 @@ namespace AgoRapideSample {
         [OverrideAuthentication]
         [BasicAuthentication(AccessLevelUse = AccessLevel.Admin)]
         [HttpGet]
-        [APIMethod(CoreMethod = CoreMethod.ExceptionDetails, S1 = nameof(ExceptionDetails), AccessLevelUse = AccessLevel.Admin)]
+        [APIMethod(CoreMethod = CoreAPIMethod.ExceptionDetails, S1 = nameof(ExceptionDetails), AccessLevelUse = AccessLevel.Admin)]
         public object ExceptionDetails() {
             try {
                 return HandleCoreMethodExceptionDetails(GetMethod());

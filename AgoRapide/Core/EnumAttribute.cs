@@ -11,7 +11,7 @@ namespace AgoRapide.Core {
     /// </summary>    
     [Class(Description =
         "Describes an enum-\"class\".\r\n" +
-        "(enum members (the individual values) are described by -" + nameof(EnumMemberAttribute) + "-)")]
+        "(enum members (the individual values) are described by -" + nameof(EnumValueAttribute) + "-)")]
     public class EnumAttribute : BaseAttribute {
 
         private Type _enumType;
@@ -27,20 +27,8 @@ namespace AgoRapide.Core {
         public EnumType EnumTypeY { get; set; }
 
         public static EnumAttribute GetAttribute(Type type) {
-            var retval = (EnumAttribute)GetCustomAttribute(type, typeof(EnumAttribute));
-            if (retval == null) {
-                /// TODO: Duplicate code!
-                var tester = new Action<Type>(t => {
-                    var found = GetCustomAttribute(type, t);
-                    if (found != null) throw new IncorrectAttributeTypeUsedException(found, typeof(EnumAttribute), type.ToString());
-                });
-                tester(typeof(ClassAttribute));
-                tester(typeof(ClassMemberAttribute));
-                // tester(typeof(EnumAttribute));
-                tester(typeof(EnumMemberAttribute));
-                tester(typeof(AgoRapideAttribute));
-                return new EnumAttribute { IsDefault = true };
-            }
+            NotOfTypeEnumException.AssertEnum(type);
+            var retval = GetAttributeThroughType<EnumAttribute>(type);
             retval._enumType = type;
             return retval;
         }

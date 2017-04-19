@@ -8,44 +8,43 @@ using AgoRapide.Database;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: Note how <see cref="PropertyKey"/> became ubiquitous throughout the library at introduction.
-    /// TDOO: Consider if some use of it can be changed back to use of <see cref="AgoRapideAttributeEnriched"/> instead. 
+    /// TODO: Rename into PropertyKey
+    /// 
+    /// TODO: Note how <see cref="PropertyKeyWithIndex"/> became ubiquitous throughout the library at introduction.
+    /// TDOO: Consider if some use of it can be changed back to use of <see cref="PropertyKeyAttributeEnriched"/> instead. 
     /// TODO: Notice how connected everything is, starting with the need for describing <see cref="Property.Key"/>.
     /// TODO: this is assumed to be a suboptimal situation at present.
     /// 
-    /// TODO: The whole distinction between <see cref="PropertyKeyNonStrict"/> and <see cref="Core.PropertyKey"/> is a bit messy as of Apr 2017
+    /// TODO: The whole distinction between <see cref="PropertyKeyNonStrict"/> and <see cref="Core.PropertyKeyWithIndex"/> is a bit messy as of Apr 2017
     /// TODO: Especially the hack with <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
     /// TODO: There is also the question of creating a new subclass called PropertyKeyIsMany (and moving the Index-property there)
     /// </summary>
-    [AgoRapide(
+    [PropertyKey(
         Description =
-            "Corresponds normally directly to the name of -" + nameof(EnumType.EntityPropertyEnum) + "- like -" + nameof(CoreP) + "-, -P-) used in your application. ",
-        LongDescription =
-            "The difference between -" + nameof(PropertyKeyNonStrict) + "- and -" + nameof(Core.PropertyKey) + "- " +
-            "is that the latter also specifies an -" + nameof(Core.PropertyKey.Index) + "- for -" + nameof(AgoRapideAttribute.IsMany) + "-"
+            "Corresponds normally directly to the name of -" + nameof(EnumType.PropertyKey) + "- like -" + nameof(CoreP) + "-, -P-) used in your application. "
     )]
     public class PropertyKeyNonStrict : ITypeDescriber {
-        public AgoRapideAttributeEnriched Key { get; protected set; }
+        public PropertyKeyAttributeEnriched Key { get; protected set; }
 
-        public PropertyKeyNonStrict(AgoRapideAttributeEnriched key) => Key = key;
+        public PropertyKeyNonStrict(PropertyKeyAttributeEnriched key) => Key = key;
 
-        private PropertyKey _propertyKey;
+        private PropertyKeyWithIndex _propertyKeyWithIndex;
         /// <summary>
-        /// HACK. Relevant when !<see cref="AgoRapideAttribute.IsMany"/>
+        /// HACK. Relevant when !<see cref="PropertyKeyAttribute.IsMany"/>
         /// Only relevant when originates from <see cref="EnumMapper"/>
         /// Constitutes the "strict" version of <see cref="PropertyKeyNonStrict"/>
         /// </summary>
-        public PropertyKey PropertyKey {
+        public PropertyKeyWithIndex PropertyKeyWithIndex {
             get {
-                if (_propertyKey != null) return _propertyKey;
+                if (_propertyKeyWithIndex != null) return _propertyKeyWithIndex;
                 switch (this) {
-                    case PropertyKey temp: return _propertyKey = temp; /// Hack, because often <see cref="PropertyKeyNonStrict.PropertyKey"/> is asked for even in cases when the caller already has a <see cref="PropertyKey"/> object (the caller "belives" it only has a <see cref="PropertyKeyNonStrict"/>  object)
+                    case PropertyKeyWithIndex temp: return _propertyKeyWithIndex = temp; /// Hack, because often <see cref="PropertyKeyNonStrict.PropertyKeyWithIndex"/> is asked for even in cases when the caller already has a <see cref="PropertyKeyWithIndex"/> object (the caller "belives" it only has a <see cref="PropertyKeyNonStrict"/>  object)
                     default:
                         throw new NullReferenceException(
-                            nameof(_propertyKey) + ". " +
+                            nameof(_propertyKeyWithIndex) + ". " +
                             "Possible reason: " +
                             new Func<string>(() => {
-                                if (Key.A.IsMany) return nameof(AgoRapideAttribute.IsMany) + "(" + Key.A.IsMany + ") = TRUE";
+                                if (Key.A.IsMany) return nameof(PropertyKeyAttribute.IsMany) + "(" + Key.A.IsMany + ") = TRUE";
                                 return "Maybe this instance does not originate from " + nameof(EnumMapper);
                             })() +
                             "\r\n" +
@@ -57,20 +56,20 @@ namespace AgoRapide.Core {
             }
         }
 
-        public bool PropertyKeyIsSet => _propertyKey != null;
+        public bool PropertyKeyIsSet => _propertyKeyWithIndex != null;
 
-        private PropertyKey _propertyKeyAsIsManyParentOrTemplate;
+        private PropertyKeyWithIndex _propertyKeyWithIndexAsIsManyParentOrTemplate;
         /// <summary>
         /// HACK. See <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
         /// Only relevant when originates from <see cref="EnumMapper"/>
         /// </summary>
-        public PropertyKey PropertyKeyAsIsManyParentOrTemplate => _propertyKeyAsIsManyParentOrTemplate ?? throw new NullReferenceException(nameof(_propertyKeyAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(EnumMapper) + ".\r\nDetails: " + ToString());
+        public PropertyKeyWithIndex PropertyKeyAsIsManyParentOrTemplate => _propertyKeyWithIndexAsIsManyParentOrTemplate ?? throw new NullReferenceException(nameof(_propertyKeyWithIndexAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(EnumMapper) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// This is a hack to allow <see cref="Property.IsIsManyParent"/> and <see cref="Property.IsTemplateOnly"/> 
-        /// to have a "strict" <see cref="Core.PropertyKey"/> as key (instead of <see cref="PropertyKeyNonStrict"/>. 
+        /// to have a "strict" <see cref="Core.PropertyKeyWithIndex"/> as key (instead of <see cref="PropertyKeyNonStrict"/>. 
         /// 
-        /// Not how reading <see cref="PropertyKey.Index"/> with this value will result in an exception being thrown
+        /// Not how reading <see cref="PropertyKeyWithIndex.Index"/> with this value will result in an exception being thrown
         /// 
         /// See <see cref="PropertyKeyAsIsManyParentOrTemplate"/>
         /// 
@@ -83,14 +82,14 @@ namespace AgoRapide.Core {
         /// HACK. See <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
         /// Only relevant when originates from <see cref="EnumMapper"/>
         /// </summary>
-        public void SetPropertyKeyAndPropertyKeyAsIsManyParentOrTemplate() {
-            if (!Key.A.IsMany) _propertyKey = new PropertyKey(Key);
-            _propertyKeyAsIsManyParentOrTemplate = new PropertyKey(Key, IS_MANY_PARENT_OR_TEMPLATE_INDEX);
+        public void SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate() {
+            if (!Key.A.IsMany) _propertyKeyWithIndex = new PropertyKeyWithIndex(Key);
+            _propertyKeyWithIndexAsIsManyParentOrTemplate = new PropertyKeyWithIndex(Key, IS_MANY_PARENT_OR_TEMPLATE_INDEX);
         }
 
         public static bool TryParse(string value, out PropertyKeyNonStrict key, out string strErrorResponse) {
 
-            if (PropertyKey.TryParse(value, out var retval, out strErrorResponse, out _, out var nonStrictAlternative, out _)) {
+            if (PropertyKeyWithIndex.TryParse(value, out var retval, out strErrorResponse, out _, out var nonStrictAlternative, out _)) {
                 key = retval;
                 return true;
             }
@@ -105,7 +104,7 @@ namespace AgoRapide.Core {
             return false;
         }
 
-        public static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
+        public static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
         agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
             return TryParse(value, out var retval, out string errorResponse) ?
             ParseResult.Create(agoRapideAttribute, retval) :
@@ -114,7 +113,7 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// TODO: REMOVE COMMENT, WE REMOVE THE FORMER EXCEPTION
-        /// TOOD: Do not confuse <see cref="AgoRapide.Database.InvalidPropertyKeyException"/> and <see cref="PropertyKey.InvalidPropertyKeyException"/>,
+        /// TOOD: Do not confuse <see cref="AgoRapide.Database.InvalidPropertyKeyException"/> and <see cref="PropertyKeyWithIndex.InvalidPropertyKeyException"/>,
         /// TODO: RENAME ONE OF THESE INTO SOMETHING ELSE
         /// </summary>
         public class InvalidPropertyKeyException : ApplicationException {

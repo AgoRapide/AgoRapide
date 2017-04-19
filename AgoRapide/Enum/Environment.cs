@@ -7,14 +7,14 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    [AgoRapide(
+    [PropertyKey(
         Description = "Characterizes the runtime environment that the application runs in.",
         LongDescription = "Environment in AgoRapide are used in different conceptual understandings:\r\n" +
             "\r\n" +
-            "1) To characterize a single property. See -" + nameof(AgoRapideAttribute) + "-.\r\n" +
+            "1) To characterize a single property. See -" + nameof(PropertyKeyAttribute) + "-.\r\n" +
             "   The current -" + nameof(Environment) + "- has to be equivalent or lower in order for the property to be shown / accepted\r\n" +
             "\r\n" +
-            "2) To characterize an API method. See -" + nameof(AgoRapideAttribute) + "-.\r\n" +
+            "2) To characterize an API method. See -" + nameof(PropertyKeyAttribute) + "-.\r\n" +
             "    The current -" + nameof(Environment) + "- has to be equivalent or lower in order for the method to be included in the API routing\r\n" +
             "\r\n" +
             "3) To characterize an individual instance of an entity. See -" + nameof(BaseEntity) + "-\r\n" +
@@ -26,7 +26,7 @@ namespace AgoRapide {
             "And last, you may use Environment for\r\n" +
             "4) To (the traditional understanding) characterize the runtime environment the application runs in\r\n" +
             "    (see -" + nameof(ConfigurationAttribute.Environment) + "-)\r\n",
-        EnumType = EnumType.DataEnum
+        EnumType = EnumType.EnumValue
     )]
     public enum Environment {
         None,

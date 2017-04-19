@@ -268,12 +268,12 @@ namespace AgoRapide.Core {
 
         public string GenericMethodRouteTemplate = "{*url}";
 
-        [AgoRapide(EnumType = EnumType.EntityPropertyEnum)]
+        [PropertyKey(EnumType = EnumType.PropertyKey)]
         public enum ConfigurationKey {
             None,
-            [AgoRapide(AccessLevelRead = AccessLevel.Admin)]
+            [PropertyKey(AccessLevelRead = AccessLevel.Admin)]
             LogPath,
-            [AgoRapide(AccessLevelRead = AccessLevel.Anonymous)]
+            [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
             RootUrl
         }
 
@@ -288,7 +288,7 @@ namespace AgoRapide.Core {
         /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
         /// </summary>
         public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
-            var retval = new PropertyT<string>(CoreP.Value.A().PropertyKey, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
+            var retval = new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
 
             // Note how we are not adding None-values since they will be considered invalid at later reading from database.
             if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);

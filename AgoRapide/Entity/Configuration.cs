@@ -16,7 +16,7 @@ namespace AgoRapide {
     /// 
     /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
     /// </summary>
-    [AgoRapide(AccessLevelRead = AccessLevel.Admin, AccessLevelWrite = AccessLevel.System)]
+    [PropertyKey(AccessLevelRead = AccessLevel.Admin, AccessLevelWrite = AccessLevel.System)]
     public class Configuration : ApplicationPart {
 
         public ConfigurationAttribute A { get; private set; }

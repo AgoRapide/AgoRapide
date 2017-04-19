@@ -6,7 +6,7 @@ using AgoRapide;
 using AgoRapide.Core;
 
 namespace AgoRapideSample {
-    [AgoRapide(
+    [PropertyKey(
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.Anonymous
     )]

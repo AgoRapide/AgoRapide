@@ -14,8 +14,8 @@ namespace AgoRapide.API {
     [Class(Description = "General attributes for a -" + nameof(APIMethod) + "-.")]
     public class APIMethodAttribute : BaseAttribute {
 
-        public CoreMethod CoreMethod { get; set; }
-        public void AssertCoreMethod(CoreMethod coreMethod) {
+        public CoreAPIMethod CoreMethod { get; set; }
+        public void AssertCoreMethod(CoreAPIMethod coreMethod) {
             if (CoreMethod != coreMethod) throw new InvalidEnumException(CoreMethod, "Expected " + coreMethod);
         }
 
@@ -81,9 +81,9 @@ namespace AgoRapide.API {
         /// TODO: (and all other similar classes)
         /// </summary>
         public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
-            var retval = new PropertyT<string>(CoreP.Value.A().PropertyKey, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
+            var retval = new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
             // Note how we are not adding None-values since they will be considered invalid at later reading from database.
-            if (CoreMethod != CoreMethod.None) retval.AddProperty(CoreP.CoreMethod.A(), CoreMethod);
+            if (CoreMethod != CoreAPIMethod.None) retval.AddProperty(CoreP.CoreAPIMethod.A(), CoreMethod);
             if (AccessLevelUse != AccessLevel.None) retval.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse);
             if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);
 

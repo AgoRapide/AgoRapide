@@ -25,16 +25,16 @@ namespace AgoRapide {
     ///    
     ///    a) Calls <see cref="PropertyT{T}.PropertyT"/>) directly 
     ///       (which happens whenever value itself does not originate from <see cref="DBField.strv"/> 
-    ///       or when <see cref="AgoRapideAttribute.Type"/> is <see cref="string"/>)
+    ///       or when <see cref="PropertyKeyAttribute.Type"/> is <see cref="string"/>)
     ///       
     ///    or
     ///    
-    ///    b) Calls <see cref="AgoRapideAttributeEnriched.TryValidateAndParse"/> / <see cref="ParseResult.Create{T}"/> 
+    ///    b) Calls <see cref="PropertyKeyAttributeEnriched.TryValidateAndParse"/> / <see cref="ParseResult.Create{T}"/> 
     ///       which again calls <see cref="PropertyT{T}.PropertyT"/>
     ///    
     /// 3) When received by API (<see cref="BaseController.TryGetRequest"/>):
     /// 
-    ///    Through <see cref="AgoRapideAttributeEnriched.TryValidateAndParse"/> 
+    ///    Through <see cref="PropertyKeyAttributeEnriched.TryValidateAndParse"/> 
     ///    which calls <see cref="ParseResult.Create{T}"/> 
     ///    which again calls <see cref="PropertyT{T}.PropertyT"/>) 
     ///    
@@ -42,7 +42,7 @@ namespace AgoRapide {
     /// 
     ///    Through direct call to <see cref="PropertyT{T}.PropertyT"/>
     ///    
-    /// 5) Template and <see cref="AgoRapideAttribute.IsMany"/> parent.
+    /// 5) Template and <see cref="PropertyKeyAttribute.IsMany"/> parent.
     /// 
     ///    Through <see cref="Property.CreateTemplate"/> and <see cref="Property.CreateIsManyParent"/>
     ///    TODO: This is not considered an optimal solution as of Apr 2017
@@ -54,11 +54,11 @@ namespace AgoRapide {
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
     /// <see cref="IDatabase.TryGetEntities{T}"/> 
     /// </summary>
-    [AgoRapide(
+    [PropertyKey(
         Description = "Represents a single property of a -" + nameof(BaseEntity) + "-.",
         LongDescription =
             "Note how -" + nameof(Property) + "- is itself also a -" + nameof(BaseEntity) + "- and may therefore contain " +
-            "a collection of -" + nameof(Property) + "- itself, either because it \"is\" -" + nameof(AgoRapideAttribute.IsMany) + "- or " +
+            "a collection of -" + nameof(Property) + "- itself, either because it \"is\" -" + nameof(PropertyKeyAttribute.IsMany) + "- or " +
             "because it just contains child-properties.",
         AccessLevelRead = AccessLevel.Relation,
         AccessLevelWrite = AccessLevel.Relation
@@ -81,8 +81,8 @@ namespace AgoRapide {
             set => _keyDB = value;
         }
 
-        protected PropertyKey _key;
-        public PropertyKey Key => _key ?? (_key = PropertyKey.Parse(_keyDB ?? throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'"), () => ToString()));
+        protected PropertyKeyWithIndex _key;
+        public PropertyKeyWithIndex Key => _key ?? (_key = PropertyKeyWithIndex.Parse(_keyDB ?? throw new NullReferenceException(nameof(_keyDB) + ". Either " + nameof(_key) + " or " + nameof(_keyDB) + " must be set from 'outside'"), () => ToString()));
         /// <summary>
         /// Key for use in HTML-code (as identifiers for use by Javascript)
         /// (that is, NOT key in HTML-format)
@@ -95,13 +95,13 @@ namespace AgoRapide {
         /// <summary>
         /// Improves on <see cref="ParseResult.Result"/>
         /// 
-        /// HACK: Solves problem of <see cref="AgoRapideAttributeEnriched.TryValidateAndParse"/> / <see cref="ParseResult.Create"/> 
-        /// HACK: only being aware of <see cref="AgoRapideAttributeEnriched"/>, 
-        /// HACK: not <see cref="PropertyKey"/> 
+        /// HACK: Solves problem of <see cref="PropertyKeyAttributeEnriched.TryValidateAndParse"/> / <see cref="ParseResult.Create"/> 
+        /// HACK: only being aware of <see cref="PropertyKeyAttributeEnriched"/>, 
+        /// HACK: not <see cref="PropertyKeyWithIndex"/> 
         /// HACK: when generating <see cref="ParseResult.Result"/>
         /// </summary>
         /// <param name="key"></param>
-        public void SetKey(PropertyKey key) {
+        public void SetKey(PropertyKeyWithIndex key) {
             _key = key;
             _keyDB = null;
         }
@@ -174,11 +174,11 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Only relevant when corresponding <see cref="AgoRapideAttribute.IsMany"/> for <see cref="Key"/>
+        /// Only relevant when corresponding <see cref="PropertyKeyAttribute.IsMany"/> for <see cref="Key"/>
         /// </summary>
         public bool IsIsManyParent { get; private set; }
         public void AssertIsManyParent() {
-            if (!true.Equals(IsIsManyParent)) throw new AgoRapideAttribute.IsManyException("!" + nameof(IsIsManyParent) + ": " + ToString());
+            if (!true.Equals(IsIsManyParent)) throw new PropertyKeyAttribute.IsManyException("!" + nameof(IsIsManyParent) + ": " + ToString());
         }
 
         /// <summary>
@@ -187,12 +187,12 @@ namespace AgoRapide {
         /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
         /// </summary>
         /// <returns></returns>
-        public PropertyKey GetNextIsManyId() {
+        public PropertyKeyWithIndex GetNextIsManyId() {
             AssertIsManyParent();
             var id = 1; while (Properties.ContainsKey((CoreP)(object)(int.MaxValue - id))) {
-                id++; if (id > 1000) throw new AgoRapideAttribute.IsManyException("id " + id + ", limit is (somewhat artificially) set to 1000. " + ToString());
+                id++; if (id > 1000) throw new PropertyKeyAttribute.IsManyException("id " + id + ", limit is (somewhat artificially) set to 1000. " + ToString());
             }
-            return new PropertyKey(Key.Key, id);
+            return new PropertyKeyWithIndex(Key.Key, id);
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="parent"></param>
         /// <returns></returns>
-        public static Property CreateTemplate(PropertyKey key, BaseEntity parent) => new Property(dummy: null) {
+        public static Property CreateTemplate(PropertyKeyWithIndex key, BaseEntity parent) => new Property(dummy: null) {
             IsTemplateOnly = true,
             _key = key,
             Parent = parent,
@@ -252,7 +252,7 @@ namespace AgoRapide {
                 /// Therefore we must to this instead:
                 EnumMapper.GetA(key.Key.CoreP).PropertyKeyAsIsManyParentOrTemplate;
             // TODO: Code above is a bit slow performance wise (there are two dictionary look ups involved)
-            /// TODO: Code above is run whenever an <see cref="AgoRapideAttribute.IsMany"/> property is read from database for instance.
+            /// TODO: Code above is run whenever an <see cref="PropertyKeyAttribute.IsMany"/> property is read from database for instance.
 
             return new Property(dummy: null) {
                 IsIsManyParent = true,
@@ -268,7 +268,7 @@ namespace AgoRapide {
         /// </summary>
         /// <returns></returns>
         public static Property Create(
-            PropertyKey key,
+            PropertyKeyWithIndex key,
             long id,
             DateTime created,
             long creatorId,
@@ -338,10 +338,10 @@ namespace AgoRapide {
         public string ValueHTML(Request request) {
             var v = V<string>();
             switch (Key.Key.CoreP) {
-                case CoreP.Identifier: return request.CreateAPILink(CoreMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
+                case CoreP.Identifier: return request.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
                 case CoreP.DBId:
-                    return request.CreateAPILink(CoreMethod.EntityIndex, v,
-                       (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreMethod.EntityIndex, Parent.GetType(), out _) ?
+                    return request.CreateAPILink(CoreAPIMethod.EntityIndex, v,
+                       (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
                             Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
                             typeof(BaseEntity)), new QueryIdInteger(V<long>()));
                 default: return v.HTMLEncodeAndEnrich(request);
@@ -400,7 +400,7 @@ namespace AgoRapide {
 
         /// <summary>
         /// Asserts that <paramref name="type"/> is a generic List 
-        /// compatible with <see cref="Key"/> (compatible with <see cref="AgoRapideAttribute.Type"/>)
+        /// compatible with <see cref="Key"/> (compatible with <see cref="PropertyKeyAttribute.Type"/>)
         /// </summary>
         /// <param name="type"></param>
         /// <param name="key"></param>
@@ -419,7 +419,7 @@ namespace AgoRapide {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
             var type = _value.GetType();
             if (type.IsEnum) {
-                return type.GetEnumAttribute().EnumTypeY == EnumType.EntityPropertyEnum ?
+                return type.GetEnumAttribute().EnumTypeY == EnumType.PropertyKey ?
                     (BaseAttribute)type.GetAgoRapideAttribute() :
                     (BaseAttribute)type.GetEnumMemberAttribute();
             }
@@ -472,7 +472,7 @@ namespace AgoRapide {
         public bool IsChangeableByCurrentUser;
 
         /// <summary>
-        /// TODO: Create better links, use <see cref="CoreMethod"/> or similar in order to get the REAL URL's used by the actual methods.
+        /// TODO: Create better links, use <see cref="CoreAPIMethod"/> or similar in order to get the REAL URL's used by the actual methods.
         /// 
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
         /// </summary>
@@ -524,13 +524,13 @@ namespace AgoRapide {
 
                             /// TODO: An alternative to the above would be to 
                             /// TODO: consider making <see cref="APIMethod"/> create Javascript such as this automatically...
-                            /// TODO: In other words, call the <see cref="APIMethod"/> for <see cref="CoreMethod.UpdateProperty"/> 
+                            /// TODO: In other words, call the <see cref="APIMethod"/> for <see cref="CoreAPIMethod.UpdateProperty"/> 
                             /// TODO: in order to get the Javascript required here, instead of generating it as done immediately below:
                             "<input " +
                                 "type=\"button\" " +
                                 "value = \"Save\" " +
                                 "onclick = \"try { " +
-                                        CoreMethod.UpdateProperty + "('" + KeyHTML + "', '" + Parent.GetType().ToStringVeryShort() + "', '" + ParentId + "', '" + KeyDB + "'); " +
+                                        CoreAPIMethod.UpdateProperty + "('" + KeyHTML + "', '" + Parent.GetType().ToStringVeryShort() + "', '" + ParentId + "', '" + KeyDB + "'); " +
                                     "} catch (err) { " +
                                         "com.AgoRapide.AgoRapide.log(err); " +
                                     "} return false;" +
@@ -543,7 +543,7 @@ namespace AgoRapide {
                             "<select " +
                                 "id=\"input_" + KeyHTML + "\" " +
                                 "onchange = \"try { " +
-                                        CoreMethod.UpdateProperty + "('" + KeyHTML + "', '" + Parent.GetType().ToStringVeryShort() + "', '" + ParentId + "', '" + KeyDB + "'); " +
+                                        CoreAPIMethod.UpdateProperty + "('" + KeyHTML + "', '" + Parent.GetType().ToStringVeryShort() + "', '" + ParentId + "', '" + KeyDB + "'); " +
                                     "} catch (err) { " +
                                         "com.AgoRapide.AgoRapide.log(err); " +
                                     "} return false;" +
@@ -552,11 +552,11 @@ namespace AgoRapide {
                             /// TODO: Idea for <see cref="Property.ToHTMLTableRow(Request)"/>
                             /// TODO: SELECT values for choosing should also have PropertyOperation in them, se we can immediately
                             /// TODO: delete properties from the HTML admin interface.
-                            /// TOOD: (but that would leave properties without <see cref="AgoRapideAttribute.ValidValues"/> without such...)
+                            /// TOOD: (but that would leave properties without <see cref="PropertyKeyAttribute.ValidValues"/> without such...)
                             /// TODO: Maybe better to just leave as is...
 
                             "<option value=\"\">[Choose " + Name.HTMLEncode() + "...]</option>\r\n" +
-                            /// TODO: Add to <see cref="AgoRapideAttribute.ValidValues"/> a List of tuples with description for each value
+                            /// TODO: Add to <see cref="PropertyKeyAttribute.ValidValues"/> a List of tuples with description for each value
                             /// TODO: (needed for HTML SELECT tags)
                             string.Join("\r\n", a.ValidValues.Select(v => "<option value=\"" + v + "\">" + v.HTMLEncode() + "</option>")) +
                             "</select>"
@@ -631,12 +631,12 @@ namespace AgoRapide {
             adderWithLink(DBField.iid, InvalidatorId);
             retval.AppendLine("</table>");
             var cmds = new List<string>();
-            request.CreateAPICommand(CoreMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
+            request.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
                 retval.AppendLine("<p>" + request.CreateAPILink(cmd, "History") + "</p>");
                 cmds.Add(cmd);
             });
             Util.EnumGetValues<PropertyOperation>().ForEach(o => {
-                request.CreateAPICommand(CoreMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
+                request.CreateAPICommand(CoreAPIMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
                     retval.AppendLine("<p>" + request.CreateAPILink(cmd, o.ToString()) + "</p>");
                     cmds.Add(cmd);
                 });
@@ -724,7 +724,7 @@ namespace AgoRapide {
         /// TODO: We should really consider if there is any point in this property, as it often shows up as
         /// key in containing JSON dictionary anyway.
         /// 
-        /// Is currently <see cref="AgoRapideAttributeEnriched.PToString"/>. Maybe change to ToStringShort or similar.
+        /// Is currently <see cref="PropertyKeyAttributeEnriched.PToString"/>. Maybe change to ToStringShort or similar.
         /// </summary>
         public string Key { get; set; }
         public List<string> ValidValues;

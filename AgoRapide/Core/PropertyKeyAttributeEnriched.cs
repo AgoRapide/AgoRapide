@@ -9,31 +9,33 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// Extends on <see cref="AgoRapideAttribute"/> because that class is very limited since it is an <see cref="Attribute"/>-class.  
+    /// Extends on <see cref="PropertyKeyAttribute"/> because that class is very limited since it is an <see cref="Attribute"/>-class.  
+    /// 
+    /// TODO: Candidate for removal. Put functionality into <see cref="PropertyKeyNonStrict"/> instead.
     /// 
     /// See subclasses 
-    /// <see cref="AgoRapideAttributeEnrichedT{T}"/>: Attribute originating from C# code.
-    /// <see cref="AgoRapideAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
+    /// <see cref="PropertyKeyAttributeEnrichedT{T}"/>: Attribute originating from C# code.
+    /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// TODO: As of Jan 2017 there is still some work to be done in this class regarding parsing and validation
     /// 
-    /// TODO: SPLIT <see cref="AgoRapideAttribute"/> into EnumAttribute and ClassAttribute.
+    /// TODO: SPLIT <see cref="PropertyKeyAttribute"/> into EnumAttribute and ClassAttribute.
     ///
     /// TODO: Make this inherit <see cref="BaseEntity"/> and store Properties to database. In this manner we
     /// TODO: get HISTORICAL information about documentation (for each and every attribute of a property), giving us much
     /// TODO: better documentation of the application.    
     /// TODO: ACTUALLY, make this inherit <see cref="ApplicationPart"/> (with its own id against database)
-    /// TODO: and with its own <see cref="CoreMethod"/> called AgoRapideAttribute.
+    /// TODO: and with its own <see cref="CoreAPIMethod"/> called AgoRapideAttribute.
     /// 
     /// TODO: (AFTER IMPLEMENTING ABOVE) MOVE THIS TO ENTITY-FOLDER SINCE INHERITS <see cref="BaseEntity"/> 
     /// </summary>
-    public abstract class AgoRapideAttributeEnriched {
+    public abstract class PropertyKeyAttributeEnriched {
 
-        public AgoRapideAttribute A { get; protected set; }
+        public PropertyKeyAttribute A { get; protected set; }
 
         /// <summary>
         /// The value used in API queries, for storing in database and so on.
-        /// Corresponds directly <see cref="AgoRapideAttributeEnrichedT{T}.P"/> (if this is actually an instance of that class)
+        /// Corresponds directly <see cref="PropertyKeyAttributeEnrichedT{T}.P"/> (if this is actually an instance of that class)
         /// </summary>
         public string PToString { get; protected set; }
 
@@ -42,7 +44,7 @@ namespace AgoRapide.Core {
         /// 
         /// Typical examples:
         /// CoreP.Username
-        /// P.Email &lt;- CoreP.Username (when <see cref="AgoRapideAttribute.InheritAndEnrichFromProperty"/> is used)
+        /// P.Email &lt;- CoreP.Username (when <see cref="PropertyKeyAttribute.InheritAndEnrichFromProperty"/> is used)
         /// P.FirstName (CoreP 42) (when no corresponding <see cref="CoreP"/> exists. 
         /// TODO: If very high value (like almost MaxInt), then explain this as a IsMany-property where P is the index
         /// </summary>
@@ -52,17 +54,17 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Throws exception if <see cref="_coreP"/> not set. 
         /// 
-        /// TODO: Split <see cref="AgoRapideAttributeEnriched"/> into multiple classes.
+        /// TODO: Split <see cref="PropertyKeyAttributeEnriched"/> into multiple classes.
         /// </summary>
         public CoreP CoreP => _coreP ?? throw new NullReferenceException(
             nameof(CoreP) + ". " +
-            "This property is only set for -" + nameof(EnumType.EntityPropertyEnum) + "- through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" +
+            "This property is only set for -" + nameof(EnumType.PropertyKey) + "- through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" +
             "For other enums it is irrelevant (illegal) to ask for " + nameof(CoreP) + ".\r\n" +
             "Details:\r\n" + A.ToString());
 
         private ConcurrentDictionary<Type, bool> _isParentForCache = new ConcurrentDictionary<Type, bool>();
         /// <summary>
-        /// Explains if this property belongs to the given entity type (based on <see cref="AgoRapideAttribute.Parents"/>). 
+        /// Explains if this property belongs to the given entity type (based on <see cref="PropertyKeyAttribute.Parents"/>). 
         /// Used by <see cref="Extensions.GetObligatoryChildProperties(Type)"/>. 
         /// </summary>
         /// <param name="type"></param>
@@ -117,16 +119,18 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// Cleanup of values, to be used before value is attempted validated
+        /// Cleanup of values, to be used before value is attempted validated. 
         /// 
-        /// Note that for some types (like long, double, bool, DateTime, string) <see cref="AgoRapideAttributeT(AgoRapideAttribute)"/> 
+        /// Note that for some types (like long, double, bool, DateTime, string) <see cref="AgoRapideAttributeT(PropertyKeyAttribute)"/> 
         /// will set a standard <see cref="Cleaner"/> automatically (may be overriden afterwards or others chained to it)
         /// TODO: IMPLEMENT CHAINING OF CLEANING!
         /// </summary>
         public Func<string, string> Cleaner { get; set; }
 
         /// <summary>
-        /// Note that for some types (like long, double, bool, DateTime) <see cref="AgoRapideAttributeT(AgoRapideAttribute)"/> 
+        /// Validates and parses a value.
+        /// 
+        /// Note that for some types (like long, double, bool, DateTime) <see cref="AgoRapideAttributeT(PropertyKeyAttribute)"/> 
         /// will set a standard <see cref="ValidatorAndParser"/> automatically (may be overriden afterwards or others chained to it)
         /// TODO: IMPLEMENT CHAINING OF VALIDATING!
         /// 
@@ -182,8 +186,8 @@ namespace AgoRapide.Core {
             }
 
             /// Enrichment 2, from enum-"class" 
-            /// (see <see cref="CoreP.CoreMethod"/> / <see cref="CoreMethod"/> for example)
-            /// (note how both enrichment 2 and 4 is based on <see cref="AgoRapideAttribute.Type"/>)
+            /// (see <see cref="CoreP.CoreAPIMethod"/> / <see cref="CoreAPIMethod"/> for example)
+            /// (note how both enrichment 2 and 4 is based on <see cref="PropertyKeyAttribute.Type"/>)
             /// -----------------------------------------
             if (!A.TypeIsSet) {
                 // Nothing to enrich from 
@@ -198,20 +202,20 @@ namespace AgoRapide.Core {
             /// Enrichment 3, from <see cref="IGroupDescriber"/>
             /// -----------------------------------------
             if (A.Group != null) {
-                InvalidTypeException.AssertAssignable(A.Group, typeof(IGroupDescriber), () => "Type given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + " must implement " + typeof(Core.IGroupDescriber));
+                InvalidTypeException.AssertAssignable(A.Group, typeof(IGroupDescriber), () => "Type given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + " must implement " + typeof(Core.IGroupDescriber));
                 try {
                     ((IGroupDescriber)Activator.CreateInstance(A.Group)).EnrichAttribute(this);
                     PExplained += " (also enriched from " + nameof(IGroupDescriber) + " " + A.Group.ToStringShort() + ")";
                 } catch (Exception ex) {
                     throw new BaseAttribute.AttributeException(
-                        "Unable to initialize instance of " + A.Group + " given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + ".\r\n" +
+                        "Unable to initialize instance of " + A.Group + " given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + ".\r\n" +
                         "Most probably because " + A.Group + " does not have a default constructor without any arguments\r\n" +
                         "Details:\r\n" + A.ToString(), ex);
                 }
             }
 
             /// Enrichment 4, from <see cref="ITypeDescriber"/>
-            /// (note how both enrichment 2 and 4 is based on <see cref="AgoRapideAttribute.Type"/>)
+            /// (note how both enrichment 2 and 4 is based on <see cref="PropertyKeyAttribute.Type"/>)
             /// -----------------------------------------
             if (A.TypeIsSet && typeof(ITypeDescriber).IsAssignableFrom(A.Type)) {
                 var methodName = nameof(IGroupDescriber.EnrichAttribute); /// Note that <see cref="ITypeDescriber"/> itself is "empty".
@@ -223,10 +227,10 @@ namespace AgoRapide.Core {
                     throw new BaseAttribute.AttributeException(
                         "Unable to invoke \r\n" + A.Type.ToStringShort() + "'s\r\n" +
                         "   public static void method " + methodName + "\r\n" +
-                        "given as " + typeof(AgoRapideAttribute).ToString() + "." + nameof(AgoRapideAttribute.Type) + " to " + typeof(CoreP).ToString() + "." + A.Property + "\r\n" +
-                        "Resolution: Check that it exists and that it takes exactly one parameter of type " + typeof(AgoRapideAttributeEnriched).ToStringShort() + ".\r\n" +
+                        "given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Type) + " to " + typeof(CoreP).ToString() + "." + A.Property + "\r\n" +
+                        "Resolution: Check that it exists and that it takes exactly one parameter of type " + typeof(PropertyKeyAttributeEnriched).ToStringShort() + ".\r\n" +
                         "In other words it should look like\r\n\r\n" +
-                        "   public static void method " + methodName + "(" + typeof(AgoRapideAttributeEnriched).ToStringShort() + " agoRapideAttribute)\r\n\r\n" +
+                        "   public static void method " + methodName + "(" + typeof(PropertyKeyAttributeEnriched).ToStringShort() + " agoRapideAttribute)\r\n\r\n" +
                         "Details:\r\n" + A.ToString(), ex);
                 }
             }
@@ -283,7 +287,7 @@ namespace AgoRapide.Core {
             // TODO: then general long-parser and at last validator for value range based on min / max values.
 
             if (!string.IsNullOrEmpty(A.RegExpValidator)) throw new NotImplementedException(
-                typeof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.RegExpValidator) + "\r\n" +
+                typeof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.RegExpValidator) + "\r\n" +
                 "Details: " + A.ToString());
 
             if (!A.TypeIsSet) {

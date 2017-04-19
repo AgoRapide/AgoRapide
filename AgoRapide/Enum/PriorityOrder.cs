@@ -8,7 +8,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    [AgoRapide(
+    [PropertyKey(
         Description =
             "Used for general sorting. " +
             "A lower value (think like 1'st order of priority, 2'nd order of priority) will put object higher up (make more visible) in a typical AgoRapide sorted list",

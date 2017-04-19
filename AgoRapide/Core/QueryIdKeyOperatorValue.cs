@@ -16,7 +16,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// TODO: Check initialization of this
         /// </summary>
-        public AgoRapideAttributeEnriched Key { get; private set; }
+        public PropertyKeyAttributeEnriched Key { get; private set; }
         public Operator Operator { get; private set; }
         public object Value { get; private set; }
 
@@ -27,7 +27,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public override string ToString() => _toString ?? throw new NullReferenceException(nameof(_toString));
 
-        public List<AgoRapideAttributeEnriched> Properties { get; private set; }
+        public List<PropertyKeyAttributeEnriched> Properties { get; private set; }
 
         ///// <summary>
         ///// Constructor for generic parsing of any kind of SQL expression. 
@@ -61,7 +61,7 @@ namespace AgoRapide.Core {
         /// <param name="property"></param>
         /// <param name="_operator"></param>
         /// <param name="value"></param>
-        public QueryIdKeyOperatorValue(AgoRapideAttributeEnriched property, Operator _operator, object value) : this(new List<AgoRapideAttributeEnriched> { property }, _operator, value) { }
+        public QueryIdKeyOperatorValue(PropertyKeyAttributeEnriched property, Operator _operator, object value) : this(new List<PropertyKeyAttributeEnriched> { property }, _operator, value) { }
         /// <summary>
         /// Strongly typed constructor. 
         /// (usually used when query originates from "outside" of API)
@@ -71,7 +71,7 @@ namespace AgoRapide.Core {
         /// <param name="property"></param>
         /// <param name="_operator"></param>
         /// <param name="value"></param>
-        public QueryIdKeyOperatorValue(List<AgoRapideAttributeEnriched> properties, Operator _operator, object value) {
+        public QueryIdKeyOperatorValue(List<PropertyKeyAttributeEnriched> properties, Operator _operator, object value) {
             Properties = properties ?? throw new NullReferenceException(nameof(properties));
             if (Properties.Count == 0) throw new InvalidCountException(nameof(Properties) + ": " + Properties.Count);
             Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
@@ -110,7 +110,7 @@ namespace AgoRapide.Core {
             /// We have to number parameters for instance for <see cref="Operator.IN"/> and for multiple <see cref="Properties"/>
             var parameterNo = 0;
 
-            var singlePropertySQLConstructor = new Func<AgoRapideAttributeEnriched, string>(A => {
+            var singlePropertySQLConstructor = new Func<PropertyKeyAttributeEnriched, string>(A => {
                 var sql = new StringBuilder();
                 var detailer = new Func<string>(() => A.PToString + " " + Operator + " " + Value + " (of type " + Value.GetType() + ")");
 
@@ -248,7 +248,7 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
+        public new static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is QueryIdKeyOperatorValue ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="QueryIdKeyOperatorValue"/>

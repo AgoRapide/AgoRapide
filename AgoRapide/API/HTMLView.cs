@@ -94,7 +94,7 @@ namespace AgoRapide.API {
 
             // TODO: Make this static. 
             "<script>\r\n" + /// TODO: Consider making any <see cref="APIMethod"/> create Javascript such as this automatically...
-            "function " + CoreMethod.UpdateProperty + "(keyHTML, entityType, entityId, keyDB) {\r\n" +
+            "function " + CoreAPIMethod.UpdateProperty + "(keyHTML, entityType, entityId, keyDB) {\r\n" +
             "   var inputId = '#input_' + keyHTML;\r\n" +
             "   var errorId = '#error_' + keyHTML;\r\n" +
             "   $(errorId).html('');\r\n" +
@@ -103,7 +103,7 @@ namespace AgoRapide.API {
             "   $(inputId).css({\"background - color\":\"lightgray\"});\r\n" + // TODO: Add some CSS-class here, like "saveInProgress" or similar
             "   com.AgoRapide.AgoRapide.call({\r\n" + /// TODO: Consider making any <see cref="APIMethod"/> create Javascript such as this automatically...
             "     log: true,\r\n" +
-            "     url: entityType + '/" + CoreMethod.UpdateProperty + "',\r\n" +
+            "     url: entityType + '/" + CoreAPIMethod.UpdateProperty + "',\r\n" +
             "     type: '" + HTTPMethod.POST + "',\r\n" +
             "     data: '" + CoreP.QueryId + "=' + entityId + '&" + CoreP.Key + "=' + encodeURIComponent(keyDB) + '&" + CoreP.Value + "=' + encodeURIComponent($(inputId).val()),\r\n" +
             "     success: function saveSuccess(data) {\r\n" +
@@ -129,7 +129,7 @@ namespace AgoRapide.API {
                 /// Show which user is logged in
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
-                    CoreMethod.EntityIndex,
+                    CoreAPIMethod.EntityIndex,
                     nameof(Request.CurrentUser) + ": " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
                     new QueryIdInteger(Request.CurrentUser.Id)
@@ -138,10 +138,10 @@ namespace AgoRapide.API {
             ) +
             (Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity == null ? "" :
                 /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
-                /// TODO: Consider creating a <see cref="CoreMethod"/>.Logout in which to hide this code
+                /// TODO: Consider creating a <see cref="CoreAPIMethod"/>.Logout in which to hide this code
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
-                    CoreMethod.PropertyOperation,
+                    CoreAPIMethod.PropertyOperation,
                     "End representation as " + Request.CurrentUser.Name,
                     typeof(Property),
                     new QueryIdInteger( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreP.EntityToRepresent"/> no longer exists for CurrentUser.
@@ -152,16 +152,16 @@ namespace AgoRapide.API {
             ) +
             (Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity != null ? "" :
                 /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
-                /// TODO: Consider creating a <see cref="CoreMethod"/>.Logout in which to hide this code
+                /// TODO: Consider creating a <see cref="CoreAPIMethod"/>.Logout in which to hide this code
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
-                    CoreMethod.UpdateProperty,
+                    CoreAPIMethod.UpdateProperty,
                     "Logout as " + Request.CurrentUser.Name,
                     Request.CurrentUser.GetType(),
                     new QueryIdInteger(Request.CurrentUser.Id),
                     CoreP.RejectCredentialsNextTime.A(),
                     true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreP.Value"/> is a string at this stage
-                                    /// (<see cref = "CoreMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
+                                    /// (<see cref = "CoreAPIMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
                                     /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
                     ) +
                 "</p>"

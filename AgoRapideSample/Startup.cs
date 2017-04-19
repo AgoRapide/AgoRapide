@@ -106,7 +106,7 @@ namespace AgoRapideSample {
                 mapper1<AgoRapide.CoreP>();
                 mapper1<AgoRapide.Core.ConfigurationAttribute.ConfigurationKey>();
                 mapper1<P>();
-                /// Add all your <see cref="AgoRapide.EnumType.EntityPropertyEnum"/> at bottom of list, 
+                /// Add all your <see cref="AgoRapide.EnumType.PropertyKey"/> at bottom of list, 
                 /// that is in order of going outwards from inner AgoRapide library towards your final application
 
                 AgoRapide.Core.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.Core.EnumMapper.MapEnumFinalize) + ": " + s));
@@ -132,7 +132,7 @@ namespace AgoRapideSample {
                     mapper2<AgoRapide.APIMethodOrigin>()  /// Maps to <see cref="AgoRapide.CoreP.APIMethodOrigin"/>
                 );
                 Log("Miscellaneous testing");
-                if (!AgoRapide.Core.Extensions.GetAgoRapideAttributeT(P.Password).A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.AgoRapideAttribute) + "." + nameof(AgoRapide.Core.AgoRapideAttribute.IsPassword));
+                if (!AgoRapide.Core.Extensions.GetAgoRapideAttributeT(P.Password).A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.PropertyKeyAttribute) + "." + nameof(AgoRapide.Core.PropertyKeyAttribute.IsPassword));
 
                 Log("(See corresponding code in Startup.cs for above. Add for more types as you develop your application)");
 
@@ -169,7 +169,7 @@ namespace AgoRapideSample {
                             { AgoRapide.CoreP.IsAnonymous, true },
                             { AgoRapide.CoreP.AccessLevelRead, AgoRapide.AccessLevel.Anonymous },
                             { AgoRapide.CoreP.AccessLevelWrite, AgoRapide.AccessLevel.System }
-                        }.Select(e => (AgoRapide.Core.Extensions.A(e.Key).PropertyKey, e.Value)).ToList(),
+                        }.Select(e => (AgoRapide.Core.Extensions.A(e.Key).PropertyKeyWithIndex, e.Value)).ToList(),
                         result: null));
                 } else {
                     AgoRapide.Core.Util.Configuration.A.AnonymousUser = anonymousUser;
@@ -210,7 +210,7 @@ namespace AgoRapideSample {
                         typeof(Person),
                         typeof(Car)
                         /// Add to this list each <see cref="AgoRapide.BaseEntity"/>-derived class in your project 
-                        /// for which you want to automatically implement common API-methods like <see cref="AgoRapide.CoreMethod.AddEntity"/> and so on.
+                        /// for which you want to automatically implement common API-methods like <see cref="AgoRapide.CoreAPIMethod.AddEntity"/> and so on.
                     },
                     db: db
                 );

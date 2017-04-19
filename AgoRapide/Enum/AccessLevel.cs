@@ -16,26 +16,26 @@ namespace AgoRapide {
     /// 
     /// TODO: Consider adding something "past" <see cref="System"/> like Denied or similar (so that even the system itself will not try to make changes)
     /// </summary>
-    [AgoRapide(
+    [PropertyKey(
         Description =
             "Describes level of access, from -" + nameof(Anonymous) + "- to -" + nameof(System) + "-.",
         LongDescription =
             "See -" + nameof(AccessLocation) + "- for how -" + nameof(AccessLevel) + "- " +
             "(for -" + nameof(AccessType.Read) + "- / -" + nameof(AccessType.Write) + "-) may be specified.",
-        EnumType =EnumType.DataEnum
+        EnumType =EnumType.EnumValue
     )]
     public enum AccessLevel {
         None,
 
         Anonymous,
 
-        [EnumMember(Description = "Access is given for to all entities that are registered as users in the system")]
+        [EnumValue(Description = "Access is given for to all entities that are registered as users in the system")]
         User,
 
         /// <summary>
         /// TODO: Elaborate on this. Is this needed in addition to <see cref="AccessLocation.Relation"/>???
         /// </summary>
-        [EnumMember(Description = "A relation has to exist between the current user and the entity in question.",
+        [EnumValue(Description = "A relation has to exist between the current user and the entity in question.",
             LongDescription = "Either the current user IS the entity or there is some kind of relation giving access (like a parent-child relationship for instance).")]
         Relation,
 

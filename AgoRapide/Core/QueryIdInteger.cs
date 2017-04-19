@@ -7,7 +7,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide.Core {
 
-    [AgoRapide( 
+    [PropertyKey( 
         Description = 
             "The simplest form of -" + nameof(QueryId) + "-, " +
             "accepting only integer id's " +
@@ -31,7 +31,7 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
+        public new static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is QueryIdInteger ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="QueryIdInteger"/>

@@ -122,12 +122,12 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKey)>> _tToCorePCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKey)>>();
-        public static PropertyKey MapTToCoreP<T>() => TryMapTToCoreP<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
-        public static bool TryMapTToCoreP<T>(out PropertyKey a) => TryMapTToCoreP<T>(out a, out _);
+        private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKeyWithIndex)>> _tToCorePCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKeyWithIndex)>>();
+        public static PropertyKeyWithIndex MapTToCoreP<T>() => TryMapTToCoreP<T>(out var retval, out var errorResponse) ? retval : throw new InvalidMappingException<T>(errorResponse);
+        public static bool TryMapTToCoreP<T>(out PropertyKeyWithIndex a) => TryMapTToCoreP<T>(out a, out _);
         /// <summary>
-        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <see cref="CoreP"/> based on <see cref="AgoRapideAttribute.Type"/>. 
-        /// Example: See how enum-"class" <see cref="CoreMethod"/> is linked to enum value <see cref="CoreP.CoreMethod"/>
+        /// Maps the type name of <typeparamref name="T"/> to a corresponding value for <see cref="CoreP"/> based on <see cref="PropertyKeyAttribute.Type"/>. 
+        /// Example: See how enum-"class" <see cref="CoreAPIMethod"/> is linked to enum value <see cref="CoreP.CoreAPIMethod"/>
         /// 
         /// <see cref="BaseEntity.PVM{T}"/>
         /// <see cref="BaseEntity.TryGetPVM{T}(out T)"/>
@@ -136,7 +136,7 @@ namespace AgoRapide.Core {
         /// <param name="a"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public static bool TryMapTToCoreP<T>(out PropertyKey a, out string errorResponse) {
+        public static bool TryMapTToCoreP<T>(out PropertyKeyWithIndex a, out string errorResponse) {
             if (typeof(T).Equals(typeof(CoreP))) throw new InvalidTypeException(typeof(T),
                 "Attempt of mapping from " + typeof(T) + " to " + typeof(CoreP) + ". " +
                 "A common cause is mistakenly calling " +
@@ -145,7 +145,7 @@ namespace AgoRapide.Core {
                 "(note for instance how the overload of " + nameof(BaseEntity.PVM) + " with defaultValue-parameter " +
                 "looks very similar to " + nameof(BaseEntity.PV) + " if you forget the explicit type parameter for the latter method)");
             var mapping = _tToCorePCache.
-                GetOrAdd(typeof(CoreP), type => new ConcurrentDictionary<Type, (string, PropertyKey)>()).
+                GetOrAdd(typeof(CoreP), type => new ConcurrentDictionary<Type, (string, PropertyKeyWithIndex)>()).
                 GetOrAdd(typeof(T), type => {
                     /// NOTE: Note how <see cref="EnumMapper.AllCoreP"/> itself is cached but that should not matter
                     /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
@@ -154,7 +154,7 @@ namespace AgoRapide.Core {
                         case 0: return ("No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort(), null);
                         case 1:
                             var key = candidates[0];
-                            return (null, (key.PropertyKeyIsSet ? key.PropertyKey : key.PropertyKeyAsIsManyParentOrTemplate)); // Note how that last on may fail
+                            return (null, (key.PropertyKeyIsSet ? key.PropertyKeyWithIndex : key.PropertyKeyAsIsManyParentOrTemplate)); // Note how that last on may fail
                         default:
                             return (
                                 "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + ".\r\n" +
@@ -539,7 +539,7 @@ namespace AgoRapide.Core {
         public InvalidMappingException(string message) : base(
             "It is not possible to map from " + typeof(T).ToStringShort() + " to " + typeof(TProperty).ToStringShort() + ".\r\n" +
             "Explanation: Exact one of the enum values for " + typeof(TProperty).ToStringShort() + " must specify\r\n" +
-            "   [" + nameof(AgoRapideAttribute) + "(" + nameof(AgoRapideAttribute.Type) + " = typeof(" + typeof(T).ToStringShort() + "))]\r\n" +
+            "   [" + nameof(PropertyKeyAttribute) + "(" + nameof(PropertyKeyAttribute.Type) + " = typeof(" + typeof(T).ToStringShort() + "))]\r\n" +
             "\r\nDetails:\r\n" + message) { }
     }
 
@@ -667,6 +667,18 @@ namespace AgoRapide.Core {
     public class NotOfTypeEnumException<T> : ApplicationException {
         public NotOfTypeEnumException() : base("Expected Type.IsEnum but got type " + typeof(T).ToString()) { }
     }
+
+    public class OfTypeEnumException : ApplicationException {
+        public static void AssertNotEnum(Type type) {
+            if (type.IsEnum) throw new OfTypeEnumException(type);
+        }
+        public static void AssertNotEnum(Type type, Func<string> detailer) {
+            if (type.IsEnum) throw new OfTypeEnumException(type, detailer());
+        }
+        public OfTypeEnumException(Type type) : base("Expected !Type.IsEnum but got type " + type.ToString()) { }
+        public OfTypeEnumException(Type type, string details) : base("Expected !Type.IsEnum but got type " + type.ToString() + ".\r\nDetails: " + details) { }
+    }
+
 
     /// <summary>
     /// TODO: Not in use as of Jan 2017

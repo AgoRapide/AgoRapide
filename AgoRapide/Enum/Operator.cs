@@ -22,9 +22,9 @@ namespace AgoRapide {
         LT,
         GEQ,
         LEQ,
-        [EnumMember(Description = "Case sensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
+        [EnumValue(Description = "Case sensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
         LIKE,
-        [EnumMember(Description = "Case insensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
+        [EnumValue(Description = "Case insensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
         ILIKE
     }
 }

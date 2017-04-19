@@ -10,11 +10,11 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
-    [Enum(EnumTypeY = EnumType.DataEnum)]
+    [Enum(EnumTypeY = EnumType.EnumValue)]
     public enum Colour {
         None,
 
-        [EnumMember(Description = "Bjørn's favourite colour")]
+        [EnumValue(Description = "Bjørn's favourite colour")]
         Red,
 
         Green,
@@ -38,10 +38,10 @@ namespace AgoRapide {
     [Class(
         Description = "Represents a basic data object in your model like Person, Order, Product",
 
-        /// Do not do this. Make exception for <see cref="CoreP.AccessLevelUse"/> for <see cref="CoreMethod.EntityIndex"/> instead
+        /// Do not do this. Make exception for <see cref="CoreP.AccessLevelUse"/> for <see cref="CoreAPIMethod.EntityIndex"/> instead
         // AccessLevelRead = AccessLevel.Anonymous, /// Necessary for <see cref="CoreMethod.EntityIndex"/> to accept all kind of queries. 
 
-        DefinedForClass = nameof(BaseEntity) /// Necessary for <see cref="AgoRapideAttribute.IsInherited"/> to be set correctly. TODO: Turn into Type (will require more work for deducing <see cref="AgoRapideAttribute.IsInherited"/>). 
+        DefinedForClass = nameof(BaseEntity) /// Necessary for <see cref="PropertyKeyAttribute.IsInherited"/> to be set correctly. TODO: Turn into Type (will require more work for deducing <see cref="PropertyKeyAttribute.IsInherited"/>). 
     )]
     public class BaseEntity : BaseCore {
 
@@ -117,7 +117,7 @@ namespace AgoRapide {
         /// and may therefore have <see cref="Properties"/> (although not set as default). 
         /// (you may check for <see cref="Properties"/> == null and call <see cref="IDatabase.GetChildProperties"/> accordingly)
         /// 
-        /// Note how <see cref="AgoRapideAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="AgoRapideAttribute.IsMany"/>-parent and
+        /// Note how <see cref="PropertyKeyAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="PropertyKeyAttribute.IsMany"/>-parent and
         /// the different properties as properties under that again with dictionary index equal to <see cref="int.MaxValue"/> minus index
         /// </summary>
         public Dictionary<CoreP, Property> Properties { get; set; }
@@ -128,7 +128,7 @@ namespace AgoRapide {
         /// <summary>
         /// Returns existing properties available to <paramref name="currentUser"/> according to <paramref name="accessType"/>. 
         /// 
-        /// Missing some properties in your HTML / JSON <see cref="Result"/>? See important comment for <see cref="AgoRapideAttribute.Parents"/> about access rights. 
+        /// Missing some properties in your HTML / JSON <see cref="Result"/>? See important comment for <see cref="PropertyKeyAttribute.Parents"/> about access rights. 
         /// </summary>
         /// <param name="currentUser">
         /// May be null in which case <see cref="AccessLevel.Anonymous"/> 
@@ -141,7 +141,7 @@ namespace AgoRapide {
             var allForType = GetType().GetChildProperties();
             return Properties.Where(p =>
                 possible.ContainsKey(p.Key) || /// This is the "ordinary" check, ensuring that <param name="currentUser"/> has access.
-                !allForType.ContainsKey(p.Key) /// This check makes it non-mandatory to specify <see cref="AgoRapideAttribute.Parents"/> for all properties for all your entities. Without this check the system would be too strict and cumbersome to get started with (since no properties would be shown until specification of <see cref="AgoRapideAttribute.Parents"/>. 
+                !allForType.ContainsKey(p.Key) /// This check makes it non-mandatory to specify <see cref="PropertyKeyAttribute.Parents"/> for all properties for all your entities. Without this check the system would be too strict and cumbersome to get started with (since no properties would be shown until specification of <see cref="PropertyKeyAttribute.Parents"/>. 
             ).ToDictionary(p => p.Key, p => p.Value);
         }
 
@@ -234,7 +234,7 @@ namespace AgoRapide {
         /// Useful for logging and exception messages
         /// Returns either "[NOT_FOUND]" or the result of <see cref="Property.ToString"/>
         /// 
-        /// TODO: Solve for <see cref="AgoRapideAttribute.IsMany"/> properties
+        /// TODO: Solve for <see cref="PropertyKeyAttribute.IsMany"/> properties
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
@@ -257,7 +257,7 @@ namespace AgoRapide {
         /// <summary>
         /// Adds the property to this entity (in-memory operation only, does not create anything in database)
         /// 
-        /// Note how accepts either single values or complete List for <see cref="AgoRapideAttribute.IsMany"/>
+        /// Note how accepts either single values or complete List for <see cref="PropertyKeyAttribute.IsMany"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
@@ -270,8 +270,8 @@ namespace AgoRapide {
                 var temp = this as Property;
                 var isManyParent = temp != null && temp.IsIsManyParent ? temp : null;
                 if (isManyParent != null) { // We are an IsMany parent, add at next available id.
-                    if (key is PropertyKey) throw new PropertyKey.InvalidPropertyKeyException(nameof(key) + " as " + nameof(PropertyKey) + " not allowed (" + nameof(PropertyKey.Index) + " not allowed)");
-                    isManyParent.Properties.Add(isManyParent.GetNextIsManyId().IndexAsCoreP, new PropertyT<T>(key.PropertyKey, value)); /// Note how <see cref="PropertyT{T}.PropertyT"/> will fail if value is a List now (not corresponding to <see cref="AgoRapideAttribute.IsMany"/>)
+                    if (key is PropertyKeyWithIndex) throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key) + " as " + nameof(PropertyKeyWithIndex) + " not allowed (" + nameof(PropertyKeyWithIndex.Index) + " not allowed)");
+                    isManyParent.Properties.Add(isManyParent.GetNextIsManyId().IndexAsCoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value)); /// Note how <see cref="PropertyT{T}.PropertyT"/> will fail if value is a List now (not corresponding to <see cref="PropertyKeyAttribute.IsMany"/>)
                 } else {
                     var t = typeof(T);
                     if (t.IsGenericType) {
@@ -287,7 +287,7 @@ namespace AgoRapide {
                     }
                 }
             } else {
-                Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKey, value) {
+                Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value) {
                     ParentId = Id,
                     Parent = this
                 });
@@ -346,7 +346,7 @@ namespace AgoRapide {
             if (Properties != null) {
 
                 /// Note that is is tempting to do something like this, ensuring that you do not
-                /// have to specify <see cref="AgoRapideAttribute.Parents"/> for every property for each and every type of entity:
+                /// have to specify <see cref="PropertyKeyAttribute.Parents"/> for every property for each and every type of entity:
                 /// ---------
                 //var existing = GetType().GetAgoRapideAttribute().AccessLevelRead <= AccessLevel.Anonymous ?
                 //     Properties : 
@@ -410,9 +410,9 @@ namespace AgoRapide {
                         ) +
                         "<br><br>\r\n" +
                         "In order to have any " + nameof(addableProperties) + " you must in general (for all the relevant enum values of -" + typeof(CoreP) + "-) " +
-                        "add typeof(" + GetType().ToStringShort() + ") to -" + nameof(AgoRapideAttribute.Parents) + "- and also set " + nameof(AgoRapideAttribute.AccessLevelWrite) + ". " +
+                        "add typeof(" + GetType().ToStringShort() + ") to -" + nameof(PropertyKeyAttribute.Parents) + "- and also set " + nameof(PropertyKeyAttribute.AccessLevelWrite) + ". " +
                         "<br><br>\r\n" +
-                        "(currently -" + typeof(CoreP) + "- has -" + nameof(AgoRapideAttribute.Parents) + "- set to typeof(" + GetType().ToStringShort() + ") for " +
+                        "(currently -" + typeof(CoreP) + "- has -" + nameof(PropertyKeyAttribute.Parents) + "- set to typeof(" + GetType().ToStringShort() + ") for " +
                         (childProperties.Count == 0 ? "no values at all" :
                             ("the following values:<br>\r\n" + string.Join("<br>\r\n", childProperties.Values.Select(v => v.Key.PToString + " (" + v.Key.A.AccessLevelWrite + ")"))) + "<br>\r\n") +
                         "). " +
@@ -444,7 +444,7 @@ namespace AgoRapide {
             var retval = new JSONEntity1 { Id = Id };
             if (Properties != null) {
                 retval.Properties = new Dictionary<string, JSONProperty0>();
-                /// Missing some properties in your HTML / JSON <see cref="Result"/>? See important comment for <see cref="AgoRapideAttribute.Parents"/> about access rights. 
+                /// Missing some properties in your HTML / JSON <see cref="Result"/>? See important comment for <see cref="PropertyKeyAttribute.Parents"/> about access rights. 
                 /// (note how you may get different results for <see cref="Result.MultipleEntitiesResult"/> for HTML and JSON because HTML will use
                 /// <see cref="BaseEntity.ToHTMLTableRow"/> which does not check access at all, while JSON data here checks for each individual property. 
                 GetExistingProperties(request.CurrentUser, AccessType.Read).ForEach(i => {

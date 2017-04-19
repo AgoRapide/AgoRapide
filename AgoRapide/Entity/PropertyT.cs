@@ -12,7 +12,7 @@ namespace AgoRapide {
     /// <summary>
     /// See <see cref="Property"/> for overview and detailed documentation about properties. 
     /// 
-    /// Note that <typeparamref name="T"/> does not necessarily have to correspond to <see cref="AgoRapideAttribute.Type"/>.
+    /// Note that <typeparamref name="T"/> does not necessarily have to correspond to <see cref="PropertyKeyAttribute.Type"/>.
     /// See <see cref="PropertyT{T}.PropertyT"/> for details.
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -26,7 +26,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public PropertyT(PropertyKey key, T value) : this(key, value, null) { }
+        public PropertyT(PropertyKeyWithIndex key, T value) : this(key, value, null) { }
 
         /// <summary>
         /// Preferred overload if <paramref name="strValue"/> is known by caller. 
@@ -38,17 +38,17 @@ namespace AgoRapide {
         /// subclass <see cref="PropertyT{T}"/> is little used in AgoRapide anyway.
         /// 
         /// Note that it is possible to use <see cref="string"/> as generic parameter here even when
-        /// <see cref="AgoRapideAttribute.Type"/> is something different that <see cref="string"/>. 
+        /// <see cref="PropertyKeyAttribute.Type"/> is something different that <see cref="string"/>. 
         /// </param>
         /// <param name="strValue">
         /// </param>
-        public PropertyT(PropertyKey key, T value, string strValue) : base(dummy: null) {
+        public PropertyT(PropertyKeyWithIndex key, T value, string strValue) : base(dummy: null) {
             _key = key ?? throw new ArgumentNullException(nameof(key));
             _value = (object)value ?? throw new ArgumentNullException(nameof(value)); 
             _genericValue = value;
 
             if (typeof(string).Equals(typeof(T))) {
-                /// Do not bother with type checking now against <see cref="AgoRapideAttribute.Type"/>
+                /// Do not bother with type checking now against <see cref="PropertyKeyAttribute.Type"/>
                 /// But note that <see cref="Property.TryGetV{T}"/> will fail at a later stage if called with something other than string. 
                 /// Note that this is a pragmatic decision. 
                 /// TODO: Consider tightening up
@@ -58,10 +58,10 @@ namespace AgoRapide {
             } else {
                 /// We can not do this:
                 ///   InvalidTypeException.AssertAssignable(typeof(T), key.Key.A.Type, () => nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " for " + key.Key.PExplained + " !IsAssignableFrom " + typeof(T));
-                /// because often we are called with T = object like from here (See <see cref="AgoRapideAttributeEnriched"/>):
+                /// because often we are called with T = object like from here (See <see cref="PropertyKeyAttributeEnriched"/>):
                 ///   if (Util.EnumTryParse(A.Type, value, out var temp)) return ParseResult.Create(this, temp);
                 /// Instead we must do like this, using the actual type that we got:
-                InvalidTypeException.AssertAssignable(value.GetType(), key.Key.A.Type, () => nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " for " + key.Key.PExplained + " !IsAssignableFrom " + value.GetType());
+                InvalidTypeException.AssertAssignable(value.GetType(), key.Key.A.Type, () => nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " for " + key.Key.PExplained + " !IsAssignableFrom " + value.GetType());
             }
             _stringValue = strValue ?? new Func<string>(() => {
                 /// This is typically the case when called from <see cref="ParseResult.Create"/>        

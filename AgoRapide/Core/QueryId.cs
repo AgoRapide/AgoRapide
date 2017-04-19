@@ -15,7 +15,7 @@ namespace AgoRapide.Core {
     ///   WHERE first_name LIKE 'John%' ORDER BY last_name, first_name
     ///   WHERE date_of_birth > '2017-01-01' ORDER BY id DESC
     /// </summary>
-    [AgoRapide(
+    [PropertyKey(
         Description =
             "Represents a search term in the API.\r\n" +
             "In its simplest form it is just a long integer that corresponds directly to " + nameof(DBField.id) + " " +
@@ -33,7 +33,7 @@ namespace AgoRapide.Core {
     public abstract class QueryId : ITypeDescriber {
 
         /// <summary>
-        /// Note that a <see cref="QueryIdKeyOperatorValue"/> may also be <see cref="IsSingle"/> (for <see cref="AgoRapideAttribute.IsUniqueInDatabase"/>)
+        /// Note that a <see cref="QueryIdKeyOperatorValue"/> may also be <see cref="IsSingle"/> (for <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/>)
         /// </summary>
         public bool IsSingle { get; protected set; }
         public void AssertIsSingle() {
@@ -115,7 +115,7 @@ namespace AgoRapide.Core {
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(AgoRapideAttributeEnriched agoRapideAttribute) =>
+        public static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     ParseResult.Create(agoRapideAttribute, retval) :

@@ -96,7 +96,7 @@ namespace AgoRapide.Database {
         bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse);
 
         /// <summary>
-        /// See <see cref="CoreMethod.History"/>. 
+        /// See <see cref="CoreAPIMethod.History"/>. 
         /// Implementator should return results with ORDER BY <see cref="DBField.id"/> DESC
         /// 
         /// TODO: Implement some LIMIT statement or throw exception if too many, or add an explanatory message
@@ -161,7 +161,7 @@ namespace AgoRapide.Database {
         long CreateEntity(long cid, Type entityType, Result result);
         long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntity;
         long CreateEntity(long cid, Type entityType, Parameters properties, Result result);
-        long CreateEntity<T>(long cid, IEnumerable<(PropertyKey key, object value)> properties, Result result) where T : BaseEntity;
+        long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) where T : BaseEntity;
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -170,7 +170,7 @@ namespace AgoRapide.Database {
         /// <param name="properties">May be null or empty. Turn this into an Properties collection? Or just a BaseEntity template or similar?</param>
         /// <param name="result"></param>
         /// <returns></returns>
-        long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKey key, object value)> properties, Result result);
+        long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result);
 
         /// <summary>
         /// Changes to entity given in <see cref="CoreP.EntityToRepresent"/> if that property exists for the entity given
@@ -190,16 +190,16 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         void SwitchIfHasEntityToRepresent(ref BaseEntity entity);
 
-        void AssertUniqueness(PropertyKey key, object value);
+        void AssertUniqueness(PropertyKeyWithIndex key, object value);
         /// <summary>
-        /// Only relevant for <paramref name="key"/> <see cref="AgoRapideAttribute.IsUniqueInDatabase"/> 
+        /// Only relevant for <paramref name="key"/> <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> 
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <param name="existingProperty">Useful for including in exception response (for logging purposes)</param>
         /// <param name="errorResponse">Suitable for returning to API client</param>
         /// <returns></returns>
-        bool TryAssertUniqueness(PropertyKey key, object value, out Property existingProperty, out string errorResponse);
+        bool TryAssertUniqueness(PropertyKeyWithIndex key, object value, out Property existingProperty, out string errorResponse);
 
         /// <summary>
         /// Returns id (database primary-key) of property created
@@ -207,7 +207,7 @@ namespace AgoRapide.Database {
         /// Note that often <see cref="UpdateProperty{T}"/> can be used instead of <see cref="CreateProperty"/>
         /// 
         /// The implementation should assert (case insensitive) uniqueness of <paramref name="value"/> 
-        /// when <see cref="AgoRapideAttribute.IsUniqueInDatabase"/> for <paramref name="key"/>
+        /// when <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> for <paramref name="key"/>
         /// </summary>
         /// <param name="cid">
         /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
@@ -222,10 +222,10 @@ namespace AgoRapide.Database {
         /// <param name="value">TODO: Consider strongly typed overloads which leads to less processing here</param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        long CreateProperty(long? cid, long? pid, long? fid, PropertyKey key, object value, Result result);
+        long CreateProperty(long? cid, long? pid, long? fid, PropertyKeyWithIndex key, object value, Result result);
 
         /// <summary>
-        /// See <see cref="CoreMethod.UpdateProperty"/>
+        /// See <see cref="CoreAPIMethod.UpdateProperty"/>
         /// 
         /// Note that often <see cref="UpdateProperty{T}"/> should be used instead of <see cref="CreateProperty"/>
         /// </summary>
@@ -233,8 +233,8 @@ namespace AgoRapide.Database {
         /// <param name="cid"><see cref="DBField.cid"/> </param>
         /// <param name="entity"></param>
         /// <param name="key">
-        /// For <see cref="AgoRapideAttribute.IsMany"/> if <paramref name="key"/> is instance of <see cref="PropertyKey"/> 
-        /// then the implementator shall take into account <see cref="PropertyKey.Index"/>
+        /// For <see cref="PropertyKeyAttribute.IsMany"/> if <paramref name="key"/> is instance of <see cref="PropertyKeyWithIndex"/> 
+        /// then the implementator shall take into account <see cref="PropertyKeyWithIndex.Index"/>
         /// If not it shall call <see cref="Property.GetNextIsManyId"/>. 
         /// </param>
         /// <param name="value"></param>

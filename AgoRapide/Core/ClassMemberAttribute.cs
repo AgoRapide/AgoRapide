@@ -19,28 +19,8 @@ namespace AgoRapide.Core {
         /// <param name="member"></param>
         /// <returns></returns>
         public static ClassMemberAttribute GetAttribute(Type classType, string member) {
-            var field = classType.GetField(member) ?? throw new NullReferenceException(nameof(classType.GetField) + "(): Cause: " + classType.ToStringShort() + "." + member.ToString() + " is most probably not defined.");
-            var retval = new Func<ClassMemberAttribute>(() => {
-                var attributes = field.GetCustomAttributes(typeof(ClassMemberAttribute), true);
-                switch (attributes.Length) {
-                    case 0:
-                        /// TODO: Duplicate code!
-                        var tester = new Action<Type>(t => {
-                            object found = field.GetCustomAttributes(t, true);
-                            if (found != null) throw new IncorrectAttributeTypeUsedException(found, typeof(EnumMemberAttribute), classType + "." + member);
-                        });
-                        tester(typeof(ClassAttribute));
-                        // tester(typeof(ClassMemberAttribute));
-                        tester(typeof(EnumAttribute));
-                        tester(typeof(EnumMemberAttribute));
-                        tester(typeof(AgoRapideAttribute));
-                        return new ClassMemberAttribute { IsDefault = true };
-                    case 1:
-                        return (ClassMemberAttribute)attributes[0];
-                    default:
-                        throw new AttributeException(nameof(attributes) + ".Length > 1 (" + attributes.Length + ") for " + classType.ToStringVeryShort() + "." + member.ToString());
-                }
-            })();
+            var field = classType.GetField(member) ?? throw new NullReferenceException(nameof(classType.GetField) + "(): Cause: " + classType + "." + member.ToString() + " is most probably not defined.");
+            var retval = GetAttributeThroughFieldInfo<ClassMemberAttribute>(field, () => classType + "." + member);
             retval.ClassType = classType;
             retval.Member = member;
             return retval;

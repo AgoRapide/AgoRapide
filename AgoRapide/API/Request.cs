@@ -177,7 +177,7 @@ namespace AgoRapide.API {
 
         public ResponseFormat ResponseFormat { get; private set; }
         /// <summary>
-        /// Usually used for <see cref="CoreMethod.RootIndex"/> when JSON is most probably not needed.
+        /// Usually used for <see cref="CoreAPIMethod.RootIndex"/> when JSON is most probably not needed.
         /// </summary>
         public void ForceHTMLResponse() => ResponseFormat = ResponseFormat.HTML;
 
@@ -204,43 +204,43 @@ namespace AgoRapide.API {
         })());
 
         /// <summary>
-        /// Creates API command for <see cref="CoreMethod.EntityIndex"/> for <paramref name="entityType"/> and <paramref name="id"/> like "Person/42"
+        /// Creates API command for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entityType"/> and <paramref name="id"/> like "Person/42"
         /// </summary>
         /// <param name="entityType"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreMethod.EntityIndex, entityType, new QueryIdInteger(id));
+        public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreAPIMethod.EntityIndex, entityType, new QueryIdInteger(id));
         public string CreateAPICommand(BaseEntity entity) => CreateAPICommand(entity.GetType(), entity.Id);
         /// <summary>
         /// 
         /// </summary>
         /// <param name="coreMethod"></param>
-        /// <param name="type">May be null, for instance for <see cref="CoreMethod.ExceptionDetails"/></param>
+        /// <param name="type">May be null, for instance for <see cref="CoreAPIMethod.ExceptionDetails"/></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public string CreateAPICommand(CoreMethod coreMethod, Type type, params object[] parameters) => APIMethod.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
+        public string CreateAPICommand(CoreAPIMethod coreMethod, Type type, params object[] parameters) => APIMethod.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
 
         /// <summary>
-        /// Creates API URL for <see cref="CoreMethod.EntityIndex"/> for <paramref name="entityType"/> and <paramref name="id"/>  like "https://AgoRapide.com/api/Person/42/HTML"
+        /// Creates API URL for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entityType"/> and <paramref name="id"/>  like "https://AgoRapide.com/api/Person/42/HTML"
         /// </summary>
         /// <param name="entityType"></param>
         /// <param name="id"></param>
         /// <returns></returns>
         public string CreateAPIUrl(Type entityType, long id) => CreateAPIUrl(CreateAPICommand(entityType, id));
         public string CreateAPIUrl(BaseEntity entity) => CreateAPIUrl(CreateAPICommand(entity));
-        public string CreateAPIUrl(CoreMethod coreMethod) => CreateAPIUrl(coreMethod, null);
-        public string CreateAPIUrl(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
+        public string CreateAPIUrl(CoreAPIMethod coreMethod) => CreateAPIUrl(coreMethod, null);
+        public string CreateAPIUrl(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
         public string CreateAPIUrl(string apiCommand) => Util.Configuration.A.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.A.HTMLPostfixIndicator : "");
 
         /// <summary>
-        /// Creates API link for <see cref="CoreMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}
+        /// Creates API link for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
         public string CreateAPILink(BaseEntity entity) => CreateAPILink(entity, entity.Name);
         public string CreateAPILink(BaseEntity entity, string linkText) =>
-            CreateAPILink(CoreMethod.EntityIndex, linkText, entity.GetType(),
+            CreateAPILink(CoreAPIMethod.EntityIndex, linkText, entity.GetType(),
                 (entity.Properties!=null && entity.Properties.TryGetValue(CoreP.Identifier, out var p) ?
                     (QueryId)new QueryIdIdentifier(p.V<string>()) : /// Using identifier looks much better in links. Especially good for documentation where names stay the same but id's may change  (like "Property/{QueryId}" to identify an <see cref="APIMethod"/> for instance)
                     // (QueryId)new QueryIdInteger(entity.Id) :
@@ -248,11 +248,11 @@ namespace AgoRapide.API {
                 )
             );
         
-        public string CreateAPILink(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(coreMethod, null, null, type, parameters);
-        public string CreateAPILink(CoreMethod coreMethod, string linkText, Type type, params object[] parameters) => CreateAPILink(coreMethod, linkText, null, type, parameters);
+        public string CreateAPILink(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(coreMethod, null, null, type, parameters);
+        public string CreateAPILink(CoreAPIMethod coreMethod, string linkText, Type type, params object[] parameters) => CreateAPILink(coreMethod, linkText, null, type, parameters);
         //public string CreateAPILink(CoreMethod coreMethod, Type type, string linkText, params object[] parameters) => CreateAPILink(CreateAPICommand(coreMethod, type, parameters), linkText, null);
         //public string CreateAPILink(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(CreateAPICommand(coreMethod, type, parameters), linkText, helpText);
-        public string CreateAPILink(CoreMethod coreMethod, string linkText, string helpText, Type type, params object[] parameters) {
+        public string CreateAPILink(CoreAPIMethod coreMethod, string linkText, string helpText, Type type, params object[] parameters) {
             var apiCommand = CreateAPICommand(coreMethod, type, parameters);
             return CreateAPILink(apiCommand, linkText, helpText);
         }
@@ -359,8 +359,8 @@ namespace AgoRapide.API {
 
             var lastList = APIMethod.AllMethods.Where(m => {
                 switch (m.A.CoreMethod) {
-                    case CoreMethod.GenericMethod:
-                    case CoreMethod.RootIndex: return false;
+                    case CoreAPIMethod.GenericMethod:
+                    case CoreAPIMethod.RootIndex: return false;
                     default: return true;
                 }
             }).ToList();

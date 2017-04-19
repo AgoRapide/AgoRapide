@@ -24,6 +24,7 @@ namespace AgoRapide.Core {
         /// </summary>        
         [ClassMember(Description="Only relevant when attribute for -" + nameof(BaseEntity) + "-")]
         public AccessLevel AccessLevelRead { get; set; } = AccessLevel.System;
+
         /// <summary>
         /// See <see cref="CoreP.AccessLevelWrite"/> 
         /// Note strict default of <see cref="AccessLevel.System"/> 
@@ -51,40 +52,21 @@ namespace AgoRapide.Core {
         public bool IsInherited { get; private set; }
 
         public static ClassAttribute GetAttribute(Type type) {
-            var retval = (ClassAttribute)GetCustomAttribute(type, typeof(ClassAttribute));
-            if (retval == null) {
-                /// TODO: Duplicate code!
-                var tester = new Action<Type>(t => {
-                    var found = GetCustomAttribute(type, t);
-                    if (found != null) throw new IncorrectAttributeTypeUsedException(found, typeof(ClassAttribute), type.ToString());
-                });
-                // tester(typeof(ClassAttribute));
-                tester(typeof(ClassMemberAttribute));
-                tester(typeof(EnumAttribute));
-                tester(typeof(EnumMemberAttribute));
-                tester(typeof(AgoRapideAttribute));
-
-                return GetNewDefaultInstance(type);
-            }
+            OfTypeEnumException.AssertNotEnum(type);
+            var retval = GetAttributeThroughType<ClassAttribute>(type);
             retval._classType = type;
             if (string.IsNullOrEmpty(retval.DefinedForClass) || type.ToStringVeryShort().Equals(retval.DefinedForClass)) {
-                return retval;
+                return retval; /// retval is not inherited from super class
             }
             /// Create whole new instance and set <see cref="IsInherited"/> for it. 
-            var newRetval = GetNewDefaultInstance(type);
+            var newRetval = new ClassAttribute { IsDefault = true, _classType = type };
             newRetval.EnrichFrom(retval); /// TODO: Ensure that code in <see cref="EnrichFrom"/> is up-to-date (last checked Feb 2017)
-            newRetval.IsDefault = false;
+            newRetval.IsDefault = false; // Correct this
             newRetval.IsInherited = true;
             return newRetval;
         }
 
         public override string ToString() => (_classType == null ? (nameof(ClassType) + ": [NULL]") : (ClassType.IsEnum ? "Enum: " : "Class: "))  + "\r\nDescription:\r\n" + Description + "\r\nLongDescription:\r\n" + LongDescription;
-
-        /// <summary>
-        /// Typically used by for instance <see cref= "GetClassAttribute" /> when no attribute found.
-        /// </summary>
-        /// <returns></returns>
-        public static ClassAttribute GetNewDefaultInstance(Type type) => new ClassAttribute { IsDefault = true, _classType = type };
 
         public void EnrichFrom(ClassAttribute other) {
             if (string.IsNullOrEmpty(Description)) {
