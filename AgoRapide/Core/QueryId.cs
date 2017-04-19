@@ -15,7 +15,7 @@ namespace AgoRapide.Core {
     ///   WHERE first_name LIKE 'John%' ORDER BY last_name, first_name
     ///   WHERE date_of_birth > '2017-01-01' ORDER BY id DESC
     /// </summary>
-    [PropertyKey(
+    [Class(
         Description =
             "Represents a search term in the API.\r\n" +
             "In its simplest form it is just a long integer that corresponds directly to " + nameof(DBField.id) + " " +

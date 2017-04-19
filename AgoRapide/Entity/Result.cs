@@ -38,7 +38,7 @@ namespace AgoRapide {
                 if (Properties != null && Properties.ContainsKey(CoreP.Log)) Properties.Remove(CoreP.Log);
             }
             if (ResultCode != ResultCode.ok) {
-                AddProperty(CoreP.ResultCodeDescription.A(), ResultCode.GetAgoRapideAttributeT().A.Description);
+                AddProperty(CoreP.ResultCodeDescription.A(), ResultCode.GetEnumValueAttribute().Description);
                 if (!Properties.ContainsKey(CoreP.APIDocumentationUrl)) AddProperty(CoreP.APIDocumentationUrl.A(), request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
             }
             if (ResultCode == ResultCode.exception_error) {

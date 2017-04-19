@@ -33,6 +33,21 @@ namespace AgoRapide.Core {
         public AccessLevel AccessLevelWrite { get; set; } = AccessLevel.System;
 
         /// <summary>
+        /// Only relevant when attribute for a class implementing <see cref="ITypeDescriber"/>
+        /// </summary>
+        [ClassMember(Description= "Used for unit testing in order to assert failure of validation.")]
+        public string[] InvalidValues { get; set; }
+
+        /// <summary>
+        /// Only relevant when attribute for a class implementing <see cref="ITypeDescriber"/>
+        /// </summary>
+        [ClassMember(Description = "Used for\r\n" +
+            "1) Unit testing in order to assert validation and\r\n" +
+            "2) giving sample values for API calls."
+        )]
+        public string[] SampleValues { get; set; }
+
+        /// <summary>
         /// Indicates for which class this <see cref="ClassAttribute"/> was defined. 
         /// Needed in order to deduce <see cref="IsInherited"/>. 
         /// 

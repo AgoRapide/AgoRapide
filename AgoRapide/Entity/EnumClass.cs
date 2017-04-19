@@ -8,14 +8,12 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
 
-    //public class Enum {
-    //    public static string A => "B";
-    //}
-
-        /// <summary>
-        /// TODO: DELETE THIS. Replace with Key (other EnumClass goes into <see cref="ClassAndMethod"/>)
-        /// </summary>
-    [PropertyKey(
+    /// <summary>
+    /// TODO: Move to Core-folder (no need to collect all <see cref="BaseEntity"/> in one place.
+    /// 
+    /// TODO: DELETE THIS. Replace with Key (other EnumClass goes into <see cref="ClassAndMethod"/>)
+    /// </summary>
+    [Class(
         Description = "Represents an Enum with values",
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System

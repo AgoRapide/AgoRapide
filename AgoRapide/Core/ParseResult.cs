@@ -51,8 +51,8 @@ namespace AgoRapide.Core {
             new ParseResult(
                 new PropertyT<T>(
                     new Func<PropertyKeyWithIndex>(() => {
-                        if (!key.A.IsMany) return new PropertyKeyWithIndex(key); /// TODO: Clean up all handling of <see cref="PropertyKeyWithIndex"/> and <see cref="PropertyKeyNonStrict"/>
-                        var retval = new PropertyKeyNonStrict(key);
+                        if (!key.A.IsMany) return new PropertyKeyWithIndex(key); /// TODO: Clean up all handling of <see cref="PropertyKeyWithIndex"/> and <see cref="PropertyKey"/>
+                        var retval = new PropertyKey(key);
                         retval.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); 
                         return retval.PropertyKeyAsIsManyParentOrTemplate; // Note that this may be just delaying throwing of the inevitable exception
                     })(),

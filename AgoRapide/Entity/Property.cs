@@ -54,7 +54,7 @@ namespace AgoRapide {
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
     /// <see cref="IDatabase.TryGetEntities{T}"/> 
     /// </summary>
-    [PropertyKey(
+    [Class(
         Description = "Represents a single property of a -" + nameof(BaseEntity) + "-.",
         LongDescription =
             "Note how -" + nameof(Property) + "- is itself also a -" + nameof(BaseEntity) + "- and may therefore contain " +
@@ -245,7 +245,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static Property CreateIsManyParent(PropertyKeyNonStrict key) {
+        public static Property CreateIsManyParent(PropertyKey key) {
             var strictKey = key.PropertyKeyIsSet ?
                 key.PropertyKeyAsIsManyParentOrTemplate :
                 /// Above is not sufficient for instance when <param name="key"/> does not originate from EnumMapper.
@@ -404,7 +404,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="type"></param>
         /// <param name="key"></param>
-        public static void AssertList(Type type, PropertyKeyNonStrict key, Func<string> detailer) {
+        public static void AssertList(Type type, PropertyKey key, Func<string> detailer) {
             if (!type.GetGenericTypeDefinition().Equals(typeof(List<>))) throw new InvalidTypeException(type, "Only GetGenericTypeDefinition List is allowed for IsGenericType" + detailer.Result("\r\nDetails: "));
             if (type.GenericTypeArguments.Length != 1) throw new InvalidTypeException(type, "Only 1 GenericTypeArguments allowed, not " + type.GenericTypeArguments.Length + detailer.Result("\r\nDetails: "));
             InvalidTypeException.AssertAssignable(type.GenericTypeArguments[0], key.Key.A.Type, () => "Generic type requested was " + type + detailer.Result("\r\nDetails: "));
@@ -420,20 +420,17 @@ namespace AgoRapide {
             var type = _value.GetType();
             if (type.IsEnum) {
                 return type.GetEnumAttribute().EnumTypeY == EnumType.PropertyKey ?
-                    (BaseAttribute)type.GetAgoRapideAttribute() :
-                    (BaseAttribute)type.GetEnumMemberAttribute();
+                    (BaseAttribute)_value.GetPropertyKeyAttribute() :
+                    (BaseAttribute)_value.GetEnumValueAttribute();
             }
-            switch (_value) {
-                case Type t: return t.GetClassAttribute();
-                default: return DefaultAgoRapideAttribute;
-            }
+            return DefaultAgoRapideAttribute; /// TODO: What about <see cref="ClassAttribute"/> here? Especially for <see cref="ITypeDescriber"/>
         })());
 
         /// <summary>
         /// Use with caution. Note how the same instance is returned always. 
         /// Therefore the requester should not change this instance after "receiving" it. 
         /// </summary>
-        public static BaseAttribute DefaultAgoRapideAttribute = BaseAttribute.GetNewDefaultInstance();
+        private static BaseAttribute DefaultAgoRapideAttribute = BaseAttribute.GetNewDefaultInstance();
 
         /// <summary>
         /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntity.InvalidPropertyException{T}"/>
@@ -453,7 +450,7 @@ namespace AgoRapide {
             (IsTemplateOnly ? nameof(IsTemplateOnly) : "") +
             nameof(ParentId) + ": " + ParentId + ", " +
             nameof(KeyDB) + ": " + (_keyDB ?? "[NULL]") + ", " +
-            nameof(Key.Key.CoreP) + ": " + (_key?.Key.PExplained ?? "[NULL]") + ", " +
+            nameof(Key.Key.CoreP) + ": " + (_key?.Key.A.EnumValueExplained ?? "[NULL]") + ", " +
             nameof(_stringValue) + ": " + (_stringValue ?? "[NULL]") + ", " +
             (_key == null ? "" : (", " + nameof(Key.Key.A.Type) + ": " + (_key.Key.A.Type?.ToString() ?? "[NULL]"))) + ", " +
             GetType() + ".\r\n";
@@ -582,7 +579,6 @@ namespace AgoRapide {
             var retval = new StringBuilder();
             retval.AppendLine("<table><tr><th>Field</th><th>Value</th></tr>");
             var adder = new Action<DBField, string>((field, value) => {
-                var A = field.GetAgoRapideAttributeT();
                 var includeDescription = new Func<string>(() => {
                     switch (field) {
                         case DBField.key: if (!string.IsNullOrEmpty(Key.Key.A.WholeDescription)) return (Key.Key.A.WholeDescription).HTMLEncode(); return null;
@@ -592,15 +588,14 @@ namespace AgoRapide {
                 })();
 
                 retval.AppendLine("<tr><td>" +
-                    field.ToString().HTMLEncloseWithinTooltip(A.A.WholeDescription) +
+                    field.ToString().HTMLEncloseWithinTooltip(field.A().Key.A.WholeDescription) +
                     "</td><td>" +
                     (value?.HTMLEncodeAndEnrich(request) ?? "&nbsp;").HTMLEncloseWithinTooltip(includeDescription) +
                     "</td></tr>");
             });
             var adderWithLink = new Action<DBField, long?>((field, value) => {
-                var A = field.GetAgoRapideAttributeT();
                 retval.AppendLine("<tr><td>" +
-                    field.ToString().HTMLEncloseWithinTooltip(A.A.WholeDescription) +
+                    field.ToString().HTMLEncloseWithinTooltip(field.A().Key.A.WholeDescription) +
                     "</td><td>" +
                     (value != null && value != 0 ?
                         (Util.EntityCache.TryGetValue((long)value, out var entity) ?

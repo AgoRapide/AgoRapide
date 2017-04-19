@@ -240,7 +240,7 @@ namespace AgoRapide.Database {
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKeyNonStrict key, T value, Result result);
+        void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result);
 
         /// <summary>
         /// 
@@ -276,7 +276,7 @@ namespace AgoRapide.Database {
     public class InvalidPasswordException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
         public InvalidPasswordException(T property) : this(property, null, null) { }
         public InvalidPasswordException(T property, string message) : this(property, message, null) { }
-        public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetAgoRapideAttributeT().PExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
+        public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetEnumValueAttribute().EnumValueExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
     }
 
     public class PropertyNotFoundException : ApplicationException {

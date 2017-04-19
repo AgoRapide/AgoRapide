@@ -226,7 +226,7 @@ namespace AgoRapide.Database {
                     entity = root;
                     return true;
                 }
-                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.RootProperty).Key.PExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
@@ -422,7 +422,7 @@ namespace AgoRapide.Database {
 
             var id = r.GetInt64((int)DBField.id);
             // TODO: Add restriction in database so this can never be null
-            var keyDB = r.IsDBNull((int)DBField.key) ? throw new PropertyKeyNonStrict.InvalidPropertyKeyException(
+            var keyDB = r.IsDBNull((int)DBField.key) ? throw new PropertyKey.InvalidPropertyKeyException(
                 DBField.key + " not given at all for " + nameof(DBField.id) + " = " + id + ".\r\n" +
                 "Possible resolution:\r\n" +
                 "  DELETE FROM p WHERE " + DBField.id + " = " + id + "\r\n"
@@ -446,7 +446,7 @@ namespace AgoRapide.Database {
                         unrecognizedCoreP.Value.unrecognizedCoreP + " was found as property " + id + " at " + DateTime.Now.ToString(DateTimeFormat.DateHourMin), out strErrorResponse)) {
                         // OK. New mapping succeeded.
                     } else { /// Note how errorResponse was changed by <see cref="EnumMapper.TryAddA"/> if that one was called above.
-                        throw new PropertyKeyNonStrict.InvalidPropertyKeyException(
+                        throw new PropertyKey.InvalidPropertyKeyException(
                            DBField.key + " invalid for " + DBField.id + " = " + id + ".\r\n" +
                            "Possible resolution:\r\n" +
                            "  DELETE FROM p WHERE " + DBField.id + " = " + id + "\r\n" +
@@ -455,8 +455,8 @@ namespace AgoRapide.Database {
                     }
                 }
 
-                if (!PropertyKeyWithIndex.TryParse(keyDB, out key, out strErrorResponse)) throw new PropertyKeyNonStrict.InvalidPropertyKeyException(nameof(keyDB) + " (" + keyDB + ") is still not a valid " + typeof(PropertyKeyWithIndex) + " despite changes.\r\nDetails: " + strErrorResponse);
-                if (!keyDB.Equals(key.ToString())) throw new PropertyKeyNonStrict.InvalidPropertyKeyException(nameof(keyDB) + " (" + keyDB + ") != " + nameof(key) + " (" + key.ToString() + ")");
+                if (!PropertyKeyWithIndex.TryParse(keyDB, out key, out strErrorResponse)) throw new PropertyKey.InvalidPropertyKeyException(nameof(keyDB) + " (" + keyDB + ") is still not a valid " + typeof(PropertyKeyWithIndex) + " despite changes.\r\nDetails: " + strErrorResponse);
+                if (!keyDB.Equals(key.ToString())) throw new PropertyKey.InvalidPropertyKeyException(nameof(keyDB) + " (" + keyDB + ") != " + nameof(key) + " (" + key.ToString() + ")");
             }
 
             var retval = Property.Create(
@@ -530,7 +530,7 @@ namespace AgoRapide.Database {
 
             if (currentUser.PV<string>(CoreP.Username.A(), "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 
                 Log(
-                    "It looks like " + CoreP.Username.A().Key.PExplained + " " +
+                    "It looks like " + CoreP.Username.A().Key.A.EnumValueExplained + " " +
                     "was just changed for entity " + currentUser.Id + " " +
                     "resulting in more than one current property in database. " +
                     "Returning FALSE now " +
@@ -724,7 +724,7 @@ namespace AgoRapide.Database {
             return id;
         }
 
-        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKeyNonStrict key, T value, Result result) {
+        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result) {
             // Log(""); Note how we only log when property is actually created or updated
             var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
             if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
@@ -816,7 +816,7 @@ namespace AgoRapide.Database {
             Log(nameof(parentProperty.Id) + ": " + parentProperty.Id);
             if (!true.Equals(parentProperty.Key.Key.A.CanHaveChildren)) throw new Exception(
                 "!" + nameof(parentProperty.Key.Key.A.CanHaveChildren) + " (" + parentProperty.ToString() + ". " +
-                "Explanation: You are not allowed to operate with child properties for " + parentProperty.Key.Key.PExplained + " because there is no [" + nameof(PropertyKeyAttribute) + "(" + nameof(PropertyKeyAttribute.CanHaveChildren) + " = true)] defined for this enum value");
+                "Explanation: You are not allowed to operate with child properties for " + parentProperty.Key.Key.A.EnumValueExplained + " because there is no [" + nameof(PropertyKeyAttribute) + "(" + nameof(PropertyKeyAttribute.CanHaveChildren) + " = true)] defined for this enum value");
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE\r\n" +
                 // TODO: CHECK IF THIS IS STILL THE CORRECT METHOD
                 "(\r\n" +
@@ -1036,7 +1036,7 @@ namespace AgoRapide.Database {
             return "CREATE TABLE p\r\n(\r\n" +
             string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => {
                 return "  " + f.ToString() + " " + new Func<string>(() => {
-                    var a = f.GetAgoRapideAttributeT();
+                    var a = f.A();
                     var postfix = new Func<string>(() => {
                         switch (f) {
                             case DBField.id:
@@ -1045,12 +1045,12 @@ namespace AgoRapide.Database {
                             default: return ",";
                         }
                     })();
-                    if (a.A.Type.Equals(typeof(long))) return "bigint" + postfix;
-                    if (a.A.Type.Equals(typeof(double))) return "double precision" + postfix;
-                    if (a.A.Type.Equals(typeof(bool))) return "boolean" + postfix;
-                    if (a.A.Type.Equals(typeof(DateTime))) return "timestamp without time zone" + postfix;
-                    if (a.A.Type.Equals(typeof(string))) return "text" + postfix;
-                    throw new InvalidTypeException(a.A.Type, nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " (" + a.A.Type + ") defined for " + typeof(DBField) + "." + f.ToString() + " is not valid");
+                    if (a.Key.A.Type.Equals(typeof(long))) return "bigint" + postfix;
+                    if (a.Key.A.Type.Equals(typeof(double))) return "double precision" + postfix;
+                    if (a.Key.A.Type.Equals(typeof(bool))) return "boolean" + postfix;
+                    if (a.Key.A.Type.Equals(typeof(DateTime))) return "timestamp without time zone" + postfix;
+                    if (a.Key.A.Type.Equals(typeof(string))) return "text" + postfix;
+                    throw new InvalidTypeException(a.Key.A.Type, nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " (" + a.Key.A.Type + ") defined for " + typeof(DBField) + "." + f.ToString() + " is not valid");
                 })();
             })) + "\r\n" +
             "  CONSTRAINT p_pk PRIMARY KEY (" + DBField.id + ")\r\n" +
@@ -1064,8 +1064,8 @@ ALTER TABLE p
 
 COMMENT ON TABLE p IS 'Main property table'; 
 " +
-            string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => f.GetAgoRapideAttributeT()).Select(f =>
-                "COMMENT ON COLUMN p." + f.A.Property.ToString() + " IS '" + makeSQLSafe(f.A.Description) + (string.IsNullOrEmpty(f.A.LongDescription) ? "" : (" // " + nameof(f.A.LongDescription) + ": " + f.A.LongDescription)) + "';")) +
+            string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => f.A().Key).Select(f =>
+                "COMMENT ON COLUMN p." + f.A.EnumValue + " IS '" + makeSQLSafe(f.A.Description) + (string.IsNullOrEmpty(f.A.LongDescription) ? "" : (" // " + nameof(f.A.LongDescription) + ": " + f.A.LongDescription)) + "';")) +
 
         // TODO: As of Jan 2017 we have troubles with newlines in the CREATE SEQUENCE below with the Visual Studio RC 2017 editor.
         @"

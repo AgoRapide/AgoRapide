@@ -16,13 +16,13 @@ namespace AgoRapide {
     /// 
     /// TODO: Consider adding something "past" <see cref="System"/> like Denied or similar (so that even the system itself will not try to make changes)
     /// </summary>
-    [PropertyKey(
+    [Enum(
         Description =
             "Describes level of access, from -" + nameof(Anonymous) + "- to -" + nameof(System) + "-.",
         LongDescription =
             "See -" + nameof(AccessLocation) + "- for how -" + nameof(AccessLevel) + "- " +
             "(for -" + nameof(AccessType.Read) + "- / -" + nameof(AccessType.Write) + "-) may be specified.",
-        EnumType =EnumType.EnumValue
+        EnumTypeY =EnumType.EnumValue
     )]
     public enum AccessLevel {
         None,

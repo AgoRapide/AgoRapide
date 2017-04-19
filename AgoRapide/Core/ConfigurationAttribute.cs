@@ -268,7 +268,7 @@ namespace AgoRapide.Core {
 
         public string GenericMethodRouteTemplate = "{*url}";
 
-        [PropertyKey(EnumType = EnumType.PropertyKey)]
+        [Enum(EnumTypeY = EnumType.PropertyKey)]
         public enum ConfigurationKey {
             None,
             [PropertyKey(AccessLevelRead = AccessLevel.Admin)]

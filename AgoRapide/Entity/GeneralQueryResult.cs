@@ -11,7 +11,7 @@ namespace AgoRapide {
     /// <summary>
     /// Never stored in database. 
     /// </summary>
-    [PropertyKey(
+    [Class(
         Description = "Communicates result of -" + nameof(CoreAPIMethod.GeneralQuery) + "-",
         AccessLevelRead = AccessLevel.User // For JSON to work something must be specified here
     )]

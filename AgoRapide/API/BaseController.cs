@@ -219,7 +219,7 @@ namespace AgoRapide.API {
             method.A.AssertCoreMethod(CoreAPIMethod.UpdateProperty);
             if (!TryGetRequest(id, key, value, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PVM<QueryId>();
-            var propertyKeyNonStrict = request.Parameters.PVM<PropertyKeyNonStrict>();
+            var propertyKeyNonStrict = request.Parameters.PVM<PropertyKey>();
             var strValue = request.Parameters.PV<string>(CoreP.Value.A());
             /// Validate value. Note how TryGetRequest was only able to validate value as string 
             /// because <see cref="CoreAPIMethod.UpdateProperty"/> does not know anything about which values are valid for which keys.
@@ -228,7 +228,7 @@ namespace AgoRapide.API {
             var objValue = parseResult.Result.Value;
 
             if (propertyKeyNonStrict.Key.A.IsUniqueInDatabase) {            
-                /// TODO: Improve on error message here if call to <see cref="PropertyKeyNonStrict.PropertyKeyWithIndex"/> fails.
+                /// TODO: Improve on error message here if call to <see cref="PropertyKey.PropertyKeyWithIndex"/> fails.
                 if (!DB.TryAssertUniqueness(propertyKeyNonStrict.PropertyKeyWithIndex, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
                 /// Note that <see cref="IDatabase.CreateProperty"/> will also repeat the check above
             }

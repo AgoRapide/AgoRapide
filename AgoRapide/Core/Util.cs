@@ -477,7 +477,7 @@ namespace AgoRapide.Core {
         /// <param name="list">Any </param>
         /// <param name="detailer">May be null</param>
         /// <returns></returns>
-        public static Property ConvertListToIsManyParent(BaseEntity parent, PropertyKeyNonStrict key, object list, Func<string> detailer) {
+        public static Property ConvertListToIsManyParent(BaseEntity parent, PropertyKey key, object list, Func<string> detailer) {
             var t = list?.GetType() ?? throw new NullReferenceException(nameof(list));
             Property.AssertList(t, key, () => detailer());
             // Replace all existing values with values in list.
@@ -551,7 +551,7 @@ namespace AgoRapide.Core {
 
     public class KeyAlreadyExistsException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
         public KeyAlreadyExistsException(T key) : this(key, null) { }
-        public KeyAlreadyExistsException(T key, string message) : base("The key " + key.GetAgoRapideAttributeT().PExplained + " already exists" + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message))) { }
+        public KeyAlreadyExistsException(T key, string message) : base("The key " + key.GetEnumValueAttribute().EnumValueExplained + " already exists" + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message))) { }
     }
 
     public class SingleObjectNotFoundOrMultipleFoundException : ApplicationException {

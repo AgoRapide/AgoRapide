@@ -11,23 +11,13 @@ namespace AgoRapide.Core {
     /// <summary>
     /// Extends on <see cref="PropertyKeyAttribute"/> because that class is very limited since it is an <see cref="Attribute"/>-class.  
     /// 
-    /// TODO: Candidate for removal. Put functionality into <see cref="PropertyKeyNonStrict"/> instead.
+    /// TODO: Candidate for removal. Put functionality into <see cref="PropertyKey"/> instead.
     /// 
     /// See subclasses 
     /// <see cref="PropertyKeyAttributeEnrichedT{T}"/>: Attribute originating from C# code.
     /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// TODO: As of Jan 2017 there is still some work to be done in this class regarding parsing and validation
-    /// 
-    /// TODO: SPLIT <see cref="PropertyKeyAttribute"/> into EnumAttribute and ClassAttribute.
-    ///
-    /// TODO: Make this inherit <see cref="BaseEntity"/> and store Properties to database. In this manner we
-    /// TODO: get HISTORICAL information about documentation (for each and every attribute of a property), giving us much
-    /// TODO: better documentation of the application.    
-    /// TODO: ACTUALLY, make this inherit <see cref="ApplicationPart"/> (with its own id against database)
-    /// TODO: and with its own <see cref="CoreAPIMethod"/> called AgoRapideAttribute.
-    /// 
-    /// TODO: (AFTER IMPLEMENTING ABOVE) MOVE THIS TO ENTITY-FOLDER SINCE INHERITS <see cref="BaseEntity"/> 
     /// </summary>
     public abstract class PropertyKeyAttributeEnriched {
 
@@ -39,28 +29,11 @@ namespace AgoRapide.Core {
         /// </summary>
         public string PToString { get; protected set; }
 
-        /// <summary>
-        /// Explains how this originates. 
-        /// 
-        /// Typical examples:
-        /// CoreP.Username
-        /// P.Email &lt;- CoreP.Username (when <see cref="PropertyKeyAttribute.InheritAndEnrichFromProperty"/> is used)
-        /// P.FirstName (CoreP 42) (when no corresponding <see cref="CoreP"/> exists. 
-        /// TODO: If very high value (like almost MaxInt), then explain this as a IsMany-property where P is the index
-        /// </summary>
-        public string PExplained { get; protected set; }
-
         public CoreP? _coreP;
         /// <summary>
         /// Throws exception if <see cref="_coreP"/> not set. 
-        /// 
-        /// TODO: Split <see cref="PropertyKeyAttributeEnriched"/> into multiple classes.
         /// </summary>
-        public CoreP CoreP => _coreP ?? throw new NullReferenceException(
-            nameof(CoreP) + ". " +
-            "This property is only set for -" + nameof(EnumType.PropertyKey) + "- through " + nameof(EnumMapper) + "." + nameof(EnumMapper.MapEnum) + ".\r\n" +
-            "For other enums it is irrelevant (illegal) to ask for " + nameof(CoreP) + ".\r\n" +
-            "Details:\r\n" + A.ToString());
+        public CoreP CoreP => _coreP ?? throw new NullReferenceException(nameof(_coreP) + ".\r\nDetails: " + ToString()); /// Set by methods like <see cref="PropertyKeyAttributeEnrichedT{T}.PropertyKeyAttributeEnrichedT"/>
 
         private ConcurrentDictionary<Type, bool> _isParentForCache = new ConcurrentDictionary<Type, bool>();
         /// <summary>
@@ -109,7 +82,7 @@ namespace AgoRapide.Core {
                     }
                 }
                 throw new InvalidObjectTypeException(obj, A.Type,
-                    ((obj is CoreP && typeof(PropertyKeyNonStrict).IsAssignableFrom(A.Type)) ? "A common mistake is specifying " + typeof(CoreP) + " (like " + nameof(CoreP) + ".SomeValue) instead of " + typeof(PropertyKeyNonStrict) + " (like " + nameof(CoreP) + ".SomeValue." + nameof(Extensions.A) + "()).\r\n" : "") +
+                    ((obj is CoreP && typeof(PropertyKey).IsAssignableFrom(A.Type)) ? "A common mistake is specifying " + typeof(CoreP) + " (like " + nameof(CoreP) + ".SomeValue) instead of " + typeof(PropertyKey) + " (like " + nameof(CoreP) + ".SomeValue." + nameof(Extensions.A) + "()).\r\n" : "") +
                     A.ToString());
             }
             if (A.Type.Equals(typeof(DateTime))) return (obj as DateTime? ?? throw new NullReferenceException(nameof(obj) + " for " + A.ToString())).ToString(DateTimeFormat.DateHourMin);
@@ -166,23 +139,22 @@ namespace AgoRapide.Core {
         }
 
         public void Initialize() {
-
-            PToString = A.Property.ToString();
-            PExplained = A.Property.GetType().ToStringVeryShort() + "." + PToString;
+            PToString = A.EnumValue.ToString();
+            A.SetEnumValueExplained(A.EnumValue.GetType().ToStringVeryShort() + "." + PToString);
             // TODO: Clean up code for documentation here.
-            if (_coreP != null && A.InheritAndEnrichFromProperty == null && !A.Property.GetType().Equals(typeof(CoreP))) {
-                PExplained += " (" + nameof(CoreP) + ": " + _coreP.ToString() + ")";
+            if (_coreP != null && A.InheritAndEnrichFromProperty == null && !A.EnumValue.GetType().Equals(typeof(CoreP))) {
+                A.SetEnumValueExplained(A.EnumValueExplained + " (" + nameof(CoreP) + ": " + _coreP.ToString() + ")");
             }
 
             /// Enrichment 1, explicit given
             /// -----------------------------------------
             if (A.InheritAndEnrichFromProperty != null) {
                 NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
-                if (A.Property.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.Property) + " (" + A.Property + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
+                if (A.EnumValue.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.EnumValue) + " (" + A.EnumValue + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
                 var key = EnumMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
                 _coreP = key.Key.CoreP;
                 A.EnrichFrom(key.Key.A);
-                PExplained += " <- " + key.Key.PExplained;
+                A.SetEnumValueExplained(A.EnumValueExplained + " <- " + key.Key.A.EnumValueExplained);
             }
 
             /// Enrichment 2, from enum-"class" 
@@ -192,23 +164,31 @@ namespace AgoRapide.Core {
             if (!A.TypeIsSet) {
                 // Nothing to enrich from 
             } else {
-                A.Type.GetClassAttribute().Use(a => {
-                    if (a.IsDefault) return; // Nothing interesting / nothing of value
-                    A.EnrichFrom(a); 
-                    PExplained += " (also enriched from type " + A.Type.ToStringShort() + ")";
-                });
+                if (A.Type.IsEnum) {
+                    A.Type.GetEnumAttribute().Use(a => {
+                        if (a.IsDefault) return; // Nothing interesting / nothing of value
+                        A.EnrichFrom(a);
+                        A.SetEnumValueExplained(A.EnumValueExplained + " (also enriched from enum " + A.Type.ToStringShort() + ")");
+                    });
+                } else {
+                    A.Type.GetClassAttribute().Use(a => {
+                        if (a.IsDefault) return; // Nothing interesting / nothing of value
+                        A.EnrichFrom(a);
+                        A.SetEnumValueExplained(A.EnumValueExplained + " (also enriched from class " + A.Type.ToStringShort() + ")");
+                    });
+                }
             }
 
             /// Enrichment 3, from <see cref="IGroupDescriber"/>
             /// -----------------------------------------
             if (A.Group != null) {
-                InvalidTypeException.AssertAssignable(A.Group, typeof(IGroupDescriber), () => "Type given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + " must implement " + typeof(Core.IGroupDescriber));
+                InvalidTypeException.AssertAssignable(A.Group, typeof(IGroupDescriber), () => "Type given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.EnumValue + " must implement " + typeof(Core.IGroupDescriber));
                 try {
                     ((IGroupDescriber)Activator.CreateInstance(A.Group)).EnrichAttribute(this);
-                    PExplained += " (also enriched from " + nameof(IGroupDescriber) + " " + A.Group.ToStringShort() + ")";
+                    A.SetEnumValueExplained(A.EnumValueExplained + " (also enriched from " + nameof(IGroupDescriber) + " " + A.Group.ToStringShort() + ")");
                 } catch (Exception ex) {
                     throw new BaseAttribute.AttributeException(
-                        "Unable to initialize instance of " + A.Group + " given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.Property + ".\r\n" +
+                        "Unable to initialize instance of " + A.Group + " given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.EnumValue + ".\r\n" +
                         "Most probably because " + A.Group + " does not have a default constructor without any arguments\r\n" +
                         "Details:\r\n" + A.ToString(), ex);
                 }
@@ -222,12 +202,12 @@ namespace AgoRapide.Core {
                 try {
                     var method = A.Type.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static) ?? throw new InvalidTypeException(A.Type, "Does not have a public static method called " + methodName);
                     method.Invoke(null, new object[] { this });
-                    PExplained += " (also enriched from " + nameof(ITypeDescriber) + " " + A.Type.ToStringShort() + ")";
+                    A.SetEnumValueExplained(A.EnumValueExplained + " (also enriched from " + nameof(ITypeDescriber) + " " + A.Type.ToStringShort() + ")");
                 } catch (Exception ex) {
                     throw new BaseAttribute.AttributeException(
                         "Unable to invoke \r\n" + A.Type.ToStringShort() + "'s\r\n" +
                         "   public static void method " + methodName + "\r\n" +
-                        "given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Type) + " to " + typeof(CoreP).ToString() + "." + A.Property + "\r\n" +
+                        "given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Type) + " to " + typeof(CoreP).ToString() + "." + A.EnumValue + "\r\n" +
                         "Resolution: Check that it exists and that it takes exactly one parameter of type " + typeof(PropertyKeyAttributeEnriched).ToStringShort() + ".\r\n" +
                         "In other words it should look like\r\n\r\n" +
                         "   public static void method " + methodName + "(" + typeof(PropertyKeyAttributeEnriched).ToStringShort() + " agoRapideAttribute)\r\n\r\n" +

@@ -9,7 +9,7 @@ namespace AgoRapide.Core {
     /// <summary>
     /// Attribute originating dynamically (from database / API client, not C# code)
     /// 
-    /// TODO: Candidate for removal. Put functionality into <see cref="PropertyKeyNonStrict"/> instead.
+    /// TODO: Candidate for removal. Put functionality into <see cref="PropertyKey"/> instead.
     /// 
     /// This class has no properties in addition to <see cref="PropertyKeyAttributeEnriched"/> but is used
     /// to clarify origin of the attribute. 
@@ -23,7 +23,7 @@ namespace AgoRapide.Core {
         public PropertyKeyAttributeEnrichedDyn(PropertyKeyAttribute agoRapideAttribute, CoreP coreP) {
             A = agoRapideAttribute;
             _coreP = coreP;
-            if (!(A.Property is string)) throw new InvalidObjectTypeException(A.Property, typeof(string), nameof(A.Property) + ".\r\nDetails: " + ToString());
+            if (!(A.EnumValue is string)) throw new InvalidObjectTypeException(A.EnumValue, typeof(string), nameof(A.EnumValue) + ".\r\nDetails: " + ToString());
             Initialize();
         }
     }

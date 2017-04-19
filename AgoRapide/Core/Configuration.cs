@@ -9,21 +9,14 @@ using System.Web.Http;
 using AgoRapide.Database;
 using AgoRapide.API;
 
-namespace AgoRapide {
+namespace AgoRapide.Core {
 
-    /// <summary>
-    /// TODO: Move to API-folder (no need to collect all <see cref="BaseEntity"/> in one place.
-    /// 
-    /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
-    /// </summary>
-    [PropertyKey(AccessLevelRead = AccessLevel.Admin, AccessLevelWrite = AccessLevel.System)]
+    [Class(AccessLevelRead = AccessLevel.Admin, AccessLevelWrite = AccessLevel.System)]
     public class Configuration : ApplicationPart {
 
         public ConfigurationAttribute A { get; private set; }
-        public Configuration(ConfigurationAttribute configurationAttribute) {
-            A = configurationAttribute;
-        }
-
+        public Configuration(ConfigurationAttribute configurationAttribute) => A = configurationAttribute;
+        
         /// <summary>
         /// Dummy constructor for use by <see cref="IDatabase"/>. DO NOT USE!
         /// </summary>

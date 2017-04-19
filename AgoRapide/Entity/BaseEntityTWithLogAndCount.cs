@@ -100,7 +100,7 @@ namespace AgoRapide {
                 Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
                     var key = c.Key.A().Key.PToString;
                     if (retval.Properties.TryGetValue(key, out var existing)) {
-                        throw new KeyAlreadyExistsException<CoreP>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.GetAgoRapideAttributeT().PExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
+                        throw new KeyAlreadyExistsException<CoreP>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.A().Key.A.EnumValueExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
                     }
                     retval.Properties[key] = new JSONProperty0 { Value = c.Value.ToString() };
                 });

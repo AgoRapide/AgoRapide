@@ -187,7 +187,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <returns></returns>
-        public T PV<T>(PropertyKeyNonStrict key) => TryGetPV(key, out T retval) ? retval : throw new InvalidPropertyException<T>(key.Key.CoreP, PExplained(key));
+        public T PV<T>(PropertyKey key) => TryGetPV(key, out T retval) ? retval : throw new InvalidPropertyException<T>(key.Key.CoreP, PExplained(key));
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
@@ -196,7 +196,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public T PV<T>(PropertyKeyNonStrict key, T defaultValue) => TryGetPV(key, out T retval) ? retval : defaultValue;
+        public T PV<T>(PropertyKey key, T defaultValue) => TryGetPV(key, out T retval) ? retval : defaultValue;
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -220,7 +220,7 @@ namespace AgoRapide {
         /// <param name="key"></param>
         /// <param name="pAsT"></param>
         /// <returns></returns>
-        public bool TryGetPV<T>(PropertyKeyNonStrict key, out T pAsT) {
+        public bool TryGetPV<T>(PropertyKey key, out T pAsT) {
             // TODO: Decide whether to do this:
             // TODO: if (Properties == null) throw new NullReferenceException(nameof(Properties) + ". Details: " + ToString());
             // TODO: or this:
@@ -238,7 +238,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public string PExplained(PropertyKeyNonStrict key) => Properties.TryGetValue(key.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]";
+        public string PExplained(PropertyKey key) => Properties.TryGetValue(key.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]";
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -262,7 +262,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public void AddProperty<T>(PropertyKeyNonStrict key, T value) {
+        public void AddProperty<T>(PropertyKey key, T value) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (value == null) throw new ArgumentNullException(nameof(value));
             if (Properties == null) Properties = new Dictionary<CoreP, Property>(); // TODO: Maybe structure better how Properties is initialized

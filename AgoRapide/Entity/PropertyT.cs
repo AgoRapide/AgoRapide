@@ -61,7 +61,7 @@ namespace AgoRapide {
                 /// because often we are called with T = object like from here (See <see cref="PropertyKeyAttributeEnriched"/>):
                 ///   if (Util.EnumTryParse(A.Type, value, out var temp)) return ParseResult.Create(this, temp);
                 /// Instead we must do like this, using the actual type that we got:
-                InvalidTypeException.AssertAssignable(value.GetType(), key.Key.A.Type, () => nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " for " + key.Key.PExplained + " !IsAssignableFrom " + value.GetType());
+                InvalidTypeException.AssertAssignable(value.GetType(), key.Key.A.Type, () => nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " for " + key.Key.A.EnumValueExplained + " !IsAssignableFrom " + value.GetType());
             }
             _stringValue = strValue ?? new Func<string>(() => {
                 /// This is typically the case when called from <see cref="ParseResult.Create"/>        

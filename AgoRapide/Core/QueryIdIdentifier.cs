@@ -7,11 +7,11 @@ using AgoRapide;
 
 namespace AgoRapide.Core {
 
-    [PropertyKey(
+    [Class(
         Description =
             "Lookup based on -" + nameof(CoreP.Identifier) + "-. " +
             "Identical to -" + nameof(QueryIdKeyOperatorValue) + "- WHERE " + nameof(CoreP.Identifier) + " = {value}",
-        SampleValues = new string[] { "Property/{QueryId}" } /// The sample values identifies a specific <see cref="APIMethod"/>
+        SampleValues = new string[] { "APIMethod_Property__QueryId_" } /// The sample values identifies a specific <see cref="APIMethod"/>
     )]
     class QueryIdIdentifier : QueryIdKeyOperatorValue {
         public QueryIdIdentifier(string value) : base(CoreP.Identifier.A().Key, Operator.EQ, value) {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.API;
 
-namespace AgoRapide {
+namespace AgoRapide.API {
 
     /// <summary>
     /// Never stored in database.

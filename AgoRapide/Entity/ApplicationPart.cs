@@ -107,13 +107,20 @@ namespace AgoRapide {
                     key: CoreP.RootProperty.A().PropertyKeyWithIndex,
                     value: typeof(T).ToStringDB(),
                     result: null);
-                var a = type.GetClassAttribute();
-                new List<(CoreP coreP, object obj)> {
-                    (CoreP.Name, identifier ), // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
+                var properties = new List<(CoreP coreP, object obj)> {
+                    (CoreP.Name, identifier), // Name may be overriden, for instance for ApiMethod for which RouteTemplate is used instead for name
                     (CoreP.Identifier, identifier),
-                    (CoreP.AccessLevelRead, a.AccessLevelRead),
-                    (CoreP.AccessLevelWrite, a.AccessLevelWrite)
-                }.ForEach(t => db.CreateProperty(id, id, null, t.coreP.A().PropertyKeyWithIndex, t.obj, null));
+                };
+
+                if (type.IsEnum) {
+                    var a = type.GetEnumAttribute();
+                    /// Nothing of relevance in <see cref="EnumAttribute"/>
+                } else {
+                    var a = type.GetClassAttribute();
+                    properties.Add((CoreP.AccessLevelRead, a.AccessLevelRead));
+                    properties.Add((CoreP.AccessLevelWrite, a.AccessLevelWrite));
+                }
+                properties.ForEach(t => db.CreateProperty(id, id, null, t.coreP.A().PropertyKeyWithIndex, t.obj, null));
                 return db.GetEntityById<T>(id);
             });
             var retval = retvalTemp as T;

@@ -7,11 +7,12 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    /// <summary>
-    /// The AgoRapide principle is to use <see cref="GET"/> for "everything" including create, read, update and delete 
-    /// except when the data is incompatible for fitting within an URL in which case <see cref="POST"/> may be used.
-    /// </summary>
-    [PropertyKey(EnumType = EnumType.EnumValue)]
+    [Enum(
+        Description =
+            "The AgoRapide principle is to use -" + nameof(GET) + "- for \"everything\" including create, read, update and delete " +
+            "except when the data is incompatible for fitting within an URL in which case -" + nameof(POST) + "- may be used.",
+        EnumTypeY = EnumType.EnumValue
+    )]
     public enum HTTPMethod {
 
         GET,

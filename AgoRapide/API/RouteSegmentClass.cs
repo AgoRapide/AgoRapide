@@ -49,7 +49,7 @@ namespace AgoRapide.API {
         /// <summary>
         /// Typical example would be <see cref="CoreP.QueryId"/> like api/Person/{QueryId}
         /// </summary>
-        public PropertyKeyNonStrict Parameter { get; private set; }
+        public PropertyKey Parameter { get; private set; }
 
         /// <summary>
         /// Typical example would be Add like api/Person/Add
@@ -84,7 +84,7 @@ namespace AgoRapide.API {
                 return;
             }
 
-            if (segment.GetType().IsEnum) { /// Turn into <see cref="PropertyKeyNonStrict"/>
+            if (segment.GetType().IsEnum) { /// Turn into <see cref="PropertyKey"/>
                 if (EnumMapper.TryGetA(segment.ToString(), out var temp)) {
                     segment = temp;
                 } else {
@@ -92,11 +92,11 @@ namespace AgoRapide.API {
                 }
             }
 
-            Parameter = segment as PropertyKeyNonStrict;
+            Parameter = segment as PropertyKey;
             if (Parameter != null) {
                 SampleValues = new Func<List<string>>(() => {
                     var a = Parameter.Key.A;
-                    if (a.SampleValues == null || a.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + Parameter.Key.PExplained };
+                    if (a.SampleValues == null || a.SampleValues.Length == 0) return new List<string> { "[No sample value defined for " + Parameter.Key.A.EnumValueExplained };
                     return a.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
                 })();
                 PropertyToStringToLower = Parameter.Key.PToString.ToLower();

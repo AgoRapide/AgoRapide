@@ -64,7 +64,7 @@ namespace AgoRapideSample {
                 var logPath = @"c:\p\Logfiles\AgoRapideSample\AgoRapideLogX_[DATE_HOUR].txt";
 
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl and rootPath
-                AgoRapide.Core.Util.Configuration = new AgoRapide.Configuration(new AgoRapide.Core.ConfigurationAttribute(
+                AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(new AgoRapide.Core.ConfigurationAttribute(
                     logPath: logPath,
                     rootUrl: AgoRapide.Core.Util.Configuration.A.RootUrl
                 ));
@@ -86,7 +86,7 @@ namespace AgoRapideSample {
                 Log("environment: " + environment.environment);
 
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl and rootPath
-                AgoRapide.Core.Util.Configuration = new AgoRapide.Configuration(new AgoRapide.Core.ConfigurationAttribute(
+                AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(new AgoRapide.Core.ConfigurationAttribute(
                     logPath: logPath,
                     rootUrl: rootUrl
                 ) {
@@ -103,6 +103,7 @@ namespace AgoRapideSample {
                 });
 
                 void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.Core.EnumMapper.MapEnum<T>(s => Log(nameof(AgoRapide.Core.EnumMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
+                mapper1<AgoRapide.DBField>(); /// This is a quasi <see cref="AgoRapide.Core.PropertyKeyAttribute"/>
                 mapper1<AgoRapide.CoreP>();
                 mapper1<AgoRapide.Core.ConfigurationAttribute.ConfigurationKey>();
                 mapper1<P>();
@@ -110,29 +111,40 @@ namespace AgoRapideSample {
                 /// that is in order of going outwards from inner AgoRapide library towards your final application
 
                 AgoRapide.Core.EnumMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.Core.EnumMapper.MapEnumFinalize) + ": " + s));
-                Log(nameof(AgoRapide.Core.EnumMapper.AllCoreP) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.Core.EnumMapper.AllCoreP.Select(c => c.Key.PExplained)) + "\r\n");
+                Log(nameof(AgoRapide.Core.EnumMapper.AllCoreP) + ":\r\n\r\n" + string.Join("\r\n", AgoRapide.Core.EnumMapper.AllCoreP.Select(c => c.Key.A.EnumValueExplained)) + "\r\n");
 
                 var systemUser = new Person();
                 systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.AccessLevelGiven), AgoRapide.AccessLevel.System);
                 AgoRapide.Core.Util.Configuration.A.SystemUser = systemUser;
 
-                Log("Going through all " + typeof(P) + " attributes in order to expose any issues at once");
-                AgoRapide.Core.Util.EnumGetValues<P>().ForEach(p => AgoRapide.Core.Extensions.GetAgoRapideAttributeT(p));
-                // Add here any kind of enums that you use
+                //void tester<T>() where T : struct, IFormattable, IConvertible, IComparable // What we really would want is "where T : Enum"
+                //{
+                //    Log("Going through all " + typeof(T) + " attributes in order to expose any issues at once");
+                //    AgoRapide.Core.Util.EnumGetValues<T>().ForEach(p => AgoRapide.Core.Extensions.GetPropertyKeyAttributeT(p));
+                //}
+                //tester<AgoRapide.CoreP>();
+                //tester<AgoRapide.Core.ConfigurationAttribute.ConfigurationKey>();
+                //tester<P>();
 
-                Log("\r\n\r\n" +
-                    "Mapping all " + typeof(P) + " to " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
-                    "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards for all " + typeof(P) + " not explicitly mapped to a " + typeof(AgoRapide.CoreP) + ")\r\n\r\n" +
-                    string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<P>().Select(p => nameof(P) + "." + p + " => " + AgoRapide.Core.EnumMapper.GetA(p).Key.CoreP)) + "\r\n");
+                void mapper2<T>() where T : struct, IFormattable, IConvertible, IComparable // What we really would want is "where T : Enum"
+                {
+                    Log("\r\n\r\n" +
+                        "Mapping all " + typeof(T) + " to " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
+                        "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards for all " + typeof(T) + " not explicitly mapped to a " + typeof(AgoRapide.CoreP) + ")\r\n\r\n" +
+                        string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<T>().Select(p => nameof(T) + "." + p + " => " + AgoRapide.Core.EnumMapper.GetA(p).Key.CoreP)) + "\r\n");
+                }
+                mapper2<AgoRapide.Core.ConfigurationAttribute.ConfigurationKey>();
+                mapper2<P>();
 
-                string mapper2<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreP<T>().Key.PExplained + "\r\n";
+                string mapper3<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreP<T>().Key.A.EnumValueExplained + "\r\n";
                 Log("\r\n\r\n" +
                     "Testing " + nameof(AgoRapide.Core.Util.MapTToCoreP) + " for a few enums\r\n\r\n" +
-                    mapper2<AgoRapide.ResultCode>() + /// Maps to <see cref="AgoRapide.CoreP.ResultCode"/>
-                    mapper2<AgoRapide.APIMethodOrigin>()  /// Maps to <see cref="AgoRapide.CoreP.APIMethodOrigin"/>
+                    mapper3<AgoRapide.ResultCode>() + /// Maps to <see cref="AgoRapide.CoreP.ResultCode"/>
+                    mapper3<AgoRapide.APIMethodOrigin>()  /// Maps to <see cref="AgoRapide.CoreP.APIMethodOrigin"/>
                 );
+
                 Log("Miscellaneous testing");
-                if (!AgoRapide.Core.Extensions.GetAgoRapideAttributeT(P.Password).A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.PropertyKeyAttribute) + "." + nameof(AgoRapide.Core.PropertyKeyAttribute.IsPassword));
+                if (!Extensions.A(P.Password).Key.A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.PropertyKeyAttribute) + "." + nameof(AgoRapide.Core.PropertyKeyAttribute.IsPassword));
 
                 Log("(See corresponding code in Startup.cs for above. Add for more types as you develop your application)");
 
@@ -177,17 +189,17 @@ namespace AgoRapideSample {
 
                 // ---------------------
 
-                Log("Reading all (or rather the single) " + typeof(AgoRapide.Configuration));
-                AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.Configuration>(db, text => Log("(by " + typeof(AgoRapide.Configuration) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
+                Log("Reading all (or rather the single) " + typeof(AgoRapide.Core.Configuration));
+                AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.Core.Configuration>(db, text => Log("(by " + typeof(AgoRapide.Core.Configuration) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
                 Log("Writing configuration to database");
                 AgoRapide.Core.Util.Configuration.ConnectWithDatabase(db);
 
                 // ---------------------
-                Log("Reading all " + typeof(AgoRapide.APIMethod));
-                AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.APIMethod>(db, text => Log("(by " + typeof(AgoRapide.ApplicationPart) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
+                Log("Reading all " + typeof(AgoRapide.API.APIMethod));
+                AgoRapide.ApplicationPart.GetFromDatabase<AgoRapide.API.APIMethod>(db, text => Log("(by " + typeof(AgoRapide.ApplicationPart) + "." + nameof(AgoRapide.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
-                AgoRapide.APIMethod.CreateSemiAutogeneratedMethods(
+                AgoRapide.API.APIMethod.CreateSemiAutogeneratedMethods(
                     controllers: new List<Type> {
                         typeof(HomeController),
                         typeof(AnotherController)  // Add to this list each Controller in your project
@@ -199,11 +211,11 @@ namespace AgoRapideSample {
                     db: db
                 );
 
-                AgoRapide.APIMethod.CreateAutogeneratedMethods(
+                AgoRapide.API.APIMethod.CreateAutogeneratedMethods(
                     types: new List<Type> {
-                        typeof(AgoRapide.Configuration), 
+                        typeof(AgoRapide.Core.Configuration),
                         typeof(AgoRapide.BaseEntity),
-                        typeof(AgoRapide.APIMethod),
+                        typeof(AgoRapide.API.APIMethod),
                         typeof(AgoRapide.ClassAndMethod),
                         typeof(AgoRapide.EnumClass),
                         typeof(AgoRapide.Property),
@@ -216,15 +228,15 @@ namespace AgoRapideSample {
                 );
 
                 Log("The following methods where found by " +
-                    nameof(AgoRapide.APIMethod) + "." + nameof(AgoRapide.APIMethod.CreateSemiAutogeneratedMethods) + " and " +
-                    nameof(AgoRapide.APIMethod) + "." + nameof(AgoRapide.APIMethod.CreateAutogeneratedMethods) + ":\r\n\r\n" +
-                    string.Join("\r\n", AgoRapide.APIMethod.AllMethods.Select(r => r.ToString())) + "\r\n");
+                    nameof(AgoRapide.API.APIMethod) + "." + nameof(AgoRapide.API.APIMethod.CreateSemiAutogeneratedMethods) + " and " +
+                    nameof(AgoRapide.API.APIMethod) + "." + nameof(AgoRapide.API.APIMethod.CreateAutogeneratedMethods) + ":\r\n\r\n" +
+                    string.Join("\r\n", AgoRapide.API.APIMethod.AllMethods.Select(r => r.ToString())) + "\r\n");
 
-                if (AgoRapide.APIMethod.IgnoredMethods.Count > 0) {
+                if (AgoRapide.API.APIMethod.IgnoredMethods.Count > 0) {
                     /// Note that we do not delete from the database in cases like this
                     /// (in general as of Feb 2017 we do not have deletion of <see cref="AgoRapide.ApplicationPart"/> no longer in the C# code)
                     Log("In addition the following methods are present in the C# code but where ignored because the " + nameof(AgoRapide.Environment) + " does not match the current one (" + AgoRapide.Core.Util.Configuration.A.Environment + "):\r\n\r\n" +
-                        string.Join("\r\n", AgoRapide.APIMethod.IgnoredMethods.Select(r => r.ToString() + " (" + nameof(r.A.Environment) + ": " + r.A.Environment + ")")) + "\r\n");
+                        string.Join("\r\n", AgoRapide.API.APIMethod.IgnoredMethods.Select(r => r.ToString() + " (" + nameof(r.A.Environment) + ": " + r.A.Environment + ")")) + "\r\n");
                 }
 
                 // ---------------------
@@ -257,7 +269,7 @@ namespace AgoRapideSample {
     public class WebApiConfig {
         public static void Register(System.Web.Http.HttpConfiguration httpConfiguration) {
             Log("Calling " + nameof(AgoRapide.API.APIMethodMapper) + "." + nameof(AgoRapide.API.APIMethodMapper.MapHTTPRoutes));
-            AgoRapide.API.APIMethodMapper.MapHTTPRoutes(httpConfiguration, AgoRapide.APIMethod.AllMethods.Where(m => m.Origin != AgoRapide.APIMethodOrigin.Autogenerated).ToList());
+            AgoRapide.API.APIMethodMapper.MapHTTPRoutes(httpConfiguration, AgoRapide.API.APIMethod.AllMethods.Where(m => m.Origin != AgoRapide.APIMethodOrigin.Autogenerated).ToList());
 
             Log("Removing XmlFormatter");
             httpConfiguration.Formatters.Remove(httpConfiguration.Formatters.XmlFormatter);

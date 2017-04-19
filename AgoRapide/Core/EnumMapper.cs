@@ -13,7 +13,7 @@ namespace AgoRapide.Core {
     /// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
     /// TODO: (corresponding functionality has been put into <see cref="PostgreSQLDatabase"/>.ReadOneProperty instead.
     /// </summary>
-    [PropertyKey(
+    [Class(
         Description = "Helper class matching -" + nameof(EnumType.PropertyKey) + "- (like P) used in your project to -" + nameof(CoreP) + "-",
         LongDescription = "Note especially -" + nameof(GetA) + "- which is able to store in database any new string values found"
     )]
@@ -22,13 +22,13 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Set by <see cref="MapEnumFinalize"/>
         /// </summary>
-        private static List<PropertyKeyNonStrict> _allCoreP;
+        private static List<PropertyKey> _allCoreP;
         /// <summary>
         /// Returns all <see cref="CoreP"/> including additional ones mapped from other enums. 
         /// 
         /// Will not contain <see cref="PropertyKeyAttributeEnrichedDyn"/> (since all use of <see cref="AllCoreP"/> is based on C# originated needs, not database originated needs)
         /// </summary>
-        public static List<PropertyKeyNonStrict> AllCoreP => _allCoreP ?? throw new NullReferenceException(nameof(AllCoreP) + ". Most probably because no corresponding call was made to " + nameof(MapEnumFinalize));
+        public static List<PropertyKey> AllCoreP => _allCoreP ?? throw new NullReferenceException(nameof(AllCoreP) + ". Most probably because no corresponding call was made to " + nameof(MapEnumFinalize));
 
         /// <summary>
         /// Key is enum type which is mapped from. 
@@ -40,7 +40,7 @@ namespace AgoRapide.Core {
         /// entries for non <see cref="AgoRapide.EnumType.PropertyKey"/> 
         /// (while _this_ cache, <see cref="_enumMapsCache"/> only contains entires for entity property enums)
         /// </summary>
-        private static Dictionary<Type, Dictionary<int, PropertyKeyNonStrict>> _enumMapsCache = new Dictionary<Type, Dictionary<int, PropertyKeyNonStrict>>();
+        private static Dictionary<Type, Dictionary<int, PropertyKey>> _enumMapsCache = new Dictionary<Type, Dictionary<int, PropertyKey>>();
 
         /// <summary>
         /// TODO: Define atomic increasing of this value.
@@ -53,7 +53,7 @@ namespace AgoRapide.Core {
         /// Populated through <see cref="MapEnum{T}"/>. 
         /// Used at ordinary reading from database. 
         /// </summary>
-        private static ConcurrentDictionary<string, PropertyKeyNonStrict> _fromStringMaps = new ConcurrentDictionary<string, PropertyKeyNonStrict>();
+        private static ConcurrentDictionary<string, PropertyKey> _fromStringMaps = new ConcurrentDictionary<string, PropertyKey>();
 
         /// <summary>
         /// The order in which <see cref="MapEnum"/> was being called.
@@ -95,19 +95,19 @@ namespace AgoRapide.Core {
             }
             _allCoreP = null; // TODO: REMOVE USE OF THIS!
             overriddenAttributes[typeof(T)] = new List<string>();
-            Util.EnumGetValues<T>().ForEach(e => {
+            Util.EnumGetValues<T>(typeof(T).Equals(typeof(DBField)) ? (T)(object)-1 :(T)(object)0).ForEach(e => { /// Note exception for <see cref="DBField"/>. TODO: Try to remove this! 
                 // TODO: WHY DOES THIS WORK FOR IsMany???
-                var a = new PropertyKeyNonStrict(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAgoRapideAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
+                var a = new PropertyKey(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
                 a.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); // HACK
                 if (_fromStringMaps.TryGetValue(e.ToString(), out var existing)) {
-                    overriddenAttributes.GetValue(existing.Key.A.Property.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
-                        existing.Key.A.Property.GetType().ToStringShort() + "." + existing.Key.A.Property + " replaced by " + typeof(T).ToStringShort() + "." + e);
+                    overriddenAttributes.GetValue(existing.Key.A.EnumValue.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
+                        existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
                 }
                 _fromStringMaps[e.ToString()] = a;
                 if (a.Key.A.InheritAndEnrichFromProperty != null && !a.Key.A.InheritAndEnrichFromProperty.ToString().Equals(e.ToString())) {
                     if (_fromStringMaps.TryGetValue(a.Key.A.InheritAndEnrichFromProperty.ToString(), out existing)) {
-                        overriddenAttributes.GetValue(existing.Key.A.Property.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
-                            existing.Key.A.Property.GetType().ToStringShort() + "." + existing.Key.A.Property + " replaced by " + typeof(T).ToStringShort() + "." + e);
+                        overriddenAttributes.GetValue(existing.Key.A.EnumValue.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
+                            existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
                     }
                     _fromStringMaps[a.Key.A.InheritAndEnrichFromProperty.ToString()] = a;
                 }
@@ -118,7 +118,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// To be called once at application initialization.
         /// 
-        /// Note how subsequent calls to <see cref="Extensions.GetAgoRapideAttributeT"/> will then always return the overridden values if any.
+        /// Note how subsequent calls to <see cref="Extensions.GetPropertyKeyAttributeT"/> will then always return the overridden values if any.
         /// </summary>
         public static void MapEnumFinalize(Action<string> noticeLogger) {
             mapOrders.ForEach(o => {
@@ -132,17 +132,18 @@ namespace AgoRapide.Core {
                     /// TODO: We must also replace for "manually" given <see cref="CoreP"/>
                     _fromStringMaps.GetValue(e.ToString(), () => nameof(o) + ": " + o)
                 );
-                Extensions.SetAgoRapideAttribute(o, dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: true);
+                // TODO: REMOVE THIS COMMENT:
+                // Extensions.SetPropertyKeyAttribute(o, dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: true);
                 _enumMapsCache[o] = dict;
             });
             var enumMapForCoreP = _enumMapsCache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
-            var allCoreP = new Dictionary<CoreP, PropertyKeyNonStrict>();
+            var allCoreP = new Dictionary<CoreP, PropertyKey>();
             _fromStringMaps.ForEach(e => {
                 if (!allCoreP.TryGetValue(e.Value.Key.CoreP, out var existing)) {
                     allCoreP.AddValue(e.Value.Key.CoreP, e.Value);
                 } else {
                     /// Keep the one that is last in <see cref="mapOrders"/>
-                    if (mapOrders.IndexOf(e.Value.Key.A.Property.GetType()) > mapOrders.IndexOf(existing.Key.A.Property.GetType())) {
+                    if (mapOrders.IndexOf(e.Value.Key.A.EnumValue.GetType()) > mapOrders.IndexOf(existing.Key.A.EnumValue.GetType())) {
                         /// The new one came later as parameter to <see cref="MapEnum{T}"/> and should take precedence
                         allCoreP[e.Value.Key.CoreP] = e.Value;
                     }
@@ -150,8 +151,10 @@ namespace AgoRapide.Core {
                 if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out PropertyKeyAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
             _allCoreP = allCoreP.Values.ToList();
-            /// Repeat for <see cref="CoreP"/> since it most probably was changed above (new values mapped to it)
-            Extensions.SetAgoRapideAttribute(typeof(CoreP), _enumMapsCache.GetValue(typeof(CoreP)).ToDictionary(e => e.Key, e => e.Value.Key), strict: false);            
+
+            // TODO: REMOVE THIS COMMENT!
+            /// Repeat for <see cref="CoreP"/> since it most probably was changed above (new values mapped to it)            
+            // Extensions.SetPropertyKeyAttribute(typeof(CoreP), _enumMapsCache.GetValue(typeof(CoreP)).ToDictionary(e => e.Key, e => e.Value.Key), strict: false);            
         }
 
         /// <summary>
@@ -160,7 +163,7 @@ namespace AgoRapide.Core {
         /// <typeparam name="T"></typeparam>
         /// <param name="_enum"></param>
         /// <returns></returns>
-        public static PropertyKeyNonStrict GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+        public static PropertyKey GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
             TryGetA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
 
         /// <summary>
@@ -170,7 +173,7 @@ namespace AgoRapide.Core {
         /// <param name="_enum"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static bool TryGetA<T>(T _enum, out PropertyKeyNonStrict key) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+        public static bool TryGetA<T>(T _enum, out PropertyKey key) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
             _enumMapsCache.TryGetValue(typeof(T), out var dict) ?
                 dict.TryGetValue((int)(object)_enum, out key) :
                 throw new InvalidMappingException<T>(_enum,
@@ -184,7 +187,7 @@ namespace AgoRapide.Core {
         ///// <param name="_enum"></param>
         ///// <returns></returns>
         //public static PropertyKeyNonStrict GetAOrDefault(string _enum) => _fromStringMaps.TryGetValue(_enum, out var retval) ? retval : throw new NullReferenceException(Util.BreakpointEnabler + "Unable to return default, concept does not exist");
-        public static PropertyKeyNonStrict GetA(string _enum) => _fromStringMaps.GetValue(_enum);
+        public static PropertyKey GetA(string _enum) => _fromStringMaps.GetValue(_enum);
         ///// <summary>
         ///// 
         ///// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
@@ -241,7 +244,7 @@ namespace AgoRapide.Core {
             }
 
             // TODO: This should not have been accepted for IsMany!
-            var key = new PropertyKeyNonStrict( 
+            var key = new PropertyKey( 
                 new PropertyKeyAttributeEnrichedDyn(
                     new PropertyKeyAttribute(
                         property: _enum,
@@ -263,13 +266,17 @@ namespace AgoRapide.Core {
                 throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + description);
             }
 
+            /// TODO: NOT THREAD SAFE
             /// TODO: Correct this not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
+            /// TODO: NOT THREAD SAFE
             var dict = _enumMapsCache.GetValue(typeof(CoreP));
             dict[(int)key.Key.CoreP] = key;
-            /// Important. Although for the most <see cref="EnumMapper"/> will be used for <see cref="CoreP"/> there are some
-            /// cases, especially for extension methods like <see cref="Extensions.AddValue2"/> 
-            /// where <see cref="Extensions.GetAgoRapideAttributeT{T}"/> is called directly.
-            Extensions.SetAgoRapideAttribute(typeof(CoreP), dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: false);
+
+            // TODO: REMOVE THIS COMMENT:
+            ///// Important. Although for the most <see cref="EnumMapper"/> will be used for <see cref="CoreP"/> there are some
+            ///// cases, especially for extension methods like <see cref="Extensions.AddValue2"/> 
+            ///// where <see cref="Extensions.GetPropertyKeyAttributeT{T}"/> is called directly.
+            //Extensions.SetPropertyKeyAttribute(typeof(CoreP), dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: false);
 
             // TODO: STORE THIS IN DATABASE
             // TODO: THINK ABOUT THREAD ISSUES 
@@ -279,6 +286,6 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        public static bool TryGetA(string _enum, out PropertyKeyNonStrict key) => _fromStringMaps.TryGetValue(_enum, out key);
+        public static bool TryGetA(string _enum, out PropertyKey key) => _fromStringMaps.TryGetValue(_enum, out key);
     }
 }

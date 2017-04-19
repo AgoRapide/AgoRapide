@@ -18,37 +18,37 @@ namespace AgoRapide {
     /// Future addition to this table should be limited to data types that the database engine actually understands.
     /// Other data types can be stored as <see cref="strv"/> (especially those supporting <see cref="ITypeDescriber"/>)
     /// </summary>
-    [PropertyKey( 
+    [Enum( 
         Description = "Describes the different fields in the database. Mostly used for documentation. Also used for generating database schema. ",
-        EnumType = EnumType.EnumValue)] /// TODO: Consider turning into <see cref="EnumType.PropertyKey"/> (after that has been renamed into KeyEnum)
+        EnumTypeY = EnumType.PropertyKey)] /// Note choice of <see cref="EnumType"/> (and correspondingly <see cref="PropertyKeyAttribute"/> below)
     public enum DBField {
 
         /// <summary>
-        /// Note how does not contain None (<see cref="Util.EnumGetValues{T}"/> should be used with caution)
+        /// Note how does not contain None (<see cref="Util.EnumGetValues{T}"/> should therefore be used with caution)
         /// </summary>
-        [PropertyKey(
+        [PropertyKey( 
             Description ="Primary key in database",
             Type = typeof(long))]
         id = 0,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Timestamp when created in database", 
             Type = typeof(DateTime))]
         created = 1,
 
-        [PropertyKey(
-            Description = "Creator id (entity which created this property)", 
+        [PropertyKey( 
+            Description = "Creator id (entity which created this property)",  
             Type = typeof(long))]
         cid = 2,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Parent id (entity which this property belongs to)", 
             LongDescription = "Not relevant for entity root properties",
             Type = typeof(long)
             )]
         pid = 3,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Foreign id (only relevant when this property is a relation", 
             LongDescription = 
                 "Only relevant if this property is a relation. " +
@@ -57,7 +57,7 @@ namespace AgoRapide {
             Type = typeof(long))]
         fid = 4,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "The actual name of the property",
             LongDescription =
                 "Correponds to the actual enum used (like -" + nameof(CoreP) + "- or -P-).\r\n" +
@@ -65,52 +65,52 @@ namespace AgoRapide {
             Type = typeof(string))]
         key = 5,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Long value", 
             Type = typeof(long))]
         lngv = 6,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Double Long value", 
             Type = typeof(double))]
         dblv = 7,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Bool value", 
             Type = typeof(bool))]
         blnv = 8,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "DateTime value", 
             Type = typeof(DateTime))]
         dtmv = 9,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Geometry value. TODO: Not implemented as of Jan 2017", 
             Type = typeof(string))]
         geov = 10,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "String value (also used for enums and for " + nameof(ITypeDescriber) + ")", 
             Type = typeof(string))]
         strv = 11,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Timestamp when last known valid", 
             Type = typeof(DateTime))]
         valid = 12,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Validator id (entity which last validated this property)", 
             Type = typeof(long))]
         vid = 13,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Timestamp when invalidated (NULL if still valid (indicates 'current' properties))", 
             Type = typeof(DateTime))]
         invalid = 14,
 
-        [PropertyKey(
+        [PropertyKey( 
             Description = "Invalidator id (entity which invalidated this property)", 
             Type = typeof(long))]
         iid = 15

@@ -7,7 +7,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide.Core {
 
-    [PropertyKey( 
+    [Class( 
         Description = 
             "The simplest form of -" + nameof(QueryId) + "-, " +
             "accepting only integer id's " +

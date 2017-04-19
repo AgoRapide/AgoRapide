@@ -26,7 +26,7 @@ namespace AgoRapide.API {
             new System.Web.Mvc.JsonResult { // Without method we can not construct a Request object. Send emergency response as JSON only.
                 Data = new {
                     ResultCode = ResultCode.exception_error.ToString(),
-                    ResultCodeDescription = ResultCode.exception_error.GetAgoRapideAttributeT().A.Description,
+                    ResultCodeDescription = ResultCode.exception_error.GetEnumValueAttribute().Description,
                     Message = System.Reflection.MethodBase.GetCurrentMethod().Name + ": Unable to communicate " + resultCode + " with message " + message
                 }
             };

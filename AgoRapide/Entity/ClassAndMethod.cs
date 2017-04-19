@@ -11,7 +11,7 @@ namespace AgoRapide {
     /// <summary>
     /// TODO: Move to Core-folder (no need to collect all <see cref="BaseEntity"/> in one place.
     /// </summary>
-    [PropertyKey(
+    [Class(
         Description = "Represents a class plus a method within that class in your application like \"{className}.{methodName}\"",
         LongDescription =
             "Used as source of -" + nameof(DBField.cid) + "-, -" + nameof(DBField.vid) + "-, and -" + nameof(DBField.iid) + "- when it is " +

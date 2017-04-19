@@ -7,7 +7,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    [PropertyKey(
+    [Enum(
         Description = "Characterizes the runtime environment that the application runs in.",
         LongDescription = "Environment in AgoRapide are used in different conceptual understandings:\r\n" +
             "\r\n" +
@@ -26,7 +26,7 @@ namespace AgoRapide {
             "And last, you may use Environment for\r\n" +
             "4) To (the traditional understanding) characterize the runtime environment the application runs in\r\n" +
             "    (see -" + nameof(ConfigurationAttribute.Environment) + "-)\r\n",
-        EnumType = EnumType.EnumValue
+        EnumTypeY = EnumType.EnumValue
     )]
     public enum Environment {
         None,

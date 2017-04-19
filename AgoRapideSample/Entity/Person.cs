@@ -8,7 +8,7 @@ using AgoRapide.Core;
           
 namespace AgoRapideSample {
 
-    [PropertyKey(
+    [Class(
         Description = "Represents a person like employee, customer or similar",
         AccessLevelRead = AccessLevel.Relation,
         AccessLevelWrite = AccessLevel.Relation

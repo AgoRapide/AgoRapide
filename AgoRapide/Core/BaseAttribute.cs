@@ -49,7 +49,7 @@ namespace AgoRapide.Core {
                 "Incorrect attribute used for " + member + ".\r\n" +
                 "Expected " + expectedType + " but found " + foundAttribute.GetType() + ".\r\n" +
                 "Resolution: Change to " + expectedType + " for " + member + ".\r\n" +
-                "(Code will most probably still compile.)\r\n\r\n" +
+                "(Code will most probably still compile as properties are identically named or shared through inheritance.)\r\n\r\n" +
                 "Details for " + nameof(foundAttribute) + ":\r\n" + foundAttribute.ToString()) { }
         }
 
@@ -81,8 +81,8 @@ namespace AgoRapide.Core {
                 case 0:
                     allAgoRapideAttributeTypes.ForEach(t => { // Test for incorrect attribute type used (clarify any misunderstandings)
                         if (t.Equals(typeof(T))) return;
-                        object found = fieldInfo.GetCustomAttributes(t, true);
-                        if (found != null) throw new IncorrectAttributeTypeUsedException(found, typeof(T), memberInfo());
+                        var found = fieldInfo.GetCustomAttributes(t, true);
+                        if (found != null && found.Length > 0) throw new IncorrectAttributeTypeUsedException(found[0], typeof(T), memberInfo());
                     });
                     return new T { IsDefault = true };
                 case 1:

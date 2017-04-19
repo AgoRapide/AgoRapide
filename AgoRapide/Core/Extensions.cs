@@ -15,7 +15,7 @@ namespace AgoRapide.Core {
         /// <param name="dict"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static Property GetOrAddIsManyParent(this Dictionary<CoreP, Property> dict, PropertyKeyNonStrict key) {
+        public static Property GetOrAddIsManyParent(this Dictionary<CoreP, Property> dict, PropertyKey key) {
             key.Key.A.AssertIsMany(null);
             if (dict.TryGetValue(key.Key.CoreP, out var retval)) {
                 retval.AssertIsManyParent();
@@ -76,7 +76,7 @@ namespace AgoRapide.Core {
         /// <param name="value"></param>
         /// <param name="details"></param>
         public static void AddValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> details) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetAgoRapideAttributeT().PExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + details.Result(", Details: "));
+            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + details.Result(", Details: "));
             dictionary.Add(key, value);
         }
 
@@ -257,7 +257,7 @@ namespace AgoRapide.Core {
         public static string KeysAsString2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary.Count > 100) return "Keys.Count: " + dictionary.Keys.Count;
             if (!typeof(TKey).IsEnum) return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.ToString()));
-            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.GetAgoRapideAttributeT().PExplained));
+            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.GetEnumValueAttribute().EnumValueExplained));
         }
 
         /// <summary>
@@ -276,7 +276,7 @@ namespace AgoRapide.Core {
         public static string KeysAsString2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary.Count > 100) return "Keys.Count: " + dictionary.Keys.Count;
             if (!typeof(TKey).IsEnum) return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.ToString()));
-            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.GetAgoRapideAttributeT().PExplained));
+            return "Keys:\r\n" + string.Join(",\r\n", dictionary.Keys.Select(k => k.GetEnumValueAttribute().EnumValueExplained));
         }
 
         /// <summary>
@@ -474,7 +474,7 @@ namespace AgoRapide.Core {
         /// <param name="accessType"></param>
         /// <param name="accessLevelGiven"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKeyNonStrict> GetChildPropertiesForUser(this Type type, BaseEntity currentUser, BaseEntity entity, AccessType accessType) {
+        public static Dictionary<CoreP, PropertyKey> GetChildPropertiesForUser(this Type type, BaseEntity currentUser, BaseEntity entity, AccessType accessType) {
             var accessLevelGiven = currentUser?.AccessLevelGiven ?? AccessLevel.Anonymous;
 
             if (currentUser != null && currentUser.Id == entity.Id) {
@@ -490,13 +490,13 @@ namespace AgoRapide.Core {
                     case AccessType.Read:
                         if (accessLevelGiven < entity.PV(CoreP.AccessLevelRead.A(), classAttribute.AccessLevelRead)) {
                             /// TODO: Implement access through relations (not implemented as of March 2017)
-                            return new Dictionary<CoreP, PropertyKeyNonStrict>();
+                            return new Dictionary<CoreP, PropertyKey>();
                         }
                         break;
                     case AccessType.Write:
                         if (accessLevelGiven < entity.PV(CoreP.AccessLevelWrite.A(), classAttribute.AccessLevelRead)) {
                             /// TODO: Implement access through relations (not implemented as of March 2017)
-                            return new Dictionary<CoreP, PropertyKeyNonStrict>();
+                            return new Dictionary<CoreP, PropertyKey>();
                         }
                         break;
                     default: throw new InvalidEnumException(accessType);
@@ -509,7 +509,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// key = type.ToString() + "_" + accessType + "_" + accessLevelGiven
         /// </summary>
-        private static ConcurrentDictionary<string, Dictionary<CoreP, PropertyKeyNonStrict>> _childPropertiesForAccessLevelCache = new ConcurrentDictionary<string, Dictionary<CoreP, PropertyKeyNonStrict>>();
+        private static ConcurrentDictionary<string, Dictionary<CoreP, PropertyKey>> _childPropertiesForAccessLevelCache = new ConcurrentDictionary<string, Dictionary<CoreP, PropertyKey>>();
         /// <summary>
         /// Returns all <see cref="CoreP"/> relevant for <paramref name="accessType"/> and <paramref name="accessLevelGiven"/> 
         /// for which <paramref name="type"/> is in <see cref="PropertyKeyAttribute.Parents"/> 
@@ -521,10 +521,10 @@ namespace AgoRapide.Core {
         /// <param name="accessType"></param>
         /// <param name="accessLevelGiven"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKeyNonStrict> GetChildPropertiesForAccessLevel(this Type type, AccessType accessType, AccessLevel accessLevelGiven) {
+        public static Dictionary<CoreP, PropertyKey> GetChildPropertiesForAccessLevel(this Type type, AccessType accessType, AccessLevel accessLevelGiven) {
             var key = type.ToString() + "_" + accessType + "_" + accessLevelGiven;
             return _childPropertiesForAccessLevelCache.GetOrAdd(key, k => {
-                var r = new Dictionary<CoreP, PropertyKeyNonStrict>();
+                var r = new Dictionary<CoreP, PropertyKey>();
 
                 /// Implementing <see cref="AccessLocation.Type"/>. 
                 var classAttribute = type.GetClassAttribute();
@@ -555,13 +555,13 @@ namespace AgoRapide.Core {
         /// 
         /// Has practical use when calling <see cref="IDatabase.CreateEntity"/>
         /// 
-        /// Now how returns <see cref="PropertyKeyNonStrict.PropertyKeyWithIndex"/> from <see cref="GetChildProperties"/>.
+        /// Now how returns <see cref="PropertyKey.PropertyKeyWithIndex"/> from <see cref="GetChildProperties"/>.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
         public static Dictionary<CoreP, PropertyKeyWithIndex> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.Key.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value.Key.A.IsMany ? new PropertyKeyWithIndex(e.Value.Key, 1) : e.Value.PropertyKeyWithIndex));
 
-        private static ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKeyNonStrict>> _childPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKeyNonStrict>>();
+        private static ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>> _childPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>>();
         /// <summary>
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="PropertyKeyAttribute.Parents"/>. 
         /// Note how result is cached.
@@ -573,7 +573,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKeyNonStrict> GetChildProperties(this Type type) =>
+        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) =>
              _childPropertiesCache.GetOrAdd(type, t => EnumMapper.AllCoreP.Where(key => key.Key.IsParentFor(type)).ToDictionary(key => key.Key.CoreP, key => key));
 
         private static ConcurrentDictionary<Type, ClassAttribute> _classAttributeCache = new ConcurrentDictionary<Type, ClassAttribute>();
@@ -594,9 +594,16 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static EnumAttribute GetEnumAttribute(this Type type) => _enumAttributeCache.GetOrAdd(type, t => EnumAttribute.GetAttribute(t));
 
-        public static EnumValueAttribute GetEnumMemberAttribute(this object _enum) => throw new NotImplementedException();
+        private static ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumValueAttribute>> _enumValueAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumValueAttribute>>();
+        public static EnumValueAttribute GetEnumValueAttribute(this object _enum) {
+            var type = _enum.GetType();
+            NotOfTypeEnumException.AssertEnum(type);
+            return _enumValueAttributeCache.
+                GetOrAdd(type, dummy => new ConcurrentDictionary<string, EnumValueAttribute>()).
+                GetOrAdd(_enum.ToString(), dummy => EnumValueAttribute.GetAttribute(_enum));
+        }
 
-        private static ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>> _agoRapideAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>>();
+        private static ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>> _propertyKeyAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>>();
         /// <summary>
         /// Only used by <see cref="Property.ValueA"/>
         /// 
@@ -604,55 +611,61 @@ namespace AgoRapide.Core {
         /// 
         /// Note that this method gets ONLY the <see cref="PropertyKeyAttribute"/> (instead of the enriched <see cref="PropertyKeyAttributeEnriched"/>)
         /// for an individual <paramref name="_enum"/>. This is only relevant when you do not possess the generic parameter necessary for 
-        /// calling <see cref="Extensions.GetAgoRapideAttributeT"/>.
-        /// In other words, normally do not use this method but use the more sophisticated method <see cref="Extensions.GetAgoRapideAttributeT"/> whenever possible.
+        /// calling <see cref="Extensions.GetPropertyKeyAttributeT"/>.
+        /// In other words, normally do not use this method but use the more sophisticated method <see cref="Extensions.GetPropertyKeyAttributeT"/> whenever possible.
         /// (since that method again returns a much more sophisticated object back)
         /// </summary>
         /// <param name="_enum"></param>
         /// <returns></returns>
-        public static PropertyKeyAttribute GetAgoRapideAttribute(this object _enum) {
+        public static PropertyKeyAttribute GetPropertyKeyAttribute(this object _enum) {
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type);
-            return _agoRapideAttributeCache.
+            return _propertyKeyAttributeCache.
                 GetOrAdd(type, dummy => new ConcurrentDictionary<string, PropertyKeyAttribute>()).
-                GetOrAdd(_enum.ToString(), dummy => PropertyKeyAttribute.GetAgoRapideAttribute(_enum));
+                GetOrAdd(_enum.ToString(), dummy => PropertyKeyAttribute.GetAttribute(_enum));
         }
 
-        /// <summary>
-        /// TODO: Consider using ordinary dictionary and demand all enums to be registered at application startup.
-        /// TODO: OR: 
-        /// </summary>
-        private static ConcurrentDictionary<Type, Dictionary<int, PropertyKeyAttributeEnriched>> _agoRapideAttributeTCache = new ConcurrentDictionary<Type, Dictionary<int, PropertyKeyAttributeEnriched>>();
-        /// <summary>
-        /// Note use of caching
-        /// 
-        /// Note how we do not return a <see cref="PropertyKeyAttributeEnrichedT{T}"/> object because of <see cref="ReplaceAgoRapideAttribute{T}"/> 
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="_enum"></param>
-        /// <returns></returns>
-        public static PropertyKeyAttributeEnriched GetAgoRapideAttributeT<T>(this T _enum) where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
-            _agoRapideAttributeTCache.
-                GetOrAdd(typeof(T), dummy => {
-                    NotOfTypeEnumException.AssertEnum(typeof(T));
-                    return Util.EnumGetValues(exclude: (T)(object)-1). // Note how we also want the .None value (therefore exclude -1 below)
-                        ToDictionary(e => (int)(object)e, e => (PropertyKeyAttributeEnriched)(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAgoRapideAttribute(e), null)));
-                }).
-                GetValue2((int)(object)_enum, () => "Hint: Is " + _enum + " a valid value for " + typeof(T) + "?");
+        ///// <summary>
+        ///// TODO: Consider using ordinary dictionary and demand all enums to be registered at application startup.
+        ///// TODO: OR: 
+        ///// </summary>
+        //private static ConcurrentDictionary<Type, Dictionary<int, PropertyKeyAttributeEnriched>> _agoRapideAttributeTCache = new ConcurrentDictionary<Type, Dictionary<int, PropertyKeyAttributeEnriched>>();
+        ///// <summary>
+        ///// Note use of caching
+        ///// 
+        ///// Note how we do not return a <see cref="PropertyKeyAttributeEnrichedT{T}"/> object because of <see cref="ReplaceAgoRapideAttribute{T}"/> 
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="_enum"></param>
+        ///// <returns></returns>
+        //public static PropertyKeyAttributeEnriched GetPropertyKeyAttributeT<T>(this T _enum) where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
+        //    _agoRapideAttributeTCache.
+        //        GetValue(typeof(T),() => "Possible cause: No call made to " +  nameof(SetPropertyKeyAttribute) + " for " + typeof(T)).
+        //        //GetOrAdd(typeof(T), dummy => {
+        //        //    throw new PropertyKey.InvalidPropertyKeyException("No )
+        //            //NotOfTypeEnumException.AssertEnum(typeof(T));
+        //            //return Util.EnumGetValues(exclude: (T)(object)-1). // Note how we also want the .None value (therefore exclude -1 below)
+        //            //    ToDictionary(e => (int)(object)e, e => (PropertyKeyAttributeEnriched)(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAttribute(e), null)));
+        //        // }).
+        //        GetValue2((int)(object)_enum, () => "Hint: Is " + _enum + " a valid value for " + typeof(T) + "?");
 
-        /// <summary>
-        /// Only to be called at application startup from <see cref="EnumMapper."/>. 
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="attributes"></param>
-        /// <param name="strict">If true then will throw exception if already exists.</param>
-        public static void SetAgoRapideAttribute(Type type, Dictionary<int, PropertyKeyAttributeEnriched> attributes, bool strict) {
-            if (strict && _agoRapideAttributeTCache.ContainsKey(type)) throw new KeyAlreadyExistsException(type, nameof(_agoRapideAttributeTCache), "All -" + nameof(EnumType.PropertyKey) + "- are supposed to be found by " + nameof(EnumMapper.MapEnum) + " before " + nameof(GetAgoRapideAttributeT) + " is being called");
-            _agoRapideAttributeTCache[type] = attributes;
-        }
+        ///// <summary>
+        ///// Only to be called at application startup from <see cref="EnumMapper."/>. 
+        ///// 
+        ///// TODO: TRY TO REMOVE THIS!
+        ///// </summary>
+        ///// <param name="type"></param>
+        ///// <param name="attributes"></param>
+        ///// <param name="strict">If true then will throw exception if already exists.</param>
+        //public static void SetPropertyKeyAttribute(Type type, Dictionary<int, PropertyKeyAttributeEnriched> attributes, bool strict) {
+        //    if (strict && _agoRapideAttributeTCache.ContainsKey(type)) throw new KeyAlreadyExistsException(type, nameof(_agoRapideAttributeTCache), 
+        //        "All -" + nameof(EnumType.PropertyKey) + "- are supposed to be found by " + nameof(EnumMapper.MapEnum) + " before " + nameof(GetPropertyKeyAttributeT) + " is being called");
+        //    _agoRapideAttributeTCache[type] = attributes;
+        //}
 
-        public static PropertyKeyNonStrict A(this CoreP coreP) => EnumMapper.GetA(coreP);
-        public static PropertyKeyNonStrict A(this ConfigurationAttribute.ConfigurationKey configurationKey) => EnumMapper.GetA(configurationKey);
+        public static PropertyKey A(this CoreP coreP) => EnumMapper.GetA(coreP);
+        public static PropertyKey A(this DBField dbField) => EnumMapper.GetA(dbField);
+        public static PropertyKey A(this ConfigurationAttribute.ConfigurationKey configurationKey) => EnumMapper.GetA(configurationKey);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {
@@ -749,6 +762,6 @@ namespace AgoRapide.Core {
         /// <param name="key"></param>
         /// <param name="detailer">May be null</param>
         /// <returns></returns>
-        public static Property ToIsManyParent<T>(this List<T> list, BaseEntity parent, PropertyKeyNonStrict key, Func<string> detailer) => Util.ConvertListToIsManyParent(parent, key, list, detailer);
+        public static Property ToIsManyParent<T>(this List<T> list, BaseEntity parent, PropertyKey key, Func<string> detailer) => Util.ConvertListToIsManyParent(parent, key, list, detailer);
     }
 }

@@ -36,9 +36,9 @@ namespace AgoRapide {
     /// See <see cref="CoreAPIMethod"/> for example of the recommended approach to setting attributes when the type given (<see cref="PropertyKeyAttribute.Type"/>) 
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
     /// </summary>
-    [PropertyKey(
+    [Enum(
         Description = "The core -" + nameof(EnumType.PropertyKey) + "-. All other -" + nameof(EnumType.PropertyKey) + "- are mapped to -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-.",
-        EnumType = EnumType.PropertyKey
+        EnumTypeY = EnumType.PropertyKey
     )]
     public enum CoreP {
         None,
@@ -155,10 +155,10 @@ namespace AgoRapide {
         Identifier,
 
         /// <summary>
-        /// Note how this is deliberately <see cref="PropertyKeyNonStrict"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to
+        /// Note how this is deliberately <see cref="PropertyKey"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to
         /// allow <see cref="PropertyKeyAttribute.IsMany"/> without <see cref="PropertyKeyWithIndex.Index"/> (<see cref="CoreAPIMethod.UpdateProperty"/> for instance). 
         /// </summary>
-        [PropertyKey(Type = typeof(PropertyKeyNonStrict))]
+        [PropertyKey(Type = typeof(PropertyKey))]
         Key,
 
         [PropertyKey(

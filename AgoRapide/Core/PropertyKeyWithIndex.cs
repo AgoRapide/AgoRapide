@@ -8,16 +8,16 @@ using AgoRapide.Database;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: The whole distinction between <see cref="PropertyKeyNonStrict"/> and <see cref="Core.PropertyKeyWithIndex"/> is a bit messy as of Apr 2017
+    /// TODO: The whole distinction between <see cref="PropertyKey"/> and <see cref="Core.PropertyKeyWithIndex"/> is a bit messy as of Apr 2017
     /// TODO: Especially the hack with <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
     /// TODO: There is also the question of creating a new subclass called PropertyKeyIsMany (and moving the Index-property there)
     /// </summary>
-    [PropertyKey(
+    [Class(
         Description = 
-        "Strict version of -" + nameof(PropertyKeyNonStrict) + "-. " +
+        "Strict version of -" + nameof(PropertyKey) + "-. " +
         "For -" + nameof(PropertyKeyAttribute.IsMany) + "- will also contain the " + nameof(Index) + ", like PhoneNumber#1, PhoneNumber#2.\r\n" +
         "Inconsistency between -" + nameof(PropertyKeyAttribute.IsMany) + "- and -" + nameof(Index) + "- is not allowed")]
-    public class PropertyKeyWithIndex : PropertyKeyNonStrict {
+    public class PropertyKeyWithIndex : PropertyKey {
 
         private int _index;
         /// <summary>
@@ -44,7 +44,7 @@ namespace AgoRapide.Core {
                             throw new InvalidPropertyKeyException(
                                 /// TODO: As of Apr 2017 it is not possible to use <see cref="PropertyKeyAttribute.IsMany"/> in connection with <see cref="CoreAPIMethod.AddEntity"/>. 
                                 nameof(Index) + " missing for " + nameof(Key.A.IsMany) + " for " + ToString() + ".\r\n" +
-                                "Possible resolution: You may call constructor for " + nameof(PropertyKeyNonStrict) + " instead of " + nameof(PropertyKeyWithIndex) + " if you do not need a " + nameof(PropertyKeyWithIndex) + " instance now.\r\n" +
+                                "Possible resolution: You may call constructor for " + nameof(PropertyKey) + " instead of " + nameof(PropertyKeyWithIndex) + " if you do not need a " + nameof(PropertyKeyWithIndex) + " instance now.\r\n" +
                                 "Details: " + key.ToString());
                         }
                     }
@@ -74,7 +74,7 @@ namespace AgoRapide.Core {
         /// Normally used by <see cref="IDatabase"/>-implementation when reading a single <see cref="Property"/> from database. 
         /// </param>
         /// <param name="nonStrictAlternative">
-        /// Used by <see cref="PropertyKeyNonStrict.TryParse"/> in order to have only one parser (not duplicating code)
+        /// Used by <see cref="PropertyKey.TryParse"/> in order to have only one parser (not duplicating code)
         /// </param>
         /// <param name="unrecognizedCoreP">
         /// Facilitates dynamic mapping of any unknown properties found. 
@@ -88,7 +88,7 @@ namespace AgoRapide.Core {
             out PropertyKeyWithIndex key, 
             out string strErrorResponse, 
             out IsManyInconsistency enumErrorResponse, 
-            out PropertyKeyNonStrict nonStrictAlternative, 
+            out PropertyKey nonStrictAlternative, 
             out (string unrecognizedCoreP, bool isMany)? unrecognizedCoreP) {
 
             if (EnumMapper.TryGetA(value, out nonStrictAlternative)) {
@@ -99,7 +99,7 @@ namespace AgoRapide.Core {
                     unrecognizedCoreP = null;
                     return false;
                 }
-                key = nonStrictAlternative.PropertyKeyWithIndex; /// Note how this is a "costless" "conversion" since <see cref="PropertyKeyNonStrict.PropertyKeyWithIndex"/> already exists.
+                key = nonStrictAlternative.PropertyKeyWithIndex; /// Note how this is a "costless" "conversion" since <see cref="PropertyKey.PropertyKeyWithIndex"/> already exists.
                 strErrorResponse = null;
                 enumErrorResponse = IsManyInconsistency.None;
                 unrecognizedCoreP = null;

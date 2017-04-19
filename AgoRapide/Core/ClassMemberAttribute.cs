@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AgoRapide.Core {
 
-    [Class(Description = "Describes a member of a class (a method)")]
+    [Class(Description = "Describes a member of a class (a method). The class itself is described by -" + nameof(ClassAttribute) + "-.")]
     public class ClassMemberAttribute : BaseAttribute {
 
         public Type ClassType { get; private set; }

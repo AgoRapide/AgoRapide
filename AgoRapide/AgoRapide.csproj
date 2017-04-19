@@ -84,7 +84,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\APIMethod.cs" />
     <Compile Include="API\APIMethodAttribute.cs" />
+    <Compile Include="API\APIMethodCandidate.cs" />
     <Compile Include="API\APIMethodMapper.cs" />
     <Compile Include="API\BaseController.cs" />
     <Compile Include="API\HTMLView.cs" />
@@ -95,6 +97,7 @@
     <Compile Include="Core\BaseAttribute.cs" />
     <Compile Include="Core\BaseCore.cs" />
     <Compile Include="Core\ClassAttribute.cs" />
+    <Compile Include="Core\Configuration.cs" />
     <Compile Include="Core\ConfigurationAttribute.cs" />
     <Compile Include="Core\EnumAttribute.cs" />
     <Compile Include="Core\EnumMapper.cs" />
@@ -104,11 +107,11 @@
     <Compile Include="Core\ITypeDescriber.cs" />
     <Compile Include="Core\ClassMemberAttribute.cs" />
     <Compile Include="Core\ParseResult.cs" />
+    <Compile Include="Core\PropertyKey.cs" />
     <Compile Include="Core\PropertyKeyAttribute.cs" />
     <Compile Include="Core\PropertyKeyAttributeEnriched.cs" />
     <Compile Include="Core\PropertyKeyAttributeEnrichedDyn.cs" />
     <Compile Include="Core\PropertyKeyAttributeEnrichedT.cs" />
-    <Compile Include="Core\PropertyKeyNonStrict.cs" />
     <Compile Include="Core\PropertyKeyWithIndex.cs" />
     <Compile Include="Core\QueryId.cs" />
     <Compile Include="Core\QueryIdIdentifier.cs" />
@@ -118,13 +121,10 @@
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Database\IDatabase.cs" />
     <Compile Include="Database\PostgreSQLDatabase.cs" />
-    <Compile Include="Entity\APIMethod.cs" />
-    <Compile Include="Entity\APIMethodCandidate.cs" />
     <Compile Include="Entity\ApplicationPart.cs" />
     <Compile Include="Entity\BaseEntity.cs" />
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />
     <Compile Include="Entity\ClassAndMethod.cs" />
-    <Compile Include="Entity\Configuration.cs" />
     <Compile Include="Entity\EnumClass.cs" />
     <Compile Include="Entity\GeneralQueryResult.cs" />
     <Compile Include="Entity\Parameters.cs" />

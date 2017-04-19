@@ -15,30 +15,30 @@ namespace AgoRapide.Core {
     /// TODO: Notice how connected everything is, starting with the need for describing <see cref="Property.Key"/>.
     /// TODO: this is assumed to be a suboptimal situation at present.
     /// 
-    /// TODO: The whole distinction between <see cref="PropertyKeyNonStrict"/> and <see cref="Core.PropertyKeyWithIndex"/> is a bit messy as of Apr 2017
+    /// TODO: The whole distinction between <see cref="PropertyKey"/> and <see cref="Core.PropertyKeyWithIndex"/> is a bit messy as of Apr 2017
     /// TODO: Especially the hack with <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
     /// TODO: There is also the question of creating a new subclass called PropertyKeyIsMany (and moving the Index-property there)
     /// </summary>
-    [PropertyKey(
+    [Class(
         Description =
             "Corresponds normally directly to the name of -" + nameof(EnumType.PropertyKey) + "- like -" + nameof(CoreP) + "-, -P-) used in your application. "
     )]
-    public class PropertyKeyNonStrict : ITypeDescriber {
+    public class PropertyKey : ITypeDescriber {
         public PropertyKeyAttributeEnriched Key { get; protected set; }
 
-        public PropertyKeyNonStrict(PropertyKeyAttributeEnriched key) => Key = key;
+        public PropertyKey(PropertyKeyAttributeEnriched key) => Key = key;
 
         private PropertyKeyWithIndex _propertyKeyWithIndex;
         /// <summary>
         /// HACK. Relevant when !<see cref="PropertyKeyAttribute.IsMany"/>
         /// Only relevant when originates from <see cref="EnumMapper"/>
-        /// Constitutes the "strict" version of <see cref="PropertyKeyNonStrict"/>
+        /// Constitutes the "strict" version of <see cref="PropertyKey"/>
         /// </summary>
         public PropertyKeyWithIndex PropertyKeyWithIndex {
             get {
                 if (_propertyKeyWithIndex != null) return _propertyKeyWithIndex;
                 switch (this) {
-                    case PropertyKeyWithIndex temp: return _propertyKeyWithIndex = temp; /// Hack, because often <see cref="PropertyKeyNonStrict.PropertyKeyWithIndex"/> is asked for even in cases when the caller already has a <see cref="PropertyKeyWithIndex"/> object (the caller "belives" it only has a <see cref="PropertyKeyNonStrict"/>  object)
+                    case PropertyKeyWithIndex temp: return _propertyKeyWithIndex = temp; /// Hack, because often <see cref="PropertyKey.PropertyKeyWithIndex"/> is asked for even in cases when the caller already has a <see cref="PropertyKeyWithIndex"/> object (the caller "belives" it only has a <see cref="PropertyKey"/>  object)
                     default:
                         throw new NullReferenceException(
                             nameof(_propertyKeyWithIndex) + ". " +
@@ -67,7 +67,7 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// This is a hack to allow <see cref="Property.IsIsManyParent"/> and <see cref="Property.IsTemplateOnly"/> 
-        /// to have a "strict" <see cref="Core.PropertyKeyWithIndex"/> as key (instead of <see cref="PropertyKeyNonStrict"/>. 
+        /// to have a "strict" <see cref="Core.PropertyKeyWithIndex"/> as key (instead of <see cref="PropertyKey"/>. 
         /// 
         /// Not how reading <see cref="PropertyKeyWithIndex.Index"/> with this value will result in an exception being thrown
         /// 
@@ -87,7 +87,7 @@ namespace AgoRapide.Core {
             _propertyKeyWithIndexAsIsManyParentOrTemplate = new PropertyKeyWithIndex(Key, IS_MANY_PARENT_OR_TEMPLATE_INDEX);
         }
 
-        public static bool TryParse(string value, out PropertyKeyNonStrict key, out string strErrorResponse) {
+        public static bool TryParse(string value, out PropertyKey key, out string strErrorResponse) {
 
             if (PropertyKeyWithIndex.TryParse(value, out var retval, out strErrorResponse, out _, out var nonStrictAlternative, out _)) {
                 key = retval;
