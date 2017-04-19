@@ -112,6 +112,8 @@ namespace AgoRapide {
                     (CoreP.Identifier, identifier),
                 };
 
+                /// TODO: Consider generic <see cref="BaseAttribute"/>.Properties like
+                /// <see cref="APIMethodAttribute.Properties"/> and <see cref="ConfigurationAttribute.Properties"/>
                 if (type.IsEnum) {
                     var a = type.GetEnumAttribute();
                     /// Nothing of relevance in <see cref="EnumAttribute"/>

@@ -87,6 +87,9 @@ namespace AgoRapide.API {
             if (AccessLevelUse != AccessLevel.None) retval.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse);
             if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);
 
+            /// TODO: Add <see cref="ClassMemberAttribute"/> information for each property given by <see cref="APIMethodAttribute.Properties"/>
+            /// TODO: Read <see cref="ClassMemberAttribute"/> for each property in class and add those as child properties to each property added here.            
+            /// TODO: (or add as link to those)
             retval.AddProperty(CoreP.Description.A(), Description + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
             retval.AddProperty(CoreP.LongDescription.A(), LongDescription + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
             retval.AddProperty(CoreP.ShowDetailedResult.A(), ShowDetailedResult);

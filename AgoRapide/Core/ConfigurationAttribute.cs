@@ -285,7 +285,7 @@ namespace AgoRapide.Core {
         /// TODO: Similar code in both <see cref="APIMethodAttribute.Properties"/> and <see cref="ConfigurationAttribute.Properties"/>
         /// TODO: (and all other similar classes)
         /// 
-        /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
+        /// TODO: Add <see cref="ClassMemberAttribute"/> information for each property given by <see cref="ConfigurationAttribute.Properties"/>
         /// </summary>
         public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
             var retval = new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
@@ -293,8 +293,9 @@ namespace AgoRapide.Core {
             // Note how we are not adding None-values since they will be considered invalid at later reading from database.
             if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);
 
-            /// TODO: Add MemberAttribute information for each property given by <see cref="ConfigurationAttribute.Properties"/>
-            /// TODO: Read MemberAttribute for each property in class and add those as child properties to each property added here.
+            /// TODO: Add <see cref="ClassMemberAttribute"/> information for each property given by <see cref="ConfigurationAttribute.Properties"/>
+            /// TODO: Read <see cref="ClassMemberAttribute"/> for each property in class and add those as child properties to each property added here.            
+            /// TODO: (or add as link to those)
             retval.AddProperty(ConfigurationKey.LogPath.A(), LogPath);
             retval.AddProperty(ConfigurationKey.RootUrl.A(), RootUrl);
 
