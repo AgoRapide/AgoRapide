@@ -439,10 +439,10 @@ namespace AgoRapide.Core {
         public static string ToString(this DateTime dateTime, DateTimeFormat resolution) {
             switch (resolution) {
                 case DateTimeFormat.None:
-                case DateTimeFormat.DateHourMinSecMs: return dateTime.ToString(Util.Configuration.A.DateAndHourMinSecMsFormat);
-                case DateTimeFormat.DateHourMinSec: return dateTime.ToString(Util.Configuration.A.DateAndHourMinSecFormat);
-                case DateTimeFormat.DateHourMin: return dateTime.ToString(Util.Configuration.A.DateAndHourMinFormat);
-                case DateTimeFormat.DateOnly: return dateTime.ToString(Util.Configuration.A.DateOnlyFormat);
+                case DateTimeFormat.DateHourMinSecMs: return dateTime.ToString(Util.Configuration.CA.DateAndHourMinSecMsFormat);
+                case DateTimeFormat.DateHourMinSec: return dateTime.ToString(Util.Configuration.CA.DateAndHourMinSecFormat);
+                case DateTimeFormat.DateHourMin: return dateTime.ToString(Util.Configuration.CA.DateAndHourMinFormat);
+                case DateTimeFormat.DateOnly: return dateTime.ToString(Util.Configuration.CA.DateOnlyFormat);
                 default: throw new InvalidEnumException(resolution);
             }
         }
@@ -584,6 +584,45 @@ namespace AgoRapide.Core {
         /// <param name="type"></param>
         /// <returns></returns>
         public static ClassAttribute GetClassAttribute(this Type type) => _classAttributeCache.GetOrAdd(type, t => ClassAttribute.GetAttribute(t));
+
+        private static ConcurrentDictionary<string, ClassMemberAttribute> _classMemberAttributeCache = new ConcurrentDictionary<string, ClassMemberAttribute>();
+        /// <summary>
+        /// Note use of caching. 
+        /// See <see cref="ClassMemberAttribute.GetAttribute"/> for documentation. 
+        /// NOTE: Use with caution.
+        /// NOTE: Will not work for overloaded methods. 
+        /// NOTE: Overload <see cref="GetClassMemberAttribute(System.Reflection.MemberInfo)"/> is preferred. 
+        /// 
+        /// TODO: This is most probably not needed. It is used in order to get to a <see cref="ClassMemberAttribute"/> but that one again
+        /// TODO: is most probably only used in order to get to a <see cref="System.Reflection.MemberInfo"/> object (<see cref="ClassMemberAttribute.MemberInfo"/>)
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static ClassMemberAttribute GetClassMemberAttribute(this Type type, string member) => _classMemberAttributeCache.GetOrAdd(type + "." + member, k => ClassMemberAttribute.GetAttribute(type, member));
+        /// <summary>
+        /// Preferred overload
+        /// 
+        /// NOTE THAT NOT IN USE AS OF Apr 2017
+        /// </summary>
+        /// <param name="memberInfo"></param>
+        /// <returns></returns>
+        public static ClassMemberAttribute GetClassMemberAttribute(this System.Reflection.MemberInfo memberInfo) => GetClassMemberAttributeNonStrict(memberInfo) ?? throw new NullReferenceException(System.Reflection.MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetClassMemberAttributeNonStrict) + " instead");
+        /// <summary>
+        /// TODO: Most probably not needed. Consider deleting.
+        /// 
+        /// NOTE THAT NOT IN USE AS OF Apr 2017
+        /// </summary>
+        /// <param name="memberInfo"></param>
+        /// <returns></returns>
+        public static ClassMemberAttribute GetClassMemberAttributeNonStrict(this System.Reflection.MemberInfo memberInfo) {
+            if (ApplicationPart.GetFromDatabaseInProgress) {
+                /// This typical happens when called from <see cref="ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates"/> because that one wants to
+                /// <see cref="PropertyOperation.SetInvalid"/> some <see cref="Property"/> for a <see cref="ClassMember"/>.
+                return null;
+            }
+            /// Careful with cache key here. <see cref="System.Reflection.MemberInfo.Name"/> is not sufficient because of overloads.
+            return _classMemberAttributeCache.GetOrAdd(memberInfo.DeclaringType + "." + memberInfo.ToString(), k => ClassMemberAttribute.GetAttribute(memberInfo));
+        }
 
         private static ConcurrentDictionary<Type, EnumAttribute> _enumAttributeCache = new ConcurrentDictionary<Type, EnumAttribute>();
         /// <summary>
@@ -731,7 +770,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static string HTMLEncodeAndEnrich(this string _string, Request request) {
             if (_string.StartsWith("http://") || _string.StartsWith("https://")) {
-                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (request.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.A.HTMLPostfixIndicator) ? Util.Configuration.A.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
+                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (request.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.CA.HTMLPostfixIndicator) ? Util.Configuration.CA.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
             }
             return HTMLEncode(_string).Replace("\r\n", "\r\n<br>");
         }

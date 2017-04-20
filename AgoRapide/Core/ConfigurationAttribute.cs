@@ -9,6 +9,7 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
     /// <summary>
     /// TODO: DELETE THIS CLASS. Not needed after all, move into <see cref="Configuration"/>. 
+    /// TODO: Or rather, keep, if <see cref="Configuration"/> will be turned into an <see cref="ApplicationPart"/>
     /// 
     /// This class has mostly usable default values in the sense that they will not result 
     /// in NullReferenceExceptions being thrown or similar. 
@@ -25,7 +26,7 @@ namespace AgoRapide.Core {
     /// any values afterwards after accessing any cached value. 
     /// </summary>
     [Class(Description = "General attributes for a -" + nameof(Configuration) + "-.")]
-    public class ConfigurationAttribute { /// NOTE: This class does NOT inherit <see cref="BaseAttribute"/> in spite of its name.
+    public class ConfigurationAttribute : BaseAttribute { /// NOTE: This class does not use any <see cref="Attribute"/> functionality
 
         /// <summary>
         /// Example: @"c:\p\Logfiles\AgoRapide\AgoRapideLog_[DATE_HOUR].txt"
@@ -71,7 +72,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// The <see cref="SystemUser"/> is normally not stored in the database as there is no need for using it as 
         /// <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> since we use 
-        /// <see cref="ClassAndMethod"/> for that purpose. 
+        /// <see cref="ClassMember"/> for that purpose. 
         /// 
         /// TODO: Explain why we create <see cref="AnonymousUser"/> in database but not <see cref="SystemUser"/>
         /// </summary>
@@ -211,41 +212,45 @@ namespace AgoRapide.Core {
 
         private string _baseUrl;
         /// <summary>
-        /// URL that is prepended to every API-command generated through code. 
-        /// Equivalent to RootUrl + ApiPrefix
         /// Example: https://bapi.agorapide.com/api/ or http://localhost:59294/api/
         /// </summary>
-        public string BaseUrl => _baseUrl ?? (_baseUrl = RootUrl + ApiPrefix);
+        [ClassMember(
+            Description= 
+                "URL that is prepended to every API-command generated through code. " +
+                "See -" + nameof(APIMethod.GetAPICommand) + "- / -" + nameof(Request.CreateAPICommand) + "-",
+            LongDescription =
+                "Equivalent to -" + nameof(RootUrl) + "- plus -" + nameof(APIPrefix) + "-"
+        )]
+        public string BaseUrl => _baseUrl ?? (_baseUrl = RootUrl + APIPrefix);
 
         // public List<string> ScriptUrls
 
-        private string _apiPrefix = "api/";
-        /// <summary>
-        /// This prefix will be added to every API route mapped by BAPI.Method.MapHTTPRoutes
-        /// 
-        /// Default value is 'api/'
-        /// 
-        /// Useful if you want to host static content together with your REST API on the same web server. 
-        /// You may then cleanly separate the static content from the REST API routes. 
-        /// 
-        /// Set to null or empty value if not used (empty value will be stored). 
-        /// If not null or empty then leading slash / will be removed and trailing slash / added as necessary
-        /// </summary>
-        public string ApiPrefix {
-            get => _apiPrefix;
+        private string _APIPrefix = "api/";
+        [ClassMember(
+              Description= 
+                "This prefix will be added to -" + nameof(RootUrl) + "- for every -" + nameof(APIMethod) + "- mapped. " +
+                "Default value is \"api/\"",
+             LongDescription = 
+                "Useful if you want to host static content together with your REST API on the same web server. " +
+                "You may then cleanly separate the static content from the REST API routes. " + 
+                "Set to null or empty value if not used (empty value will be stored). " +
+                "If not null or empty then leading slash / will be removed and trailing slash / added as necessary"
+        )]
+        public string APIPrefix {
+            get => _APIPrefix;
             set {
                 if (string.IsNullOrEmpty(value)) {
-                    _apiPrefix = "";
+                    _APIPrefix = "";
                 } else {
-                    _apiPrefix = value;
-                    if (_apiPrefix.StartsWith("/")) _apiPrefix = _apiPrefix.Substring(1); // Or maybe throw an exception instead?
-                    if (!_apiPrefix.EndsWith("/")) _apiPrefix += "/"; // Or maybe throw an exception instead?
+                    _APIPrefix = value;
+                    if (_APIPrefix.StartsWith("/")) _APIPrefix = _APIPrefix.Substring(1); // Or maybe throw an exception instead?
+                    if (!_APIPrefix.EndsWith("/")) _APIPrefix += "/"; // Or maybe throw an exception instead?
                 }
             }
         }
 
         private string _apiPrefixToLower;
-        public string ApiPrefixToLower => _apiPrefixToLower ?? (_apiPrefixToLower = ApiPrefix.ToLower());
+        public string ApiPrefixToLower => _apiPrefixToLower ?? (_apiPrefixToLower = APIPrefix.ToLower());
 
         public string CSSRelativePath { get; set; } = "css.css";
 
@@ -272,37 +277,30 @@ namespace AgoRapide.Core {
         public enum ConfigurationKey {
             None,
             [PropertyKey(AccessLevelRead = AccessLevel.Admin)]
-            LogPath,
+            ConfigurationLogPath,
             [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
-            RootUrl
+            ConfigurationRootUrl,
+            [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
+            ConfigurationAPIPrefix,
+            [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
+            ConfigurationBaseUrl
         }
 
-        private Dictionary<CoreP, Property> _properties;
-        /// <summary>
-        /// Returns a <see cref="BaseEntity.Properties"/> collection based on properties of this instance.
-        /// TODO: Consider making this an abstract method of a base-class
-        /// 
-        /// TODO: Similar code in both <see cref="APIMethodAttribute.Properties"/> and <see cref="ConfigurationAttribute.Properties"/>
-        /// TODO: (and all other similar classes)
-        /// 
-        /// TODO: Add <see cref="ClassMemberAttribute"/> information for each property given by <see cref="ConfigurationAttribute.Properties"/>
-        /// </summary>
-        public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
-            var retval = new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
+        protected override Dictionary<CoreP, Property> GetProperties() {
+            /// Note how we are not adding None-values since they will be considered invalid at later reading from database.
+            /// Note how string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) are easily deduced by <see cref="PropertyT{T}"/> in this case so we do not need to add those as parameters here.
+            if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment); 
 
-            // Note how we are not adding None-values since they will be considered invalid at later reading from database.
-            if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);
+            /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)));
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)));
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)));
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)));
 
-            /// TODO: Add <see cref="ClassMemberAttribute"/> information for each property given by <see cref="ConfigurationAttribute.Properties"/>
-            /// TODO: Read <see cref="ClassMemberAttribute"/> for each property in class and add those as child properties to each property added here.            
-            /// TODO: (or add as link to those)
-            retval.AddProperty(ConfigurationKey.LogPath.A(), LogPath);
-            retval.AddProperty(ConfigurationKey.RootUrl.A(), RootUrl);
-
-            retval.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            PropertiesParent.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name);
             /// TODO: Add more values to this list. Expand <see cref="ConfigurationKey"/> as needed.
             
-            return retval.Properties;
-        })());
+            return PropertiesParent.Properties;
+        }
     }
 }

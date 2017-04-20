@@ -97,10 +97,12 @@
     <Compile Include="Core\BaseAttribute.cs" />
     <Compile Include="Core\BaseCore.cs" />
     <Compile Include="Core\ClassAttribute.cs" />
+    <Compile Include="Core\ClassMember.cs" />
     <Compile Include="Core\Configuration.cs" />
     <Compile Include="Core\ConfigurationAttribute.cs" />
     <Compile Include="Core\EnumAttribute.cs" />
     <Compile Include="Core\EnumMapper.cs" />
+    <Compile Include="Core\EnumValue.cs" />
     <Compile Include="Core\EnumValueAttribute.cs" />
     <Compile Include="Core\ErrorResponse.cs" />
     <Compile Include="Core\IGroupDescriber.cs" />
@@ -124,8 +126,6 @@
     <Compile Include="Entity\ApplicationPart.cs" />
     <Compile Include="Entity\BaseEntity.cs" />
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />
-    <Compile Include="Entity\ClassAndMethod.cs" />
-    <Compile Include="Entity\EnumClass.cs" />
     <Compile Include="Entity\GeneralQueryResult.cs" />
     <Compile Include="Entity\Parameters.cs" />
     <Compile Include="Entity\Property.cs" />

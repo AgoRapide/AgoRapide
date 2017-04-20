@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using AgoRapide.Core;
+using System.Reflection;
 
 namespace AgoRapide.Database {
 
@@ -228,7 +229,7 @@ namespace AgoRapide.Database {
                 }
                 throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
-                        ("Possible cause: Method " + System.Reflection.MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
+                        ("Possible cause: Method " + MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
                     )
                 );
@@ -498,14 +499,9 @@ namespace AgoRapide.Database {
             return retval;
         }
 
-        /// <summary>
-        /// Pragmatic simple and easy to understand mechanism for verification of credentials.
-        /// Only to be used in systems requiring low levels of security.
-        /// </summary>
-        /// <param name="username"></param>
-        /// <param name="password"></param>
-        /// <param name="currentUser"></param>
-        /// <returns></returns>
+        [ClassMember(Description = 
+            "Pragmatic simple and easy to understand mechanism for verification of credentials. " +
+            "Only to be used in systems requiring low levels of security.")]
         public bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser) {
             // Note how password is NOT logged.
             // Log(nameof(email) + ": " + email + ", " + nameof(password) + ": " + (string.IsNullOrEmpty(password) ? "[NULL_OR_EMPTY]" : " [SET]"));
@@ -549,20 +545,20 @@ namespace AgoRapide.Database {
                 // A bit expensive to store in database, but useful information. 
                 // Note how the NUMBER of failed attempts are not logged since only the (last) valid-date in the database is stored for repeated failures. 
                 // Note that if you are concerned about hacking / DDOS scenarios or similar you should definitely implement a more robust authentication mechanism.
-                UpdateProperty(GetId(), currentUser, CoreP.AuthResult.A(), value: false, result: null);
+                UpdateProperty(GetId(MethodBase.GetCurrentMethod()), currentUser, CoreP.AuthResult.A(), value: false, result: null);
                 return false;
             }
 
             if (currentUser.PV(CoreP.RejectCredentialsNextTime.A(), defaultValue: false)) {
                 // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-                UpdateProperty(GetId(), currentUser, new PropertyKeyWithIndex(CoreP.RejectCredentialsNextTime.A().Key), value: false, result: null);
+                UpdateProperty(GetId(MethodBase.GetCurrentMethod()), currentUser, new PropertyKeyWithIndex(CoreP.RejectCredentialsNextTime.A().Key), value: false, result: null);
                 return false;
             }
 
             Log("Returning TRUE");
             // Note how the NUMBER of successful attempts are not logged since only the (last) valid-date in the database is stored for repeated successes. 
             // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-            UpdateProperty(GetId(), currentUser, CoreP.AuthResult.A(), value: true, result: null);
+            UpdateProperty(GetId(MethodBase.GetCurrentMethod()), currentUser, CoreP.AuthResult.A(), value: true, result: null);
 
             SwitchIfHasEntityToRepresent(ref currentUser);
             return true;
@@ -624,7 +620,7 @@ namespace AgoRapide.Database {
                 if (cid == null && pid == null && fid == null) {
                     Log(nameof(cid) + ", " + nameof(pid) + " and " + nameof(fid) + " are all null. Setting " + nameof(cid) + " = 0. " +
                         "This should only occur once for your database in order for " + typeof(ApplicationPart) + "." + nameof(ApplicationPart.GetOrAdd) + " to create an instance 'for itself'. " +
-                        "In all other instances of calls to " + System.Reflection.MethodBase.GetCurrentMethod().Name + " it should be possible to at least have a value for " + nameof(cid) + " (creatorId) " +
+                        "In all other instances of calls to " + MethodBase.GetCurrentMethod().Name + " it should be possible to at least have a value for " + nameof(cid) + " (creatorId) " +
                         "(by using " + typeof(ApplicationPart) + "." + nameof(ApplicationPart.GetOrAdd) + "). " +
                         "In other words, this log message should never repeat itself", result);
                     cid = 0;
@@ -927,13 +923,13 @@ namespace AgoRapide.Database {
             return retval;
         }
 
-        /// <summary>
-        /// For any duplicates the first property's <see cref="Property.Invalid"/> will be set to <see cref="DateTime.Now"/> 
-        /// and that property will be excluded from the returned dictionary. 
-        /// (it is therefore important to always read properties in ASCending order from database before calling this method)
-        /// </summary>
-        /// <param name="cmd"></param>
-        /// <returns></returns>
+        [ClassMember(
+            Description = 
+                "For any duplicates the first property's -" + nameof(Property.Invalid) + "- will be set to -" + nameof(DateTime.Now) + "- " +
+                "and that property will be excluded from the returned dictionary.",
+            LongDescription =
+                "It is therefore important to always read properties in ASCending order from database before calling this method"
+        )]
         protected Dictionary<CoreP, Property> ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates(Npgsql.NpgsqlCommand cmd) {
             var dict = new Dictionary<CoreP, Property>();
             lock (cmd.Connection) {
@@ -943,7 +939,7 @@ namespace AgoRapide.Database {
                 } catch (Exception ex) {
                     throw new PostgreSQLDatabaseException(cmd, ex);
                 }
-                var noLongerCurrent = new List<(Property p, byte id)>();
+                var noLongerCurrent = new List<Property>();
                 var isManyCorrections = new List<string>();
                 while (r.Read()) {
                     var p = ReadOneProperty(r, isManyCorrections);
@@ -951,12 +947,12 @@ namespace AgoRapide.Database {
                     if (p.Key.Key.A.IsMany) {
                         var isManyParent = dict.GetOrAddIsManyParent(p.Key);
                         if (isManyParent.Properties.TryGetValue(p.Key.IndexAsCoreP, out var toBeOverwritten)) {
-                            noLongerCurrent.Add((toBeOverwritten, 1)); // _1 when calling GetId
+                            noLongerCurrent.Add(toBeOverwritten); 
                         }
                         isManyParent.Properties[p.Key.IndexAsCoreP] = p;
                     } else {
                         if (dict.TryGetValue(p.Key.Key.CoreP, out var toBeOverwritten)) {
-                            noLongerCurrent.Add((toBeOverwritten, 2)); // _2 when calling GetId
+                            noLongerCurrent.Add(toBeOverwritten); 
                         }
                         dict[p.Key.Key.CoreP] = p;
                     }
@@ -965,14 +961,9 @@ namespace AgoRapide.Database {
                 ExecuteNonQuerySQLStatements(isManyCorrections);
                 if (noLongerCurrent.Count > 0) {
                     Log("Calling " + nameof(OperateOnProperty) + " for " + noLongerCurrent.Count + " properties");
-                    var ids = new List<long?> { // Distinguish between multiple or not (maybe not really important?)
-                        0,
-                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "_1"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
-                        GetIdNonStrict(System.Reflection.MethodBase.GetCurrentMethod().Name + "_2"), /// Non strict because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
-                    };
-                    noLongerCurrent.ForEach(n => {
-                        if (n.id < 1 || n.id > 2) throw new Exception("Invalid " + nameof(n.id) + " (" + n.id + ")");
-                        OperateOnProperty(operatorId: ids[n.id], property: n.p, operation: PropertyOperation.SetInvalid, result: null);
+                    var id = GetIdNonStrict(MethodBase.GetCurrentMethod());
+                    noLongerCurrent.ForEach(p => { /// Note use of <see cref="GetIdNonStrict"/> because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
+                        OperateOnProperty(operatorId: id, property: p, operation: PropertyOperation.SetInvalid, result: null);
                     });
                 }
             }
@@ -1002,7 +993,7 @@ namespace AgoRapide.Database {
                     cn.Open();
                 } catch (Exception ex) {
                     cn = null;
-                    var exOuter = new OpenDatabaseConnectionException(System.Reflection.MethodBase.GetCurrentMethod().Name + " for " + id + " failed at stage " + stage + " because of " + ex.GetType().ToString() + " with message " + ex.Message + " (see " + nameof(ex.InnerException) + " for more details)", ex);
+                    var exOuter = new OpenDatabaseConnectionException(MethodBase.GetCurrentMethod().Name + " for " + id + " failed at stage " + stage + " because of " + ex.GetType().ToString() + " with message " + ex.Message + " (see " + nameof(ex.InnerException) + " for more details)", ex);
                     HandleException(exOuter);
                     throw exOuter;
                 }
@@ -1139,24 +1130,27 @@ OWNER TO agorapide;
             IsDisposed = true;
         }
 
-        protected long GetId([System.Runtime.CompilerServices.CallerMemberName] string caller = "") => GetIdNonStrict(caller) ?? throw new NullReferenceException(System.Reflection.MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetIdNonStrict) + " instead");
+        protected long GetId(MemberInfo memberInfo) => GetIdNonStrict(memberInfo) ?? throw new NullReferenceException(MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetIdNonStrict) + " instead");
         
         /// <summary>
-        /// Returns id of class + method for use as <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> 
+        /// Returns <see cref="DBField.id"/> of <see cref="ClassMember"/> corresponding to <paramref name="memberInfo"/> 
+        /// for use as <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> 
         /// (note that usually you should use the "currentUser".id for this purpose). 
         /// 
         /// Note how null is returned when <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
         /// </summary>
         /// <param name="caller"></param>
         /// <returns></returns>
-        protected long? GetIdNonStrict([System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
+        protected long? GetIdNonStrict(MemberInfo memberInfo) {            
             if (ApplicationPart.GetFromDatabaseInProgress) {
                 /// This typical happens when called from <see cref="ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates"/> because that one wants to
-                /// <see cref="PropertyOperation.SetInvalid"/> some <see cref="Property"/> for a <see cref="ClassAndMethod"/>.
+                /// <see cref="PropertyOperation.SetInvalid"/> some <see cref="Property"/> for a <see cref="ClassMember"/>.
                 return null;
             }
-            return ApplicationPart.GetOrAdd<ClassAndMethod>(GetType(), caller, this).Id;
+            // THIS WILL MOST PROBABLY NOT WORK BECAUSE OVER OVERLOADS
+            return ApplicationPart.GetOrAdd(memberInfo, this).Id;
         }
+
         /// <summary>
         /// </summary>
         /// <param name="text"></param>

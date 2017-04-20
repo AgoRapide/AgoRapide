@@ -220,7 +220,7 @@ namespace AgoRapide.Core {
         /// <param name="ex"></param>
         /// <returns></returns>
         public static void LogException(Exception ex) {
-            var logPath = Configuration.A.LogPath;
+            var logPath = Configuration.CA.LogPath;
             if (string.IsNullOrWhiteSpace(logPath)) {
                 // Will most probably not happen since Configuration.LogPath has a default value
                 // Give up totally. You might want to add some code here
@@ -350,7 +350,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="text"></param>
         public static void Log(string text) {
-            var logPath = Configuration.A.LogPath;
+            var logPath = Configuration.CA.LogPath;
             if (string.IsNullOrWhiteSpace(logPath)) {
                 // Will most probably not happen since Configuration.LogPath has a default value
                 // Give up totally. You might want to add some code here
@@ -363,7 +363,7 @@ namespace AgoRapide.Core {
                 text + "\r\n";
             lock (lastLogData) {
                 lastLogData.AddLast(logText);
-                if (lastLogData.Count > Configuration.A.LAST_LOG_DATA_MAX_SIZE) lastLogData.RemoveFirst();
+                if (lastLogData.Count > Configuration.CA.LAST_LOG_DATA_MAX_SIZE) lastLogData.RemoveFirst();
             }
 
             logQueue.Enqueue((logPath, logText));

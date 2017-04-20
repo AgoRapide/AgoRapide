@@ -71,29 +71,19 @@ namespace AgoRapide.API {
         /// </summary>
         public string SuggestedNextMethod { get; set; }
 
-        private Dictionary<CoreP, Property> _properties;
-        /// <summary>
-        /// Returns a <see cref="BaseEntity.Properties"/> collection based on properties of this instance.
-        /// 
-        /// TODO: Consider making this an abstract method of a base-class
-        /// 
-        /// TODO: Similar code in both <see cref="APIMethodAttribute.Properties"/> and <see cref="ConfigurationAttribute.Properties"/>
-        /// TODO: (and all other similar classes)
-        /// </summary>
-        public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
-            var retval = new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, ""); /// This is really a dummy object which is created just for the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/>
-            // Note how we are not adding None-values since they will be considered invalid at later reading from database.
+        protected override Dictionary<CoreP, Property> GetProperties() {
+            var retval = PropertiesParent;
+            /// Note how we are not adding None-values since they will be considered invalid at later reading from database.
+            /// Note how string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) are easily deduced by <see cref="PropertyT{T}"/> in this case so we do not need to add those as parameters here.
             if (CoreMethod != CoreAPIMethod.None) retval.AddProperty(CoreP.CoreAPIMethod.A(), CoreMethod);
             if (AccessLevelUse != AccessLevel.None) retval.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse);
             if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);
 
-            /// TODO: Add <see cref="ClassMemberAttribute"/> information for each property given by <see cref="APIMethodAttribute.Properties"/>
-            /// TODO: Read <see cref="ClassMemberAttribute"/> for each property in class and add those as child properties to each property added here.            
-            /// TODO: (or add as link to those)
-            retval.AddProperty(CoreP.Description.A(), Description + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
-            retval.AddProperty(CoreP.LongDescription.A(), LongDescription + ""); // Avoid null values (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
-            retval.AddProperty(CoreP.ShowDetailedResult.A(), ShowDetailedResult);
+            /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
+            retval.AddProperty(CoreP.Description.A(), Description + "", Description + "", GetType().GetClassMemberAttribute(nameof(Description))); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            retval.AddProperty(CoreP.LongDescription.A(), LongDescription + "", LongDescription + "", GetType().GetClassMemberAttribute(nameof(LongDescription))); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            retval.AddProperty(CoreP.ShowDetailedResult.A(), ShowDetailedResult, ShowDetailedResult.ToString(), GetType().GetClassMemberAttribute(nameof(ShowDetailedResult)));
             return retval.Properties;
-        })());
+        }
     }
 }

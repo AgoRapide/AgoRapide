@@ -36,7 +36,7 @@ namespace AgoRapide.API {
         public object GetOKResponseAsEntityId(Type entityType, long id, string message) {
             if (!string.IsNullOrEmpty(message)) message += ". ";
             message += "Id: " + id;
-            if (!string.IsNullOrEmpty(Method.A.Description)) message += ". The following was executed: " + Method.A.Description;
+            if (!string.IsNullOrEmpty(Method.MA.Description)) message += ". The following was executed: " + Method.MA.Description;
             Result.ResultCode = ResultCode.ok;
             Result.AddProperty(CoreP.DBId.A(), id);
             Result.AddProperty(CoreP.SuggestedUrl.A(), CreateAPIUrl(entityType, id));
@@ -198,7 +198,7 @@ namespace AgoRapide.API {
         public string JSONUrl => _JSONUrl ?? (_JSONUrl = new Func<string>(() => {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return URL;
-                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.A.HTMLPostfixIndicator.Length);
+                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.CA.HTMLPostfixIndicator.Length);
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
@@ -231,7 +231,7 @@ namespace AgoRapide.API {
         public string CreateAPIUrl(CoreAPIMethod coreMethod) => CreateAPIUrl(coreMethod, null);
         public string CreateAPIUrl(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
-        public string CreateAPIUrl(string apiCommand) => Util.Configuration.A.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.A.HTMLPostfixIndicator : "");
+        public string CreateAPIUrl(string apiCommand) => Util.Configuration.CA.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.CA.HTMLPostfixIndicator : "");
 
         /// <summary>
         /// Creates API link for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}
@@ -312,12 +312,12 @@ namespace AgoRapide.API {
                 urlSegments.RemoveAt(urlSegments.Count - 1); // Corresponds to Util.Configuration.HTMLPostfixIndicator
             }
 
-            if (!string.IsNullOrEmpty(Util.Configuration.A.ApiPrefix) && Util.Configuration.A.ApiPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
-                var prefix = Util.Configuration.A.ApiPrefixToLower;
+            if (!string.IsNullOrEmpty(Util.Configuration.CA.APIPrefix) && Util.Configuration.CA.APIPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
+                var prefix = Util.Configuration.CA.ApiPrefixToLower;
                 var prefixWithoutTrailingSlash = prefix.Substring(0, prefix.Length - 1);
                 while (!urlSegments[0].ToLower().Equals(prefixWithoutTrailingSlash)) {
                     urlSegments.RemoveAt(0);
-                    if (urlSegments.Count == 0) throw new MethodMatchingException(nameof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.ApiPrefix) + ": '" + prefixWithoutTrailingSlash + "' not present in " + nameof(urlSegments) + " but '" + prefix + "' was found in " + url);
+                    if (urlSegments.Count == 0) throw new MethodMatchingException(nameof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.APIPrefix) + ": '" + prefixWithoutTrailingSlash + "' not present in " + nameof(urlSegments) + " but '" + prefix + "' was found in " + url);
                 }
                 urlSegments.RemoveAt(0);
             } else {
@@ -358,7 +358,7 @@ namespace AgoRapide.API {
             // (since not then would have been picked up by the ordinary ASP .NET routing mechanism. 
 
             var lastList = APIMethod.AllMethods.Where(m => {
-                switch (m.A.CoreMethod) {
+                switch (m.MA.CoreMethod) {
                     case CoreAPIMethod.GenericMethod:
                     case CoreAPIMethod.RootIndex: return false;
                     default: return true;
@@ -484,7 +484,7 @@ namespace AgoRapide.API {
             public MethodMatchingException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.A.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
+        public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.CA.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
     }
 
     /// <summary>

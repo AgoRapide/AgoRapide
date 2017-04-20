@@ -9,6 +9,8 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
+    /// TODO: MOVE INTO API-FOLDER!
+    /// 
     /// Never stored in database. 
     /// 
     /// Note how many of the methods in the AgoRapide-library will log 
@@ -34,7 +36,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="request"></param>
         private void AdjustAccordingToResultCodeAndMethod(Request request) {
-            if (ResultCode == ResultCode.ok && !request.Method.A.ShowDetailedResult) {
+            if (ResultCode == ResultCode.ok && !request.Method.MA.ShowDetailedResult) {
                 if (Properties != null && Properties.ContainsKey(CoreP.Log)) Properties.Remove(CoreP.Log);
             }
             if (ResultCode != ResultCode.ok) {

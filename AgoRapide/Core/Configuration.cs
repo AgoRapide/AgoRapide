@@ -14,20 +14,23 @@ namespace AgoRapide.Core {
     [Class(AccessLevelRead = AccessLevel.Admin, AccessLevelWrite = AccessLevel.System)]
     public class Configuration : ApplicationPart {
 
-        public ConfigurationAttribute A { get; private set; }
-        public Configuration(ConfigurationAttribute configurationAttribute) => A = configurationAttribute;
-        
-        /// <summary>
-        /// Dummy constructor for use by <see cref="IDatabase"/>. DO NOT USE!
-        /// </summary>
-        public Configuration() {
-        }
+        public ConfigurationAttribute _ca { get; private set; }
+        public ConfigurationAttribute CA { get => _ca ?? throw new NullReferenceException(nameof(CA)); set => _ca = value ?? throw new NullReferenceException(nameof(value)); }
 
+        /// <summary>
+        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
+        /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.GetOrAdd{T}"/>. 
+        /// DO NOT USE!
+        /// </summary>
+        public Configuration() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
+
+        public Configuration(ConfigurationAttribute configurationAttribute) :base(configurationAttribute) => CA = configurationAttribute;
+        
         public void ConnectWithDatabase(IDatabase db) {
-            var cid = GetOrAdd<ClassAndMethod>(typeof(Configuration), System.Reflection.MethodBase.GetCurrentMethod().Name, db).Id;
+            var cid = GetOrAdd(System.Reflection.MethodBase.GetCurrentMethod(), db).Id;
 
             /// TODO: Duplicate code in <see cref="APIMethod.FilterConnectWithDatabaseAndAddMethod"/> and <see cref="Configuration.ConnectWithDatabase"/>
-            GetOrAdd(typeof(Configuration), null, db, enrichAndReturnThisObject: this);
+             GetOrAdd(typeof(Configuration), null, db, enrichAndReturnThisObject: this);
 
             /// TODO: Duplicate code in <see cref="APIMethod.FilterConnectWithDatabaseAndAddMethod"/> and <see cref="Configuration.ConnectWithDatabase"/>
             // TDOO: MOVE THIS TO A MORE GENERAL PLACE (Into BaseEntity for instance?

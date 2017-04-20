@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.API;
 
-namespace AgoRapide {
+namespace AgoRapide.Core {
 
-    /// <summary>
-    /// TODO: Move to Core-folder (no need to collect all <see cref="BaseEntity"/> in one place.
-    /// </summary>
     [Class(
-        Description = "Represents a class plus a method within that class in your application like \"{className}.{methodName}\"",
+        Description = 
+            "Represents a class plus a method within that class in your application like \"{className}.{methodName}\". " +
+            "Based on -" + nameof(ClassMemberAttribute) + "-.",
         LongDescription =
             "Used as source of -" + nameof(DBField.cid) + "-, -" + nameof(DBField.vid) + "-, and -" + nameof(DBField.iid) + "- when it is " +
             "\"the system itself\" making changes to your database " +
@@ -21,6 +20,13 @@ namespace AgoRapide {
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]
-    public class ClassAndMethod : ApplicationPart { 
+    public class ClassMember : ApplicationPart {
+
+        /// <summary>
+        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
+        /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.GetOrAdd{T}"/>. 
+        /// DO NOT USE!
+        /// </summary>
+        public ClassMember() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
     }
 }

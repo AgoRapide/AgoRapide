@@ -254,6 +254,7 @@ namespace AgoRapide {
         /// <param name="value"></param>
         public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreP<T>(), value);
 
+        public void AddProperty<T>(PropertyKey key, T value) => AddProperty(key, value, null, null);
         /// <summary>
         /// Adds the property to this entity (in-memory operation only, does not create anything in database)
         /// 
@@ -262,7 +263,15 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public void AddProperty<T>(PropertyKey key, T value) {
+        /// <param name="strValue">
+        /// May be null. 
+        /// See <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> for documentation
+        /// </param>
+        /// <param name="valueAttribute">
+        /// May be null. 
+        /// See <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> for documentation
+        /// </param>
+        public void AddProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (value == null) throw new ArgumentNullException(nameof(value));
             if (Properties == null) Properties = new Dictionary<CoreP, Property>(); // TODO: Maybe structure better how Properties is initialized
@@ -283,11 +292,11 @@ namespace AgoRapide {
                         // isManyParent.Properties.Add(id.IndexAsCoreP, new PropertyT<T>(id, value));
                         // but must do this:
                         /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
-                        isManyParent.AddPropertyForIsManyParent(id.IndexAsCoreP, new PropertyT<T>(id, value)); // Important in order for cached _value to be reset
+                        isManyParent.AddPropertyForIsManyParent(id.IndexAsCoreP, new PropertyT<T>(id, value, strValue, valueAttribute)); // Important in order for cached _value to be reset
                     }
                 }
             } else {
-                Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value) {
+                Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute) {
                     ParentId = Id,
                     Parent = this
                 });
@@ -385,7 +394,7 @@ namespace AgoRapide {
             if (addableProperties.Count == 0) {
                 // Give hint about situation if considered relevant (because AgoRapide mechanism may be somewhat confusing at first)
 
-                if (Util.Configuration.A.Environment == Environment.Production) {
+                if (Util.Configuration.CA.Environment == Environment.Production) {
                     /// The hint given below is a <see cref="Environment.Development"/> / <see cref="Environment.Test"/> issue only. 
                 } else if (request.CurrentUser == null) {
                     /// It is quite expected that <see cref="AccessType.Write"/> is not allowed now

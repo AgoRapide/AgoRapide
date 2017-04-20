@@ -288,14 +288,14 @@ namespace AgoRapide {
             ) {
 
             var retval = new Func<Property>(() => {
-                if (lngValue != null) return new PropertyT<long>(key, (long)lngValue, lngValue.ToString());
-                if (dblValue != null) return new PropertyT<double>(key, (double)dblValue, ((double)dblValue).ToString2());
-                if (blnValue != null) return new PropertyT<bool>(key, (bool)blnValue, ((bool)blnValue).ToString());
-                if (dtmValue != null) return new PropertyT<DateTime>(key, (DateTime)dtmValue, ((DateTime)dtmValue).ToString(key.Key.A.DateTimeFormat));
+                if (lngValue != null) return new PropertyT<long>(key, (long)lngValue, lngValue.ToString(), valueAttribute: null);
+                if (dblValue != null) return new PropertyT<double>(key, (double)dblValue, ((double)dblValue).ToString2(), valueAttribute: null);
+                if (blnValue != null) return new PropertyT<bool>(key, (bool)blnValue, ((bool)blnValue).ToString(), valueAttribute: null);
+                if (dtmValue != null) return new PropertyT<DateTime>(key, (DateTime)dtmValue, ((DateTime)dtmValue).ToString(key.Key.A.DateTimeFormat), valueAttribute: null);
                 if (strValue == null) throw new NullReferenceException("None of the following was set: " + nameof(lngValue) + ", " + nameof(dblValue) + ", " + nameof(blnValue) + ", " + nameof(dtmValue) + ", " + nameof(strValue) + ".\r\nDetails: " + key.Key.ToString());
-                if (key.Key.A.Type.Equals(typeof(string))) return new PropertyT<string>(key, strValue, strValue);
+                if (key.Key.A.Type.Equals(typeof(string))) return new PropertyT<string>(key, strValue, strValue, valueAttribute: null);
                 if (!key.Key.TryValidateAndParse(strValue, out var parseResult)) {
-                    if (key.Key.A.IsNotStrict) return new PropertyT<string>(key, strValue, strValue);
+                    if (key.Key.A.IsNotStrict) return new PropertyT<string>(key, strValue, strValue, valueAttribute: null);
                     throw new InvalidPropertyException(
                         parseResult.ErrorResponse + ".\r\n" +
                         "Possible resolution:\r\n" +

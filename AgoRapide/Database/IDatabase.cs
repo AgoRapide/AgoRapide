@@ -211,7 +211,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="cid">
         /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
-        /// Use <see cref="ApplicationPart.GetOrAdd{T}"/> in order to get a <paramref name="cid"/>. 
+        /// Use <see cref="ApplicationPart.GetOrAdd"/> in order to get a <paramref name="cid"/>. 
         /// <see cref="DBField.cid"/> 
         /// </param>
         /// <param name="pid"><see cref="DBField.pid"/> </param>
@@ -247,7 +247,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="operatorId">
         /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
-        /// Use <see cref="ApplicationPart.GetOrAdd{T}"/> in order to get a <paramref name="cid"/>. 
+        /// Use <see cref="ApplicationPart.GetOrAdd"/> in order to get a <paramref name="cid"/>. 
         /// <paramref name="operatorId"/> will be used as either <see cref="DBField.vid"/> or <see cref="DBField.iid"/>. 
         /// </param>
         /// <param name="property"></param>

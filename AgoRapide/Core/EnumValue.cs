@@ -6,20 +6,32 @@ using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.Database;
 
-namespace AgoRapide {
+namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: Move to Core-folder (no need to collect all <see cref="BaseEntity"/> in one place.
-    /// 
-    /// TODO: DELETE THIS. Replace with Key (other EnumClass goes into <see cref="ClassAndMethod"/>)
+    /// TODO: Rename into 
+    /// TODO: Fix meaning of this. Code now looks like this is an Enum-class.
     /// </summary>
     [Class(
-        Description = "Represents an Enum with values",
+        Description = 
+            "Represents an Enum with values. " + 
+            "Based on -" + nameof(EnumValueAttribute) + "-. ",
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]
-    public class EnumClass : ApplicationPart {
+    public class EnumValue : ApplicationPart {
 
+        /// <summary>
+        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
+        /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.GetOrAdd{T}"/>. 
+        /// DO NOT USE!
+        /// </summary>
+        public EnumValue() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
+
+        /// <summary>
+        /// TODO: Move into <see cref="AgoRapide.Core.Enum"/>
+        /// </summary>
+        /// <param name="db"></param>
         public static void RegisterCoreEnumClasses(IDatabase db) {
             void Register<T>() where T : struct, IFormattable, IConvertible, IComparable
             { // What we really would want is "where T : Enum"
@@ -45,8 +57,8 @@ namespace AgoRapide {
         /// <param name="enumClass"></param>
         /// <param name="db"></param>
         public static void RegisterEnumClass<T>(IDatabase db) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-            var cid = GetOrAdd<EnumClass>(typeof(EnumClass), System.Reflection.MethodBase.GetCurrentMethod().Name, db);
-            var ec = GetOrAdd<EnumClass>(typeof(T), "", db);
+            var cid = GetOrAdd(System.Reflection.MethodBase.GetCurrentMethod(), db);
+            throw new NotImplementedException();
             Util.EnumGetValues<T>().ForEach(e => {
                 /// TODO: COMPLETE THIS! 
                 /// TODO: Get information from <see cref="EnumMapper"/> for instance

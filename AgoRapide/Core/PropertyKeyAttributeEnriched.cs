@@ -298,8 +298,8 @@ namespace AgoRapide.Core {
                     ValidatorAndParser = value => bool.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
                         "Invalid as " + A.Type + ", use '" + true.ToString() + "' or '" + false.ToString() + "'");
                 } else if (typeof(DateTime).Equals(A.Type)) {
-                    var validFormats = Util.Configuration.A.ValidDateFormatsByResolution.GetValue2(A.DateTimeFormat);
-                    ValidatorAndParser = value => DateTime.TryParseExact(value, validFormats, Util.Configuration.A.Culture, System.Globalization.DateTimeStyles.None, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                    var validFormats = Util.Configuration.CA.ValidDateFormatsByResolution.GetValue2(A.DateTimeFormat);
+                    ValidatorAndParser = value => DateTime.TryParseExact(value, validFormats, Util.Configuration.CA.Culture, System.Globalization.DateTimeStyles.None, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
                         "Invalid as " + A.Type + ".\r\n" +
                         "Must be in one of the following formats:\r\n" +
                         string.Join(", ", validFormats) + "\r\n");

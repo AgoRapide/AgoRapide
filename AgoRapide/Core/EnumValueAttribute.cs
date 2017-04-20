@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace AgoRapide.Core {
 
-    [Enum(Description = "Describes an enum member (enum value) NOT of type -" + nameof(EnumType.PropertyKey) + "-. Derived class -" + nameof(PropertyKeyAttribute) + "- describes -" + nameof(EnumType.PropertyKey) + "-")]
+    [Enum(Description = 
+        "Describes an enum value NOT of type -" + nameof(EnumType.PropertyKey) + "-. " +
+        "Member of -" + nameof(EnumValue) + "-. " +
+        "Derived class -" + nameof(PropertyKeyAttribute) + "- describes -" + nameof(EnumType.PropertyKey) + "-")]
     public class EnumValueAttribute : BaseAttribute {
 
         protected object _enumValue;
@@ -45,7 +48,7 @@ namespace AgoRapide.Core {
                 // throw new InvalidObjectTypeException(_enum, EnumType.PropertyKey + " not allowed here");
                 return PropertyKeyAttribute.GetAttribute(_enum); // Quite OK since this is a sub class
             }
-            var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type.ToStringShort() + "." + _enum.ToString() + " is most probably not defined.");
+            var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type + "." + _enum + " is most probably not defined.");
             var retval = GetAttributeThroughFieldInfo<EnumValueAttribute>(field, () => type + "." + _enum);
             retval._enumValue = _enum;
             retval._EnumValueExplained = retval.EnumValue.GetType() + "." + _enum.ToString();

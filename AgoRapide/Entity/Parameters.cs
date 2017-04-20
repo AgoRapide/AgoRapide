@@ -9,6 +9,8 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
+    /// TODO: MOVE INTO API-FOLDER!
+    /// 
     /// Never stored in database. 
     /// </summary>
     [Class(Description = "Incoming parameters to an API call. Offered through -" + nameof(ValidRequest) + "-")]

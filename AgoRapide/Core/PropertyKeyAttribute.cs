@@ -10,11 +10,11 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: Use more concept like <see cref="IsManyIsSet"/> in order for <see cref="EnrichFrom"/> to know
     /// TODO: which values to enrich.
-    /// 
     /// <see cref="PropertyKeyAttributeEnriched"/>
     /// </summary>
     [Enum(Description =
-        "Specialized version of -" + nameof(EnumValueAttribute) + "- which describes an enum member (enum value) of type -" + nameof(EnumType.PropertyKey) + "-. " +
+        "Specialized version of -" + nameof(EnumValueAttribute) + "- which describes an enum value of type -" + nameof(EnumType.PropertyKey) + "-. " +
+        "Member of -" + nameof(PropertyKey) + "-. (through -" + nameof(PropertyKeyAttributeEnriched) + "-). " +
         "Super class -" + nameof(EnumValueAttribute) + "- describes \"ordinary\" enum values (that is, those NOT of type -" + nameof(EnumType.PropertyKey) + "-)")]
     public class PropertyKeyAttribute : EnumValueAttribute {
 

@@ -26,7 +26,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public PropertyT(PropertyKeyWithIndex key, T value) : this(key, value, null) { }
+        public PropertyT(PropertyKeyWithIndex key, T value) : this(key, value, null, null) { }
 
         /// <summary>
         /// Preferred overload if <paramref name="strValue"/> is known by caller. 
@@ -41,10 +41,14 @@ namespace AgoRapide {
         /// <see cref="PropertyKeyAttribute.Type"/> is something different that <see cref="string"/>. 
         /// </param>
         /// <param name="strValue">
+        /// May be null. If not given then corresponding conversion of <paramref name="value"/> to string will be used. 
         /// </param>
-        public PropertyT(PropertyKeyWithIndex key, T value, string strValue) : base(dummy: null) {
+        /// <param name="valueAttribute">
+        /// May be null. See <see cref="Property.ValueA"/> for how it then will be found. 
+        /// </param>
+        public PropertyT(PropertyKeyWithIndex key, T value, string strValue, BaseAttribute valueAttribute) : base(dummy: null) {
             _key = key ?? throw new ArgumentNullException(nameof(key));
-            _value = (object)value ?? throw new ArgumentNullException(nameof(value)); 
+            _value = (object)value ?? throw new ArgumentNullException(nameof(value));
             _genericValue = value;
 
             if (typeof(string).Equals(typeof(T))) {

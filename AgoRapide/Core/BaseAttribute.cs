@@ -6,16 +6,35 @@ using System.Threading.Tasks;
 
 namespace AgoRapide.Core {
 
-    [Class(Description = "Not to be instantiated directly. See derived classes " +
-        "-" + nameof(ClassAttribute) + "-" +
-        "-" + nameof(ClassMemberAttribute) + "-" +
-        "-" + nameof(EnumAttribute) + "-" +
-        "-" + nameof(EnumValueAttribute) + "-" +
-        "-" + nameof(PropertyKeyAttribute) + "-"
+    /// <summary>
+    /// 
+    /// </summary>
+    [Class(
+        Description =
+            "Instances of this class are used as source of documentation and data for the API. " +
+            "Note how the information NORMALLY originates from within the C# code in contrast to the -" + nameof(BaseEntity) + "- where " +
+            "information NORMALLY originates from the api client / database. " +
+            nameof(Properties) + " is used to transfer properties to the \"standard\" -" + nameof(BaseEntity) + "- concept " +
+            "(and from there again to API clients or to be stored in the database for documentation purposes)",
+        LongDescription =
+            "-" + nameof(BaseAttribute) + "- is not to be instantiated directly. See instead the derived classes " +
+            "" +
+            "-" + nameof(ConfigurationAttribute) + "- (which does not use any -" + nameof(Attribute) + "- functionality), " +
+            "-" + nameof(ClassAttribute) + "-, " +
+            "-" + nameof(ClassMemberAttribute) + "-, " +
+            "-" + nameof(EnumAttribute) + "-, " +
+            "-" + nameof(EnumValueAttribute) + "-, " +
+            "-" + nameof(PropertyKeyAttribute) + "-, "
     )]
     public class BaseAttribute : Attribute {
 
         public static BaseAttribute GetNewDefaultInstance() => new BaseAttribute { IsDefault = true };
+        /// <summary>
+        /// Used by dummy constructors of <see cref="ApplicationPart"/>
+        /// 
+        /// TODO: Add some mechanism that will throw an exception if properties of returned instance are accessed.
+        /// </summary>
+        public static BaseAttribute GetStaticNotToBeUsedInstance = new BaseAttribute { IsDefault = true }; // Add GenerateExceptionWhenPropertyAccessed or similar here.
 
         [ClassMember(Description = "Indicates that the actual attribute is not defined and instead a default instance was generated")]
         public bool IsDefault { get; protected set; }
@@ -102,5 +121,35 @@ namespace AgoRapide.Core {
             });
             return new T { IsDefault = true };
         }
+
+        protected static T GetAttributeThroughMemberInfo<T>(System.Reflection.MemberInfo memberInfo) where T : BaseAttribute, new() {
+            var retval = (T)GetCustomAttribute(memberInfo, typeof(T));
+            if (retval != null) return retval;
+            allAgoRapideAttributeTypes.ForEach(t => { // Test for incorrect attribute type used (clarify any misunderstandings)
+                if (t.Equals(typeof(T))) return;
+                var found = GetCustomAttribute(memberInfo, t);
+                if (found != null) throw new IncorrectAttributeTypeUsedException(found, typeof(T), memberInfo.Name);
+            });
+            return new T { IsDefault = true };
+        }
+
+        private Property _propertiesParent;
+        /// <summary>
+        /// Serves the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/> for the purpose of generating the 
+        /// collection accessed through <see cref="Properties"/>
+        /// 
+        /// NOTE: IMPORTANT. 
+        /// NOTE: IMPORTANT. Do not attempt to eliminate <see cref="_propertiesParent"/> and shorten this to = new Property ... because then you will get type initializer exception at application startup because
+        /// NOTE: IMPORTANT: <see cref="EnumMapper.MapEnum{T}"/> will not have been called yet in application lifetime for <see cref="CoreP"/>. 
+        /// NOTE: IMPORTANT: In other words you will trip a chicken-and-egg trap
+        /// NOTE: IMPORTANT. 
+        /// </summary>
+        protected Property PropertiesParent => _propertiesParent ?? (_propertiesParent = new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, ""));
+        private Dictionary<CoreP, Property> _properties;
+        /// <summary>
+        /// Returns a <see cref="BaseEntity.Properties"/> collection based on properties of this instance.
+        /// </summary>
+        public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = GetProperties());
+        protected virtual Dictionary<CoreP, Property> GetProperties() => new Dictionary<CoreP, Property>();
     }
 }
