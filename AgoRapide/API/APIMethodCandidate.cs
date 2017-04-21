@@ -34,7 +34,7 @@ namespace AgoRapide.API {
             Method = method ?? throw new ArgumentNullException(nameof(method));
             LastMatchingSegmentNo = (lastMatchingSegmentNo >= -1 && lastMatchingSegmentNo < (method.RouteSegments.Count - 1)) ? lastMatchingSegmentNo : throw new ArgumentException(nameof(lastMatchingSegmentNo) + " (" + lastMatchingSegmentNo + ") does not fall within valid index value minus one for " + nameof(method) + "." + nameof(method.RouteSegments) + " (which has .Count = " + method.RouteSegments.Count + "), nor is it -1");
             FirstNonMatchingSegment = Method.RouteSegments[LastMatchingSegmentNo + 1];
-            AddProperty(CoreP.SuggestedUrl.A(), request.JSONUrl + "/" + FirstNonMatchingSegment.SampleValues[0] + (request.ResponseFormat==ResponseFormat.HTML ? Util.Configuration.CA.HTMLPostfixIndicator  : ""));
+            AddProperty(CoreP.SuggestedUrl.A(), request.JSONUrl + "/" + FirstNonMatchingSegment.SampleValues[0] + (request.ResponseFormat==ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator  : ""));
         }
     }
 }

@@ -7,7 +7,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    [Enum(EnumTypeY = EnumType.EnumValue)]
+    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
     public enum DateTimeFormat {
 
         None,

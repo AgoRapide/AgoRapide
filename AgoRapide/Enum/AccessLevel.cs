@@ -22,7 +22,7 @@ namespace AgoRapide {
         LongDescription =
             "See -" + nameof(AccessLocation) + "- for how -" + nameof(AccessLevel) + "- " +
             "(for -" + nameof(AccessType.Read) + "- / -" + nameof(AccessType.Write) + "-) may be specified.",
-        EnumTypeY =EnumType.EnumValue
+        AgoRapideEnumType =EnumType.EnumValue
     )]
     public enum AccessLevel {
         None,

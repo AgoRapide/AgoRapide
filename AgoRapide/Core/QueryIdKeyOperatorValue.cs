@@ -103,6 +103,7 @@ namespace AgoRapide.Core {
                 // Use empty SQL statement
                 SQLWhereStatement = "";
                 _toString = "All"; /// Improve on use of <see cref="QueryId.ToString"/>
+                IsAll = true;
                 return;
             }
 

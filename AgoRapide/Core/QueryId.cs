@@ -8,12 +8,19 @@ using AgoRapide;
 namespace AgoRapide.Core {
 
     /// <summary>
+    /// This class does NOT contain information about what type of entity is being queried.
+    /// 
     /// TODO: Consider making even more generic, by also adding the entity type...
     /// TODO: (if possible to unite with generic methods though)
     /// 
     /// TODO: Implement in <see cref="TryParse"/> parsing of more advanced variants like:
     ///   WHERE first_name LIKE 'John%' ORDER BY last_name, first_name
     ///   WHERE date_of_birth > '2017-01-01' ORDER BY id DESC
+    ///   
+    /// Sub classes:
+    /// <see cref="QueryIdInteger"/>
+    /// <see cref="QueryIdIdentifier"/>
+    /// <see cref="QueryIdKeyOperatorValue"/>
     /// </summary>
     [Class(
         Description =
@@ -43,6 +50,9 @@ namespace AgoRapide.Core {
         public void AssertIsMultiple() {
             if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString());
         }
+
+        [ClassMember(Description = "Corresponds to -" + nameof(ToString) + "- returning \"All\"")]
+        public bool IsAll { get; protected set; }
 
         /// <summary>
         /// Returns something like 

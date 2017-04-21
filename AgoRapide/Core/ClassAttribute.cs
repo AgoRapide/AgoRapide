@@ -81,8 +81,6 @@ namespace AgoRapide.Core {
             return newRetval;
         }
 
-        public override string ToString() => (_classType == null ? (nameof(ClassType) + ": [NULL]") : (ClassType.IsEnum ? "Enum: " : "Class: "))  + "\r\nDescription:\r\n" + Description + "\r\nLongDescription:\r\n" + LongDescription;
-
         public void EnrichFrom(ClassAttribute other) {
             if (string.IsNullOrEmpty(Description)) {
                 Description = other.Description;
@@ -98,5 +96,8 @@ namespace AgoRapide.Core {
             if (AccessLevelRead == AccessLevel.System) AccessLevelRead = other.AccessLevelRead; // Careful with what is default value here
             if (AccessLevelWrite == AccessLevel.System) AccessLevelWrite = other.AccessLevelWrite; // Careful with what is default value here
         }
+
+        public override string ToString() => nameof(ClassType) + ": " + ( _classType?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
+        protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + ClassType.ToStringShort();
     }
 }

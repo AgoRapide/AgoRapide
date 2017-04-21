@@ -69,14 +69,14 @@ namespace AgoRapide.API {
             Log("url: " + url);
 
             var request = new Request(Request, method, currentUser, exceptionHasOccurred: false);
-            var tip = request.ResponseFormat == ResponseFormat.HTML ? "\r\nTip: Add " + Util.Configuration.CA.HTMLPostfixIndicator + " at the end of your request URL if you want this response in HTML-format instead of JSON" : "";
+            var tip = request.ResponseFormat == ResponseFormat.HTML ? "\r\nTip: Add " + Util.Configuration.C.HTMLPostfixIndicator + " at the end of your request URL if you want this response in HTML-format instead of JSON" : "";
 
-            if (!string.IsNullOrEmpty(Util.Configuration.CA.APIPrefix) && Util.Configuration.CA.APIPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
-                var prefix = Util.Configuration.CA.ApiPrefixToLower;
+            if (!string.IsNullOrEmpty(Util.Configuration.C.APIPrefix) && Util.Configuration.C.APIPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
+                var prefix = Util.Configuration.C.ApiPrefixToLower;
                 if (!url.ToLower().Contains(prefix)) {
-                    var suggestedUrl = Util.Configuration.CA.RootUrl + Util.Configuration.CA.APIPrefix;
+                    var suggestedUrl = Util.Configuration.C.RootUrl + Util.Configuration.C.APIPrefix;
                     request.Result.ResultCode = ResultCode.client_error;
-                    request.Result.AddProperty(CoreP.Message.A(), "Did you remember '" + Util.Configuration.CA.APIPrefix + "' in your URL?" + tip);
+                    request.Result.AddProperty(CoreP.Message.A(), "Did you remember '" + Util.Configuration.C.APIPrefix + "' in your URL?" + tip);
                     request.Result.AddProperty(CoreP.SuggestedUrl.A(), suggestedUrl);
                     return request.GetResponse();
                 }
@@ -170,7 +170,7 @@ namespace AgoRapide.API {
                 /// Generate <see cref="CoreP.SuggestedUrl"/>:
                 // var docUrl = request.CreateAPIUrl("") does not work (will give us /api//HTML for example)
                 // Therefore we must create the URL manually now:
-                var docUrl = Util.Configuration.CA.RootUrl + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.CA.HTMLPostfixIndicatorWithoutLeadingSlash : "");
+                var docUrl = Util.Configuration.C.RootUrl + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash : "");
                 request.Result.AddProperty(CoreP.SuggestedUrl.A(), docUrl);
                 request.Result.AddProperty(CoreP.APIDocumentationUrl.A(), docUrl);
                 return request.GetResponse();
@@ -210,6 +210,22 @@ namespace AgoRapide.API {
             method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
             if (!TryGetRequest(id, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PVM<QueryId>();
+
+            if (typeof(ApplicationPart).IsAssignableFrom(method.EntityType)) { // Fetch from cache if possible
+                if (queryId.IsAll) {
+                    return request.GetOKResponseAsMultipleEntities(ApplicationPart.AllApplicationParts.Values.Where(
+                        p => method.EntityType.IsAssignableFrom(p.GetType())).Select(a => (BaseEntity)a).ToList());
+                } else {
+                    switch (queryId) {
+                        case QueryIdIdentifier q:
+                            /// Improve on use of <see cref="QueryId.ToString"/>
+                            if (ApplicationPart.AllApplicationParts.TryGetValue(q.ToString(), out var retval) && method.EntityType.IsAssignableFrom(retval.GetType())) {
+                                return request.GetOKResponseAsSingleEntity(retval);
+                            } break;                        
+                    }
+                }
+            }
+
             /// TODO: Utilize <see cref="APIMethod.EntityType"/> here. Maybe give up having TryGetEntities generic?
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
@@ -228,7 +244,7 @@ namespace AgoRapide.API {
             if (!propertyKeyNonStrict.Key.TryValidateAndParse(strValue, out var parseResult)) return request.GetErrorResponse(ResultCode.invalid_parameter_error, parseResult.ErrorResponse);
             var objValue = parseResult.Result.Value;
 
-            if (propertyKeyNonStrict.Key.A.IsUniqueInDatabase) {            
+            if (propertyKeyNonStrict.Key.A.IsUniqueInDatabase) {
                 /// TODO: Improve on error message here if call to <see cref="PropertyKey.PropertyKeyWithIndex"/> fails.
                 if (!DB.TryAssertUniqueness(propertyKeyNonStrict.PropertyKeyWithIndex, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
                 /// Note that <see cref="IDatabase.CreateProperty"/> will also repeat the check above
@@ -271,7 +287,7 @@ namespace AgoRapide.API {
             method.MA.AssertCoreMethod(CoreAPIMethod.ExceptionDetails);
             var request = new Request(Request, method, CurrentUser(method), exceptionHasOccurred: false);
 
-            var logDirectory = System.IO.Path.GetDirectoryName(Util.Configuration.CA.LogPath);
+            var logDirectory = System.IO.Path.GetDirectoryName(Util.Configuration.C.LogPath);
             string newestFilePath = null; var newestTimeStamp = DateTime.MinValue;
             var filePaths = System.IO.Directory.GetFiles(logDirectory, "*exception*");
             foreach (var path in filePaths) {
@@ -385,7 +401,7 @@ namespace AgoRapide.API {
                     if (p1 != null) return p1;
                     return null;
                 })();
-                if (lastParameter != null && lastParameter.ToLower().Equals(Util.Configuration.CA.HTMLPostfixIndicatorWithoutLeadingSlashToLower)) {
+                if (lastParameter != null && lastParameter.ToLower().Equals(Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlashToLower)) {
                     // This check does not hold. We could check URL direct for /HTML/HTML though...
                     //var tempRequest = new Request(Request, method, currentUser, exceptionHasOccurred: false);
                     //if (tempRequest.ResponseFormat == ResponseFormat.HTML) {
@@ -550,7 +566,7 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="caller"></param>
         /// <returns></returns>
-        protected long GetId(MemberInfo memberInfo) => ApplicationPart.GetOrAdd(memberInfo, DB).Id;
+        protected long GetId(MemberInfo memberInfo) => ApplicationPart.GetClassMember(memberInfo, DB).Id;
 
         public class NoLoginPerformedException : ApplicationException {
             public NoLoginPerformedException(string message) : base(message) { }

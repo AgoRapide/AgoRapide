@@ -18,7 +18,7 @@ namespace AgoRapide {
             "has the advantage of " +
             "building your API in a standardised manner " +
             "with validation of input parameters, documentation, samples for the user and unit tests.",
-        EnumTypeY = EnumType.EnumValue
+        AgoRapideEnumType = EnumType.EnumValue
     )]
     public enum APIMethodOrigin {
         None,

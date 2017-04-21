@@ -180,45 +180,7 @@ namespace AgoRapide.Core {
                     "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
                     "(Hint: this is usually done in Startup.cs.)");
 
-
-        ///// <summary>
-        ///// TODO: REMOVE THIS METHOD!
-        ///// </summary>
-        ///// <param name="_enum"></param>
-        ///// <returns></returns>
-        //public static PropertyKeyNonStrict GetAOrDefault(string _enum) => _fromStringMaps.TryGetValue(_enum, out var retval) ? retval : throw new NullReferenceException(Util.BreakpointEnabler + "Unable to return default, concept does not exist");
         public static PropertyKey GetA(string _enum) => _fromStringMaps.GetValue(_enum);
-        ///// <summary>
-        ///// 
-        ///// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
-        ///// TODO: (corresponding functionality has been put into <see cref="PostgreSQLDatabase"/>.ReadOneProperty instead.
-        ///// TODO: (OR RATHER, THIS METHOD WAS REPLACED BY <see cref="TryAddA"/>)
-        ///// 
-        ///// Method that will always "succeed" in the sense that unknown values of <paramref name="_enum"/> will just be added. 
-        ///// 
-        ///// Preferred method when <paramref name="_enum"/> is not known in the C# code. 
-        ///// 
-        ///// Also to be used for hierarchically organise enums.
-        ///// 
-        ///// This is the method to use when reading from database (before initializing <see cref="Property"/>) 
-        ///// and also when dynamically adding properties. 
-        ///// 
-        ///// Note how unknown values are added automatically and also stored in database
-        ///// </summary>
-        ///// <param name="_enum"></param>
-        ///// <returns></returns>
-        //public static PropertyKeyNonStrict GetA(string _enum, IDatabase db) =>
-        //    _fromStringMaps.GetOrAdd(_enum, e => {
-        //        if (db == null) throw new NullReferenceException(nameof(db));
-        //        throw new NotImplementedException(
-        //            "Adding of properties to database not implemented as of March 2017. " +
-        //            "Verify as valid C# identifier. " +
-        //            "Set _allCoreP = null;" +
-        //            "TODO: Reuse " + nameof(EnumClass) + ". " +
-        //            "Store in database (check that not already exist, some reading from database must be done in Startup.cs). " +
-        //            "Corresponding AgoRapideAttribute properties to be stored in database. " +
-        //            "Also implement support for hierarchically organised enums where AgoRapideAttribute reflects all hierarchical levels");
-        //    });
 
         /// <summary>
         /// TODO: Correct not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>

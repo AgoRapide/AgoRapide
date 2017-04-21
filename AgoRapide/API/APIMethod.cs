@@ -121,7 +121,7 @@ namespace AgoRapide.API {
                     if (!string.IsNullOrEmpty(MA.RouteTemplate)) throw new MethodAttributeInitialisationException(
                         nameof(MA.RouteTemplate) + " is not allowed for " + typeof(CoreAPIMethod) + "." + MA.CoreMethod + ". " +
                         nameof(MA.RouteTemplate) + ": " + MA.RouteTemplate + ". " +
-                        (MA.CoreMethod == CoreAPIMethod.GenericMethod ? ("For " + MA.CoreMethod + " it will default to " + typeof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.GenericMethodRouteTemplate) + " = " + Util.Configuration.CA.GenericMethodRouteTemplate) : "") + ". " +
+                        (MA.CoreMethod == CoreAPIMethod.GenericMethod ? ("For " + MA.CoreMethod + " it will default to " + typeof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.GenericMethodRouteTemplate) + " = " + Util.Configuration.C.GenericMethodRouteTemplate) : "") + ". " +
                         detailer1()); break;
                 default:
                     break;// OK
@@ -140,7 +140,7 @@ namespace AgoRapide.API {
                         RouteTemplates = new List<string> { "" };
                         return; // Initialization is now complete.
                     case CoreAPIMethod.GenericMethod:
-                        RouteTemplates = new List<string> { Util.Configuration.CA.GenericMethodRouteTemplate }; // Usually "{*url}"
+                        RouteTemplates = new List<string> { Util.Configuration.C.GenericMethodRouteTemplate }; // Usually "{*url}"
                         return; // Initialization is now complete.
                     default:
                         throw new MethodInitialisationException("No " + nameof(APIMethodAttribute) + "." + nameof(MA.RouteTemplate) + ", no " + nameof(RouteSegments) + " and unknown " + nameof(CoreAPIMethod) + " (" + MA.CoreMethod + "). Possible resolution: Remove attribute " + MA.GetType().ToString() + " if not needed" + detailer1());
@@ -681,11 +681,11 @@ namespace AgoRapide.API {
             if (method == null) throw new NullReferenceException(nameof(method));
             if (db == null) throw new NullReferenceException(nameof(db));
 
-            if (method.MA.Environment < Util.Configuration.CA.Environment) {
+            if (method.MA.Environment < Util.Configuration.C.Environment) {
                 IgnoredMethods.Add(method);
                 return;
             }
-            var cid = GetOrAdd(System.Reflection.MethodBase.GetCurrentMethod(), db).Id;
+            var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db).Id;
 
             var identifier = new Func<string>(() => {
                 switch (method.MA.CoreMethod) {
@@ -694,10 +694,10 @@ namespace AgoRapide.API {
                     default: return method.RouteTemplates[0].Replace("/", "_").Replace("{", "_").Replace("}", "_");
                 }
             })();
-            InvalidIdentifierException.AssertValidIdentifier(identifier); // 
-            GetOrAdd(typeof(APIMethod), identifier, db, enrichAndReturnThisObject: method);
+            method.A.AssertToBeUsed();
+            method.MA.SetIdentifier(identifier);
+            method.ConnectWithDatabase(db);
 
-            /// TODO: Duplicate code in <see cref="APIMethod.FilterConnectWithDatabaseAndAddMethod"/> and <see cref="Configuration.ConnectWithDatabase"/>
             void updater<T>(CoreP key, T value)
             { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
                 db.UpdateProperty(cid, method, key.A(), value, result: null);
@@ -766,47 +766,47 @@ namespace AgoRapide.API {
             }
 
             /// TODO: Add <see cref="PropertyOperation.SetInvalid"/> if already exists a <see cref="CoreP.SuggestedUrl"/>
-            if (suggestedUrls.Count > 0) updater(CoreP.SuggestedUrl, string.Join("\r\n", suggestedUrls.Select(s => Util.Configuration.CA.BaseUrl + s)));
+            if (suggestedUrls.Count > 0) updater(CoreP.SuggestedUrl, string.Join("\r\n", suggestedUrls.Select(s => Util.Configuration.C.BaseUrl + s)));
 
-            // Update all MethodAttribute properties
-            /// TODO: Duplicate code in <see cref="APIMethod.FilterConnectWithDatabaseAndAddMethod"/> and <see cref="Configuration.ConnectWithDatabase"/>
-            // TDOO: MOVE THIS TO A MORE GENERAL PLACE (Into BaseEntity for instance?   
-            //
-            // TODO: BIG WEAKNESS HERE. We do not know the generic value of what we are asking for
-            // TODO: The result will be to store as DBField.strv instead of a more precise type.
-            // TODO: Implement some kind of copying of properties in order to avoid this!
-            // TODO: (or rather, solve the general problem of using generics with properties)
-            method.MA.Properties.Values.ForEach(p => {
-                if (typeof(bool).Equals(p.Key.Key.A.Type)) {
-                    db.UpdateProperty(cid, method, p.Key, p.V<bool>(), result: null);
-                    // TODO: Maybe replace this check with extension-method IsStoredAsStringInDatabase or similar...
-                } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
-                    var value = p.V<string>();
-                    if (method.MA.CoreMethod != CoreAPIMethod.None) {
-                        /// Add information about CoreMethod
-                        /// TODO: This is very similar to <see cref="PropertyKeyAttribute.EnrichFrom"/> 
-                        /// TODO: We should use some of the same mechanism there.
-                        var coreA = method.MA.CoreMethod.GetEnumValueAttribute();
-                        if (p.Key.Key.CoreP.Equals(CoreP.Description) && !string.IsNullOrEmpty(coreA.Description)) { // TODO: Do this in a more streamlined manner!
-                            if (string.IsNullOrEmpty(value)) {
-                                value = coreA.Description;
-                            } else {
-                                value += (value.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(coreA.Description) + ": " + coreA.Description;
-                            }
-                        } else if (p.Key.Equals(CoreP.LongDescription) && !string.IsNullOrEmpty(coreA.LongDescription)) { // TODO: Do this in a more streamlined manner!
-                            if (string.IsNullOrEmpty(value)) {
-                                value = coreA.LongDescription;
-                            } else {
-                                value += (value.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(coreA.LongDescription) + ": " + coreA.LongDescription;
-                            }
-                        }
-                    }
-                    db.UpdateProperty(cid, method, p.Key, value, result: null);
-                } else {
-                    throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
-                }
+            //// Update all MethodAttribute properties
+            ///// TODO: Duplicate code in <see cref="APIMethod.FilterConnectWithDatabaseAndAddMethod"/> and <see cref="Configuration.ConnectWithDatabase"/>
+            //// TDOO: MOVE THIS TO A MORE GENERAL PLACE (Into BaseEntity for instance?   
+            ////
+            //// TODO: BIG WEAKNESS HERE. We do not know the generic value of what we are asking for
+            //// TODO: The result will be to store as DBField.strv instead of a more precise type.
+            //// TODO: Implement some kind of copying of properties in order to avoid this!
+            //// TODO: (or rather, solve the general problem of using generics with properties)
+            //method.MA.Properties.Values.ForEach(p => {
+            //    if (typeof(bool).Equals(p.Key.Key.A.Type)) {
+            //        db.UpdateProperty(cid, method, p.Key, p.V<bool>(), result: null);
+            //        // TODO: Maybe replace this check with extension-method IsStoredAsStringInDatabase or similar...
+            //    } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
+            //        var value = p.V<string>();
+            //        if (method.MA.CoreMethod != CoreAPIMethod.None) {
+            //            /// Add information about CoreMethod
+            //            /// TODO: This is very similar to <see cref="PropertyKeyAttribute.EnrichFrom"/> 
+            //            /// TODO: We should use some of the same mechanism there.
+            //            var coreA = method.MA.CoreMethod.GetEnumValueAttribute();
+            //            if (p.Key.Key.CoreP.Equals(CoreP.Description) && !string.IsNullOrEmpty(coreA.Description)) { // TODO: Do this in a more streamlined manner!
+            //                if (string.IsNullOrEmpty(value)) {
+            //                    value = coreA.Description;
+            //                } else {
+            //                    value += (value.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(coreA.Description) + ": " + coreA.Description;
+            //                }
+            //            } else if (p.Key.Equals(CoreP.LongDescription) && !string.IsNullOrEmpty(coreA.LongDescription)) { // TODO: Do this in a more streamlined manner!
+            //                if (string.IsNullOrEmpty(value)) {
+            //                    value = coreA.LongDescription;
+            //                } else {
+            //                    value += (value.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(coreA.LongDescription) + ": " + coreA.LongDescription;
+            //                }
+            //            }
+            //        }
+            //        db.UpdateProperty(cid, method, p.Key, value, result: null);
+            //    } else {
+            //        throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
+            //    }
 
-            });
+            //});
             _allMethods.Add(method);
         }
 
@@ -832,5 +832,7 @@ namespace AgoRapide.API {
         public class InvalidControllernameException : ApplicationException {
             public InvalidControllernameException(string message) : base(message) { }
         }
+
+        public override void ConnectWithDatabase(IDatabase db) => GetOrAdd(A, db, enrichAndReturnThisObject: this);
     }
 }

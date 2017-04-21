@@ -220,7 +220,7 @@ namespace AgoRapide.Core {
         /// <param name="ex"></param>
         /// <returns></returns>
         public static void LogException(Exception ex) {
-            var logPath = Configuration.CA.LogPath;
+            var logPath = Configuration.C.LogPath;
             if (string.IsNullOrWhiteSpace(logPath)) {
                 // Will most probably not happen since Configuration.LogPath has a default value
                 // Give up totally. You might want to add some code here
@@ -350,7 +350,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="text"></param>
         public static void Log(string text) {
-            var logPath = Configuration.CA.LogPath;
+            var logPath = Configuration.C.LogPath;
             if (string.IsNullOrWhiteSpace(logPath)) {
                 // Will most probably not happen since Configuration.LogPath has a default value
                 // Give up totally. You might want to add some code here
@@ -363,7 +363,7 @@ namespace AgoRapide.Core {
                 text + "\r\n";
             lock (lastLogData) {
                 lastLogData.AddLast(logText);
-                if (lastLogData.Count > Configuration.CA.LAST_LOG_DATA_MAX_SIZE) lastLogData.RemoveFirst();
+                if (lastLogData.Count > Configuration.C.LAST_LOG_DATA_MAX_SIZE) lastLogData.RemoveFirst();
             }
 
             logQueue.Enqueue((logPath, logText));
@@ -594,7 +594,14 @@ namespace AgoRapide.Core {
         public static void AssertValidIdentifier(string identifier) {
             if (!CSharpCodeDomProvider.IsValidIdentifier(identifier)) throw new InvalidIdentifierException(identifier);
         }
-        public InvalidIdentifierException(string identifier) : base(nameof(identifier) + " '" + identifier + "' is not valid as a C# identifier") { }
+        public static void AssertValidIdentifier(string identifier, Func<string> detailer) {
+            if (!CSharpCodeDomProvider.IsValidIdentifier(identifier)) throw new InvalidIdentifierException(identifier, detailer.Result(""));
+        }
+        public InvalidIdentifierException(string identifier) : this(identifier, null) { }
+        public InvalidIdentifierException(string identifier, string details) : base(
+            nameof(identifier) + " '" + identifier + "' is not valid as a C# identifier." +
+            (string.IsNullOrEmpty(details) ? "" : "\r\nDetails: " + details)
+        ) { }
     }
 
     public class InvalidTypeException : ApplicationException {

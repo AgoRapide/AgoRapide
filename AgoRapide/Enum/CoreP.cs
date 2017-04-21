@@ -38,7 +38,7 @@ namespace AgoRapide {
     /// </summary>
     [Enum(
         Description = "The core -" + nameof(EnumType.PropertyKey) + "-. All other -" + nameof(EnumType.PropertyKey) + "- are mapped to -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-.",
-        EnumTypeY = EnumType.PropertyKey
+        AgoRapideEnumType = EnumType.PropertyKey
     )]
     public enum CoreP {
         None,

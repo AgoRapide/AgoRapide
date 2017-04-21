@@ -51,6 +51,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="rootUrl"></param>
         public ConfigurationAttribute(string logPath, string rootUrl) {
+            Description = "Contains all Configuration information for AgoRapide";            
             LogPath = logPath;
             RootUrl = rootUrl;
         }
@@ -215,7 +216,7 @@ namespace AgoRapide.Core {
         /// Example: https://bapi.agorapide.com/api/ or http://localhost:59294/api/
         /// </summary>
         [ClassMember(
-            Description= 
+            Description =
                 "URL that is prepended to every API-command generated through code. " +
                 "See -" + nameof(APIMethod.GetAPICommand) + "- / -" + nameof(Request.CreateAPICommand) + "-",
             LongDescription =
@@ -227,12 +228,12 @@ namespace AgoRapide.Core {
 
         private string _APIPrefix = "api/";
         [ClassMember(
-              Description= 
+              Description =
                 "This prefix will be added to -" + nameof(RootUrl) + "- for every -" + nameof(APIMethod) + "- mapped. " +
                 "Default value is \"api/\"",
-             LongDescription = 
+             LongDescription =
                 "Useful if you want to host static content together with your REST API on the same web server. " +
-                "You may then cleanly separate the static content from the REST API routes. " + 
+                "You may then cleanly separate the static content from the REST API routes. " +
                 "Set to null or empty value if not used (empty value will be stored). " +
                 "If not null or empty then leading slash / will be removed and trailing slash / added as necessary"
         )]
@@ -273,7 +274,7 @@ namespace AgoRapide.Core {
 
         public string GenericMethodRouteTemplate = "{*url}";
 
-        [Enum(EnumTypeY = EnumType.PropertyKey)]
+        [Enum(AgoRapideEnumType = EnumType.PropertyKey)]
         public enum ConfigurationKey {
             None,
             [PropertyKey(AccessLevelRead = AccessLevel.Admin)]
@@ -287,20 +288,29 @@ namespace AgoRapide.Core {
         }
 
         protected override Dictionary<CoreP, Property> GetProperties() {
+            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
+            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
+            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
+            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            Func<string> d = () => ToString();
+
             /// Note how we are not adding None-values since they will be considered invalid at later reading from database.
             /// Note how string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) are easily deduced by <see cref="PropertyT{T}"/> in this case so we do not need to add those as parameters here.
-            if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment); 
+            if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment);
 
             /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)));
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)));
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)));
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)));
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)), d);
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)), d);
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)), d);
+            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)), d);
 
-            PropertiesParent.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            PropertiesParent.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
             /// TODO: Add more values to this list. Expand <see cref="ConfigurationKey"/> as needed.
-            
+
             return PropertiesParent.Properties;
         }
+
+        public override string ToString() => base.ToString();
+        protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_Configuration";
     }
 }

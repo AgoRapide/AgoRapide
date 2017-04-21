@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AgoRapide.API;
 
 namespace AgoRapide.Core {
 
@@ -28,16 +29,32 @@ namespace AgoRapide.Core {
     )]
     public class BaseAttribute : Attribute {
 
+        private string _identifier;
+        public string Identifier => _identifier ?? (_identifier = new Func<string>(() => {
+            var retval = GetIdentifier();
+            InvalidIdentifierException.AssertValidIdentifier(retval, () => ToString());
+            return retval;
+        })());
+
+        [ClassMember(Description = "Indicates that the actual attribute is not defined and instead a default instance was generated")]
+        public bool IsDefault { get; protected set; }
         public static BaseAttribute GetNewDefaultInstance() => new BaseAttribute { IsDefault = true };
+        public void AssertNotDefault() {
+            if (IsDefault) throw new AttributeException(nameof(IsDefault) + ". Details: " + ToString());
+        }
+
+        private bool IsNotToBeUsed;
         /// <summary>
         /// Used by dummy constructors of <see cref="ApplicationPart"/>
         /// 
         /// TODO: Add some mechanism that will throw an exception if properties of returned instance are accessed.
+        /// 
+        /// TODO: Especially an 
         /// </summary>
-        public static BaseAttribute GetStaticNotToBeUsedInstance = new BaseAttribute { IsDefault = true }; // Add GenerateExceptionWhenPropertyAccessed or similar here.
-
-        [ClassMember(Description = "Indicates that the actual attribute is not defined and instead a default instance was generated")]
-        public bool IsDefault { get; protected set; }
+        public static BaseAttribute GetStaticNotToBeUsedInstance = new BaseAttribute { IsDefault = true, IsNotToBeUsed = true }; // Add GenerateExceptionWhenPropertyAccessed or similar here.
+        public void AssertToBeUsed() {
+            if (IsNotToBeUsed) throw new AttributeException(nameof(IsNotToBeUsed) + ". Details: " + ToString());
+        }
 
         /// <summary>
         /// Note: If <see cref="Type"/> is one of your own classes / enums, or one of the AgoRapide classes / enums 
@@ -138,8 +155,13 @@ namespace AgoRapide.Core {
         /// Serves the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/> for the purpose of generating the 
         /// collection accessed through <see cref="Properties"/>
         /// 
+        /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
+        /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
+        /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
+        /// 
         /// NOTE: IMPORTANT. 
-        /// NOTE: IMPORTANT. Do not attempt to eliminate <see cref="_propertiesParent"/> and shorten this to = new Property ... because then you will get type initializer exception at application startup because
+        /// NOTE: IMPORTANT. Do not attempt to eliminate <see cref="_propertiesParent"/> and shorten this to = new Property ... 
+        /// NOTE> IMPORTANT. because then you will get type initializer exception at application startup because
         /// NOTE: IMPORTANT: <see cref="EnumMapper.MapEnum{T}"/> will not have been called yet in application lifetime for <see cref="CoreP"/>. 
         /// NOTE: IMPORTANT: In other words you will trip a chicken-and-egg trap
         /// NOTE: IMPORTANT. 
@@ -149,7 +171,34 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Returns a <see cref="BaseEntity.Properties"/> collection based on properties of this instance.
         /// </summary>
-        public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = GetProperties());
+        public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
+            var retval = GetProperties();
+            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
+            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
+            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
+            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            Func<string> d = () => ToString();
+
+            /// Name may be overriden, for instance for <see cref="APIMethod"/> for which <see cref="APIMethod.RouteTemplates"/> is used instead for name
+            /// TODO: Do not use <see cref="Identifier"/> for name, for <see cref="ClassMember"/> for instance it will not look pretty
+            PropertiesParent.AddProperty(CoreP.Name.A(), Identifier, Identifier, GetType().GetClassMemberAttribute(nameof(Identifier)), d);
+
+            PropertiesParent.AddProperty(CoreP.Identifier.A(), Identifier, Identifier, GetType().GetClassMemberAttribute(nameof(Identifier)), d);
+
+            PropertiesParent.AddProperty(CoreP.Description.A(), Description + "", Description + "", GetType().GetClassMemberAttribute(nameof(Description)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            PropertiesParent.AddProperty(CoreP.LongDescription.A(), LongDescription + "", LongDescription + "", GetType().GetClassMemberAttribute(nameof(LongDescription)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            return retval;
+        })());
         protected virtual Dictionary<CoreP, Property> GetProperties() => new Dictionary<CoreP, Property>();
+
+        public override string ToString() => nameof(Description) + ":\r\n" + Description + "\r\n" + nameof(LongDescription) + ":\r\n" + LongDescription + "\r\n" + nameof(BaseAttribute) + "Subclass: " + GetType().ToString() + (!IsDefault ? "" : ", " + (nameof(IsDefault) + ": " + IsDefault)) + (!IsNotToBeUsed ? "" : ", " + (nameof(IsNotToBeUsed) + ": " + IsNotToBeUsed));
+        /// <summary>
+        /// The implementator should return a value satisfying both 
+        /// <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> and
+        /// <see cref="System.CodeDom.Compiler.CodeDomProvider.IsValidIdentifier"/>
+        /// (Note assertion for the last criteria in <see cref="Identifier"/>)
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string GetIdentifier() => throw new NullReferenceException(nameof(GetIdentifier) + ". Should have been implemented by sub-class.\r\nDetails: " + ToString());
     }
 }

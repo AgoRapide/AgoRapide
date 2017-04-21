@@ -10,7 +10,7 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
-    [Enum(EnumTypeY = EnumType.EnumValue)]
+    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
     public enum Colour {
         None,
 
@@ -187,7 +187,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <returns></returns>
-        public T PV<T>(PropertyKey key) => TryGetPV(key, out T retval) ? retval : throw new InvalidPropertyException<T>(key.Key.CoreP, PExplained(key));
+        public T PV<T>(PropertyKey key) => TryGetPV(key, out T retval) ? retval : throw new InvalidPropertyException<T>(key.Key.CoreP, PExplained(key), ToString());
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
@@ -254,7 +254,8 @@ namespace AgoRapide {
         /// <param name="value"></param>
         public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreP<T>(), value);
 
-        public void AddProperty<T>(PropertyKey key, T value) => AddProperty(key, value, null, null);
+        public void AddProperty<T>(PropertyKey key, T value) => AddProperty(key, value, null, null, null);
+        public void AddProperty<T>(PropertyKey key, T value, Func<string> detailer) => AddProperty(key, value, null, null, detailer);
         /// <summary>
         /// Adds the property to this entity (in-memory operation only, does not create anything in database)
         /// 
@@ -271,10 +272,12 @@ namespace AgoRapide {
         /// May be null. 
         /// See <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> for documentation
         /// </param>
-        public void AddProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute) {
+        /// <param name="detailer"></param>
+        public void AddProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute, Func<string> detailer) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (value == null) throw new ArgumentNullException(nameof(value));
             if (Properties == null) Properties = new Dictionary<CoreP, Property>(); // TODO: Maybe structure better how Properties is initialized
+            if (detailer == null) detailer = () => ToString();
             if (key.Key.A.IsMany) {
                 var temp = this as Property;
                 var isManyParent = temp != null && temp.IsIsManyParent ? temp : null;
@@ -284,7 +287,7 @@ namespace AgoRapide {
                 } else {
                     var t = typeof(T);
                     if (t.IsGenericType) {
-                        Properties.AddValue2(key.Key.CoreP, Util.ConvertListToIsManyParent(this, key, value, () => ToString()));
+                        Properties.AddValue2(key.Key.CoreP, Util.ConvertListToIsManyParent(this, key, value, detailer));
                     } else {
                         isManyParent = Properties.GetOrAddIsManyParent(key);
                         var id = isManyParent.GetNextIsManyId();
@@ -299,7 +302,7 @@ namespace AgoRapide {
                 Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute) {
                     ParentId = Id,
                     Parent = this
-                });
+                }, detailer);
             }
         }
 
@@ -308,7 +311,11 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         public class InvalidPropertyException<T> : ApplicationException {
-            public InvalidPropertyException(CoreP p, string value) : base("The value found for " + typeof(CoreP) + "." + p + " (" + value + ") is not valid for " + typeof(T)) { }
+            public InvalidPropertyException(CoreP p, string value, string details) : base(
+                    "The value found for " + typeof(CoreP) + "." + p + " " +
+                    "(" + value + ") " +
+                    "is not valid for " + typeof(T) + ".\r\n" +
+                    "Details: " + details) { }
         }
 
         public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(Created) + "</th></tr>";
@@ -394,7 +401,7 @@ namespace AgoRapide {
             if (addableProperties.Count == 0) {
                 // Give hint about situation if considered relevant (because AgoRapide mechanism may be somewhat confusing at first)
 
-                if (Util.Configuration.CA.Environment == Environment.Production) {
+                if (Util.Configuration.C.Environment == Environment.Production) {
                     /// The hint given below is a <see cref="Environment.Development"/> / <see cref="Environment.Test"/> issue only. 
                 } else if (request.CurrentUser == null) {
                     /// It is quite expected that <see cref="AccessType.Write"/> is not allowed now

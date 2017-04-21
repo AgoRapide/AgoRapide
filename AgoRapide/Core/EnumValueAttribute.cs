@@ -19,7 +19,7 @@ namespace AgoRapide.Core {
                 "Note that for dynamically originated attributes (see -" + nameof(PropertyKeyAttributeEnrichedDyn) + "- " +
                 "this value will actually be a string, not an -" + nameof(Enum) + "- (only relevant when sub class -" + nameof(PropertyKeyAttribute) + "-)."
         )]
-        public object EnumValue => _enumValue ?? throw new NullReferenceException(nameof(_enumValue) + ". Should have been set by -" + nameof(GetAttribute) + "- or similar.\r\nDetails: " + ToString());
+        public object EnumValue => _enumValue ?? throw new NullReferenceException(nameof(EnumValue) + ". Should have been set by -" + nameof(GetAttribute) + "- or similar.\r\nDetails: " + ToString());
 
         protected string _EnumValueExplained;
         /// <summary>
@@ -39,12 +39,10 @@ namespace AgoRapide.Core {
         public string EnumValueExplained => _EnumValueExplained ?? throw new NullReferenceException(nameof(_EnumValueExplained) + ". Should have been set by -" + nameof(GetAttribute) + "-.\r\nDetails: " + ToString());
         public void SetEnumValueExplained(string enumValueExplained) => _EnumValueExplained = enumValueExplained;
 
-        public override string ToString() => "Enum: " + (_enumValue?.ToString() ?? "[NULL]") + "\r\nDescription:\r\n" + Description + "\r\nLongDescription:\r\n" + LongDescription;
-
         public static EnumValueAttribute GetAttribute(object _enum) {
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type, () => nameof(_enum) + ": " + _enum.ToString());
-            if (type.GetEnumAttribute().EnumTypeY == EnumType.PropertyKey) {
+            if (type.GetEnumAttribute().AgoRapideEnumType == EnumType.PropertyKey) {
                 // throw new InvalidObjectTypeException(_enum, EnumType.PropertyKey + " not allowed here");
                 return PropertyKeyAttribute.GetAttribute(_enum); // Quite OK since this is a sub class
             }
@@ -54,5 +52,8 @@ namespace AgoRapide.Core {
             retval._EnumValueExplained = retval.EnumValue.GetType() + "." + _enum.ToString();
             return retval;
         }
+
+        public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
+        protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumValue.GetType().ToStringShort() + "_" + EnumValue.ToString();
     }
 }

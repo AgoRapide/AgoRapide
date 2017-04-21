@@ -281,7 +281,7 @@ namespace AgoRapide.Core {
             // TODO: Consider moving more of this code into AgoRapideAttribute-class
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type); // TODO: Necessary? Most possibly YES!
-            if (type.GetEnumAttribute().EnumTypeY != EnumType.PropertyKey) throw new InvalidObjectTypeException(_enum, EnumType.PropertyKey + " required here, found " + type.GetEnumAttribute().EnumTypeY);
+            if (type.GetEnumAttribute().AgoRapideEnumType != EnumType.PropertyKey) throw new InvalidObjectTypeException(_enum, EnumType.PropertyKey + " required here, found " + type.GetEnumAttribute().AgoRapideEnumType);
             var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type + "." + _enum.ToString() + " is most probably not defined.");
             var retval = GetAttributeThroughFieldInfo<PropertyKeyAttribute>(field, () => type + "." + _enum);
             retval._enumValue = _enum;
@@ -410,5 +410,10 @@ namespace AgoRapide.Core {
                     if (SampleValues == null) SampleValues = otherAsClassAttribute.SampleValues; break;
             }
         }
+
+        /// Implementations from <see cref="EnumValueAttribute"/> are sufficient, no need to override here
+        //public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
+        //protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumValue.GetType().ToStringShort() + "_" + EnumValue.ToString();
+
     }
 }

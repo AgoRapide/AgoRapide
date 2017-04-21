@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.API;
+using AgoRapide.Database;
 
 namespace AgoRapide.Core {
 
@@ -28,5 +29,6 @@ namespace AgoRapide.Core {
         /// DO NOT USE!
         /// </summary>
         public ClassMember() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
+        public override void ConnectWithDatabase(IDatabase db) => GetOrAdd(A, db, enrichAndReturnThisObject: this);
     }
 }

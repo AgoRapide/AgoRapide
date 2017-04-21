@@ -9,7 +9,7 @@ namespace AgoRapide {
 
     [Enum(
         Description = "Describes operations allowed on a -" + nameof(Property) + "-",
-        EnumTypeY = EnumType.EnumValue
+        AgoRapideEnumType = EnumType.EnumValue
     )]
     public enum PropertyOperation {
         None,

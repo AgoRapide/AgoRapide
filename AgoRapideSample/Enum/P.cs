@@ -19,7 +19,7 @@ namespace AgoRapideSample {
             "3) Documentation with sample parameters.\r\n" +
             "4) Unit testing.\r\n" +
             "and so on and so on",
-        EnumTypeY = EnumType.PropertyKey
+        AgoRapideEnumType = EnumType.PropertyKey
     )]
     public enum P {
         None,

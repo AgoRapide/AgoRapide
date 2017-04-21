@@ -72,18 +72,44 @@ namespace AgoRapide.API {
         public string SuggestedNextMethod { get; set; }
 
         protected override Dictionary<CoreP, Property> GetProperties() {
-            var retval = PropertiesParent;
+            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
+            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
+            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
+            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            Func<string> d = () => ToString();
+
             /// Note how we are not adding None-values since they will be considered invalid at later reading from database.
             /// Note how string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) are easily deduced by <see cref="PropertyT{T}"/> in this case so we do not need to add those as parameters here.
-            if (CoreMethod != CoreAPIMethod.None) retval.AddProperty(CoreP.CoreAPIMethod.A(), CoreMethod);
-            if (AccessLevelUse != AccessLevel.None) retval.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse);
-            if (Environment != Environment.None) retval.AddProperty(CoreP.Environment.A(), Environment);
+            if (CoreMethod != CoreAPIMethod.None) PropertiesParent.AddProperty(CoreP.CoreAPIMethod.A(), CoreMethod, d);
+            if (AccessLevelUse != AccessLevel.None) PropertiesParent.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse, d);
+            if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment, d);
 
             /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
-            retval.AddProperty(CoreP.Description.A(), Description + "", Description + "", GetType().GetClassMemberAttribute(nameof(Description))); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
-            retval.AddProperty(CoreP.LongDescription.A(), LongDescription + "", LongDescription + "", GetType().GetClassMemberAttribute(nameof(LongDescription))); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
-            retval.AddProperty(CoreP.ShowDetailedResult.A(), ShowDetailedResult, ShowDetailedResult.ToString(), GetType().GetClassMemberAttribute(nameof(ShowDetailedResult)));
-            return retval.Properties;
+            PropertiesParent.AddProperty(CoreP.ShowDetailedResult.A(), ShowDetailedResult, ShowDetailedResult.ToString(), GetType().GetClassMemberAttribute(nameof(ShowDetailedResult)), d);
+
+            PropertiesParent.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
+            /// TODO: Add more values to this list. Expand <see cref="ConfigurationKey"/> as needed.
+            return PropertiesParent.Properties;
         }
+
+        /// <summary>
+        /// TODO: Expand on this, include information from <see cref="S1"/> and onwards for instance.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString() => nameof(CoreMethod) + ": " + CoreMethod + ".\r\n" + base.ToString();
+
+        private string _identifier;
+        /// <summary>
+        /// Note how APIMethod is added in front of the identifier
+        /// </summary>
+        /// <param name="identifier"></param>
+        public void SetIdentifier(string identifier) {
+            if (_identifier != null) throw new NotNullReferenceException(nameof(_identifier) + ". Details: " + ToString());
+            identifier += GetType().ToStringShort().Replace("Attribute", "") + "_" + identifier;
+            InvalidIdentifierException.AssertValidIdentifier(identifier);
+            _identifier = identifier;
+        }
+        protected override string GetIdentifier() => _identifier ?? throw new NullReferenceException(nameof(_identifier) + ". Must be set by call to -" + nameof(SetIdentifier) + "-. Details: " + ToString());
+        // protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumType.ToStringShort();
     }
 }

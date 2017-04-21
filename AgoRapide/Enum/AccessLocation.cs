@@ -9,7 +9,7 @@ using AgoRapide.Database;
 namespace AgoRapide {
 
      [Enum(
-        EnumTypeY = EnumType.DocumentationOnlyEnum,
+        AgoRapideEnumType = EnumType.DocumentationOnlyEnum,
         Description = "Describes how access is granted within AgoRapide.",
         LongDescription =
             "Restricting access is the responsibility of " +

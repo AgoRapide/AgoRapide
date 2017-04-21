@@ -95,8 +95,7 @@ namespace AgoRapide.Database {
                 /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all sub-classes.
                 DBField.pid + " IN\r\n" +
                 "(SELECT " + DBField.id + " FROM p WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
-                // Check string.IsNullOrEmpty(id.SQLWhereStatement) is relevant when id is "All".
-                id.SQLWhereStatement + (string.IsNullOrEmpty(id.SQLWhereStatement) ? "" : " AND\r\n") +
+                (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
                 DBField.invalid + " IS NULL "
                 // + "ORDER BY " + DBField.id
                 , _cn1
@@ -294,7 +293,7 @@ namespace AgoRapide.Database {
 
         public void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result) {
             Log(nameof(operatorId) + ": " + (operatorId?.ToString() ??  "[NULL]") + ", " + nameof(property) + ": " + property.Id + ", " + nameof(operation) + ": " + operation);
-            property.AssertIdIsSet();
+            property.AssertIdIsSet(); var now = DateTime.Now;
             Npgsql.NpgsqlCommand cmd;
             switch (operation) {
                 case PropertyOperation.SetValid:
@@ -302,18 +301,21 @@ namespace AgoRapide.Database {
                         DBField.valid + " = :" + DBField.valid + ", " + // TODO: Use the database engine's clock here instead?
                         DBField.vid + " = " + (operatorId?.ToString() ?? "NULL") + " " +
                         "WHERE " + DBField.id + " = " + property.Id, _cn1);
-                    cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.valid.ToString(), NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = DateTime.Now }); break; // TODO: Use the database engine's clock here instead?
+                    cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.valid.ToString(), NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = now }); break; // TODO: Use the database engine's clock here instead?
                 case PropertyOperation.SetInvalid:
                     cmd = new Npgsql.NpgsqlCommand("UPDATE p SET " +
                         DBField.invalid + " = :" + DBField.invalid + ", " + // TODO: Use the database engine's clock here instead?
                         DBField.iid + " = " + (operatorId?.ToString() ?? "NULL") + " " +
                         "WHERE " + DBField.id + " = " + property.Id, _cn1);
-                    cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.invalid.ToString(), NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = DateTime.Now }); break; // TODO: Use the database engine's clock here instead?
+                    cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.invalid.ToString(), NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = now }); break; // TODO: Use the database engine's clock here instead?
                 default: throw new InvalidEnumException(operation);
             }
             ExecuteNonQuery(cmd, expectedRows: 1, doLogging: false);
             switch (operation) {
-                case PropertyOperation.SetValid: break;
+                case PropertyOperation.SetValid: // No need for removing this from cache but do adjust in-memory
+                    property.Valid = now;
+                    property.ValidatorId = operatorId ?? 0;
+                    break; 
                 case PropertyOperation.SetInvalid:
 
                     if (property.ParentId > 0) {
@@ -332,8 +334,7 @@ namespace AgoRapide.Database {
                                 }
                             }
                         }
-                    }
-                    break;
+                    } break;
                 default: throw new InvalidEnumException(operation);
             }
             result?.Count(CoreP.PAffectedCount);
@@ -615,13 +616,16 @@ namespace AgoRapide.Database {
                 if (key.Key.A.IsMany) throw new NotImplementedException(nameof(key.Key.A.IsMany) + " when " + nameof(key.Key.A.IsUniqueInDatabase));
                 AssertUniqueness(key, value);
             }
+            if (key.Key.CoreP==CoreP.Identifier) {
+                var a = 1;
+            }
 
             var idStrings = new Func<(string logtext, string names, string values)>(() => {
                 if (cid == null && pid == null && fid == null) {
                     Log(nameof(cid) + ", " + nameof(pid) + " and " + nameof(fid) + " are all null. Setting " + nameof(cid) + " = 0. " +
-                        "This should only occur once for your database in order for " + typeof(ApplicationPart) + "." + nameof(ApplicationPart.GetOrAdd) + " to create an instance 'for itself'. " +
+                        "This should only occur once for your database in order for " + typeof(ApplicationPart) + "." + nameof(ApplicationPart.GetClassMember) + " to create an instance 'for itself'. " +
                         "In all other instances of calls to " + MethodBase.GetCurrentMethod().Name + " it should be possible to at least have a value for " + nameof(cid) + " (creatorId) " +
-                        "(by using " + typeof(ApplicationPart) + "." + nameof(ApplicationPart.GetOrAdd) + "). " +
+                        "(by using " + typeof(ApplicationPart) + "." + nameof(ApplicationPart.GetClassMember) + "). " +
                         "In other words, this log message should never repeat itself", result);
                     cid = 0;
                 }
@@ -740,7 +744,11 @@ namespace AgoRapide.Database {
                     var existingValue = existingProperty.V<T>();
                     if (existingValue.Equals(value)) {
                         // Note how this is not logged
-                        OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
+                        if (existingProperty.Id <= 0) {
+                            // Skip this, property is in-memory only 
+                        } else {
+                            OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
+                        }
                         result?.Count(CoreP.PUnchangedCount);
                     } else { // Vanlig variant
                              // TODO: Use of default value.ToString() here is not optimal
@@ -1148,7 +1156,7 @@ OWNER TO agorapide;
                 return null;
             }
             // THIS WILL MOST PROBABLY NOT WORK BECAUSE OVER OVERLOADS
-            return ApplicationPart.GetOrAdd(memberInfo, this).Id;
+            return ApplicationPart.GetClassMember(memberInfo, this).Id;
         }
 
         /// <summary>

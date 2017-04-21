@@ -419,7 +419,7 @@ namespace AgoRapide {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
             var type = _value.GetType();
             if (type.IsEnum) {
-                return type.GetEnumAttribute().EnumTypeY == EnumType.PropertyKey ?
+                return type.GetEnumAttribute().AgoRapideEnumType == EnumType.PropertyKey ?
                     (BaseAttribute)_value.GetPropertyKeyAttribute() :
                     (BaseAttribute)_value.GetEnumValueAttribute();
             }
@@ -430,7 +430,7 @@ namespace AgoRapide {
         /// Use with caution. Note how the same instance is returned always. 
         /// Therefore the requester should not change this instance after "receiving" it. 
         /// </summary>
-        private static BaseAttribute DefaultAgoRapideAttribute = BaseAttribute.GetNewDefaultInstance();
+        private static BaseAttribute DefaultAgoRapideAttribute = BaseAttribute.GetStaticNotToBeUsedInstance;
 
         /// <summary>
         /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntity.InvalidPropertyException{T}"/>

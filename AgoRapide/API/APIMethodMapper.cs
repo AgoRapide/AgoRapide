@@ -27,7 +27,7 @@ namespace AgoRapide.API {
             HttpConfiguration config,
             List<APIMethod> routes) {
 
-            var apiPrefix = Util.Configuration.CA.APIPrefix;
+            var apiPrefix = Util.Configuration.C.APIPrefix;
 
             // Keep track of name and routeTemplate and catch any duplicates inside this method with friendly error messages
             // (instead of those produced by .NET which are more difficult to debug). 
@@ -62,8 +62,8 @@ namespace AgoRapide.API {
                         //default: throw new InvalidEnumException(r.A.A.CoreMethod);
                 }
             });
-            nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t + "_" + Util.Configuration.CA.HTMLPostfixIndicatorWithoutLeadingSlash, (Util.Configuration.CA.APIPrefix + t + Util.Configuration.CA.HTMLPostfixIndicator).Replace("//", "/"), r.Defaults)));
-            nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t, Util.Configuration.CA.APIPrefix + t, r.Defaults)));
+            nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t + "_" + Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, (Util.Configuration.C.APIPrefix + t + Util.Configuration.C.HTMLPostfixIndicator).Replace("//", "/"), r.Defaults)));
+            nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t, Util.Configuration.C.APIPrefix + t, r.Defaults)));
 
             var singleFinder = new Func<CoreAPIMethod, APIMethod>(coreMethod => {
                 return routes.Single(r => r.MA.CoreMethod == coreMethod, () =>
@@ -75,13 +75,13 @@ namespace AgoRapide.API {
 
             var rootIndex = singleFinder(CoreAPIMethod.RootIndex);
             tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex, "", rootIndex.Defaults);
-            tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex + "_" + Util.Configuration.CA.HTMLPostfixIndicatorWithoutLeadingSlash, Util.Configuration.CA.HTMLPostfixIndicatorWithoutLeadingSlash, rootIndex.Defaults);
+            tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex + "_" + Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, rootIndex.Defaults);
 
             var genericMethod = singleFinder(CoreAPIMethod.GenericMethod);
-            if (genericMethod.RouteTemplates != null && string.Join(",", genericMethod.RouteTemplates) != Util.Configuration.CA.GenericMethodRouteTemplate) {
-                throw new APIMethod.MethodInitialisationException(typeof(CoreAPIMethod) + "." + genericMethod.MA.CoreMethod + "'s " + nameof(APIMethod.RouteTemplates) + " should have been set to " + nameof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.GenericMethodRouteTemplate) + " (" + Util.Configuration.CA.GenericMethodRouteTemplate + "), not " + string.Join(",", genericMethod.RouteTemplates) + ". This is most probably a bug in AgoRapide framework");
+            if (genericMethod.RouteTemplates != null && string.Join(",", genericMethod.RouteTemplates) != Util.Configuration.C.GenericMethodRouteTemplate) {
+                throw new APIMethod.MethodInitialisationException(typeof(CoreAPIMethod) + "." + genericMethod.MA.CoreMethod + "'s " + nameof(APIMethod.RouteTemplates) + " should have been set to " + nameof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.GenericMethodRouteTemplate) + " (" + Util.Configuration.C.GenericMethodRouteTemplate + "), not " + string.Join(",", genericMethod.RouteTemplates) + ". This is most probably a bug in AgoRapide framework");
             }
-            tempMapper(genericMethod, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.GenericMethod, Util.Configuration.CA.GenericMethodRouteTemplate, genericMethod.Defaults);
+            tempMapper(genericMethod, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.GenericMethod, Util.Configuration.C.GenericMethodRouteTemplate, genericMethod.Defaults);
 
             // It should now be safe to call config.Routes.MapHttpRoute
             tempMappings.ForEach(m => {

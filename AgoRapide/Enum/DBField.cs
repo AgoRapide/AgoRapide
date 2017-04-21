@@ -20,7 +20,7 @@ namespace AgoRapide {
     /// </summary>
     [Enum( 
         Description = "Describes the different fields in the database. Mostly used for documentation. Also used for generating database schema. ",
-        EnumTypeY = EnumType.PropertyKey)] /// Note choice of <see cref="EnumType"/> (and correspondingly <see cref="PropertyKeyAttribute"/> below)
+        AgoRapideEnumType = EnumType.PropertyKey)] /// Note choice of <see cref="EnumType"/> (and correspondingly <see cref="PropertyKeyAttribute"/> below)
     public enum DBField {
 
         /// <summary>

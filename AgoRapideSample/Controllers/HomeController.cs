@@ -40,8 +40,6 @@ namespace AgoRapideSample {
         /// <summary>
         /// Note how this method must be implemented in the application itself since it by nature is application specific. 
         /// In other words it can not be moved into <see cref="BaseController"/>. 
-        /// 
-        /// 
         /// </summary>
         /// <param name="GeneralQueryId"></param>
         /// <returns></returns>
@@ -123,13 +121,13 @@ namespace AgoRapideSample {
                 var persons = DB.GetRootPropertyIds(typeof(Person));  // TODO: This is costly! Check in a less costly manner!
                 // TODO: If client has forgot admin credentials, give instructions for recovery. Like sending e-mail, deleting
                 // TODO: password from database or deleting all properties for admin-user.
-                var au = Util.Configuration.CA.AnonymousUser;
-                if (au == null) throw new Exception(nameof(Util.Configuration.CA.AnonymousUser) + " not set up correctly (null)");
-                if (au.Id <= 0) throw new Exception(nameof(Util.Configuration.CA.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + ": " + au.Id + ")");
-                if (!au.GetType().Equals(typeof(Person))) throw new Exception(nameof(Util.Configuration.CA.AnonymousUser) + " not set up correctly (type: " + au.GetType() + ")");
+                var au = Util.Configuration.C.AnonymousUser;
+                if (au == null) throw new Exception(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (null)");
+                if (au.Id <= 0) throw new Exception(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + ": " + au.Id + ")");
+                if (!au.GetType().Equals(typeof(Person))) throw new Exception(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (type: " + au.GetType() + ")");
                 // Check above is in order for Count > 1 below to work out
                 if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "Admin user already exists. There is no need for calling this method.");
-                if (persons[0] != au.Id) throw new Exception(nameof(Util.Configuration.CA.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
+                if (persons[0] != au.Id) throw new Exception(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
                 // ------------------------------
                 request.Parameters.AddProperty(CoreP.AccessLevelGiven.A(), AccessLevel.Admin);
                 request.Result.LogInternal("Note how this API-method gives you a high level of details in the generated result because -" + nameof(APIMethodAttribute) + "." + nameof(APIMethodAttribute.ShowDetailedResult) + "- = true", GetType());

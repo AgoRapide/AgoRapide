@@ -17,7 +17,7 @@ namespace AgoRapide {
     /// </summary>
     [Enum(
         Description = "Represents core AgoRapide API methods that must be available in the client application.",
-        EnumTypeY = EnumType.EnumValue
+        AgoRapideEnumType = EnumType.EnumValue
     )]
     public enum CoreAPIMethod {
         None,

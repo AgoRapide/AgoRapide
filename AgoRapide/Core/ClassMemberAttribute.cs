@@ -11,7 +11,8 @@ namespace AgoRapide.Core {
             "The class itself is described by -" + nameof(ClassAttribute) + "-.")]
     public class ClassMemberAttribute : BaseAttribute {
 
-        public System.Reflection.MemberInfo MemberInfo { get; private set; }
+        private System.Reflection.MemberInfo _memberInfo;
+        public System.Reflection.MemberInfo MemberInfo => _memberInfo ?? throw new NullReferenceException(nameof(MemberInfo) + ". Should have been set by -" + nameof(GetAttribute) + "- or similar.\r\nDetails: " + ToString());
 
         /// <summary>
         /// NOTE: Use with caution. 
@@ -46,8 +47,31 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static ClassMemberAttribute GetAttribute(System.Reflection.MemberInfo memberInfo) {
             var retval = GetAttributeThroughMemberInfo<ClassMemberAttribute>(memberInfo);
-            retval.MemberInfo = memberInfo;
+            retval._memberInfo = memberInfo;
             return retval;
         }
+
+        public override string ToString() => nameof(MemberInfo) + ": " + (_memberInfo?.DeclaringType.ToString() ?? "[NULL]") + "." + (_memberInfo?.ToString() ?? "") + "\r\n" + base.ToString();
+        protected override string GetIdentifier() =>
+            GetType().ToStringShort().Replace("Attribute", "") 
+            + "_" +
+            MemberInfo.ReflectedType.ToStringShort().Replace 
+                ("<", "_").Replace
+                (">", "_").Replace
+                ("+", "_")
+            + "_" +
+            MemberInfo.ToString().Replace // TODO: This is the actual method signature
+                (".", "_").Replace       // TODO: Try to make better readable version
+                (",", "_").Replace       // 
+                (" ", "_").Replace
+                ("`", "_").Replace
+                ("<", "_").Replace
+                (">", "_").Replace
+                ("[", "_").Replace
+                ("]", "_").Replace
+                ("+", "_").Replace
+                ("(", "_").Replace
+                (")", "_").Replace
+                ("Void_", "");
     }
 }

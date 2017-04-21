@@ -18,7 +18,7 @@ namespace AgoRapide {
         Description = 
             "The response format requested by the client. " +
             "JSON is default, HTML will be returned when request URL ends with -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "- (\"HTML\")",
-        EnumTypeY = EnumType.EnumValue)]
+        AgoRapideEnumType = EnumType.EnumValue)]
     public enum ResponseFormat {
         None,
 

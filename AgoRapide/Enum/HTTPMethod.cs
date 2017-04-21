@@ -11,7 +11,7 @@ namespace AgoRapide {
         Description =
             "The AgoRapide principle is to use -" + nameof(GET) + "- for \"everything\" including create, read, update and delete " +
             "except when the data is incompatible for fitting within an URL in which case -" + nameof(POST) + "- may be used.",
-        EnumTypeY = EnumType.EnumValue
+        AgoRapideEnumType = EnumType.EnumValue
     )]
     public enum HTTPMethod {
 

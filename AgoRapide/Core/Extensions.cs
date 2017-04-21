@@ -74,9 +74,9 @@ namespace AgoRapide.Core {
         /// <param name="dictionary"></param>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        /// <param name="details"></param>
-        public static void AddValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> details) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + details.Result(", Details: "));
+        /// <param name="detailer"></param>
+        public static void AddValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result(", Details: "));
             dictionary.Add(key, value);
         }
 
@@ -439,10 +439,10 @@ namespace AgoRapide.Core {
         public static string ToString(this DateTime dateTime, DateTimeFormat resolution) {
             switch (resolution) {
                 case DateTimeFormat.None:
-                case DateTimeFormat.DateHourMinSecMs: return dateTime.ToString(Util.Configuration.CA.DateAndHourMinSecMsFormat);
-                case DateTimeFormat.DateHourMinSec: return dateTime.ToString(Util.Configuration.CA.DateAndHourMinSecFormat);
-                case DateTimeFormat.DateHourMin: return dateTime.ToString(Util.Configuration.CA.DateAndHourMinFormat);
-                case DateTimeFormat.DateOnly: return dateTime.ToString(Util.Configuration.CA.DateOnlyFormat);
+                case DateTimeFormat.DateHourMinSecMs: return dateTime.ToString(Util.Configuration.C.DateAndHourMinSecMsFormat);
+                case DateTimeFormat.DateHourMinSec: return dateTime.ToString(Util.Configuration.C.DateAndHourMinSecFormat);
+                case DateTimeFormat.DateHourMin: return dateTime.ToString(Util.Configuration.C.DateAndHourMinFormat);
+                case DateTimeFormat.DateOnly: return dateTime.ToString(Util.Configuration.C.DateOnlyFormat);
                 default: throw new InvalidEnumException(resolution);
             }
         }
@@ -770,7 +770,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static string HTMLEncodeAndEnrich(this string _string, Request request) {
             if (_string.StartsWith("http://") || _string.StartsWith("https://")) {
-                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (request.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.CA.HTMLPostfixIndicator) ? Util.Configuration.CA.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
+                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (request.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator) ? Util.Configuration.C.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
             }
             return HTMLEncode(_string).Replace("\r\n", "\r\n<br>");
         }

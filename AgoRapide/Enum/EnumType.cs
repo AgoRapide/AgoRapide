@@ -9,7 +9,7 @@ using AgoRapide.Database;
 namespace AgoRapide {
 
     [Enum(
-        EnumTypeY = EnumType.DocumentationOnlyEnum,
+        AgoRapideEnumType = EnumType.DocumentationOnlyEnum,
         Description = 
             "Categories different types of enum used in AgoRapide. " + 
             "This enum -" + nameof(EnumType) + "- is itself a -" + nameof(EnumType.DocumentationOnlyEnum) + "-"

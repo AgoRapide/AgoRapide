@@ -198,7 +198,7 @@ namespace AgoRapide.API {
         public string JSONUrl => _JSONUrl ?? (_JSONUrl = new Func<string>(() => {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return URL;
-                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.CA.HTMLPostfixIndicator.Length);
+                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.C.HTMLPostfixIndicator.Length);
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
@@ -231,7 +231,7 @@ namespace AgoRapide.API {
         public string CreateAPIUrl(CoreAPIMethod coreMethod) => CreateAPIUrl(coreMethod, null);
         public string CreateAPIUrl(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
-        public string CreateAPIUrl(string apiCommand) => Util.Configuration.CA.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.CA.HTMLPostfixIndicator : "");
+        public string CreateAPIUrl(string apiCommand) => Util.Configuration.C.BaseUrl + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : "");
 
         /// <summary>
         /// Creates API link for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}
@@ -312,8 +312,8 @@ namespace AgoRapide.API {
                 urlSegments.RemoveAt(urlSegments.Count - 1); // Corresponds to Util.Configuration.HTMLPostfixIndicator
             }
 
-            if (!string.IsNullOrEmpty(Util.Configuration.CA.APIPrefix) && Util.Configuration.CA.APIPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
-                var prefix = Util.Configuration.CA.ApiPrefixToLower;
+            if (!string.IsNullOrEmpty(Util.Configuration.C.APIPrefix) && Util.Configuration.C.APIPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
+                var prefix = Util.Configuration.C.ApiPrefixToLower;
                 var prefixWithoutTrailingSlash = prefix.Substring(0, prefix.Length - 1);
                 while (!urlSegments[0].ToLower().Equals(prefixWithoutTrailingSlash)) {
                     urlSegments.RemoveAt(0);
@@ -484,7 +484,7 @@ namespace AgoRapide.API {
             public MethodMatchingException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.CA.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
+        public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.C.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
     }
 
     /// <summary>
