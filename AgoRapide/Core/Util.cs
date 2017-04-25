@@ -591,6 +591,16 @@ namespace AgoRapide.Core {
 
     public class InvalidIdentifierException : ApplicationException {
         public static System.CodeDom.Compiler.CodeDomProvider CSharpCodeDomProvider = System.CodeDom.Compiler.CodeDomProvider.CreateProvider("C#");
+
+        public static bool TryAssertValidIdentifier(string identifier, out string errorResponse) {
+            if (!CSharpCodeDomProvider.IsValidIdentifier(identifier)) {
+                errorResponse = nameof(identifier) + " '" + identifier + "' is not valid as a C# identifier.";
+                return false;
+            }
+            errorResponse = null;
+            return true;            
+        }
+
         public static void AssertValidIdentifier(string identifier) {
             if (!CSharpCodeDomProvider.IsValidIdentifier(identifier)) throw new InvalidIdentifierException(identifier);
         }

@@ -18,7 +18,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Do not confuse with <see cref="AgoRapideEnumType"/>
         /// </summary>
-        [ClassMember(Description = "The actual type of enum that we are an attribute for")]        
+        [ClassMember(Description = "The actual type of enum that we are an attribute for")]
         public Type EnumType => _enumType ?? throw new NullReferenceException(nameof(_enumType) + ". Should have been set by " + nameof(GetAttribute));
 
         public EnumType AgoRapideEnumType { get; set; }
@@ -31,6 +31,9 @@ namespace AgoRapide.Core {
         }
 
         public override string ToString() => nameof(EnumType) + ": " + (_enumType?.ToString() ?? "[NULL]") + ", " + nameof(AgoRapideEnumType) + ": " + AgoRapideEnumType + "\r\n" + base.ToString();
-        protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumType.ToStringShort();
+        protected override (string Identifier, string Name) GetIdentifierAndName() => (
+            GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumType.ToStringShort(),
+            EnumType.ToStringShort()
+        );
     }
 }

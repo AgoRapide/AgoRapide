@@ -52,10 +52,10 @@ namespace AgoRapide.Core {
         }
 
         public override string ToString() => nameof(MemberInfo) + ": " + (_memberInfo?.DeclaringType.ToString() ?? "[NULL]") + "." + (_memberInfo?.ToString() ?? "") + "\r\n" + base.ToString();
-        protected override string GetIdentifier() =>
-            GetType().ToStringShort().Replace("Attribute", "") 
+        protected override (string Identifier, string Name) GetIdentifierAndName() => (
+            GetType().ToStringShort().Replace("Attribute", "")
             + "_" +
-            MemberInfo.ReflectedType.ToStringShort().Replace 
+            MemberInfo.ReflectedType.ToStringShort().Replace
                 ("<", "_").Replace
                 (">", "_").Replace
                 ("+", "_")
@@ -72,6 +72,9 @@ namespace AgoRapide.Core {
                 ("+", "_").Replace
                 ("(", "_").Replace
                 (")", "_").Replace
-                ("Void_", "");
+                ("Void_", ""),            
+            MemberInfo.ReflectedType.ToStringShort() + "." +
+            MemberInfo.ToString()
+         );
     }
 }

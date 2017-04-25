@@ -239,6 +239,18 @@ namespace AgoRapide.Core {
         public string RegExpValidator { get; set; }
 
         /// <summary>
+        /// TODO: Consider introducing a constant useful for <see cref="RegExpValidator"/>, eliminating this property.
+        /// </summary>
+        [ClassMember(
+            Description =
+                "TRUE indicates that the value given must be a valid C# identifier. " +
+                "Especially used for -" + nameof(CoreP.Identifier) + "-. " +
+                "Only allowed for -" + nameof(Type) + "- string",
+            LongDescription =
+                "A practical consequence will be that the value can also be used in a HTTP GET query-string without escaping)")]
+        public bool MustBeValidCSharpIdentifier { get; set; }
+
+        /// <summary>
         /// Default value when used as parameter in API method
         /// 
         /// TODO: Is should be possible to have different rules for default for different APIMethods.

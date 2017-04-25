@@ -98,6 +98,9 @@ namespace AgoRapide.Core {
         }
 
         public override string ToString() => nameof(ClassType) + ": " + ( _classType?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
-        protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + ClassType.ToStringShort();
+        protected override (string Identifier, string Name) GetIdentifierAndName() => (
+            GetType().ToStringShort().Replace("Attribute", "") + "_" + ClassType.ToStringShort(),
+            ClassType.ToStringShort()
+        );
     }
 }

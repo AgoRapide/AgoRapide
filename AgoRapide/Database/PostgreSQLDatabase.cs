@@ -616,10 +616,7 @@ namespace AgoRapide.Database {
                 if (key.Key.A.IsMany) throw new NotImplementedException(nameof(key.Key.A.IsMany) + " when " + nameof(key.Key.A.IsUniqueInDatabase));
                 AssertUniqueness(key, value);
             }
-            if (key.Key.CoreP==CoreP.Identifier) {
-                var a = 1;
-            }
-
+            
             var idStrings = new Func<(string logtext, string names, string values)>(() => {
                 if (cid == null && pid == null && fid == null) {
                     Log(nameof(cid) + ", " + nameof(pid) + " and " + nameof(fid) + " are all null. Setting " + nameof(cid) + " = 0. " +

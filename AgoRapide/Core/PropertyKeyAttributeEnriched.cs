@@ -279,15 +279,19 @@ namespace AgoRapide.Core {
             if (ValidatorAndParser != null) {
                 /// OK, was most probably set through Enrichment 4, from <see cref="ITypeDescriber"/>
             } else {
-                if (typeof(string).Equals(A.Type)) {
+                if (A.MustBeValidCSharpIdentifier) {
+                    if (!typeof(string).Equals(A.Type)) throw new BaseAttribute.AttributeException(nameof(A.MustBeValidCSharpIdentifier) + " can only be combined with " + nameof(A.Type) + " string, not " + A.Type  + ". Details: " + A.ToString());
+                    ValidatorAndParser = value => InvalidIdentifierException.TryAssertValidIdentifier(value, out var errorResponse) ? ParseResult.Create(this, value) : ParseResult.Create(
+                        "Invalid as C# identifier.\r\nDetails: " + errorResponse);
+                } else if (typeof(string).Equals(A.Type)) {
                     ValidatorAndParser = value => !string.IsNullOrEmpty(value) ? ParseResult.Create(this, value) : ParseResult.Create(
-                        "Invalid as " + A.Type + " (" + (value == null ? "[NULL]" : "[EMPTY]") + ")");
+                        "Invalid as " + A.Type + " (" + (value == null ? "[NULL]" : "[EMPTY]") + ").");
                 } else if (typeof(int).Equals(A.Type)) {
                     throw new TypeIntNotSupportedByAgoRapideException(A.ToString());
                     // ValidatorAndParser = value => int.TryParse(value, out var intValue) ? new ParseResult(new Property(P, intValue), intValue) : new ParseResult("Illegal as int");
                 } else if (typeof(long).Equals(A.Type)) {
                     ValidatorAndParser = value => long.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
-                        "Invalid as " + A.Type);
+                        "Invalid as " + A.Type + ".");
                 } else if (typeof(double).Equals(A.Type)) {
                     ValidatorAndParser = value => {
                         throw new NotImplementedException(
@@ -305,10 +309,10 @@ namespace AgoRapide.Core {
                         string.Join(", ", validFormats) + "\r\n");
                 } else if (typeof(Type).Equals(A.Type)) {
                     ValidatorAndParser = value => Util.TryGetTypeFromString(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
-                        "Invalid as " + A.Type + " (must be in a format understood by " + nameof(Util) + "." + nameof(Util.TryGetTypeFromString) + ")");
+                        "Invalid as " + A.Type + " (must be in a format understood by " + nameof(Util) + "." + nameof(Util.TryGetTypeFromString) + ").");
                 } else if (typeof(Uri).Equals(A.Type)) {
                     ValidatorAndParser = value => (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var temp)) ? ParseResult.Create(this, temp) : ParseResult.Create(
-                        "Invalid as " + A.Type);
+                        "Invalid as " + A.Type + ".");
                     // TODO: Add any additional desired supported types to this list.
                 } else if (A.Type.IsEnum) {
                     ValidatorAndParser = value => {

@@ -311,6 +311,9 @@ namespace AgoRapide.Core {
         }
 
         public override string ToString() => base.ToString();
-        protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_Configuration";
+        protected override (string Identifier, string Name) GetIdentifierAndName() => (
+            GetType().ToStringShort().Replace("Attribute", "") + "_Configuration",
+            "Configuration"
+        );
     }
 }

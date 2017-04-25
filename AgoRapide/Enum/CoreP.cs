@@ -144,15 +144,24 @@ namespace AgoRapide {
 
         [PropertyKey(
             Description =
-                "General identifier. Used by -" + nameof(Request.CreateAPILink) + "-.",
+                "General identifier usable in URLs and similar.",
             LongDescription =
-                "Values chosen should be compatible with HTTP GET URLs. " +
-                "(best approach is most probably to make values valid C# identifiers.)",
+                "Values chosen should be compatible with HTTP GET URLs (without any escaping of characters). " +
+                "The approach chosen is therefore to assure that values -" + nameof(PropertyKeyAttribute.MustBeValidCSharpIdentifier) + "-. " +
+                "See accompanying -" + nameof(Name) + "- which is the more readable form",
             IsUniqueInDatabase = true,
+            MustBeValidCSharpIdentifier = true,
             PriorityOrder = PriorityOrder.Important,
             AccessLevelRead = AccessLevel.Anonymous,
             Parents = new Type[] { typeof(ApplicationPart) })]
         Identifier,
+
+        //[PropertyKey(
+        //    Description = "More readable form of -" + nameof(Identifier) + "-.",
+        //    PriorityOrder = PriorityOrder.Important,
+        //    AccessLevelRead = AccessLevel.Anonymous,
+        //    Parents = new Type[] { typeof(ApplicationPart) })]
+        //IdentifierExplained,
 
         /// <summary>
         /// Note how this is deliberately <see cref="PropertyKey"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to

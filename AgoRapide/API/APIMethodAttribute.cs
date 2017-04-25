@@ -98,18 +98,16 @@ namespace AgoRapide.API {
         /// <returns></returns>
         public override string ToString() => nameof(CoreMethod) + ": " + CoreMethod + ".\r\n" + base.ToString();
 
-        private string _identifier;
+        private (string Identifier, string Name) _identifierAndName;
         /// <summary>
         /// Note how APIMethod is added in front of the identifier
         /// </summary>
-        /// <param name="identifier"></param>
-        public void SetIdentifier(string identifier) {
-            if (_identifier != null) throw new NotNullReferenceException(nameof(_identifier) + ". Details: " + ToString());
-            identifier += GetType().ToStringShort().Replace("Attribute", "") + "_" + identifier;
-            InvalidIdentifierException.AssertValidIdentifier(identifier);
-            _identifier = identifier;
+        /// <param name="identifierAndName"></param>
+        public void SetIdentifierAndName((string Identifier, string Name) identifierAndName) {
+            if (_identifierAndName.Identifier != null) throw new NotNullReferenceException(nameof(_identifierAndName) + ". Details: " + ToString());
+            InvalidIdentifierException.AssertValidIdentifier(identifierAndName.Identifier);
+            _identifierAndName = identifierAndName;
         }
-        protected override string GetIdentifier() => _identifier ?? throw new NullReferenceException(nameof(_identifier) + ". Must be set by call to -" + nameof(SetIdentifier) + "-. Details: " + ToString());
-        // protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumType.ToStringShort();
+        protected override (string Identifier, string Name) GetIdentifierAndName() => _identifierAndName.Identifier != null ? _identifierAndName : throw new NullReferenceException(nameof(_identifierAndName) + ". Must be set by call to -" + nameof(SetIdentifierAndName) + "-. Details: " + ToString());
     }
 }
