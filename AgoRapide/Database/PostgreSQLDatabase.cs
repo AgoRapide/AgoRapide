@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using AgoRapide.Core;
 using System.Reflection;
+using AgoRapide.API;
 
 namespace AgoRapide.Database {
 

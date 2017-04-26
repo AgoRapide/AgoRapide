@@ -8,12 +8,13 @@ using AgoRapide;
 
 namespace AgoRapide.API {
 
-    /// <summary>
-    /// Container class with information about a given REST API request. 
-    /// <see cref="Request"/> is a minimal version used when request from client was not fully understood 
-    /// (invalid parameters for instance or because some exceptions occurred). 
-    /// See also <see cref="ValidRequest"/>. 
-    /// </summary>
+    [Class(
+        Description = 
+            "Container class with information about a given REST API request.\r\n" +
+            "Super class -" + nameof(Request) + "- is a minimal version used when request from client was not fully understood " +
+            "(invalid parameters for instance or because some exceptions occurred at parsing of request).\r\n" +
+            "Sub class -" + nameof(ValidRequest) + "- is the more exact version with actual validated -" + nameof(ValidRequest.Parameters) + "-"
+    )]
     public class Request {
 
         public System.Net.Http.HttpRequestMessage HttpRequestMessage { get; private set; }
@@ -250,8 +251,6 @@ namespace AgoRapide.API {
         
         public string CreateAPILink(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(coreMethod, null, null, type, parameters);
         public string CreateAPILink(CoreAPIMethod coreMethod, string linkText, Type type, params object[] parameters) => CreateAPILink(coreMethod, linkText, null, type, parameters);
-        //public string CreateAPILink(CoreMethod coreMethod, Type type, string linkText, params object[] parameters) => CreateAPILink(CreateAPICommand(coreMethod, type, parameters), linkText, null);
-        //public string CreateAPILink(CoreMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(CreateAPICommand(coreMethod, type, parameters), linkText, helpText);
         public string CreateAPILink(CoreAPIMethod coreMethod, string linkText, string helpText, Type type, params object[] parameters) {
             var apiCommand = CreateAPICommand(coreMethod, type, parameters);
             return CreateAPILink(apiCommand, linkText, helpText);
@@ -487,11 +486,11 @@ namespace AgoRapide.API {
         public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.C.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
     }
 
-    /// <summary>
-    /// Container class with information about a given REST API request. 
-    /// Populated by <see cref="BaseController.TryGetRequest"/>
-    /// See also <see cref="Request"/>. 
-    /// </summary>
+    [Class(Description =
+        "Container class with information about a given REST API request.\r\n" +
+        "Populated by -" + nameof(BaseController.TryGetRequest) + "-\r\n" +
+        "See also super class -" + nameof(Request) + "-"
+    )]
     public class ValidRequest : Request {
 
         public Parameters Parameters { get; private set; }

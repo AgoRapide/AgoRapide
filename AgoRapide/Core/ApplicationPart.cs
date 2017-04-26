@@ -5,11 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.Database;
-using AgoRapide.Core;
 using AgoRapide.API;
 using System.Reflection;
 
-namespace AgoRapide {
+namespace AgoRapide.Core {
 
     /// <summary>
     /// TODO: MOVE INTO CORE-FOLDER!

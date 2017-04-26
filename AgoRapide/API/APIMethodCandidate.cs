@@ -9,9 +9,7 @@ using AgoRapide.API;
 namespace AgoRapide.API {
 
     /// <summary>
-    /// Never stored in database.
-    /// 
-    /// TODO: Move to API-folder (no need to collect all <see cref="BaseEntity"/> in one place.
+    /// NOTE: Never stored in database.
     /// </summary>
     [Class(Description = 
         "Used by " + nameof(BaseController.AgoRapideGenericMethod) +" " +

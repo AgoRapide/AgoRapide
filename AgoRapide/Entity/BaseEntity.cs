@@ -10,18 +10,6 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
-    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
-    public enum Colour {
-        None,
-
-        [EnumValue(Description = "Bjørn's favourite colour")]
-        Red,
-
-        Green,
-
-        Blue
-    }
-
     /// <summary>
     /// Also used internally by AgoRapide like <see cref="Parameters"/>, <see cref="Result"/>, 
     /// <see cref="ApplicationPart"/>, <see cref="APIMethod"/> and so on, in order to reuse the

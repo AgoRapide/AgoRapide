@@ -10,6 +10,7 @@ namespace AgoRapideSample {
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.Anonymous
     )]
-    public class Car : BaseEntity {        
+    public class Car : BaseEntity {
+        public override string Name => "The " + PV<Colour>(P.Colour.A()) + " car";
     }
 }

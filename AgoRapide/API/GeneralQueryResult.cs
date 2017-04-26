@@ -4,14 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.Core;
-using AgoRapide.API;
 
-namespace AgoRapide {
+namespace AgoRapide.API {
 
     /// <summary>
-    /// TODO: MOVE INTO API-FOLDER!
-    /// 
-    /// Never stored in database. 
+    /// NOTE: Never stored in database. 
     /// </summary>
     [Class(
         Description = "Communicates result of -" + nameof(CoreAPIMethod.GeneralQuery) + "-",

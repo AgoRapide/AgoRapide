@@ -8,30 +8,28 @@ using AgoRapide;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// This class does NOT contain information about what type of entity is being queried.
-    /// 
     /// TODO: Consider making even more generic, by also adding the entity type...
     /// TODO: (if possible to unite with generic methods though)
     /// 
     /// TODO: Implement in <see cref="TryParse"/> parsing of more advanced variants like:
     ///   WHERE first_name LIKE 'John%' ORDER BY last_name, first_name
     ///   WHERE date_of_birth > '2017-01-01' ORDER BY id DESC
-    ///   
-    /// Sub classes:
-    /// <see cref="QueryIdInteger"/>
-    /// <see cref="QueryIdIdentifier"/>
-    /// <see cref="QueryIdKeyOperatorValue"/>
     /// </summary>
     [Class(
         Description =
             "Represents a search term in the API.\r\n" +
             "In its simplest form it is just a long integer that corresponds directly to " + nameof(DBField.id) + " " +
-            "(see -" + nameof(QueryIdInteger) + "-). " +
+            "(see -" + nameof(QueryIdInteger) + "-).\r\n" +
             "It can also be more complex like 'WHERE -" + nameof(CoreP.Name) + "- LIKE 'John%' ORDER BY -" + nameof(DBField.id) + "- " +
-            "(see -" + nameof(QueryIdKeyOperatorValue) + "-).",
+            "(see -" + nameof(QueryIdKeyOperatorValue) + "-).\r\n" +
+            "This class does NOT contain information about what type of entity is being queried.",
         LongDescription =
-            "This class translates an (untrusted) SQL like expression to a sanitized intermediate format " +
-            "that is safe to use in order to build up a real SQL query against the database backend",
+            "This class translates an (untrusted) SQL-like expression to a sanitized intermediate format " +
+            "that is safe to use in order to build up a real SQL query against the database backend.\r\n" +
+            "Sub classes:\r\n" +
+            nameof(QueryIdInteger) + "\r\n" +
+            nameof(QueryIdIdentifier) + "\r\n" +
+            nameof(QueryIdKeyOperatorValue),
         SampleValues = new string[] { "All" },
         InvalidValues = new string[] {
             "WHERE value IN ('A', 'B'" /// TODO: Add more common syntax errors and check that <see cref="TryParse"/> returns good error messages for each kind if syntax error
@@ -54,19 +52,19 @@ namespace AgoRapide.Core {
         [ClassMember(Description = "Corresponds to -" + nameof(ToString) + "- returning \"All\"")]
         public bool IsAll { get; protected set; }
 
-        /// <summary>
-        /// Returns something like 
-        /// "key = 'IsAnonymous' AND blnv = TRUE" or  
-        /// "key = 'Name' AND strv LIKE :strv (with corresponding parameter in <see cref="SQLWhereStatementParameters"/>)
-        /// 
-        /// More advanced versions:
-        /// "key = 'AccessRight' AND strv IN ('User', 'Relation', 'Admin')"
-        /// "key = 'Name' AND strv IN (:strv1, :strv2, :strv3)"  (with corresponding parameters in <see cref="SQLWhereStatementParameters"/>)
-        /// 
-        /// May be empty (understood as an "All"-query)
-        /// 
-        /// Supposed to be combined in a SQL query with filter for a specific type. 
-        /// </summary>
+        [ClassMember(
+            Description =
+                "Trusted \"safe to use\" value.\r\n" +
+                "Returns something like\r\n" +
+                "\"key = 'IsAnonymous' AND blnv = TRUE\" or\r\n" +
+                "\"key = 'Name' AND strv LIKE :strv\" (with corresponding parameter in -" + nameof(SQLWhereStatementParameters) + "-)\r\n" +
+                "Supposed to be combined in a SQL query with filter for a specific type.\r\n" +
+                "May be empty(understood as an \"All\" - query)",
+            LongDescription =
+                "More advanced versions:\r\n" +
+                "\"key = 'AccessRight' AND strv IN ('User', 'Relation', 'Admin')\"\r\n" +
+                "\"key = 'Name' AND strv IN (:strv1, :strv2, :strv3)\" (with corresponding parameters in -" + nameof(SQLWhereStatementParameters) + "-)"
+        )]
         public string SQLWhereStatement { get; protected set; }
 
         /// <summary>
