@@ -52,29 +52,44 @@ namespace AgoRapide.Core {
         }
 
         public override string ToString() => nameof(MemberInfo) + ": " + (_memberInfo?.DeclaringType.ToString() ?? "[NULL]") + "." + (_memberInfo?.ToString() ?? "") + "\r\n" + base.ToString();
-        protected override (string Identifier, string Name) GetIdentifierAndName() => (
-            GetType().ToStringShort().Replace("Attribute", "")
-            + "_" +
-            MemberInfo.ReflectedType.ToStringShort().Replace
-                ("<", "_").Replace
-                (">", "_").Replace
-                ("+", "_")
-            + "_" +
-            MemberInfo.ToString().Replace // TODO: This is the actual method signature
-                (".", "_").Replace       // TODO: Try to make better readable version
-                (",", "_").Replace       // 
-                (" ", "_").Replace
-                ("`", "_").Replace
-                ("<", "_").Replace
-                (">", "_").Replace
-                ("[", "_").Replace
-                ("]", "_").Replace
-                ("+", "_").Replace
-                ("(", "_").Replace
-                (")", "_").Replace
-                ("Void_", ""),            
-            MemberInfo.ReflectedType.ToStringShort() + "." +
-            MemberInfo.ToString()
+        protected override Id GetId() => new Id(
+            idString:
+                GetType().ToStringShort().Replace("Attribute", "")
+                + "_" +
+                MemberInfo.ReflectedType.ToStringShort().Replace
+                    ("<", "_").Replace
+                    (">", "_").Replace
+                    ("+", "_")
+                + "_" +
+                MemberInfo.ToString().Replace // TODO: This is the actual method signature
+                    (".", "_").Replace       // TODO: Try to make better readable version
+                    (",", "_").Replace       // 
+                    (" ", "_").Replace
+                    ("`", "_").Replace
+                    ("<", "_").Replace
+                    (">", "_").Replace
+                    ("[", "_").Replace
+                    ("]", "_").Replace
+                    ("+", "_").Replace
+                    ("(", "_").Replace
+                    (")", "_").Replace
+                    ("Void_", ""),
+            idFriendly: MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.Name, /// Note choice of Name here instead of ToString(). See use of ToString() below when storing <see cref="CoreP.IdFriendlyDetailed"/>
+            idDoc: new List<string> {
+                 MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.Name,
+                 MemberInfo.Name,
+            }
          );
+
+        protected override Dictionary<CoreP, Property> GetProperties() {
+            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
+            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
+            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
+            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            Func<string> d = () => ToString();
+            // Adds the full method information (in order to distinguish overloads from each other)
+            PropertiesParent.AddProperty(CoreP.IdFriendlyDetailed.A(), MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.ToString(), d);
+            return PropertiesParent.Properties;
+        }
     }
 }

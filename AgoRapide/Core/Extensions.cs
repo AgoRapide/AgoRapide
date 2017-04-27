@@ -25,6 +25,21 @@ namespace AgoRapide.Core {
             return retval;
         }
 
+        [ClassMember(Description = 
+            "Flattens (for one level only) any -" + nameof(PropertyKeyAttribute.IsMany) + "- found.\r\n" +
+            "Useful before calling -" + nameof(IDatabase.CreateProperty) + "- / -" + nameof(IDatabase.UpdateProperty) + "-.")]
+        public static List<Property> Flatten(this Dictionary<CoreP, Property> dict) {
+            var retval = new List<Property>();
+            dict.Values.ForEach(p => {
+                if (p.Key.Key.A.IsMany) {
+                    retval.AddRange(p.Properties.Values.ToList());
+                } else {
+                    retval.Add(p);
+                }
+            });
+            return retval;
+        }
+
         public static void AssertExactOne<T>(this List<T> list, Func<string> detailer) {
             if (list.Count != 1) throw new InvalidCountException("Expected exact 1 item in list but got " + list.Count + detailer.Result(".Details: "));
         }
@@ -749,13 +764,13 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// Makes "safe" attempt of turning an entity id into <see cref="BaseEntity.Name"/> through <see cref="Util.EntityCache"/>
+        /// Makes "safe" attempt of turning an entity id into <see cref="BaseEntity.IdFriendly"/> through <see cref="Util.EntityCache"/>
         /// 
         /// Note possible security consequences of this method. Use sparingly or not at all if in doubt.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public static string AsEntityName(this long id) => id <= 0 ? "[NOT SET]" : (Util.EntityCache.TryGetValue(id, out var e) ? e.Name : id.ToString());
+        public static string AsEntityName(this long id) => id <= 0 ? "[NOT SET]" : (Util.EntityCache.TryGetValue(id, out var e) ? e.IdFriendly : id.ToString());
 
         public static List<string> Split(this string _string, string separator) => _string.Split(new string[] { separator }, StringSplitOptions.None).ToList();
 

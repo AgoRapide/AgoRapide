@@ -54,9 +54,13 @@ namespace AgoRapide.Core {
         }
 
         public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
-        protected override (string Identifier, string Name) GetIdentifierAndName() => (
-            GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumValue.GetType().ToStringShort() + "_" + EnumValue.ToString(),
-            EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString()
+        protected override Id GetId() => new Id (
+            idString: GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumValue.GetType().ToStringShort() + "_" + EnumValue.ToString(),
+            idFriendly: EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),
+            idDoc: new List<string> {
+                EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),
+                EnumValue.ToString()
+            }
         );
     }
 }

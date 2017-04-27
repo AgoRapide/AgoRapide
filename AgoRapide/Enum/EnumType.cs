@@ -38,6 +38,5 @@ namespace AgoRapide {
                 "Corresponding -" + nameof(BaseAttribute) + "- is -" + nameof(EnumAttribute) + "- / -" + nameof(PropertyKeyAttribute) + "-. " +
                 "All -" + nameof(PropertyKey) + "- map towards -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-")]
         PropertyKey
-
     }
 }

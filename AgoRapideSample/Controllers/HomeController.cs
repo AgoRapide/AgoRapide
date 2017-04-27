@@ -84,7 +84,7 @@ namespace AgoRapideSample {
                             new QueryIdInteger(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
                         )
                     );
-                    r.AddProperty(CoreP.Description.A(), p.Name);
+                    r.AddProperty(CoreP.Description.A(), p.IdFriendly);
                     return (BaseEntity)r;
                 }).ToList());
             } catch (Exception ex) {

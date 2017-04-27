@@ -98,16 +98,15 @@ namespace AgoRapide.API {
         /// <returns></returns>
         public override string ToString() => nameof(CoreMethod) + ": " + CoreMethod + ".\r\n" + base.ToString();
 
-        private (string Identifier, string Name) _identifierAndName;
+        private Id _id;
         /// <summary>
         /// Note how APIMethod is added in front of the identifier
         /// </summary>
-        /// <param name="identifierAndName"></param>
-        public void SetIdentifierAndName((string Identifier, string Name) identifierAndName) {
-            if (_identifierAndName.Identifier != null) throw new NotNullReferenceException(nameof(_identifierAndName) + ". Details: " + ToString());
-            InvalidIdentifierException.AssertValidIdentifier(identifierAndName.Identifier);
-            _identifierAndName = identifierAndName;
+        /// <param name="id"></param>
+        public void SetId(Id id) {
+            if (_id != null) throw new NotNullReferenceException(nameof(_id) + ". Details: " + ToString());
+            _id = id;
         }
-        protected override (string Identifier, string Name) GetIdentifierAndName() => _identifierAndName.Identifier != null ? _identifierAndName : throw new NullReferenceException(nameof(_identifierAndName) + ". Must be set by call to -" + nameof(SetIdentifierAndName) + "-. Details: " + ToString());
+        protected override Id GetId() => _id ?? throw new NullReferenceException(nameof(_id) + ". Must be set by call to -" + nameof(SetId) + "-. Details: " + ToString());
     }
 }

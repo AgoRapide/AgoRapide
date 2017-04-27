@@ -113,9 +113,9 @@ namespace AgoRapide.API {
         /// <returns></returns>
         public object GetAccessDeniedResponse(string message, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             if (!string.IsNullOrEmpty(message)) message += ". ";
-            message += "You do not have access to the method " + Method.Name;
+            message += "You do not have access to the method " + Method.IdFriendly;
             if (CurrentUser != null) {
-                message += " (user identify recognized was " + CurrentUser.Name + " (id: " + CurrentUser.Id + ")";
+                message += " (user identify recognized was " + CurrentUser.IdFriendly + " (id: " + CurrentUser.Id + ")";
             }
             message += ". Last .NET method involved: " + caller; // TODO: Better text here! TODO: Add type / class within which caller resides!
             Result.ResultCode = ResultCode.access_error;
@@ -213,7 +213,8 @@ namespace AgoRapide.API {
         public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreAPIMethod.EntityIndex, entityType, new QueryIdInteger(id));
         public string CreateAPICommand(BaseEntity entity) => CreateAPICommand(entity.GetType(), entity.Id);
         /// <summary>
-        /// 
+        /// TODO: Move <see cref="Request.CreateAPICommand"/> to a static class and add a <see cref="ResponseFormat"/>-parameter to that method.
+        /// TODO: In this manner method <see cref="Property.ValueHTML"/>  may be simplified.
         /// </summary>
         /// <param name="coreMethod"></param>
         /// <param name="type">May be null, for instance for <see cref="CoreAPIMethod.ExceptionDetails"/></param>
@@ -239,10 +240,10 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public string CreateAPILink(BaseEntity entity) => CreateAPILink(entity, entity.Name);
+        public string CreateAPILink(BaseEntity entity) => CreateAPILink(entity, entity.IdFriendly);
         public string CreateAPILink(BaseEntity entity, string linkText) =>
             CreateAPILink(CoreAPIMethod.EntityIndex, linkText, entity.GetType(),
-                (entity.Properties!=null && entity.Properties.TryGetValue(CoreP.Identifier, out var p) ?
+                (entity.Properties!=null && entity.Properties.TryGetValue(CoreP.IdString, out var p) ?
                     (QueryId)new QueryIdIdentifier(p.V<string>()) : /// Using identifier looks much better in links. Especially good for documentation where names stay the same but id's may change  (like "Property/{QueryId}" to identify an <see cref="APIMethod"/> for instance)
                     // (QueryId)new QueryIdInteger(entity.Id) :
                     (QueryId)new QueryIdInteger(entity.Id)

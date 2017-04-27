@@ -130,13 +130,15 @@ namespace AgoRapide.Core {
         /// In the database they are stored with index #1, #2 like PhoneNumber#1, PhoneNumber#2 and so on.
         /// </summary>        
         [ClassMember(
-            Description = "Signifies that several active current instances may exist (like PhoneNumber#1, PhoneNumber#2 for a customer for instance)",
+            Description =
+                "Signifies that several active current instances may exist " +
+                "(like PhoneNumber#1, PhoneNumber#2 for a customer for instance)",
             LongDescription =
                 "The -" + nameof(IDatabase) + "- implementation should be able to handle on-the-fly changes between TRUE and FALSE for this attribute. " +
                 "Going from FALSE to TRUE should result in #1 being added to the relevant existing keys in the database, and " +
                 "going from TRUE to FALSE should result in # being replaced by _ (resulting in PhoneNumber_1, PhoneNumber_2 and so on) " +
                 "Note that -" + nameof(IsMany) + "- combined with -" + nameof(IsObligatory) + "- will result in -" + nameof(PropertyKeyWithIndex.Index) + "-#1 being used"
-            )]
+        )]
         public bool IsMany { get => _isMany; set { _isMany = value; _isManyIsSet = true; } }
 
         /// <summary>
@@ -144,6 +146,19 @@ namespace AgoRapide.Core {
         /// </summary>
         private bool _isManyIsSet = false;
         private bool IsManyIsSet => _isManyIsSet;
+
+        private bool _isDocumentation;
+        /// <summary>
+        /// TODO: Insert link to Documentator-method which does the link-insertion.
+        /// </summary>
+        [ClassMember(
+            Description = "Signifies that value contains keys on the form -xxx- which should be replaced with respective links"
+        )]
+        public bool IsDocumentation { get => _isDocumentation; set { _isDocumentation = value; _isDocumentationIsSet = true; } }
+        private bool _isDocumentationIsSet = false;
+        private bool IsDocumentationIsSet => _isDocumentationIsSet;
+
+
 
         /// <summary>
         /// 
@@ -244,7 +259,7 @@ namespace AgoRapide.Core {
         [ClassMember(
             Description =
                 "TRUE indicates that the value given must be a valid C# identifier. " +
-                "Especially used for -" + nameof(CoreP.Identifier) + "-. " +
+                "Especially used for -" + nameof(CoreP.IdString) + "-. " +
                 "Only allowed for -" + nameof(Type) + "- string",
             LongDescription =
                 "A practical consequence will be that the value can also be used in a HTTP GET query-string without escaping)")]
@@ -380,17 +395,17 @@ namespace AgoRapide.Core {
             /// TODO: This idea could also be related to the idea of making an immutable copy of <see cref="PropertyKeyAttribute"/>
             /// TODO: (this copy could have user-friendly bool-values instead of an enum)
             /// TODO: (the whole change could be without breaking code at the client side)
-
             // if (other.IsDefault) SetAsDefault(); // Removed 8 Mar 2017
 
-            /// TODO: See prototype solution with <see cref="IsManyIsSet"/>
-            /// TODO:
+            /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
+            if (other.IsManyIsSet) IsMany = other.IsMany;
+            if (other.IsDocumentationIsSet) IsDocumentation = other.IsDocumentation;
+
             if (other.IsObligatory) IsObligatory = other.IsObligatory;
             if (other.IsNotStrict) IsNotStrict = other.IsNotStrict;
             if (other.IsUniqueInDatabase) IsUniqueInDatabase = other.IsUniqueInDatabase;
             if (other.IsPassword) IsPassword = other.IsPassword;
             if (other.CanHaveChildren) CanHaveChildren = other.CanHaveChildren;
-            if (other.IsMany) IsMany = other.IsMany;
 
             if (DateTimeFormat == DateTimeFormat.None) DateTimeFormat = other.DateTimeFormat;
         }

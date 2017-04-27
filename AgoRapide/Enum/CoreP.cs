@@ -64,13 +64,6 @@ namespace AgoRapide {
         // Type = typeof(Type), Parents = new Type[] { typeof(GeneralQueryResult) })]
         EntityType,
 
-        ///// <summary>
-        //[AgoRapide(
-        //    Description = "The root property of an entity. Added to entity object by -" + nameof(IDatabase.TryGetEntityById) + "-.",
-        //    Type = typeof(Property), CanHaveChildren = true)]
-        ///// </summary>
-        //RootProperty,
-
         [PropertyKey(
             Description = "The unique property identifying users in your system.",
             IsUniqueInDatabase = true,
@@ -112,12 +105,6 @@ namespace AgoRapide {
             Type = typeof(AccessLevel))]
         AccessLevelWrite,
 
-        [PropertyKey(
-            Description = "Generic property for naming objects.",
-            Type = typeof(string),
-            PriorityOrder = PriorityOrder.Important)]
-        Name,
-
         /// <summary>
         /// Added to <see cref="BaseEntity.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
         /// </summary>
@@ -125,6 +112,47 @@ namespace AgoRapide {
             Description = "-" + nameof(DBField.id) + "- of entity as stored in database.",
             Type = typeof(long))]
         DBId,
+
+        [PropertyKey(
+            Description =
+                "General identifier usable in URLs and similar.\r\n" +
+                "Corresponds to -" + nameof(QueryIdIdentifier) + "- and -" + nameof(Id.IdString) + "-.",
+            LongDescription =
+                "Values chosen should be compatible with HTTP GET URLs (without any escaping of characters). " +
+                "The approach chosen is therefore to assure that values -" + nameof(PropertyKeyAttribute.MustBeValidCSharpIdentifier) + "-. " +
+                "See accompanying -" + nameof(IdFriendly) + "- which is the more readable form.\r\n" +
+                "Note how -" + nameof(IdString) + "- will be the same among different database instances, in contrast to -" + nameof(DBId) + "-.",
+            IsUniqueInDatabase = true,
+            MustBeValidCSharpIdentifier = true,
+            PriorityOrder = PriorityOrder.Important,
+            AccessLevelRead = AccessLevel.Anonymous,
+            Parents = new Type[] { typeof(ApplicationPart) })]
+        IdString,
+
+        [PropertyKey(
+            Description =
+                "Generic property for naming objects in a human friendly manner.\r\n" +
+                "The values used are meant for human consumption and are normally not very useful in HTTP GET query URLs.\r\n" +
+                "Corresponds to -" + nameof(Core.Id.IdFriendly) + "-.",
+            Type = typeof(string),
+            PriorityOrder = PriorityOrder.Important)]
+        IdFriendly,
+
+        /// <summary>
+        /// Used for <see cref="ClassMemberAttribute"/> for storing the full overload information
+        /// </summary>
+        [PropertyKey(
+            Description = "Detailed version of -" + nameof(IdFriendly) + "-.")]
+        IdFriendlyDetailed,
+
+        [PropertyKey(
+            Description =
+                "Very short form of id used when linking to documentation in comments.\r\n" +
+                "Values used are not expected to be unique.\r\n" +
+                "Corresponds to -" + nameof(Core.Id.IdDoc) + "-.",
+            IsMany = true
+            )]
+        IdDoc,
 
         [PropertyKey(Description = "Application specific general query request", Type = typeof(string), SampleValues = new string[] { "a", "b", "c" })]
         GeneralQueryId,
@@ -142,27 +170,6 @@ namespace AgoRapide {
             Type = typeof(QueryIdKeyOperatorValue))]
         PropertyAndValueQueryId,
 
-        [PropertyKey(
-            Description =
-                "General identifier usable in URLs and similar.",
-            LongDescription =
-                "Values chosen should be compatible with HTTP GET URLs (without any escaping of characters). " +
-                "The approach chosen is therefore to assure that values -" + nameof(PropertyKeyAttribute.MustBeValidCSharpIdentifier) + "-. " +
-                "See accompanying -" + nameof(Name) + "- which is the more readable form",
-            IsUniqueInDatabase = true,
-            MustBeValidCSharpIdentifier = true,
-            PriorityOrder = PriorityOrder.Important,
-            AccessLevelRead = AccessLevel.Anonymous,
-            Parents = new Type[] { typeof(ApplicationPart) })]
-        Identifier,
-
-        //[PropertyKey(
-        //    Description = "More readable form of -" + nameof(Identifier) + "-.",
-        //    PriorityOrder = PriorityOrder.Important,
-        //    AccessLevelRead = AccessLevel.Anonymous,
-        //    Parents = new Type[] { typeof(ApplicationPart) })]
-        //IdentifierExplained,
-
         /// <summary>
         /// Note how this is deliberately <see cref="PropertyKey"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to
         /// allow <see cref="PropertyKeyAttribute.IsMany"/> without <see cref="PropertyKeyWithIndex.Index"/> (<see cref="CoreAPIMethod.UpdateProperty"/> for instance). 
@@ -174,15 +181,6 @@ namespace AgoRapide {
             Description = "General conveyor of information.",
             Type = typeof(string))]
         Value,
-
-        ///// <summary>
-        ///// TODO: COMPLETE IMPLEMENTATION OF THIS CONCEPT
-        ///// </summary>
-        //[AgoRapide(
-        //    Description = "A single enum value.",
-        //    IsMany = true,
-        //    Parents = new Type[] { typeof(EnumClass) }, Type = typeof(string))]
-        //EnumValue,
 
         /// <summary>
         /// See <see cref="IDatabase.SwitchIfHasEntityToRepresent"/>
@@ -292,7 +290,7 @@ namespace AgoRapide {
         SuggestedUrl,
 
         /// <summary>
-        /// Set by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when not <see cref="ResultCode.ok"/>
+        /// Added by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when not <see cref="ResultCode.ok"/>
         /// </summary>
         [PropertyKey(
             Description = "Suggestions of relevant documentation for the API-method accessed.",
@@ -300,7 +298,7 @@ namespace AgoRapide {
         APIDocumentationUrl,
 
         /// <summary>
-        /// Set by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when <see cref="ResultCode.exception_error"/>
+        /// Added by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when <see cref="ResultCode.exception_error"/>
         /// </summary>
         [PropertyKey(
             Description = "URL offering details about the last exception that occurred. See also -" + nameof(AgoRapide.CoreAPIMethod) + "." + nameof(AgoRapide.CoreAPIMethod.ExceptionDetails) + "-.",

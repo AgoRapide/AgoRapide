@@ -56,7 +56,7 @@ namespace AgoRapide.API {
         public virtual string GetHTMLStart() =>
             "<html><head>\r\n" +
             "<title>AgoRapide HTML " +
-            (Request.CurrentUser == null ? "" : "(" + Request.CurrentUser.Name + ")") +
+            (Request.CurrentUser == null ? "" : "(" + Request.CurrentUser.IdFriendly + ")") +
             "</title>\r\n" +
             "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + Util.Configuration.C.RootUrl + Util.Configuration.C.CSSRelativePath + "\">\r\n" +
             string.Join("", Util.Configuration.C.ScriptRelativePaths.Select(s => "<script src=\"" + Util.Configuration.C.RootUrl + s + "\"></script>\r\n")) +
@@ -130,7 +130,7 @@ namespace AgoRapide.API {
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
                     CoreAPIMethod.EntityIndex,
-                    nameof(Request.CurrentUser) + ": " + Request.CurrentUser.Name,
+                    nameof(Request.CurrentUser) + ": " + Request.CurrentUser.IdFriendly,
                     Request.CurrentUser.GetType(),
                     new QueryIdInteger(Request.CurrentUser.Id)
                     ) +
@@ -142,7 +142,7 @@ namespace AgoRapide.API {
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
                     CoreAPIMethod.PropertyOperation,
-                    "End representation as " + Request.CurrentUser.Name,
+                    "End representation as " + Request.CurrentUser.IdFriendly,
                     typeof(Property),
                     new QueryIdInteger( /// TryGetValue because if we just did <see cref="PropertyOperation.SetInvalid"/> then <see cref="CoreP.EntityToRepresent"/> no longer exists for CurrentUser.
                         (Request.CurrentUser.RepresentedByEntity.Properties.TryGetValue(CoreP.EntityToRepresent, out var p) ? p.Id : 0)),
@@ -156,7 +156,7 @@ namespace AgoRapide.API {
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
                 "<p>" + Request.CreateAPILink(
                     CoreAPIMethod.UpdateProperty,
-                    "Logout as " + Request.CurrentUser.Name,
+                    "Logout as " + Request.CurrentUser.IdFriendly,
                     Request.CurrentUser.GetType(),
                     new QueryIdInteger(Request.CurrentUser.Id),
                     CoreP.RejectCredentialsNextTime.A(),

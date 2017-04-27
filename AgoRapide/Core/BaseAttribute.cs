@@ -29,14 +29,8 @@ namespace AgoRapide.Core {
     )]
     public class BaseAttribute : Attribute {
 
-        private (string Identifier, string IdentifierExplained) _identifierAndName;
-        [ClassMember(Description="Corresponds to -" + nameof(CoreP.Identifier) + "- and -" + nameof(CoreP.Name) + "-.")]
-        public (string Identifier, string IdentifierExplained) IdentifierAndName => _identifierAndName.Identifier != null ? _identifierAndName : (_identifierAndName = new Func<(string Identifier, string IdentifierExplained)>(() => {
-            var retval = GetIdentifierAndName();
-            InvalidIdentifierException.AssertValidIdentifier(retval.Identifier, () => ToString());
-            return retval;
-        })());
-
+        private Id _id;
+        public Id Id => _id ?? (_id = GetId());
 
         [ClassMember(Description = "Indicates that the actual attribute is not defined and instead a default instance was generated")]
         public bool IsDefault { get; protected set; }
@@ -181,8 +175,9 @@ namespace AgoRapide.Core {
             PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
             Func<string> d = () => ToString();
 
-            PropertiesParent.AddProperty(CoreP.Name.A(), IdentifierAndName.IdentifierExplained, IdentifierAndName.IdentifierExplained, GetType().GetClassMemberAttribute(nameof(IdentifierAndName)), d);
-            PropertiesParent.AddProperty(CoreP.Identifier.A(), IdentifierAndName.Identifier, IdentifierAndName.Identifier, GetType().GetClassMemberAttribute(nameof(IdentifierAndName)), d);
+            PropertiesParent.AddProperty(CoreP.IdString.A(), Id.IdString, d);
+            PropertiesParent.AddProperty(CoreP.IdFriendly.A(), Id.IdFriendly, d);
+            PropertiesParent.AddProperty(CoreP.IdDoc.A(), Id.IdDoc, d);
 
             PropertiesParent.AddProperty(CoreP.Description.A(), Description + "", Description + "", GetType().GetClassMemberAttribute(nameof(Description)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
             PropertiesParent.AddProperty(CoreP.LongDescription.A(), LongDescription + "", LongDescription + "", GetType().GetClassMemberAttribute(nameof(LongDescription)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
@@ -199,9 +194,9 @@ namespace AgoRapide.Core {
         /// The implementator should return a value satisfying both 
         /// <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> and
         /// <see cref="System.CodeDom.Compiler.CodeDomProvider.IsValidIdentifier"/>
-        /// (Note assertion for the last criteria in <see cref="IdentifierAndName"/>)
+        /// (Note assertion for the last criteria in <see cref="Id"/>)
         ///  </summary>
         /// <returns></returns>
-        protected virtual (string Identifier, string Name) GetIdentifierAndName() => throw new NullReferenceException(nameof(GetIdentifierAndName) + ". Should have been implemented by sub-class.\r\nDetails: " + ToString());
+        protected virtual Id GetId() => throw new NullReferenceException(nameof(GetId) + ". Should have been implemented by sub-class.\r\nDetails: " + ToString());
     }
 }

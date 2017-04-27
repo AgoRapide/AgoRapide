@@ -20,9 +20,9 @@ namespace AgoRapideSample {
         /// https://www.w3.org/International/questions/qa-personal-names
         /// for a thorough explanation about how to represent names in different cultures world-wide.
         /// </summary>
-        public override string Name {
+        public override string IdFriendly {
             get {
-                if (TryGetPV(CoreP.Name.A(), out string retval)) return retval;
+                if (TryGetPV(CoreP.IdFriendly.A(), out string retval)) return retval;
                 var firstName = PV(P.FirstName.A(), "");
                 var lastName = PV(P.LastName.A(), "");
                 if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName)) {

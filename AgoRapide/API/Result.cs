@@ -51,7 +51,7 @@ namespace AgoRapide.API {
         public List<BaseEntity> MultipleEntitiesResult;
 
         // public override string Name => "Result summary of API call: " + ResultCode;
-        public override string Name => ResultCode.ToString();
+        public override string IdFriendly => ResultCode.ToString();
 
         public override string ToHTMLDetailed(Request request) {
             AdjustAccordingToResultCodeAndMethod(request);
@@ -70,7 +70,7 @@ namespace AgoRapide.API {
                     retval.AppendLine(MultipleEntitiesResult.First().ToHTMLTableRowHeading(request));
                     // TODO: Assert that all are of equal type, so that heading is known to be correct.
                     // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
-                    retval.AppendLine(string.Join("", MultipleEntitiesResult.OrderBy(e => e.Name).Select(e => e.ToHTMLTableRow(request))));
+                    retval.AppendLine(string.Join("", MultipleEntitiesResult.OrderBy(e => e.IdFriendly).Select(e => e.ToHTMLTableRow(request))));
                     retval.AppendLine("</table>");
                 }
             } else if (ResultCode == ResultCode.ok) {
@@ -151,7 +151,7 @@ namespace AgoRapide.API {
                         var identical = entity.Properties.Where(p2 => p2.Key.ToString().ToLower().Equals(lowerCase)).ToList();
                         if (identical.Count > 1) {
                             retval.Append("\r\n\r\n");
-                            retval.Append("For " + entity.GetType() + " " + entity.Id + " (" + entity.Name + ") the key " + p1.Key + " is not unique in lowerCase (" + lowerCase + "). The following properties share the same key in lowerCase:\r\n");
+                            retval.Append("For " + entity.GetType() + " " + entity.Id + " (" + entity.IdFriendly + ") the key " + p1.Key + " is not unique in lowerCase (" + lowerCase + "). The following properties share the same key in lowerCase:\r\n");
                             identical.ForEach(i => {
                                 retval.Append(i.Key + ": " + i.Value.V<string>() + "\r\n");
                             });

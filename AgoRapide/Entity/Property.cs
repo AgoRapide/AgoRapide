@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -70,7 +71,7 @@ namespace AgoRapide {
         ///   public override string Name => KeyDB + " = " + Value;
         /// is not as nice as it is more natural to link to a property with only <see cref="KeyDB"/> in link text instead of "Key = Value"
         /// </summary>
-        public override string Name => KeyDB;
+        public override string IdFriendly => KeyDB;
 
         private string _keyDB;
         /// <summary>
@@ -328,17 +329,30 @@ namespace AgoRapide {
         /// <summary>
         /// The generic value for this property. Corresponds to <see cref="PropertyT{T}._genericValue"/>
         /// </summary>
-        public object Value => _value ?? throw new NullReferenceException(nameof(_value) + "Details: " + ToString());
+        public object Value => _value ?? throw new NullReferenceException(Util.BreakpointEnabler + nameof(_value) + ".\r\nDetails: " + ToString());
 
+        // TODO: DELETE COMMENT. Mistaken approach. No need for caching really.
+        // private ConcurrentDictionary<ResponseFormat, string> _valueHTMLCache = new ConcurrentDictionary<ResponseFormat, string>();
+        private string _valueHTML;
         /// <summary>
         /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
+        /// 
+        /// Note how result in itself is cached, something which is very useful when <see cref="Parent"/> itself is cached 
+        /// since the process of inserting links is quite performance heavy.
+        /// Note how returned value is considered independent of <paramref name="request"/> (and that again is considered removed)
+        /// Cached value is therefor only a single value.
+        /// 
+        /// TODO: Insert link to Documentator-method which does the link-insertion.
         /// </summary>
-        /// <param name="request"></param>
+        /// <param name="request">
+        /// TODO: This parameter could in principle be dispensed with by implementing the following:
+        /// TODO: Move <see cref="Request.CreateAPICommand"/> to a static class and add a <see cref="ResponseFormat"/>-parameter to that method.
+        /// </param>
         /// <returns></returns>
-        public string ValueHTML(Request request) {
+        public string ValueHTML(Request request) => _valueHTML ?? (_valueHTML = new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
             var v = V<string>();
             switch (Key.Key.CoreP) {
-                case CoreP.Identifier: return request.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
+                case CoreP.IdString: return request.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
                 case CoreP.DBId:
                     return request.CreateAPILink(CoreAPIMethod.EntityIndex, v,
                        (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
@@ -346,7 +360,7 @@ namespace AgoRapide {
                             typeof(BaseEntity)), new QueryIdInteger(V<long>()));
                 default: return v.HTMLEncodeAndEnrich(request);
             }
-        }
+        })());
 
         public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + _stringValue + "' to " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
         /// <summary>
@@ -486,7 +500,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 1, Key
                 // --------------------
-                (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) +
+                (Id <= 0 ? IdFriendly.HTMLEncode() : request.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) +
                 "</td><td>" +
 
                 // --------------------
@@ -552,7 +566,7 @@ namespace AgoRapide {
                             /// TOOD: (but that would leave properties without <see cref="PropertyKeyAttribute.ValidValues"/> without such...)
                             /// TODO: Maybe better to just leave as is...
 
-                            "<option value=\"\">[Choose " + Name.HTMLEncode() + "...]</option>\r\n" +
+                            "<option value=\"\">[Choose " + IdFriendly.HTMLEncode() + "...]</option>\r\n" +
                             /// TODO: Add to <see cref="PropertyKeyAttribute.ValidValues"/> a List of tuples with description for each value
                             /// TODO: (needed for HTML SELECT tags)
                             string.Join("\r\n", a.ValidValues.Select(v => "<option value=\"" + v + "\">" + v.HTMLEncode() + "</option>")) +
@@ -590,7 +604,7 @@ namespace AgoRapide {
                 retval.AppendLine("<tr><td>" +
                     field.ToString().HTMLEncloseWithinTooltip(field.A().Key.A.WholeDescription) +
                     "</td><td>" +
-                    (value?.HTMLEncodeAndEnrich(request) ?? "&nbsp;").HTMLEncloseWithinTooltip(includeDescription) +
+                    (value?.HTMLEncode() ?? "&nbsp;").HTMLEncloseWithinTooltip(includeDescription) +
                     "</td></tr>");
             });
             var adderWithLink = new Action<DBField, long?>((field, value) => {
@@ -617,9 +631,8 @@ namespace AgoRapide {
             retval.AppendLine("<tr><td>Index</td><td>" + (Key.Key.A.IsMany ? Key.Index.ToString() : "&nbsp;") + "</td></tr>\r\n");
 
             /// TODO: Maybe keep information about from which <see cref="DBField"/> <see cref="_stringValue"/> originated?
-            retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue?.HTMLEncode() ?? "[NULL[]") + "</td></tr>\r\n");
+            retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? ValueHTML(request) : "[NULL[]") + "</td></tr>\r\n");
 
-            // retval.AppendLine("<tr><td>" + nameof(DBField.strv) + " (explained)</td><td>" + ValueA.Description + "</td></tr>\r\n");
             adder(DBField.valid, Valid?.ToString(DateTimeFormat.DateHourMinSec));
             adderWithLink(DBField.vid, ValidatorId);
             adder(DBField.invalid, Invalid?.ToString(DateTimeFormat.DateHourMinSec));

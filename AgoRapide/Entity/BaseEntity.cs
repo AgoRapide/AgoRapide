@@ -45,6 +45,19 @@ namespace AgoRapide {
             public IdNotSetException(string message) : base(nameof(BaseEntity.Id) + " was not set. Possible cause: An object was assumed to originate from the database but did not.\r\nDetails:\r\n" + message) { }
         }
 
+        /// <summary>
+        /// <see cref="ToString"/> is used in logs and in exception messages. 
+        /// <see cref="IdFriendly"/> is used in contexts when a more user friendly value is needed. 
+        /// </summary>
+        /// <returns></returns>
+        public virtual string IdFriendly => PV(CoreP.IdFriendly.A(), Id.ToString());
+
+        /// <summary>
+        /// <see cref="ToString"/> is used in logs and in exception messages. 
+        /// <see cref="IdFriendly"/> is used in contexts when a more user friendly value is needed. 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString() => GetType().ToString() + ": " + Id + ", created: " + Created.ToString(DateTimeFormat.DateHourMin);
 
         /// <summary>
         /// Environment as used to characterize this entity
@@ -58,20 +71,6 @@ namespace AgoRapide {
         public Environment Environment => throw new NotImplementedException();
 
         public DateTime Created { get; set; }
-
-        /// <summary>
-        /// <see cref="ToString"/> is used in logs and in exception messages. 
-        /// <see cref="Name"/> is used in contexts when a more user friendly value is needed. 
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString() => GetType().ToString() + ": " + Id + ", created: " + Created.ToString(DateTimeFormat.DateHourMin);
-
-        /// <summary>
-        /// <see cref="ToString"/> is used in logs and in exception messages. 
-        /// <see cref="Name"/> is used in contexts when a more user friendly value is needed. 
-        /// </summary>
-        /// <returns></returns>
-        public virtual string Name => PV(CoreP.Name.A(), Id.ToString());
 
         /// <summary>
         /// Override this method in all your classes which you want to give <see cref="AccessLevel"/> as a right. 
@@ -306,10 +305,10 @@ namespace AgoRapide {
                     "Details: " + details) { }
         }
 
-        public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(Name) + "</th><th>" + nameof(Created) + "</th></tr>";
+        public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
-            (Id <= 0 ? Name.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
+            (Id <= 0 ? IdFriendly.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         /// <summary>
@@ -332,7 +331,7 @@ namespace AgoRapide {
                     (string.IsNullOrEmpty(description) ? "" : "<span title=\"" + description.HTMLEncode() + "\">") +
                     GetType().ToStringVeryShort().HTMLEncode() +
                     (string.IsNullOrEmpty(description) ? "" : " (+)</span>") +
-                    "<br>Name: " + Name.HTMLEncode() + "</h1>");
+                    "<br>Name: " + IdFriendly.HTMLEncode() + "</h1>");
             }
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
@@ -406,7 +405,7 @@ namespace AgoRapide {
                     // TODO: Create general mechanism for adding links to HTML text like this (links are indicated with starting -'s and trailing -'s.)
                     // TODO: And of course cache result, expect for request.CurrentUser.Name which will change. 
                     retval.AppendLine("<p>HINT: " +
-                        "There are no " + nameof(addableProperties) + " for this entity for " + request.CurrentUser.Name.HTMLEncode() + " (" + nameof(request.CurrentUser.AccessLevelGiven) + " = " + request.CurrentUser.AccessLevelGiven + ")." +
+                        "There are no " + nameof(addableProperties) + " for this entity for " + request.CurrentUser.IdFriendly.HTMLEncode() + " (" + nameof(request.CurrentUser.AccessLevelGiven) + " = " + request.CurrentUser.AccessLevelGiven + ")." +
                         "<br><br>\r\n" +
                         (a.IsDefault || a.IsInherited ?
                             ("Most probably because there are no -" + nameof(ClassAttribute) + "- (with -" + nameof(ClassAttribute.AccessLevelWrite) + "-) defined for -" + GetType().ToString() + "- meaning -" + nameof(ClassAttribute.AccessLevelWrite) + "- defaults to -" + a.AccessLevelWrite + "-.") :

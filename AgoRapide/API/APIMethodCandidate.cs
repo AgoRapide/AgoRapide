@@ -22,7 +22,7 @@ namespace AgoRapide.API {
 
         public string SuggestedUrl => PV<string>(CoreP.SuggestedUrl.A());
 
-        public override string Name => Method.Name;
+        public override string IdFriendly => Method.IdFriendly;
 
         /// <summary>
         /// </summary>

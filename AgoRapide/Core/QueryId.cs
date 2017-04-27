@@ -20,7 +20,7 @@ namespace AgoRapide.Core {
             "Represents a search term in the API.\r\n" +
             "In its simplest form it is just a long integer that corresponds directly to " + nameof(DBField.id) + " " +
             "(see -" + nameof(QueryIdInteger) + "-).\r\n" +
-            "It can also be more complex like 'WHERE -" + nameof(CoreP.Name) + "- LIKE 'John%' ORDER BY -" + nameof(DBField.id) + "- " +
+            "It can also be more complex like 'WHERE -" + nameof(CoreP.IdFriendly) + "- LIKE 'John%' ORDER BY -" + nameof(DBField.id) + "- " +
             "(see -" + nameof(QueryIdKeyOperatorValue) + "-).\r\n" +
             "This class does NOT contain information about what type of entity is being queried.",
         LongDescription =
@@ -107,6 +107,13 @@ namespace AgoRapide.Core {
                 id = null;
                 return false;
             }
+
+            /// TODO: In QueryId.TryParse
+            /// TODO: Consider looking for IdDoc-values here (through Documentator). TODO: Implement Documentator.
+            /// TODO: If found, translate into QueryIdMultipleInteger or QueryIdInteger as relevant.
+            /// TODO: After that, look for KNOWN IdString values, and replace with corresponding QueryIdInteger
+            /// TODO: (as this will give much quicker database access, or even facilitate use of cache)
+            /// TODO: (All <see cref="ApplicationPart"/> for instance can just as well be looked up from cache)
 
             id = new QueryIdIdentifier(value);
             errorResponse = null;
