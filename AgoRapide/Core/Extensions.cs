@@ -783,9 +783,9 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="_string"></param>
         /// <returns></returns>
-        public static string HTMLEncodeAndEnrich(this string _string, Request request) {
+        public static string HTMLEncodeAndEnrich(this string _string, APICommandCreator api) {
             if (_string.StartsWith("http://") || _string.StartsWith("https://")) {
-                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (request.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator) ? Util.Configuration.C.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
+                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (api.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator) ? Util.Configuration.C.HTMLPostfixIndicator : "") + "\">" + s.HTMLEncode() + "</a>"));
             }
             return HTMLEncode(_string).Replace("\r\n", "\r\n<br>");
         }

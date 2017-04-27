@@ -84,6 +84,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\APICommandCreator.cs" />
     <Compile Include="API\APIMethod.cs" />
     <Compile Include="API\APIMethodAttribute.cs" />
     <Compile Include="API\APIMethodCandidate.cs" />

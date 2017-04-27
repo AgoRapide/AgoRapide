@@ -148,11 +148,10 @@ namespace AgoRapide.Core {
         private bool IsManyIsSet => _isManyIsSet;
 
         private bool _isDocumentation;
-        /// <summary>
-        /// TODO: Insert link to Documentator-method which does the link-insertion.
-        /// </summary>
         [ClassMember(
-            Description = "Signifies that value contains keys on the form -xxx- which should be replaced with respective links"
+            Description = 
+                "Signifies that value may contain keys on the form -xxx- " +
+                "which should be replaced with respective links by -" + nameof(Documentator.ReplaceKeys) + "-."
         )]
         public bool IsDocumentation { get => _isDocumentation; set { _isDocumentation = value; _isDocumentationIsSet = true; } }
         private bool _isDocumentationIsSet = false;

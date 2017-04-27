@@ -255,7 +255,7 @@ namespace AgoRapide.API {
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, propertyKeyNonStrict, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
             request.Result.AddProperty(CoreP.Message.A(), nameof(entities) + ".Count: " + entities.Count);
             return request.GetResponse();
@@ -270,7 +270,7 @@ namespace AgoRapide.API {
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
             }
             request.Result.AddProperty(CoreP.Message.A(), nameof(properties) + ".Count: " + properties.Count);
             return request.GetResponse();

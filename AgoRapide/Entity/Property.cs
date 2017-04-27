@@ -331,34 +331,31 @@ namespace AgoRapide {
         /// </summary>
         public object Value => _value ?? throw new NullReferenceException(Util.BreakpointEnabler + nameof(_value) + ".\r\nDetails: " + ToString());
 
-        // TODO: DELETE COMMENT. Mistaken approach. No need for caching really.
-        // private ConcurrentDictionary<ResponseFormat, string> _valueHTMLCache = new ConcurrentDictionary<ResponseFormat, string>();
         private string _valueHTML;
         /// <summary>
         /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
         /// 
+        /// Calls <see cref="Documentator.ReplaceKeys"/> as necessary.
+        /// 
         /// Note how result in itself is cached, something which is very useful when <see cref="Parent"/> itself is cached 
         /// since the process of inserting links is quite performance heavy.
-        /// Note how returned value is considered independent of <paramref name="request"/> (and that again is considered removed)
-        /// Cached value is therefor only a single value.
-        /// 
-        /// TODO: Insert link to Documentator-method which does the link-insertion.
         /// </summary>
-        /// <param name="request">
-        /// TODO: This parameter could in principle be dispensed with by implementing the following:
-        /// TODO: Move <see cref="Request.CreateAPICommand"/> to a static class and add a <see cref="ResponseFormat"/>-parameter to that method.
-        /// </param>
         /// <returns></returns>
-        public string ValueHTML(Request request) => _valueHTML ?? (_valueHTML = new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
+        public string ValueHTML => _valueHTML ?? (_valueHTML = new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
             var v = V<string>();
             switch (Key.Key.CoreP) {
-                case CoreP.IdString: return request.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
+                case CoreP.IdString: return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
                 case CoreP.DBId:
-                    return request.CreateAPILink(CoreAPIMethod.EntityIndex, v,
+                    return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
                        (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
                             Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
                             typeof(BaseEntity)), new QueryIdInteger(V<long>()));
-                default: return v.HTMLEncodeAndEnrich(request);
+                default:
+                    if (Key.Key.A.IsDocumentation) {
+                        return Documentator.ReplaceKeys(v.HTMLEncode());
+                    } else {
+                        return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance);
+                    }
             }
         })());
 
@@ -500,7 +497,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 1, Key
                 // --------------------
-                (Id <= 0 ? IdFriendly.HTMLEncode() : request.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) +
+                (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) +
                 "</td><td>" +
 
                 // --------------------
@@ -508,7 +505,7 @@ namespace AgoRapide {
                 // --------------------
                 ((!IsChangeableByCurrentUser || a.ValidValues != null) ?
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
-                    (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML(request))) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
+                    (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML)) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
                         "<input " + // TODO: Vary size according to attribute.
                             "id=\"input_" + KeyHTML + "\"" +
@@ -613,7 +610,7 @@ namespace AgoRapide {
                     "</td><td>" +
                     (value != null && value != 0 ?
                         (Util.EntityCache.TryGetValue((long)value, out var entity) ?
-                            request.CreateAPILink(entity) :
+                            request.API.CreateAPILink(entity) :
                             value.ToString()) :
                         "&nbsp;"
                     ) +
@@ -631,7 +628,7 @@ namespace AgoRapide {
             retval.AppendLine("<tr><td>Index</td><td>" + (Key.Key.A.IsMany ? Key.Index.ToString() : "&nbsp;") + "</td></tr>\r\n");
 
             /// TODO: Maybe keep information about from which <see cref="DBField"/> <see cref="_stringValue"/> originated?
-            retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? ValueHTML(request) : "[NULL[]") + "</td></tr>\r\n");
+            retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? Value : "[NULL[]") + "</td></tr>\r\n");
 
             adder(DBField.valid, Valid?.ToString(DateTimeFormat.DateHourMinSec));
             adderWithLink(DBField.vid, ValidatorId);
@@ -639,17 +636,17 @@ namespace AgoRapide {
             adderWithLink(DBField.iid, InvalidatorId);
             retval.AppendLine("</table>");
             var cmds = new List<string>();
-            request.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
-                retval.AppendLine("<p>" + request.CreateAPILink(cmd, "History") + "</p>");
+            request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
+                retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
                 cmds.Add(cmd);
             });
             Util.EnumGetValues<PropertyOperation>().ForEach(o => {
-                request.CreateAPICommand(CoreAPIMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
-                    retval.AppendLine("<p>" + request.CreateAPILink(cmd, o.ToString()) + "</p>");
+                request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
+                    retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, o.ToString()) + "</p>");
                     cmds.Add(cmd);
                 });
             });
-            request.Result.AddProperty(CoreP.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.CreateAPIUrl(cmd))));
+            request.Result.AddProperty(CoreP.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.API.CreateAPIUrl(cmd))));
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>

@@ -335,13 +335,24 @@ namespace AgoRapide {
         /// <summary>
         /// See <see cref="APIMethodAttribute.Description"/>. 
         /// </summary>
-        [PropertyKey(Parents = new Type[] { typeof(APIMethod), typeof(GeneralQueryResult) }, Type = typeof(string), AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
+        [PropertyKey(
+            Parents = new Type[] { typeof(APIMethod), typeof(GeneralQueryResult) },
+            Type = typeof(string),
+            AccessLevelRead = AccessLevel.Anonymous,
+            PriorityOrder = PriorityOrder.Important,
+            IsDocumentation = true
+        )]
         Description,
 
         /// <summary>
         /// See <see cref="APIMethodAttribute.LongDescription"/>
         /// </summary>
-        [PropertyKey(Parents = new Type[] { typeof(APIMethod) }, Type = typeof(string), AccessLevelRead = AccessLevel.Anonymous)]
+        [PropertyKey(
+            Parents = new Type[] { typeof(APIMethod) },
+            Type = typeof(string),
+            AccessLevelRead = AccessLevel.Anonymous,
+            IsDocumentation = true
+        )]
         LongDescription,
 
         /// <summary>

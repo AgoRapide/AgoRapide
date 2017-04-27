@@ -218,7 +218,7 @@ namespace AgoRapide.Core {
         [ClassMember(
             Description =
                 "URL that is prepended to every API-command generated through code. " +
-                "See -" + nameof(APIMethod.GetAPICommand) + "- / -" + nameof(Request.CreateAPICommand) + "-",
+                "See -" + nameof(APIMethod.GetAPICommand) + "- / -" + nameof(APICommandCreator.CreateAPICommand) + "-",
             LongDescription =
                 "Equivalent to -" + nameof(RootUrl) + "- plus -" + nameof(APIPrefix) + "-"
         )]

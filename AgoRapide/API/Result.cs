@@ -40,10 +40,10 @@ namespace AgoRapide.API {
             }
             if (ResultCode != ResultCode.ok) {
                 AddProperty(CoreP.ResultCodeDescription.A(), ResultCode.GetEnumValueAttribute().Description);
-                if (!Properties.ContainsKey(CoreP.APIDocumentationUrl)) AddProperty(CoreP.APIDocumentationUrl.A(), request.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
+                if (!Properties.ContainsKey(CoreP.APIDocumentationUrl)) AddProperty(CoreP.APIDocumentationUrl.A(), request.API.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
             }
             if (ResultCode == ResultCode.exception_error) {
-                AddProperty(CoreP.ExceptionDetailsUrl.A(), request.CreateAPIUrl(CoreAPIMethod.ExceptionDetails));
+                AddProperty(CoreP.ExceptionDetailsUrl.A(), request.API.CreateAPIUrl(CoreAPIMethod.ExceptionDetails));
             }
         }
 

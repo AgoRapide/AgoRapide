@@ -22,6 +22,9 @@ namespace AgoRapide.Core {
         > Keys = new Dictionary<string, List<EntityAndAttribute>>();
 
         /// <summary>
+        /// Note that method is performance intensive and result should therefore be cached
+        /// 
+        /// TODO: Consider adding bool parameter called "cache" for ourself to implement caching
         /// </summary>
         /// <param name="html"></param>
         /// <returns></returns>
@@ -29,10 +32,17 @@ namespace AgoRapide.Core {
             "Replaces all keys on the form -xxx- like " +
             "-Username- " +
             "with complete links like " +
-            "http://sample.agorapide.com/api/EnumValue/CoreP.Username/HTML")]
+            "http://sample.agorapide.com/api/EnumValue/CoreP.Username/HTML"
+        )]
         public static string ReplaceKeys(string html) {
             KeyReplacementsHTML.ForEach(r => html = html.Replace(r.Key, r.Value));
             return html;
+        }
+
+        public static void IndexKnowEntities(IDatabase db) {
+            APIMethod.AllMethods.ForEach(m => IndexEntity(m, m.A));
+            IndexEntity(Util.Configuration, Util.Configuration.A);
+            // EnumMapper.AllCoreP.ForEach(p => IndexEntity(ApplicationPart.Get))
         }
 
         /// <summary>
@@ -45,13 +55,22 @@ namespace AgoRapide.Core {
             var ea = new EntityAndAttribute { Entity = entity, Attribute = attribute };
             attribute.Id.IdDoc.ForEach(id => {
                 var list = Keys.TryGetValue(id, out var temp) ? temp : Keys[id] = new List<EntityAndAttribute>();
+                list.Add(ea);
             });
         }
 
+        [ClassMember(Description = "Not thread safe. Should be called single threaded at application startup only.")]
         public static void IndexFinalize() {
-            var prefix = Util.Configuration.C.BaseUrl;
+            KeyReplacementsHTML = new Dictionary<string, string>();
+            var api = APICommandCreator.HTMLInstance;
             Keys.ForEach(k => {
-
+                var list = k.Value;
+                switch (list.Count) {
+                    case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
+                    case 1: KeyReplacementsHTML[k.Key] = api.CreateAPILink(CoreAPIMethod.EntityIndex, list[0].Entity.GetType(), k.Key); break;
+                    default:
+                        throw new NotImplementedException(); // TODO: Check for different types of entity
+                }
             });
         }
 

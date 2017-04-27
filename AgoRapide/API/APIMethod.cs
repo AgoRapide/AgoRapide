@@ -783,11 +783,11 @@ namespace AgoRapide.API {
         public override string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreAPIMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
-            (Id <= 0 ? IdFriendly.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
+            (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
             PV(CoreP.CoreAPIMethod.A(), CoreAPIMethod.None).Use(c => c == CoreAPIMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
             PV<AccessLevel>(CoreP.AccessLevelUse.A()) + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML(request) : "[NO DESCRIPTION AVAILABLE]") + "</td><td>" +
+            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "[NO DESCRIPTION AVAILABLE]") + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {

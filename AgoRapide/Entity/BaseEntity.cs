@@ -308,7 +308,7 @@ namespace AgoRapide {
         public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
-            (Id <= 0 ? IdFriendly.HTMLEncode() : request.CreateAPILink(this)) + "</td><td>" +
+            (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         /// <summary>

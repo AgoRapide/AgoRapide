@@ -128,7 +128,7 @@ namespace AgoRapide.API {
             (Request.CurrentUser == null ? "" :
                 /// Show which user is logged in
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
-                "<p>" + Request.CreateAPILink(
+                "<p>" + Request.API.CreateAPILink(
                     CoreAPIMethod.EntityIndex,
                     nameof(Request.CurrentUser) + ": " + Request.CurrentUser.IdFriendly,
                     Request.CurrentUser.GetType(),
@@ -140,7 +140,7 @@ namespace AgoRapide.API {
                 /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
                 /// TODO: Consider creating a <see cref="CoreAPIMethod"/>.Logout in which to hide this code
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
-                "<p>" + Request.CreateAPILink(
+                "<p>" + Request.API.CreateAPILink(
                     CoreAPIMethod.PropertyOperation,
                     "End representation as " + Request.CurrentUser.IdFriendly,
                     typeof(Property),
@@ -154,7 +154,7 @@ namespace AgoRapide.API {
                 /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
                 /// TODO: Consider creating a <see cref="CoreAPIMethod"/>.Logout in which to hide this code
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
-                "<p>" + Request.CreateAPILink(
+                "<p>" + Request.API.CreateAPILink(
                     CoreAPIMethod.UpdateProperty,
                     "Logout as " + Request.CurrentUser.IdFriendly,
                     Request.CurrentUser.GetType(),

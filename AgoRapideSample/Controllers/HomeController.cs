@@ -78,7 +78,7 @@ namespace AgoRapideSample {
                     r.AddProperty(CoreP.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="PropertyKeyAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
                     r.AddProperty(
                         CoreP.SuggestedUrl.A(), 
-                        request.CreateAPIUrl(
+                        request.API.CreateAPIUrl(
                             CoreAPIMethod.UpdateProperty, 
                             typeof(Person),  /// Note important point here, do NOT set <see cref="CoreP.EntityToRepresent"/> for <see cref="CoreP.EntityToRepresent"/>!
                             new QueryIdInteger(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
