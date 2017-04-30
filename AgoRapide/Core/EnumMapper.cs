@@ -117,8 +117,6 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// To be called once at application initialization.
-        /// 
-        /// Note how subsequent calls to <see cref="Extensions.GetPropertyKeyAttributeT"/> will then always return the overridden values if any.
         /// </summary>
         public static void MapEnumFinalize(Action<string> noticeLogger) {
             mapOrders.ForEach(o => {
@@ -127,13 +125,10 @@ namespace AgoRapide.Core {
                     "\r\n\r\nReplacements for " + o.ToStringShort() + ":\r\n" +
                     (overridden.Count == 0 ? "[NONE]\r\n" : string.Join("\r\n", overriddenAttributes.GetValue(o)) + "\r\n")
                 );
-                // Extensions.ReplaceAgoRapideAttribute(o, fromEnumMaps.GetValue(o).ToDictionary(e => e.Key, e =>
                 var dict = Util.EnumGetValues(o).ToDictionary(e => (int)e, e =>
                     /// TODO: We must also replace for "manually" given <see cref="CoreP"/>
                     _fromStringMaps.GetValue(e.ToString(), () => nameof(o) + ": " + o)
                 );
-                // TODO: REMOVE THIS COMMENT:
-                // Extensions.SetPropertyKeyAttribute(o, dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: true);
                 _enumMapsCache[o] = dict;
             });
             var enumMapForCoreP = _enumMapsCache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
@@ -151,10 +146,6 @@ namespace AgoRapide.Core {
                 if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out PropertyKeyAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
             _allCoreP = allCoreP.Values.ToList();
-
-            // TODO: REMOVE THIS COMMENT!
-            /// Repeat for <see cref="CoreP"/> since it most probably was changed above (new values mapped to it)            
-            // Extensions.SetPropertyKeyAttribute(typeof(CoreP), _enumMapsCache.GetValue(typeof(CoreP)).ToDictionary(e => e.Key, e => e.Value.Key), strict: false);            
         }
 
         /// <summary>
@@ -233,12 +224,6 @@ namespace AgoRapide.Core {
             /// TODO: NOT THREAD SAFE
             var dict = _enumMapsCache.GetValue(typeof(CoreP));
             dict[(int)key.Key.CoreP] = key;
-
-            // TODO: REMOVE THIS COMMENT:
-            ///// Important. Although for the most <see cref="EnumMapper"/> will be used for <see cref="CoreP"/> there are some
-            ///// cases, especially for extension methods like <see cref="Extensions.AddValue2"/> 
-            ///// where <see cref="Extensions.GetPropertyKeyAttributeT{T}"/> is called directly.
-            //Extensions.SetPropertyKeyAttribute(typeof(CoreP), dict.ToDictionary(e => e.Key, e => e.Value.Key), strict: false);
 
             // TODO: STORE THIS IN DATABASE
             // TODO: THINK ABOUT THREAD ISSUES 

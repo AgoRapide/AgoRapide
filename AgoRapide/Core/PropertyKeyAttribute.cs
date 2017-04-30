@@ -299,7 +299,8 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Returns <see cref="PropertyKeyAttribute"/> for given <paramref name="_enum"/>-value.
         /// 
-        /// Usually called from <see cref="Extensions.GetPropertyKeyAttributeT{T}(T)"/> / <see cref="Extensions.GetPropertyKeyAttribute(object)"/>. 
+        /// Normally called from <see cref="EnumMapper.MapEnum{T}"/> but may also be called from 
+        /// <see cref="EnumValueAttribute.GetAttribute"/>- 
         /// </summary>
         /// <param name="_enum"></param>
         /// <returns></returns>

@@ -451,13 +451,18 @@ namespace AgoRapide {
                 /// (note how you may get different results for <see cref="Result.MultipleEntitiesResult"/> for HTML and JSON because HTML will use
                 /// <see cref="BaseEntity.ToHTMLTableRow"/> which does not check access at all, while JSON data here checks for each individual property. 
                 GetExistingProperties(request.CurrentUser, AccessType.Read).ForEach(i => {
-                    if (i.Value.Key.Key.A.IsMany) throw new NotImplementedException(nameof(i.Value.Key.Key.A.IsMany));
-                    retval.Properties.Add(i.Value.Key.Key.PToString, i.Value.ToJSONProperty());
+                    if (i.Value.Key.Key.A.IsMany) { // Flatten out for JSON result.
+                        i.Value.Properties.ForEach(p => { // TODO: Consider other possibilities here. Use of array for instance just like in the C# code.
+                            retval.Properties.Add(p.Value.Key.ToString(), p.Value.ToJSONProperty());
+                        });
+                    } else {
+                        retval.Properties.Add(i.Value.Key.ToString(), i.Value.ToJSONProperty());
+                    } 
                 });
                 // Note that we do not bother with Type when Properties is not set
                 if (!retval.Properties.ContainsKey(nameof(CoreP.RootProperty))) retval.Properties.Add(nameof(CoreP.RootProperty), new JSONProperty0 { Value = GetType().ToStringShort() });
             }
-            // TODO: ADD THIS:
+            // TODO: ADD THIS SOMEHOW. That is, explain what kind of Properties may be added.
             // AddUserChangeablePropertiesToSimpleEntity(retval);
             return retval;
         }

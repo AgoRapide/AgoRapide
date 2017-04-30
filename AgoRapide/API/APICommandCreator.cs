@@ -11,10 +11,8 @@ namespace AgoRapide.API {
     public class APICommandCreator {
 
         public ResponseFormat ResponseFormat { get; private set; }
-        private APICommandCreator(ResponseFormat responseFormat) {
-
-        }
-
+        private APICommandCreator(ResponseFormat responseFormat) => ResponseFormat = responseFormat;
+        
         /// <summary>
         /// Creates API command for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entityType"/> and <paramref name="id"/> like "Person/42"
         /// 

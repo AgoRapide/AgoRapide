@@ -429,11 +429,18 @@ namespace AgoRapide {
         public BaseAttribute ValueA => _valueA ?? (_valueA = new Func<BaseAttribute>(() => {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
             var type = _value.GetType();
-            if (type.IsEnum) {
-                return type.GetEnumAttribute().AgoRapideEnumType == EnumType.PropertyKey ?
-                    (BaseAttribute)_value.GetPropertyKeyAttribute() :
-                    (BaseAttribute)_value.GetEnumValueAttribute();
-            }
+            // Unnecessary complex. We will end up with PropertyKeyAttribute anyway,.
+            // if (type.IsEnum)  { 
+            //    return type.GetEnumAttribute().AgoRapideEnumType == EnumType.PropertyKey ?
+            //        // TODO: DELETE THIS COMMENT:
+            //        // This was meaningless
+            //        // (BaseAttribute)_value.GetPropertyKeyAttribute() :
+            //        // This is better:
+            //        EnumMapper.GetA(_value.ToString()).Key.A:                    
+            //        (BaseAttribute)_value.GetEnumValueAttribute();
+            //}
+            x
+            if (type.IsEnum) return _value.GetEnumValueAttribute(); /// Note how <see cref="PropertyKeyAttribute"/> will be returned if appropriate (if type.GetEnumAttribute().AgoRapideEnumType == EnumType.PropertyKey)
             return DefaultAgoRapideAttribute; /// TODO: What about <see cref="ClassAttribute"/> here? Especially for <see cref="ITypeDescriber"/>
         })());
 

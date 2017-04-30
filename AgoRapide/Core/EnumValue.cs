@@ -8,14 +8,10 @@ using AgoRapide.Database;
 
 namespace AgoRapide.Core {
 
-    /// <summary>
-    /// TODO: Rename into 
-    /// TODO: Fix meaning of this. Code now looks like this is an Enum-class.
-    /// </summary>
     [Class(
         Description = 
             "Represents an Enum with values. " + 
-            "Based on -" + nameof(EnumValueAttribute) + "-. ",
+            "Based on -" + nameof(EnumValueAttribute) + "- / -" + nameof(PropertyKeyAttribute) + "-. ",
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]
@@ -27,45 +23,44 @@ namespace AgoRapide.Core {
         /// DO NOT USE!
         /// </summary>
         public EnumValue() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
+        public EnumValue(EnumValueAttribute attribute) : base(attribute) { }
 
-        ///// <summary>
-        ///// TODO: Move into <see cref="AgoRapide.Core.Enum"/>
-        ///// </summary>
-        ///// <param name="db"></param>
-        //public static void RegisterCoreEnumClasses(IDatabase db) {
-        //    void Register<T>() where T : struct, IFormattable, IConvertible, IComparable
-        //    { // What we really would want is "where T : Enum"
-        //        RegisterEnumClass<T>(db);
-        //    }
-        //    Register<CoreP>(); 
-        //    Register<AccessLevel>();
-        //    Register<APIMethodOrigin>();
-        //    Register<CoreAPIMethod>();
-        //    Register<DateTimeFormat>();
-        //    Register<DBField>();
-        //    Register<Environment>();
-        //    Register<HTTPMethod>();
-        //    Register<PropertyOperation>();
-        //    Register<ResponseFormat>();
-        //    Register<ResultCode>();
-        //}
+        /// <summary>
+        /// TODO: Move into <see cref="AgoRapide.Core.Enum"/>
+        /// </summary>
+        /// <param name="db"></param>
+        public static void RegisterCoreEnumClasses(IDatabase db) {
+            void Register<T>() where T : struct, IFormattable, IConvertible, IComparable
+            { // What we really would want is "where T : Enum"
+                RegisterEnumClass<T>(db);
+            }
+            Register<CoreP>();
+            Register<AccessLevel>();
+            Register<APIMethodOrigin>();
+            Register<CoreAPIMethod>();
+            Register<DateTimeFormat>();
+            Register<DBField>();
+            Register<Environment>();
+            Register<HTTPMethod>();
+            Register<PropertyOperation>();
+            Register<ResponseFormat>();
+            Register<ResultCode>();
+        }
 
-        ///// <summary>
-        ///// TODO: COMPLETE THIS!
-        ///// </summary>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="enumClass"></param>
-        ///// <param name="db"></param>
-        //public static void RegisterEnumClass<T>(IDatabase db) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-        //    var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);
-        //    throw new NotImplementedException();
-        //    Util.EnumGetValues<T>().ForEach(e => {
-        //        /// TODO: COMPLETE THIS! 
-        //        /// TODO: Get information from <see cref="EnumMapper"/> for instance
-        //        // db.UpdateProperty()
-        //        // ec.AddProperty(M(CoreP.EnumValue), "");
-        //    });
-        //}
+        /// <summary>
+        /// TODO: Move into <see cref="AgoRapide.Core.Enum"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumClass"></param>
+        /// <param name="db"></param>
+        public static void RegisterEnumClass<T>(IDatabase db) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);
+            var enumType = typeof(T).GetEnumAttribute().AgoRapideEnumType;
+            Util.EnumGetValues<T>().ForEach(e => {
+                var enumValue = new EnumValue(e.GetEnumValueAttribute());
+                enumValue.ConnectWithDatabase(db);
+            });
+        }
 
         public override void ConnectWithDatabase(IDatabase db) => GetOrAdd(A, db, enrichAndReturnThisObject: this);
     }

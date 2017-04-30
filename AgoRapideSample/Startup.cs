@@ -232,6 +232,7 @@ namespace AgoRapideSample {
 
                 Log("Calling " + nameof(AgoRapide.Core.Documentator.IndexKnowEntities));
                 AgoRapide.Core.Documentator.IndexKnowEntities(db);
+                AgoRapide.Core.Documentator.IndexFinalize();
 
                 if (AgoRapide.API.APIMethod.IgnoredMethods.Count > 0) {
                     /// Note that we do not delete from the database in cases like this

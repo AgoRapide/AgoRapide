@@ -649,6 +649,12 @@ namespace AgoRapide.Core {
         public static EnumAttribute GetEnumAttribute(this Type type) => _enumAttributeCache.GetOrAdd(type, t => EnumAttribute.GetAttribute(t));
 
         private static ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumValueAttribute>> _enumValueAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumValueAttribute>>();
+        /// <summary>
+        /// Note how sub class <see cref="PropertyKeyAttribute"/> of <see cref="EnumValueAttribute"/> 
+        /// is returned as appropriate (if <see cref="GetEnumAttribute"/> returns <see cref="EnumType.PropertyKey"/>)
+        /// </summary>
+        /// <param name="_enum"></param>
+        /// <returns></returns>
         public static EnumValueAttribute GetEnumValueAttribute(this object _enum) {
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type);
@@ -657,64 +663,25 @@ namespace AgoRapide.Core {
                 GetOrAdd(_enum.ToString(), dummy => EnumValueAttribute.GetAttribute(_enum));
         }
 
-        private static ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>> _propertyKeyAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>>();
-        /// <summary>
-        /// Only used by <see cref="Property.ValueA"/>
-        /// 
-        /// Returns <see cref="PropertyKeyAttribute"/> for <paramref name="_enum"/>.
-        /// 
-        /// Note that this method gets ONLY the <see cref="PropertyKeyAttribute"/> (instead of the enriched <see cref="PropertyKeyAttributeEnriched"/>)
-        /// for an individual <paramref name="_enum"/>. This is only relevant when you do not possess the generic parameter necessary for 
-        /// calling <see cref="Extensions.GetPropertyKeyAttributeT"/>.
-        /// In other words, normally do not use this method but use the more sophisticated method <see cref="Extensions.GetPropertyKeyAttributeT"/> whenever possible.
-        /// (since that method again returns a much more sophisticated object back)
-        /// </summary>
-        /// <param name="_enum"></param>
-        /// <returns></returns>
-        public static PropertyKeyAttribute GetPropertyKeyAttribute(this object _enum) {
-            var type = _enum.GetType();
-            NotOfTypeEnumException.AssertEnum(type);
-            return _propertyKeyAttributeCache.
-                GetOrAdd(type, dummy => new ConcurrentDictionary<string, PropertyKeyAttribute>()).
-                GetOrAdd(_enum.ToString(), dummy => PropertyKeyAttribute.GetAttribute(_enum));
-        }
-
+        //private static ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>> _propertyKeyAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>>();
         ///// <summary>
-        ///// TODO: Consider using ordinary dictionary and demand all enums to be registered at application startup.
-        ///// TODO: OR: 
-        ///// </summary>
-        //private static ConcurrentDictionary<Type, Dictionary<int, PropertyKeyAttributeEnriched>> _agoRapideAttributeTCache = new ConcurrentDictionary<Type, Dictionary<int, PropertyKeyAttributeEnriched>>();
-        ///// <summary>
-        ///// Note use of caching
+        ///// Only used by <see cref="Property.ValueA"/>
         ///// 
-        ///// Note how we do not return a <see cref="PropertyKeyAttributeEnrichedT{T}"/> object because of <see cref="ReplaceAgoRapideAttribute{T}"/> 
+        ///// Returns <see cref="PropertyKeyAttribute"/> for <paramref name="_enum"/>.
+        ///// 
+        ///// Note that this method gets ONLY the <see cref="PropertyKeyAttribute"/> (instead of the enriched <see cref="PropertyKeyAttributeEnriched"/>)
+        ///// for an individual <paramref name="_enum"/>. 
+        ///// In other words, normally do not use this method but use the more sophisticated method <see cref="Extensions.GetPropertyKeyAttributeT"/> whenever possible.
+        ///// (since that method again returns a much more sophisticated object back)
         ///// </summary>
-        ///// <typeparam name="T"></typeparam>
         ///// <param name="_enum"></param>
         ///// <returns></returns>
-        //public static PropertyKeyAttributeEnriched GetPropertyKeyAttributeT<T>(this T _enum) where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
-        //    _agoRapideAttributeTCache.
-        //        GetValue(typeof(T),() => "Possible cause: No call made to " +  nameof(SetPropertyKeyAttribute) + " for " + typeof(T)).
-        //        //GetOrAdd(typeof(T), dummy => {
-        //        //    throw new PropertyKey.InvalidPropertyKeyException("No )
-        //            //NotOfTypeEnumException.AssertEnum(typeof(T));
-        //            //return Util.EnumGetValues(exclude: (T)(object)-1). // Note how we also want the .None value (therefore exclude -1 below)
-        //            //    ToDictionary(e => (int)(object)e, e => (PropertyKeyAttributeEnriched)(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAttribute(e), null)));
-        //        // }).
-        //        GetValue2((int)(object)_enum, () => "Hint: Is " + _enum + " a valid value for " + typeof(T) + "?");
-
-        ///// <summary>
-        ///// Only to be called at application startup from <see cref="EnumMapper."/>. 
-        ///// 
-        ///// TODO: TRY TO REMOVE THIS!
-        ///// </summary>
-        ///// <param name="type"></param>
-        ///// <param name="attributes"></param>
-        ///// <param name="strict">If true then will throw exception if already exists.</param>
-        //public static void SetPropertyKeyAttribute(Type type, Dictionary<int, PropertyKeyAttributeEnriched> attributes, bool strict) {
-        //    if (strict && _agoRapideAttributeTCache.ContainsKey(type)) throw new KeyAlreadyExistsException(type, nameof(_agoRapideAttributeTCache), 
-        //        "All -" + nameof(EnumType.PropertyKey) + "- are supposed to be found by " + nameof(EnumMapper.MapEnum) + " before " + nameof(GetPropertyKeyAttributeT) + " is being called");
-        //    _agoRapideAttributeTCache[type] = attributes;
+        //public static PropertyKeyAttribute GetPropertyKeyAttribute(this object _enum) {
+        //    var type = _enum.GetType();
+        //    NotOfTypeEnumException.AssertEnum(type);
+        //    return _propertyKeyAttributeCache.
+        //        GetOrAdd(type, dummy => new ConcurrentDictionary<string, PropertyKeyAttribute>()).
+        //        GetOrAdd(_enum.ToString(), dummy => PropertyKeyAttribute.GetAttribute(_enum));
         //}
 
         public static PropertyKey A(this CoreP coreP) => EnumMapper.GetA(coreP);

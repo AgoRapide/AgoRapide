@@ -477,7 +477,7 @@ namespace AgoRapide.API {
                     methodAttribute: new APIMethodAttribute {
                         CoreMethod = CoreAPIMethod.AddEntity,
                         Description =
-                            "Adds an entity of type " + t.ToStringShort() + ".",
+                            "Adds an entity of type -" + t.ToStringShort() + "-.",
                         AccessLevelUse = t.GetClassAttribute().AccessLevelWrite // Use of method equals writing of entity (creation)
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)

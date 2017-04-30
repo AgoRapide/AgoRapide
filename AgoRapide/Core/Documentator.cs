@@ -21,6 +21,11 @@ namespace AgoRapide.Core {
             List<EntityAndAttribute>   // 
         > Keys = new Dictionary<string, List<EntityAndAttribute>>();
 
+        //private static Dictionary<
+        //    string,                   // Key is key like -xxx- but without -, that is like xxx
+        //    string
+        //> Links = new Dictionary<string, string>();
+
         /// <summary>
         /// Note that method is performance intensive and result should therefore be cached
         /// 
@@ -42,7 +47,7 @@ namespace AgoRapide.Core {
         public static void IndexKnowEntities(IDatabase db) {
             APIMethod.AllMethods.ForEach(m => IndexEntity(m, m.A));
             IndexEntity(Util.Configuration, Util.Configuration.A);
-            // EnumMapper.AllCoreP.ForEach(p => IndexEntity(ApplicationPart.Get))
+            EnumMapper.AllCoreP.ForEach(p => IndexEntity(ApplicationPart.Get))
         }
 
         /// <summary>
@@ -65,11 +70,11 @@ namespace AgoRapide.Core {
             var api = APICommandCreator.HTMLInstance;
             Keys.ForEach(k => {
                 var list = k.Value;
-                switch (list.Count) {
+                var types = list.Select(l => l.Entity.GetType()).Distinct().ToList();
+                switch (types.Count) {
                     case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
-                    case 1: KeyReplacementsHTML[k.Key] = api.CreateAPILink(CoreAPIMethod.EntityIndex, list[0].Entity.GetType(), k.Key); break;
-                    default:
-                        throw new NotImplementedException(); // TODO: Check for different types of entity
+                    case 1: KeyReplacementsHTML[k.Key] = api.CreateAPILink(CoreAPIMethod.EntityIndex, types[0], k.Key); break; // Use specific api-method like api/EnumValue for instance
+                    default: KeyReplacementsHTML[k.Key] = api.CreateAPILink(CoreAPIMethod.EntityIndex, typeof(BaseEntity), k.Key); break; // Use generic api-method like api/Entity since result will have different types
                 }
             });
         }
@@ -81,5 +86,9 @@ namespace AgoRapide.Core {
             public BaseEntity Entity;
             public BaseAttribute Attribute;
         }
+
+        //public class ListEntityAndAttributPlusTypeInfo {
+
+        //}
     }
 }
