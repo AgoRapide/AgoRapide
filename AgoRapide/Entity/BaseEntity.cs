@@ -29,7 +29,7 @@ namespace AgoRapide {
         /// Do not do this. Make exception for <see cref="CoreP.AccessLevelUse"/> for <see cref="CoreAPIMethod.EntityIndex"/> instead
         // AccessLevelRead = AccessLevel.Anonymous, /// Necessary for <see cref="CoreMethod.EntityIndex"/> to accept all kind of queries. 
 
-        DefinedForClass = nameof(BaseEntity) /// Necessary for <see cref="PropertyKeyAttribute.IsInherited"/> to be set correctly. TODO: Turn into Type (will require more work for deducing <see cref="PropertyKeyAttribute.IsInherited"/>). 
+        DefinedForClass = nameof(BaseEntity) /// Necessary for <see cref="ClassAttribute.IsInherited"/> to be set correctly. TODO: Turn into Type (will require more work for deducing <see cref="ClassAttribute.IsInherited"/>). 
     )]
     public class BaseEntity : BaseCore {
 
@@ -44,6 +44,8 @@ namespace AgoRapide {
         public class IdNotSetException : ApplicationException {
             public IdNotSetException(string message) : base(nameof(BaseEntity.Id) + " was not set. Possible cause: An object was assumed to originate from the database but did not.\r\nDetails:\r\n" + message) { }
         }
+
+        public virtual string IdString => PV(CoreP.IdString.A(), Id.ToString());
 
         /// <summary>
         /// <see cref="ToString"/> is used in logs and in exception messages. 
@@ -305,8 +307,22 @@ namespace AgoRapide {
                     "Details: " + details) { }
         }
 
+        /// <summary>
+        /// Note: You can safely use "public override string" for both 
+        /// Note: <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// Note: since <see cref="Result.ToHTMLDetailed"/> will use separate tables for each type found.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(Created) + "</th></tr>";
 
+        /// <summary>
+        /// Note: You can safely use "public override string" for both 
+        /// Note: <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// Note: since <see cref="Result.ToHTMLDetailed"/> will use separate tables for each type found.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";

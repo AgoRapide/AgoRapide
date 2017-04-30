@@ -21,7 +21,7 @@ namespace AgoRapide.Core {
             Id = id != 0 ? id : throw new ArgumentException(nameof(id) + ": " + id);
             IsSingle = true;
             IsMultiple = false;
-            SQLWhereStatement = "WHERE " + DBField.id + " = " + Id;
+            _SQLWhereStatement = "WHERE " + DBField.id + " = " + Id;
         }
 
         /// <summary>

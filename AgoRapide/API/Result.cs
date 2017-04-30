@@ -56,7 +56,6 @@ namespace AgoRapide.API {
         public override string ToHTMLDetailed(Request request) {
             AdjustAccordingToResultCodeAndMethod(request);
             var retval = new StringBuilder();
-            // var showDetails = false;
             if (SingleEntityResult != null) {
                 if (SingleEntityResult is Result) throw new InvalidObjectTypeException(SingleEntityResult, "Would have resulted in recursive call in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " if allowed");
                 // retval.Append("<p>Single entity</p>");
@@ -65,13 +64,17 @@ namespace AgoRapide.API {
                 if (MultipleEntitiesResult.Count == 0) {
                     retval.AppendLine("<p>No entities resulted from your query</p>");
                 } else {
-                    retval.AppendLine("<p>" + MultipleEntitiesResult.Count + " entities</p>"); // of type " + MultipleEntitiesResult.First().GetType().ToStringShort() + "</p>");
-                    retval.AppendLine("<table>");
-                    retval.AppendLine(MultipleEntitiesResult.First().ToHTMLTableRowHeading(request));
-                    // TODO: Assert that all are of equal type, so that heading is known to be correct.
-                    // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
-                    retval.AppendLine(string.Join("", MultipleEntitiesResult.OrderBy(e => e.IdFriendly).Select(e => e.ToHTMLTableRow(request))));
-                    retval.AppendLine("</table>");
+                    var types = MultipleEntitiesResult.Select(e => e.GetType()).Distinct().ToList();
+                    if (types.Count > 1) retval.AppendLine("<p>" + MultipleEntitiesResult.Count + " entities in total</p>"); // of type " + MultipleEntitiesResult.First().GetType().ToStringShort() + "</p>");
+                    types.ForEach(t => { /// Split up separate tables for each type because <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/> are not compatible between different types
+                        // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
+                        var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
+                        retval.AppendLine("<p>" + thisTypeSorted.Count + " entities of type " + t.ToStringShort() + "</p>");
+                        retval.AppendLine("<table>");
+                        retval.AppendLine(thisTypeSorted[0].ToHTMLTableRowHeading(request));
+                        retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToHTMLTableRow(request))));
+                        retval.AppendLine("</table>");
+                    });
                 }
             } else if (ResultCode == ResultCode.ok) {
                 // Do not bother with explaining. 

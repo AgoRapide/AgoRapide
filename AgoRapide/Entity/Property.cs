@@ -344,7 +344,7 @@ namespace AgoRapide {
         public string ValueHTML => _valueHTML ?? (_valueHTML = new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
             var v = V<string>();
             switch (Key.Key.CoreP) {
-                case CoreP.IdString: return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdIdentifier(v));
+                case CoreP.IdString: return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdString(v));
                 case CoreP.DBId:
                     return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
                        (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
@@ -353,6 +353,8 @@ namespace AgoRapide {
                 default:
                     if (Key.Key.A.IsDocumentation) {
                         return Documentator.ReplaceKeys(v.HTMLEncode());
+                    } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
+                        return Documentator.GetSingleReplacement(v, list);
                     } else {
                         return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance);
                     }
@@ -429,19 +431,13 @@ namespace AgoRapide {
         public BaseAttribute ValueA => _valueA ?? (_valueA = new Func<BaseAttribute>(() => {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
             var type = _value.GetType();
-            // Unnecessary complex. We will end up with PropertyKeyAttribute anyway,.
-            // if (type.IsEnum)  { 
-            //    return type.GetEnumAttribute().AgoRapideEnumType == EnumType.PropertyKey ?
-            //        // TODO: DELETE THIS COMMENT:
-            //        // This was meaningless
-            //        // (BaseAttribute)_value.GetPropertyKeyAttribute() :
-            //        // This is better:
-            //        EnumMapper.GetA(_value.ToString()).Key.A:                    
-            //        (BaseAttribute)_value.GetEnumValueAttribute();
-            //}
-            x
-            if (type.IsEnum) return _value.GetEnumValueAttribute(); /// Note how <see cref="PropertyKeyAttribute"/> will be returned if appropriate (if type.GetEnumAttribute().AgoRapideEnumType == EnumType.PropertyKey)
-            return DefaultAgoRapideAttribute; /// TODO: What about <see cref="ClassAttribute"/> here? Especially for <see cref="ITypeDescriber"/>
+            if (type.IsEnum) return _value.GetEnumValueAttribute();
+            if (typeof(ITypeDescriber).IsAssignableFrom(type)) {
+                /// TODO: Add check for <see cref="ClassAttribute"/> here? 
+                /// Especially for <see cref="ITypeDescriber"/>
+                throw new NotImplementedException();
+            }
+            return DefaultAgoRapideAttribute;
         })());
 
         /// <summary>
@@ -473,9 +469,6 @@ namespace AgoRapide {
             (_key == null ? "" : (", " + nameof(Key.Key.A.Type) + ": " + (_key.Key.A.Type?.ToString() ?? "[NULL]"))) + ", " +
             GetType() + ".\r\n";
 
-        public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
-        public const string HTMLTableHeading = "<tr><th>Key</th><th>Value</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
-
         /// <summary>
         /// Hack for transferring information from 
         /// <see cref="BaseEntity.CreateHTMLForExistingProperties"/> and 
@@ -487,8 +480,14 @@ namespace AgoRapide {
         public bool IsChangeableByCurrentUser;
 
         /// <summary>
-        /// TODO: Create better links, use <see cref="CoreAPIMethod"/> or similar in order to get the REAL URL's used by the actual methods.
-        /// 
+        /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
+        public const string HTMLTableHeading = "<tr><th>Key</th><th>Value</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
+
+        /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
         /// </summary>
         /// <param name="request"></param>

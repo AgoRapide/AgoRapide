@@ -780,7 +780,13 @@ namespace AgoRapide.API {
             _allMethods.Add(method);
         }
 
-        public override string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreAPIMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
+        /// <summary>
+        /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
+        public const string HTMLTableHeading = "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreAPIMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +

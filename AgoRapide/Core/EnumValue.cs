@@ -29,10 +29,10 @@ namespace AgoRapide.Core {
         /// TODO: Move into <see cref="AgoRapide.Core.Enum"/>
         /// </summary>
         /// <param name="db"></param>
-        public static void RegisterCoreEnumClasses(IDatabase db) {
+        public static void RegisterAndIndexCoreEnumClasses(IDatabase db) {
             void Register<T>() where T : struct, IFormattable, IConvertible, IComparable
             { // What we really would want is "where T : Enum"
-                RegisterEnumClass<T>(db);
+                RegisterAndIndexEnumClass<T>(db);
             }
             Register<CoreP>();
             Register<AccessLevel>();
@@ -53,12 +53,13 @@ namespace AgoRapide.Core {
         /// <typeparam name="T"></typeparam>
         /// <param name="enumClass"></param>
         /// <param name="db"></param>
-        public static void RegisterEnumClass<T>(IDatabase db) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public static void RegisterAndIndexEnumClass<T>(IDatabase db) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);
             var enumType = typeof(T).GetEnumAttribute().AgoRapideEnumType;
             Util.EnumGetValues<T>().ForEach(e => {
                 var enumValue = new EnumValue(e.GetEnumValueAttribute());
                 enumValue.ConnectWithDatabase(db);
+                Documentator.IndexEntity(enumValue);
             });
         }
 

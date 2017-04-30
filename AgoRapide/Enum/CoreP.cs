@@ -116,7 +116,7 @@ namespace AgoRapide {
         [PropertyKey(
             Description =
                 "General identifier usable in URLs and similar.\r\n" +
-                "Corresponds to -" + nameof(QueryIdIdentifier) + "- and -" + nameof(Id.IdString) + "-.",
+                "Corresponds to -" + nameof(QueryIdString) + "- and -" + nameof(Id.IdString) + "-.",
             LongDescription =
                 "Values chosen should be compatible with HTTP GET URLs (without any escaping of characters). " +
                 "The approach chosen is therefore to assure that values -" + nameof(PropertyKeyAttribute.MustBeValidCSharpIdentifier) + "-. " +

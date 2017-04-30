@@ -60,8 +60,7 @@ namespace AgoRapide.API {
         public string CreateAPILink(BaseEntity entity, string linkText) =>
             CreateAPILink(CoreAPIMethod.EntityIndex, linkText, entity.GetType(),
                 (entity.Properties != null && entity.Properties.TryGetValue(CoreP.IdString, out var p) ?
-                    (QueryId)new QueryIdIdentifier(p.V<string>()) : /// Using identifier looks much better in links. Especially good for documentation where names stay the same but id's may change  (like "Property/{QueryId}" to identify an <see cref="APIMethod"/> for instance)
-                    // (QueryId)new QueryIdInteger(entity.Id) :
+                    (QueryId)new QueryIdString(p.V<string>()) : /// Using identifier looks much better in links. Especially good for documentation where names stay the same but id's may change  (like "Property/{QueryId}" to identify an <see cref="APIMethod"/> for instance)
                     (QueryId)new QueryIdInteger(entity.Id)
                 )
             );

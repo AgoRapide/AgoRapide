@@ -101,7 +101,7 @@ namespace AgoRapide.Core {
 
             if ((Properties == null || Properties.Count == 0) && Operator == Operator.None && Value == null) {
                 // Use empty SQL statement
-                SQLWhereStatement = "";
+                _SQLWhereStatement = "";
                 _toString = "All"; /// Improve on use of <see cref="QueryId.ToString"/>
                 IsAll = true;
                 return;
@@ -222,7 +222,7 @@ namespace AgoRapide.Core {
 
             if (Properties == null || Properties.Count == 0) throw new NullReferenceException(nameof(Properties) + ", details: ??? " + Operator + " " + Value + "(of type " + Value.GetType() + ")");
             if (Properties.Count == 1) {
-                SQLWhereStatement = singlePropertySQLConstructor(Properties[0]);
+                _SQLWhereStatement = singlePropertySQLConstructor(Properties[0]);
             } else {
                 // TODO: Fix, SQL will look like
                 // TODO:   ... AND 
@@ -233,7 +233,7 @@ namespace AgoRapide.Core {
                 // TODO:   ) AND 
                 // TODO:   ...
                 // TODO: Which clearly does not look optimal...
-                SQLWhereStatement = "(\r\n   " + string.Join(" OR\r\n   ", Properties.Select(p => "(" + singlePropertySQLConstructor(p) + ")")) + "\r\n)";
+                _SQLWhereStatement = "(\r\n   " + string.Join(" OR\r\n   ", Properties.Select(p => "(" + singlePropertySQLConstructor(p) + ")")) + "\r\n)";
             }
 
             _toString = ToStringDebug(); /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatiable with parser)

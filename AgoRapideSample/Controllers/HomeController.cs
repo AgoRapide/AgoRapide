@@ -107,7 +107,7 @@ namespace AgoRapideSample {
         [HttpPost]
         [APIMethod(
             S1 = nameof(AddFirstAdminUser), S2 = P.Email, S3 = P.Password, Description =
-            "Adds the first administrative user to the system (with -" + nameof(P) + "." + nameof(P.AccessLevelGiven) + "- = -" + nameof(AccessLevel) + "." + nameof(AccessLevel.Admin) + "-. " +
+            "Adds the first administrative user to the system (with -" + nameof(P.AccessLevelGiven) + "- = -" + nameof(AccessLevel.Admin) + "-. " +
             "Only allowed if no entities of type -" + nameof(Person) + "- exists",
             ShowDetailedResult = true)]
         public object AddFirstAdminUser(string Email, string Password) {

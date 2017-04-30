@@ -219,7 +219,7 @@ namespace AgoRapide.API {
                         p => method.EntityType.IsAssignableFrom(p.GetType())).Select(a => (BaseEntity)a).ToList());
                 } else {
                     switch (queryId) {
-                        case QueryIdIdentifier q:
+                        case QueryIdString q:
                             /// Improve on use of <see cref="QueryId.ToString"/>
                             if (ApplicationPart.AllApplicationParts.TryGetValue(q.ToString(), out var retval) && method.EntityType.IsAssignableFrom(retval.GetType())) {
                                 return request.GetOKResponseAsSingleEntity(retval);

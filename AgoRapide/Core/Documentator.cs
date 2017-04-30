@@ -16,7 +16,10 @@ namespace AgoRapide.Core {
             string  // Value is complete URL for replacement like http://sample.agorapide.com/api/EnumValue/CoreP.Username/HTML
         > KeyReplacementsHTML = new Dictionary<string, string>();
 
-        private static Dictionary<
+        /// <summary>
+        /// TODO: Consider making private
+        /// </summary>
+        public static Dictionary<
             string,                    // Key is key like -xxx- but without -, that is like xxx
             List<EntityAndAttribute>   // 
         > Keys = new Dictionary<string, List<EntityAndAttribute>>();
@@ -45,11 +48,13 @@ namespace AgoRapide.Core {
         }
 
         public static void IndexKnowEntities(IDatabase db) {
-            APIMethod.AllMethods.ForEach(m => IndexEntity(m, m.A));
-            IndexEntity(Util.Configuration, Util.Configuration.A);
-            EnumMapper.AllCoreP.ForEach(p => IndexEntity(ApplicationPart.Get))
+            APIMethod.AllMethods.ForEach(m => IndexEntity(m));
+            IndexEntity(Util.Configuration);
+            // EnumMapper.AllCoreP.ForEach(p => IndexEntity(ApplicationPart.Get))
+            EnumValue.RegisterAndIndexCoreEnumClasses(db);
         }
 
+        public static void IndexEntity(ApplicationPart applicationPart) => IndexEntity(applicationPart, applicationPart.A);
         /// <summary>
         /// Complete by calling <see cref="IndexFinalize"/> afterwards. 
         /// </summary>
@@ -64,22 +69,39 @@ namespace AgoRapide.Core {
             });
         }
 
+        private static APICommandCreator api = APICommandCreator.HTMLInstance;
+        /// <summary>
+        /// Returns <see cref="KeyReplacementsHTML"/>
+        /// </summary>
+        /// <returns></returns>
         [ClassMember(Description = "Not thread safe. Should be called single threaded at application startup only.")]
-        public static void IndexFinalize() {
+        public static Dictionary<string, string> IndexFinalize() {
             KeyReplacementsHTML = new Dictionary<string, string>();
-            var api = APICommandCreator.HTMLInstance;
-            Keys.ForEach(k => {
-                var list = k.Value;
-                var types = list.Select(l => l.Entity.GetType()).Distinct().ToList();
-                switch (types.Count) {
-                    case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
-                    case 1: KeyReplacementsHTML[k.Key] = api.CreateAPILink(CoreAPIMethod.EntityIndex, types[0], k.Key); break; // Use specific api-method like api/EnumValue for instance
-                    default: KeyReplacementsHTML[k.Key] = api.CreateAPILink(CoreAPIMethod.EntityIndex, typeof(BaseEntity), k.Key); break; // Use generic api-method like api/Entity since result will have different types
-                }
-            });
+            Keys.ForEach(k => KeyReplacementsHTML["-" + k.Key + "-"] = GetSingleReplacement(k.Key, k.Value));
+            //    var list = k.Value;
+            //    var types = list.Select(l => l.Entity.GetType()).Distinct().ToList();
+            //    switch (types.Count) {
+            //        case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
+            //        case 1: KeyReplacementsHTML["-" + k.Key + "-"] = GetSingleReplacement(k.Key, list);
+            //        default: KeyReplacementsHTML["-" + k.Key+ "-"] = api.CreateAPILink(CoreAPIMethod.EntityIndex, k.Key, typeof(BaseEntity), k.Key); break; // Use generic api-method like api/Entity since result will have different types
+            //    }
+            //});
+            return KeyReplacementsHTML;
         }
 
-        private class EntityAndAttribute {
+        public static string GetSingleReplacement(string key, List<EntityAndAttribute> list) {
+            var types = list.Select(l => l.Entity.GetType()).Distinct().ToList();
+            switch (types.Count) {
+                case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
+                case 1: return api.CreateAPILink(CoreAPIMethod.EntityIndex, key, types[0], key);  // Use specific api-method like api/EnumValue for instance
+                default: return api.CreateAPILink(CoreAPIMethod.EntityIndex, key, typeof(BaseEntity), key); // Use generic api-method like api/Entity since result will have different types
+            }
+        }
+
+        /// <summary>
+        /// TODO: Consider making private
+        /// </summary>
+        public class EntityAndAttribute {
             /// <summary>
             /// TODO: Consider replacing with Type and Id instead.
             /// </summary>

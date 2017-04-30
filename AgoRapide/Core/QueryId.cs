@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AgoRapide;
+using AgoRapide.API;
 
 namespace AgoRapide.Core {
 
@@ -28,7 +29,7 @@ namespace AgoRapide.Core {
             "that is safe to use in order to build up a real SQL query against the database backend.\r\n" +
             "Sub classes:\r\n" +
             nameof(QueryIdInteger) + "\r\n" +
-            nameof(QueryIdIdentifier) + "\r\n" +
+            nameof(QueryIdString) + "\r\n" +
             nameof(QueryIdKeyOperatorValue),
         SampleValues = new string[] { "All" },
         InvalidValues = new string[] {
@@ -52,6 +53,7 @@ namespace AgoRapide.Core {
         [ClassMember(Description = "Corresponds to -" + nameof(ToString) + "- returning \"All\"")]
         public bool IsAll { get; protected set; }
 
+        protected string _SQLWhereStatement;
         [ClassMember(
             Description =
                 "Trusted \"safe to use\" value.\r\n" +
@@ -65,16 +67,7 @@ namespace AgoRapide.Core {
                 "\"key = 'AccessRight' AND strv IN ('User', 'Relation', 'Admin')\"\r\n" +
                 "\"key = 'Name' AND strv IN (:strv1, :strv2, :strv3)\" (with corresponding parameters in -" + nameof(SQLWhereStatementParameters) + "-)"
         )]
-        public string SQLWhereStatement { get; protected set; }
-
-        /// <summary>
-        /// This should correspond to a value accepted by the corresponding parser (<see cref="TryParse"/>
-        /// 
-        /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatiable with parser)
-        /// </summary>
-        /// <returns></returns>
-        public abstract override string ToString();
-        public string ToStringDebug() => SQLWhereStatement + (SQLWhereStatementParameters.Count == 0 ? "" : "\r\nParameter: ") + string.Join("\r\nParameter: ", SQLWhereStatementParameters.Select(p => p.ToString()));
+        public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ". Should have been set by sub class");
 
         /// <summary>
         /// TODO: MAKE INTO <see cref="IEnumerable{object}"/>
@@ -86,8 +79,26 @@ namespace AgoRapide.Core {
         public List<(string key, object value)> SQLWhereStatementParameters { get; protected set; } = new List<(string key, object value)>();
         public string SQLOrderByStatement => ""; // Not yet implemented
 
+        /// <summary>
+        /// This should correspond to a value accepted by the corresponding parser (<see cref="TryParse"/>
+        /// 
+        /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatiable with parser)
+        /// </summary>
+        /// <returns></returns>
+        public abstract override string ToString();
+        public string ToStringDebug() => SQLWhereStatement + (SQLWhereStatementParameters.Count == 0 ? "" : "\r\nParameter: ") + string.Join("\r\nParameter: ", SQLWhereStatementParameters.Select(p => p.ToString()));
+
         public static QueryId Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidQueryIdException(nameof(value) + ": " + value + ", " + nameof(errorResponse) + ": " + errorResponse);
         public static bool TryParse(string value, out QueryId id) => TryParse(value, out id, out var dummy);
+        /// <summary>
+        /// TODO: Because of the use of <see cref="CoreP.IdString"/> 
+        /// TODO: <see cref="QueryId.TryParse"/> will most probably never return FALSE. 
+        /// TODO: Therefore, change the method's signature into void Parse.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="id"></param>
+        /// <param name="errorResponse"></param>
+        /// <returns></returns>
         public static bool TryParse(string value, out QueryId id, out string errorResponse) {
             if (long.TryParse(value, out var lngId)) {
                 id = new QueryIdInteger(lngId);
@@ -103,19 +114,40 @@ namespace AgoRapide.Core {
             }
 
             if (valueToLower.StartsWith("where")) {  // TODO: Implement parsing of WHERE ... format.
-                errorResponse = "Invalid long integer, not recognized as " + nameof(QueryIdIdentifier) + " and parsing as " + nameof(QueryIdKeyOperatorValue) + " not yet implemented.";
+                errorResponse = "Invalid long integer, not recognized as " + nameof(QueryIdString) + " and parsing as " + nameof(QueryIdKeyOperatorValue) + " not yet implemented.";
                 id = null;
                 return false;
             }
 
-            /// TODO: In QueryId.TryParse
-            /// TODO: Consider looking for IdDoc-values here (through Documentator). TODO: Implement Documentator.
-            /// TODO: If found, translate into QueryIdMultipleInteger or QueryIdInteger as relevant.
-            /// TODO: After that, look for KNOWN IdString values, and replace with corresponding QueryIdInteger
-            /// TODO: (as this will give much quicker database access, or even facilitate use of cache)
-            /// TODO: (All <see cref="ApplicationPart"/> for instance can just as well be looked up from cache)
+            var t = value.ToLower().Split(",");
+            if (t.Count > 1) {
+                id = new QueryIdMultiple(t);
+                errorResponse = null;
+                return true;
+            }
 
-            id = new QueryIdIdentifier(value);
+            if (Documentator.Keys.TryGetValue(value, out var list)) {
+                /// There is an attempt to use a friendly id which might not be an <see cref="CoreP.IdString"/>. 
+                /// This would typically be the case if we are called from <see cref="APICommandCreator"/>, 
+                /// that is, NOT from a API client as a result of an actual query, 
+                /// but from "inside" the API in order to generate an API URL.
+                switch (list.Count) {
+                    case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
+                    case 1:
+                        var singleEntity = list[0].Entity;
+                        id = singleEntity.IdString.Equals(singleEntity.Id.ToString()) ?
+                            (QueryId)new QueryIdInteger(singleEntity.Id) : // A bit surprising, but really no problem 
+                            (QueryId)new QueryIdString(singleEntity.IdString);  /// Replace with <see cref="CoreP.IdString"/> since that one also works against the database
+                        errorResponse = null;
+                        return true;
+                    default:
+                        id = new QueryIdMultiple(list.Select(e => e.Entity.IdString).ToList());
+                        errorResponse = null;
+                        return true;
+                }
+            }
+
+            id = new QueryIdString(value);
             errorResponse = null;
             return true;
 

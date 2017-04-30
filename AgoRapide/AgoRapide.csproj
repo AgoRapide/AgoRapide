@@ -123,9 +123,10 @@
     <Compile Include="Core\PropertyKeyAttributeEnrichedT.cs" />
     <Compile Include="Core\PropertyKeyWithIndex.cs" />
     <Compile Include="Core\QueryId.cs" />
-    <Compile Include="Core\QueryIdIdentifier.cs" />
     <Compile Include="Core\QueryIdInteger.cs" />
     <Compile Include="Core\QueryIdKeyOperatorValue.cs" />
+    <Compile Include="Core\QueryIdMultiple.cs" />
+    <Compile Include="Core\QueryIdString.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Database\IDatabase.cs" />

@@ -16,7 +16,13 @@ namespace AgoRapide.API {
     )]
     public class GeneralQueryResult : BaseEntity {
 
-        public override string ToHTMLTableRowHeading(Request request) => "<tr><th>Result</th></tr>";
+        /// <summary>
+        /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
+        public const string HTMLTableHeading = "<tr><th>Result</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             "<a href=\"" + PV<string>(CoreP.SuggestedUrl.A()) + "\">" + PV<string>(CoreP.Description.A()).HTMLEncode() + "</a>" +
