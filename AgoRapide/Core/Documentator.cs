@@ -47,11 +47,15 @@ namespace AgoRapide.Core {
             return html;
         }
 
+        /// <summary>
+        /// TODO: Make more logical choice of methdod names and placing of logic
+        /// </summary>
+        /// <param name="db"></param>
         public static void IndexKnowEntities(IDatabase db) {
             APIMethod.AllMethods.ForEach(m => IndexEntity(m));
-            IndexEntity(Util.Configuration);
-            // EnumMapper.AllCoreP.ForEach(p => IndexEntity(ApplicationPart.Get))
-            EnumValue.RegisterAndIndexCoreEnumClasses(db);
+            IndexEntity(Util.Configuration); // Is 
+            Enum.RegisterAndIndexCoreEnum(db);
+            Class.RegisterAndIndexCoreClass(db);
         }
 
         public static void IndexEntity(ApplicationPart applicationPart) => IndexEntity(applicationPart, applicationPart.A);

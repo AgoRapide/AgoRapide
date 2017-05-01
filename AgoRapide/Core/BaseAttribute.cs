@@ -158,7 +158,7 @@ namespace AgoRapide.Core {
         /// NOTE: IMPORTANT. 
         /// NOTE: IMPORTANT. Do not attempt to eliminate <see cref="_propertiesParent"/> and shorten this to = new Property ... 
         /// NOTE> IMPORTANT. because then you will get type initializer exception at application startup because
-        /// NOTE: IMPORTANT: <see cref="EnumMapper.MapEnum{T}"/> will not have been called yet in application lifetime for <see cref="CoreP"/>. 
+        /// NOTE: IMPORTANT: <see cref="PropertyKeyMapper.MapEnum{T}"/> will not have been called yet in application lifetime for <see cref="CoreP"/>. 
         /// NOTE: IMPORTANT: In other words you will trip a chicken-and-egg trap
         /// NOTE: IMPORTANT. 
         /// </summary>
@@ -197,6 +197,13 @@ namespace AgoRapide.Core {
         /// (Note assertion for the last criteria in <see cref="Id"/>)
         ///  </summary>
         /// <returns></returns>
-        protected virtual Id GetId() => throw new NullReferenceException(nameof(GetId) + ". Should have been implemented by sub-class.\r\nDetails: " + ToString());
+        protected virtual Id GetId() => throw new NullReferenceException(
+            nameof(GetId) + ". " +
+            (GetType().Equals(typeof(BaseAttribute)) ? 
+                ("Illegal to call " + System.Reflection.MethodBase.GetCurrentMethod().Name + " for " + GetType() + " / " + nameof(IsDefault)) : 
+                ("Should have been implemented by sub-class " + GetType())
+            ) + ".\r\n" +
+            "Details: " + ToString()
+        );
     }
 }

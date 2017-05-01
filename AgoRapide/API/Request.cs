@@ -293,7 +293,7 @@ namespace AgoRapide.API {
                     (!isPOST ? "" : (
                         nameof(postParameters) + ":\r\n" +
                         string.Join("\r\n", postParameters.Select(p => {
-                            if (!EnumMapper.TryGetA(p.key, out var key)) return p.key + " [Not recognized] = '" + p.value + "'";
+                            if (!PropertyKeyMapper.TryGetA(p.key, out var key)) return p.key + " [Not recognized] = '" + p.value + "'";
                             return p.key + (key.Key.CoreP == CoreP.None ? (" [Not recognized]" + ")") : "") + " = " + (key.Key.A.IsPassword ? "[WITHHELD]" : ("'" + p.value + "'"));
                         })))
                     )

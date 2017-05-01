@@ -36,7 +36,7 @@ namespace AgoRapide {
                 "In AgoRapide library called -" + nameof(CoreP) + "- (often called P in final application)",
             LongDescription = 
                 "Corresponding -" + nameof(BaseAttribute) + "- is -" + nameof(EnumAttribute) + "- / -" + nameof(PropertyKeyAttribute) + "-. " +
-                "All -" + nameof(PropertyKey) + "- map towards -" + nameof(CoreP) + "- at application startup through -" + nameof(EnumMapper) + "-")]
+                "All -" + nameof(PropertyKey) + "- map towards -" + nameof(CoreP) + "- at application startup through -" + nameof(PropertyKeyMapper) + "-")]
         PropertyKey
     }
 }

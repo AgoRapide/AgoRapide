@@ -24,7 +24,7 @@ namespace AgoRapide.Core {
         public PropertyKeyAttribute() { }
 
         /// <summary>
-        /// Constructor for when originates from database (See <see cref="EnumMapper.TryAddA"/>)
+        /// Constructor for when originates from database (See <see cref="PropertyKeyMapper.TryAddA"/>)
         /// </summary>
         public PropertyKeyAttribute(
             string property,
@@ -299,7 +299,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Returns <see cref="PropertyKeyAttribute"/> for given <paramref name="_enum"/>-value.
         /// 
-        /// Normally called from <see cref="EnumMapper.MapEnum{T}"/> but may also be called from 
+        /// Normally called from <see cref="PropertyKeyMapper.MapEnum{T}"/> but may also be called from 
         /// <see cref="EnumValueAttribute.GetAttribute"/>- 
         /// </summary>
         /// <param name="_enum"></param>

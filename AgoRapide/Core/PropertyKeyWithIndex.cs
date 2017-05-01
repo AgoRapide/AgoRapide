@@ -80,7 +80,7 @@ namespace AgoRapide.Core {
         /// Facilitates dynamic mapping of any unknown properties found. 
         /// IsMany is determined by presence of # in <paramref name="value"/>   
         /// Caller (normally used by <see cref="IDatabase"/>-implementation when reading a single <see cref="Property"/> from database) 
-        /// uses this value in order to present <see cref="EnumMapper"/> with a new
+        /// uses this value in order to present <see cref="PropertyKeyMapper"/> with a new
         /// </param>
         /// <returns></returns>
         public static bool TryParse(
@@ -91,7 +91,7 @@ namespace AgoRapide.Core {
             out PropertyKey nonStrictAlternative, 
             out (string unrecognizedCoreP, bool isMany)? unrecognizedCoreP) {
 
-            if (EnumMapper.TryGetA(value, out nonStrictAlternative)) {
+            if (PropertyKeyMapper.TryGetA(value, out nonStrictAlternative)) {
                 if (nonStrictAlternative.Key.A.IsMany) {
                     key = null;
                     strErrorResponse = IsManyInconsistency.IsManyButIndexNotGiven + " (meaning # was missing in " + nameof(value) + ". " + nameof(value) + " given was -" + value + "- but expected something like -" + value + "#3-))";
@@ -115,7 +115,7 @@ namespace AgoRapide.Core {
                 return false;
             }
 
-            if (!EnumMapper.TryGetA(t[0], out var retval)) { 
+            if (!PropertyKeyMapper.TryGetA(t[0], out var retval)) { 
                 key = null;
                 strErrorResponse = "First part (" + t[0] + ") not a valid " + nameof(CoreP) + ".";
                 enumErrorResponse = IsManyInconsistency.None;
@@ -146,7 +146,7 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        [Class(Description = "See -" + nameof(PropertyKeyAttribute.IsMany) + "-")]
+        [Enum(Description = "See -" + nameof(PropertyKeyAttribute.IsMany) + "-")]
         public enum IsManyInconsistency {
             None,
             NotIsManyButIndexGiven,

@@ -85,10 +85,10 @@ namespace AgoRapide.API {
             }
 
             if (segment.GetType().IsEnum) { /// Turn into <see cref="PropertyKey"/>
-                if (EnumMapper.TryGetA(segment.ToString(), out var temp)) {
+                if (PropertyKeyMapper.TryGetA(segment.ToString(), out var temp)) {
                     segment = temp;
                 } else {
-                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(EnumMapper) + " as an -" + nameof(EnumType.PropertyKey) + "-");
+                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(PropertyKeyMapper) + " as an -" + nameof(EnumType.PropertyKey) + "-");
                 }
             }
 

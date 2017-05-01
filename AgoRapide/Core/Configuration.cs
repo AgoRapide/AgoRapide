@@ -19,11 +19,11 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
-        /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.GetOrAdd{T}"/>. 
+        /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.Get{T}"/>. 
         /// DO NOT USE!
         /// </summary>
         public Configuration() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
         public Configuration(ConfigurationAttribute configurationAttribute) :base(configurationAttribute) => C = configurationAttribute;        
-        public override void ConnectWithDatabase(IDatabase db) => GetOrAdd(A, db, enrichAndReturnThisObject: this);        
+        public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);        
     }
 }

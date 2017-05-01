@@ -227,7 +227,7 @@ namespace AgoRapide.Database {
                     entity = root;
                     return true;
                 }
-                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + EnumMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + PropertyKeyMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
                         ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
@@ -445,10 +445,10 @@ namespace AgoRapide.Database {
                 }
 
                 if (unrecognizedCoreP != null) {
-                    if (EnumMapper.TryAddA(unrecognizedCoreP.Value.unrecognizedCoreP, unrecognizedCoreP.Value.isMany, 
+                    if (PropertyKeyMapper.TryAddA(unrecognizedCoreP.Value.unrecognizedCoreP, unrecognizedCoreP.Value.isMany, 
                         unrecognizedCoreP.Value.unrecognizedCoreP + " was found as property " + id + " at " + DateTime.Now.ToString(DateTimeFormat.DateHourMin), out strErrorResponse)) {
                         // OK. New mapping succeeded.
-                    } else { /// Note how errorResponse was changed by <see cref="EnumMapper.TryAddA"/> if that one was called above.
+                    } else { /// Note how errorResponse was changed by <see cref="PropertyKeyMapper.TryAddA"/> if that one was called above.
                         throw new PropertyKey.InvalidPropertyKeyException(
                            DBField.key + " invalid for " + DBField.id + " = " + id + ".\r\n" +
                            "Possible resolution:\r\n" +

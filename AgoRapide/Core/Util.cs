@@ -42,7 +42,7 @@ namespace AgoRapide.Core {
         public static List<object> EnumGetValues(Type type) => _enumValuesCache.GetOrAdd(type, t => {
             NotOfTypeEnumException.AssertEnum(t);
             var retval = new List<object>();
-            foreach (var o in Enum.GetValues(type)) {
+            foreach (var o in System.Enum.GetValues(type)) {
                 if (!"None".Equals(o.ToString())) retval.Add(o);
             }
             return retval;
@@ -64,7 +64,7 @@ namespace AgoRapide.Core {
                 NotOfTypeEnumException.AssertEnum(type);
                 var retval = new List<T>();
 
-                foreach (var value in Enum.GetValues(type)) {
+                foreach (var value in System.Enum.GetValues(type)) {
                     if (value.Equals(exclude)) continue;
                     retval.Add((T)value);
                 }
@@ -89,8 +89,8 @@ namespace AgoRapide.Core {
         public static bool EnumTryParse<T>(string _string, out T result) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (!typeof(T).IsEnum) throw new NotOfTypeEnumException<T>();
             result = default(T);
-            if (!Enum.TryParse(_string, out result)) return false;
-            if (!Enum.IsDefined(typeof(T), result)) return false;
+            if (!System.Enum.TryParse(_string, out result)) return false;
+            if (!System.Enum.IsDefined(typeof(T), result)) return false;
             if (((int)(object)result) == 0) return false;
             return true;
         }
@@ -113,11 +113,11 @@ namespace AgoRapide.Core {
         public static bool EnumTryParse(Type type, string _string, out object result) {
             NotOfTypeEnumException.AssertEnum(type);
             try {
-                result = Enum.Parse(type, _string);
+                result = System.Enum.Parse(type, _string);
             } catch (Exception) {
                 result = null; return false;
             }
-            if (!Enum.IsDefined(type, result)) return false;
+            if (!System.Enum.IsDefined(type, result)) return false;
             if (((int)result) == 0) return false;
             return true;
         }
@@ -147,9 +147,9 @@ namespace AgoRapide.Core {
             var mapping = _tToCorePCache.
                 GetOrAdd(typeof(CoreP), type => new ConcurrentDictionary<Type, (string, PropertyKeyWithIndex)>()).
                 GetOrAdd(typeof(T), type => {
-                    /// NOTE: Note how <see cref="EnumMapper.AllCoreP"/> itself is cached but that should not matter
-                    /// NOTE: as long as all enums are registered with <see cref="EnumMapper.MapEnum{T}"/> at application startup
-                    var candidates = EnumMapper.AllCoreP.Where(key => key.Key.A.Type?.Equals(type) ?? false).ToList();
+                    /// NOTE: Note how <see cref="PropertyKeyMapper.AllCoreP"/> itself is cached but that should not matter
+                    /// NOTE: as long as all enums are registered with <see cref="PropertyKeyMapper.MapEnum{T}"/> at application startup
+                    var candidates = PropertyKeyMapper.AllCoreP.Where(key => key.Key.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
                         case 0: return ("No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort(), null);
                         case 1:

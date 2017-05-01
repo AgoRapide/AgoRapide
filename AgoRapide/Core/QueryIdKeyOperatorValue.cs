@@ -184,7 +184,7 @@ namespace AgoRapide.Core {
                     if (Value.GetType().IsEnum) {
                         Operator.AssertValidForType(typeof(string), detailer);
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" +
-                            (EnumMapper.TryGetA(Value.ToString(), out var key) ? key.Key.PToString : Value.ToString()) +
+                            (PropertyKeyMapper.TryGetA(Value.ToString(), out var key) ? key.Key.PToString : Value.ToString()) +
                             "'");
                     }
                     if (Value is ITypeDescriber) {

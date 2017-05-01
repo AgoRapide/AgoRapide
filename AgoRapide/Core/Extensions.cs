@@ -580,16 +580,16 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="PropertyKeyAttribute.Parents"/>. 
         /// Note how result is cached.
-        /// TODO: Add reset of cache (because of <see cref="EnumMapper.GetA(string, IDatabase)"/> which will add new mappings after application startup)
-        /// TODO: OR EVEN BETTER, MOVE INTO <see cref="EnumMapper"/> INSTEAD
+        /// TODO: Add reset of cache (because of <see cref="PropertyKeyMapper.GetA(string, IDatabase)"/> which will add new mappings after application startup)
+        /// TODO: OR EVEN BETTER, MOVE INTO <see cref="PropertyKeyMapper"/> INSTEAD
         /// 
-        /// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
+        /// TODO: As of Apr 2017 it looks like <see cref="PropertyKeyMapper.GetA(string, IDatabase)"/> is not going to be used after all
         /// TODO: (corresponding functionality has been put into <see cref="PostgreSQLDatabase"/>.ReadOneProperty instead.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
         public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) =>
-             _childPropertiesCache.GetOrAdd(type, t => EnumMapper.AllCoreP.Where(key => key.Key.IsParentFor(type)).ToDictionary(key => key.Key.CoreP, key => key));
+             _childPropertiesCache.GetOrAdd(type, t => PropertyKeyMapper.AllCoreP.Where(key => key.Key.IsParentFor(type)).ToDictionary(key => key.Key.CoreP, key => key));
 
         private static ConcurrentDictionary<Type, ClassAttribute> _classAttributeCache = new ConcurrentDictionary<Type, ClassAttribute>();
         /// <summary>
@@ -614,14 +614,38 @@ namespace AgoRapide.Core {
         /// <param name="type"></param>
         /// <returns></returns>
         public static ClassMemberAttribute GetClassMemberAttribute(this Type type, string member) => _classMemberAttributeCache.GetOrAdd(type + "." + member, k => ClassMemberAttribute.GetAttribute(type, member));
+
+        /// <summary>
+        /// Searches for the <see cref="System.Diagnostics.StackFrame"/> corresponding to <paramref name="preferredMethodName"/>
+        /// 
+        /// Useful when caller is an anonymous method / lambda expression, which would give a rather unwieldy <see cref="Id.IdString"/>
+        /// 
+        /// See http://stackoverflow.com/questions/171970/how-can-i-find-the-method-that-called-the-current-method
+        /// </summary>
+        /// <param name="memberInfo">
+        /// Note how this parameter is actually not very relevant 
+        /// (and there is no reason for this method to actually be an extension method)
+        /// </param>
+        /// <param name="preferredMethodName"></param>
+        /// <returns></returns>
+        public static ClassMemberAttribute GetClassMemberAttribute(this System.Reflection.MemberInfo memberInfo, string preferredMethodName) {
+            if (memberInfo.Name.Equals(preferredMethodName)) return memberInfo.GetClassMemberAttribute(); // Not very probable
+            System.Reflection.MethodBase method = null;
+            var i = 0; while (method == null || !method.Name.Equals(preferredMethodName)) {
+                if (i > 3) throw new InvalidCountException(nameof(i) + ": " + i + ". Did not find method named " + preferredMethodName + " on current stack");
+                method = new System.Diagnostics.StackFrame(i++).GetMethod();
+            }
+            return method.GetClassMemberAttribute();
+        }
+
         /// <summary>
         /// Preferred overload
-        /// 
-        /// NOTE THAT NOT IN USE AS OF Apr 2017
         /// </summary>
         /// <param name="memberInfo"></param>
         /// <returns></returns>
         public static ClassMemberAttribute GetClassMemberAttribute(this System.Reflection.MemberInfo memberInfo) => GetClassMemberAttributeNonStrict(memberInfo) ?? throw new NullReferenceException(System.Reflection.MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetClassMemberAttributeNonStrict) + " instead");
+
+
         /// <summary>
         /// TODO: Most probably not needed. Consider deleting.
         /// 
@@ -684,9 +708,9 @@ namespace AgoRapide.Core {
         //        GetOrAdd(_enum.ToString(), dummy => PropertyKeyAttribute.GetAttribute(_enum));
         //}
 
-        public static PropertyKey A(this CoreP coreP) => EnumMapper.GetA(coreP);
-        public static PropertyKey A(this DBField dbField) => EnumMapper.GetA(dbField);
-        public static PropertyKey A(this ConfigurationAttribute.ConfigurationKey configurationKey) => EnumMapper.GetA(configurationKey);
+        public static PropertyKey A(this CoreP coreP) => PropertyKeyMapper.GetA(coreP);
+        public static PropertyKey A(this DBField dbField) => PropertyKeyMapper.GetA(dbField);
+        public static PropertyKey A(this ConfigurationAttribute.ConfigurationKey configurationKey) => PropertyKeyMapper.GetA(configurationKey);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {

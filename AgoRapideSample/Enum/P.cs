@@ -135,7 +135,7 @@ namespace AgoRapideSample {
     }
 
     public static class Extensions {
-        public static PropertyKey A(this P p) => EnumMapper.GetA(p);
+        public static PropertyKey A(this P p) => PropertyKeyMapper.GetA(p);
     }
 
     /// <summary>

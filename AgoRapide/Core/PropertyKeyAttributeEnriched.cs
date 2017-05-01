@@ -151,7 +151,7 @@ namespace AgoRapide.Core {
             if (A.InheritAndEnrichFromProperty != null) {
                 NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
                 if (A.EnumValue.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.EnumValue) + " (" + A.EnumValue + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
-                var key = EnumMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
+                var key = PropertyKeyMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
                 _coreP = key.Key.CoreP;
                 A.EnrichFrom(key.Key.A);
                 A.SetEnumValueExplained(A.EnumValueExplained + " <- " + key.Key.A.EnumValueExplained);
@@ -316,8 +316,8 @@ namespace AgoRapide.Core {
                     // TODO: Add any additional desired supported types to this list.
                 } else if (A.Type.IsEnum) {
                     ValidatorAndParser = value => {
-                        /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="EnumMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
-                        if (A.Type.Equals(typeof(CoreP)) && EnumMapper.TryGetA(value, out var key)) return ParseResult.Create(this, key.Key.CoreP);
+                        /// <see cref="AgoRapide.CoreP"/> is special because only <see cref="PropertyKeyMapper"/> knows all the mapped values (values mapped towards <see cref="CoreP"/>)
+                        if (A.Type.Equals(typeof(CoreP)) && PropertyKeyMapper.TryGetA(value, out var key)) return ParseResult.Create(this, key.Key.CoreP);
 
                         /// All others enums are parsed in an ordinary manner. 
                         /// NOTE: <see cref="ParseResult.Result"/> now will be <see cref="PropertyT{T}"/> of generic type _OBJECT_.

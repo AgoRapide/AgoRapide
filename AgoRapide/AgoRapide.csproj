@@ -101,13 +101,14 @@
     <Compile Include="Core\ApplicationPart.cs" />
     <Compile Include="Core\BaseAttribute.cs" />
     <Compile Include="Core\BaseCore.cs" />
+    <Compile Include="Core\Class.cs" />
     <Compile Include="Core\ClassAttribute.cs" />
     <Compile Include="Core\ClassMember.cs" />
     <Compile Include="Core\Configuration.cs" />
     <Compile Include="Core\ConfigurationAttribute.cs" />
     <Compile Include="Core\Documentator.cs" />
+    <Compile Include="Core\Enum.cs" />
     <Compile Include="Core\EnumAttribute.cs" />
-    <Compile Include="Core\EnumMapper.cs" />
     <Compile Include="Core\EnumValue.cs" />
     <Compile Include="Core\EnumValueAttribute.cs" />
     <Compile Include="Core\ErrorResponse.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="Core\PropertyKeyAttributeEnriched.cs" />
     <Compile Include="Core\PropertyKeyAttributeEnrichedDyn.cs" />
     <Compile Include="Core\PropertyKeyAttributeEnrichedT.cs" />
+    <Compile Include="Core\PropertyKeyMapper.cs" />
     <Compile Include="Core\PropertyKeyWithIndex.cs" />
     <Compile Include="Core\QueryId.cs" />
     <Compile Include="Core\QueryIdInteger.cs" />

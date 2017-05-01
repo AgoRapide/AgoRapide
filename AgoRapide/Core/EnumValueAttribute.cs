@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AgoRapide.Core {
 
-    [Enum(Description = 
+    [Enum(Description =
         "Describes an enum value NOT of type -" + nameof(EnumType.PropertyKey) + "-. " +
         "Member of -" + nameof(EnumValue) + "-. " +
         "Derived class -" + nameof(PropertyKeyAttribute) + "- describes -" + nameof(EnumType.PropertyKey) + "-")]
@@ -15,7 +15,7 @@ namespace AgoRapide.Core {
         protected object _enumValue;
         [ClassMember(
             Description = "The actual enum member (enum value) that we are an attribute for",
-            LongDescription = 
+            LongDescription =
                 "Note that for dynamically originated attributes (see -" + nameof(PropertyKeyAttributeEnrichedDyn) + "- " +
                 "this value will actually be a string, not an -" + nameof(Enum) + "- (only relevant when sub class -" + nameof(PropertyKeyAttribute) + "-)."
         )]
@@ -54,8 +54,11 @@ namespace AgoRapide.Core {
         }
 
         public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
-        protected override Id GetId() => new Id (
-            idString: GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumValue.GetType().ToStringShort() + "_" + EnumValue.ToString(),
+        protected override Id GetId() => new Id(
+            idString:
+                GetType().ToStringShort().Replace("Attribute", "") + "_" +
+                EnumValue.GetType().ToStringShort().Replace("+", "") + "_" +/// + is for local classes like <see cref="ConfigurationAttribute.ConfigurationKey"/> 
+                EnumValue.ToString(),
             idFriendly: EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),
             idDoc: new List<string> {
                 EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),

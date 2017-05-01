@@ -7,6 +7,7 @@ using AgoRapide.Core;
 
 namespace AgoRapideSample {
     [Class(
+        Description ="A car is a personal transportation device.",
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.Anonymous
     )]

@@ -99,7 +99,7 @@ namespace AgoRapide.Core {
 
         public override string ToString() => nameof(ClassType) + ": " + ( _classType?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
         protected override Id GetId() => new Id (
-            idString: GetType().ToStringShort().Replace("Attribute", "") + "_" + ClassType.ToStringShort(),
+            idString: GetType().ToStringShort().Replace("Attribute", "") + "_" + ClassType.ToStringVeryShort().Replace("+",""), /// + will show up for local classes like <see cref="BaseAttribute.IncorrectAttributeTypeUsedException"/>
             idFriendly: ClassType.ToStringShort(),
             idDoc: new List<string> { ClassType.ToStringShort() }
         );

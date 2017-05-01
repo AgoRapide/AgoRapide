@@ -11,7 +11,7 @@ namespace AgoRapide.Core {
 
     [Class(
         Description = 
-            "Represents a class plus a method within that class in your application like \"{className}.{methodName}\". " +
+            "Represents a class' method in your application like \"{className}.{methodName}\". " +
             "Based on -" + nameof(ClassMemberAttribute) + "-.",
         LongDescription =
             "Used as source of -" + nameof(DBField.cid) + "-, -" + nameof(DBField.vid) + "-, and -" + nameof(DBField.iid) + "- when it is " +
@@ -25,10 +25,19 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
-        /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.GetOrAdd{T}"/>. 
+        /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.Get{T}"/>. 
         /// DO NOT USE!
+        /// 
+        /// Note that values identified 
+        /// only by <see cref="ApplicationPart.GetClassMember"/> 
+        /// (not by <see cref="Class.RegisterAndIndexClass"/>)
+        /// will anyway have originated through this constructor.
+        /// Note hack in <see cref="ApplicationPart.Get{T}"/> 
+        /// in order to set <see cref="ApplicationPart.A"/> correctly.
         /// </summary>
         public ClassMember() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
-        public override void ConnectWithDatabase(IDatabase db) => GetOrAdd(A, db, enrichAndReturnThisObject: this);
+        public ClassMember(ClassMemberAttribute attribute) : base(attribute) { }
+
+        public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

@@ -251,7 +251,7 @@ namespace AgoRapide {
                 key.PropertyKeyAsIsManyParentOrTemplate :
                 /// Above is not sufficient for instance when <param name="key"/> does not originate from EnumMapper.
                 /// Therefore we must to this instead:
-                EnumMapper.GetA(key.Key.CoreP).PropertyKeyAsIsManyParentOrTemplate;
+                PropertyKeyMapper.GetA(key.Key.CoreP).PropertyKeyAsIsManyParentOrTemplate;
             // TODO: Code above is a bit slow performance wise (there are two dictionary look ups involved)
             /// TODO: Code above is run whenever an <see cref="PropertyKeyAttribute.IsMany"/> property is read from database for instance.
 

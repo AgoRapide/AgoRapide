@@ -9,15 +9,11 @@ using AgoRapide.Database;
 
 namespace AgoRapide.Core {
 
-    /// <summary>
-    /// TODO: As of Apr 2017 it looks like <see cref="EnumMapper.GetA(string, IDatabase)"/> is not going to be used after all
-    /// TODO: (corresponding functionality has been put into <see cref="PostgreSQLDatabase"/>.ReadOneProperty instead.
-    /// </summary>
     [Class(
         Description = "Helper class matching -" + nameof(EnumType.PropertyKey) + "- (like P) used in your project to -" + nameof(CoreP) + "-",
         LongDescription = "Note especially -" + nameof(GetA) + "- which is able to store in database any new string values found"
     )]
-    public static class EnumMapper {
+    public static class PropertyKeyMapper {
 
         /// <summary>
         /// Set by <see cref="MapEnumFinalize"/>
@@ -38,9 +34,9 @@ namespace AgoRapide.Core {
         /// 
         /// Is in principle equivalent to <see cref="Extensions._agoRapideAttributeTCache"/> except that _that_ cache also contains 
         /// entries for non <see cref="AgoRapide.EnumType.PropertyKey"/> 
-        /// (while _this_ cache, <see cref="_enumMapsCache"/> only contains entires for entity property enums)
+        /// (while _this_ cache, <see cref="_cache"/> only contains entires for entity property enums)
         /// </summary>
-        private static Dictionary<Type, Dictionary<int, PropertyKey>> _enumMapsCache = new Dictionary<Type, Dictionary<int, PropertyKey>>();
+        private static Dictionary<Type, Dictionary<int, PropertyKey>> _cache = new Dictionary<Type, Dictionary<int, PropertyKey>>();
 
         /// <summary>
         /// TODO: Define atomic increasing of this value.
@@ -129,9 +125,9 @@ namespace AgoRapide.Core {
                     /// TODO: We must also replace for "manually" given <see cref="CoreP"/>
                     _fromStringMaps.GetValue(e.ToString(), () => nameof(o) + ": " + o)
                 );
-                _enumMapsCache[o] = dict;
+                _cache[o] = dict;
             });
-            var enumMapForCoreP = _enumMapsCache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
+            var enumMapForCoreP = _cache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
             var allCoreP = new Dictionary<CoreP, PropertyKey>();
             _fromStringMaps.ForEach(e => {
                 if (!allCoreP.TryGetValue(e.Value.Key.CoreP, out var existing)) {
@@ -165,7 +161,7 @@ namespace AgoRapide.Core {
         /// <param name="key"></param>
         /// <returns></returns>
         public static bool TryGetA<T>(T _enum, out PropertyKey key) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
-            _enumMapsCache.TryGetValue(typeof(T), out var dict) ?
+            _cache.TryGetValue(typeof(T), out var dict) ?
                 dict.TryGetValue((int)(object)_enum, out key) :
                 throw new InvalidMappingException<T>(_enum,
                     "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
@@ -174,7 +170,7 @@ namespace AgoRapide.Core {
         public static PropertyKey GetA(string _enum) => _fromStringMaps.GetValue(_enum);
 
         /// <summary>
-        /// TODO: Correct not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
+        /// TODO: Correct not thread safe use of <see cref="_cache"/> in <see cref="TryAddA"/>
         /// 
         /// Called from <see cref="PostgreSQLDatabase"/>.ReadOneProperty.
         /// </summary>
@@ -202,7 +198,7 @@ namespace AgoRapide.Core {
                     new PropertyKeyAttribute(
                         property: _enum,
                         description: description,
-                        longDescription: "This is a dynamically added 'enum' created by " + nameof(EnumMapper) + "." + System.Reflection.MethodBase.GetCurrentMethod().Name,
+                        longDescription: "This is a dynamically added 'enum' created by " + nameof(PropertyKeyMapper) + "." + System.Reflection.MethodBase.GetCurrentMethod().Name,
                         isMany: isMany
                     ),
                     (CoreP)GetNextCorePId()
@@ -220,9 +216,9 @@ namespace AgoRapide.Core {
             }
 
             /// TODO: NOT THREAD SAFE
-            /// TODO: Correct this not thread safe use of <see cref="_enumMapsCache"/> in <see cref="TryAddA"/>
+            /// TODO: Correct this not thread safe use of <see cref="_cache"/> in <see cref="TryAddA"/>
             /// TODO: NOT THREAD SAFE
-            var dict = _enumMapsCache.GetValue(typeof(CoreP));
+            var dict = _cache.GetValue(typeof(CoreP));
             dict[(int)key.Key.CoreP] = key;
 
             // TODO: STORE THIS IN DATABASE

@@ -74,7 +74,7 @@ namespace AgoRapide.Core {
         /// 3) The cached value in <see cref="AllApplicationParts"/> 
         /// against <see cref="A"/>
         /// 
-        /// Note that becausae of the generics involved in calling <see cref="GetOrAdd{T}"/> we can not have the implementator here 
+        /// Note that becausae of the generics involved in calling <see cref="Get{T}"/> we can not have the implementator here 
         /// but must leave the implementation to each individual sub class. 
         /// <see cref="APIMethodAttribute"/>.
         /// </summary>
@@ -83,13 +83,15 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// Usually used for getting an <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> in 
-        /// connection with operations against the database (storing which <see cref="ClassMember"/> did the actual change).
+        /// connection with operations against the database (storing which <see cref="ClassMember"/> did the actual change). 
+        /// 
+        /// Note that will work also for <paramref name="memberInfo"/> which have not been found by <see cref="Class.RegisterAndIndexClass{T}"/>
         /// </summary>
         /// <param name="memberInfo"></param>
         /// <param name="db"></param>
         /// <returns></returns>
         [ClassMember(Description = "Used randomly within application lifetime.")]
-        public static ClassMember GetClassMember(MemberInfo memberInfo, IDatabase db) => GetOrAdd<ClassMember>(memberInfo.GetClassMemberAttribute(), db, null);
+        public static ClassMember GetClassMember(MemberInfo memberInfo, IDatabase db) => Get<ClassMember>(memberInfo.GetClassMemberAttribute(), db, null);
 
         /// <summary>
         /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
@@ -116,18 +118,22 @@ namespace AgoRapide.Core {
                 "Adds as necessary to database if none already exists. ",
             LongDescription =
                 "Normally only called directly at application startup. " +
-                "After application startup only called indirectly via -" + nameof(GetOrAdd) + "- for -" + nameof(MemberInfo) + "-, " +
-                "except from -" + nameof(EnumMapper.TryAddA) + "- for API originated enums"
+                "After application startup only called indirectly via -" + nameof(Get) + "- for -" + nameof(MemberInfo) + "-, " +
+                "except from -" + nameof(PropertyKeyMapper.TryAddA) + "- for API originated enums"
         )]
-        protected static T GetOrAdd<T>(BaseAttribute attribute, IDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
+        protected static T Get<T>(BaseAttribute attribute, IDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
             ClassMember cid = null; /// This method as <see cref="DBField.cid"/>
             var retvalTemp = AllApplicationParts.GetOrAdd(attribute.Id.IdString, i => {
                 InvalidIdentifierException.AssertValidIdentifier(i); // TODO: As of Apr 2017 this will fail for abstract types.
 
-                var thisA = MethodBase.GetCurrentMethod().GetClassMemberAttribute();
+                // Alternative 1) This becomes very messy, something like ApplicationPart___c__DisplayClass10_0_T__AgoRapide_Core_ApplicationPart__GetOrAdd_b__0_System_String_
+                //   var thisA = MethodBase.GetCurrentMethod().GetClassMemberAttribute();
+                // Alternative 2) Instead ask for the "parent" method lower down in the stack
+                var thisA = MethodBase.GetCurrentMethod().GetClassMemberAttribute(nameof(Get)); /// Do not rename method <see cref="Get{T}"/> into GetOrAdd as it would collide with <see cref="ConcurrentDictionary{TKey, TValue}.GetOrAdd"/>
+                
                 cid = thisA.Id.IdString.Equals(i) ?
                     null : // Avoid recursive call
-                    GetOrAdd<ClassMember>(thisA, db, null); /// Get this method as <see cref="ApplicationPart"/>
+                    Get<ClassMember>(thisA, db, null); /// Get this method as <see cref="ApplicationPart"/>
 
                 /// Note that this operation is not thread-safe in the manner that the operation against the database
                 /// may be executed multiple times (the superfluous result of this lambda will then just end up being ignored)
@@ -140,16 +146,16 @@ namespace AgoRapide.Core {
                     key: CoreP.RootProperty.A().PropertyKeyWithIndex,
                     value: typeof(T).ToStringDB(),
                     result: null
-                ));
+                ));                
                 if (cid == null) {
                     cid = r as ClassMember ?? throw new InvalidObjectTypeException(r, typeof(ClassMember), nameof(cid) + " should only be null when " + nameof(T) + " is " + typeof(ClassMember));
                     /// This is not possible to do, since A is <see cref="BaseAttribute.GetStaticNotToBeUsedInstance"/>
                     /// if (cid.A.Identifier != thisA.Identifier) throw new ApplicationException("Mismatching identifiers:\r\n" + cid.A.Identifier + "\r\nand\r\n" + thisA.Identifier);                    
                 }
 
-                if (enrichAndReturnThisObject == null) {
-                    /// This is a bit unexpected, but anyway, since <see cref="IDatabase.UpdateProperty{T}"/> will not be called below, 
-                    /// create properties now. 
+                if (enrichAndReturnThisObject == null) { /// Will typically happen when called from <see cref="GetClassMember"/>
+                    r._a = attribute; // HACK: Since dummy constructor was used, set attribute now.
+                    /// Since <see cref="IDatabase.UpdateProperty{T}"/> will not be called below, create properties now. 
                     attribute.Properties.Flatten().ForEach(p => {
                         db.CreateProperty(
                             cid: cid.Id,
@@ -160,6 +166,7 @@ namespace AgoRapide.Core {
                             result: null
                         );
                     });
+
                 }
 
                 /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
@@ -175,7 +182,7 @@ namespace AgoRapide.Core {
             /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
 
             // Update all properties in database
-            if (cid == null) cid = GetOrAdd<ClassMember>(MethodBase.GetCurrentMethod().GetClassMemberAttribute(), db, null); /// Get this method as <see cref="ApplicationPart"/>
+            if (cid == null) cid = Get<ClassMember>(MethodBase.GetCurrentMethod().GetClassMemberAttribute(), db, null); /// Get this method as <see cref="ApplicationPart"/>
 
             /// TODO: BIG WEAKNESS HERE. We do not know the generic value of what we are asking for
             /// TODO: The result will be to store as <see cref="DBField.strv"/> instead of a more precise type.

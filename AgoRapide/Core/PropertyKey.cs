@@ -31,7 +31,7 @@ namespace AgoRapide.Core {
         private PropertyKeyWithIndex _propertyKeyWithIndex;
         /// <summary>
         /// HACK. Relevant when !<see cref="PropertyKeyAttribute.IsMany"/>
-        /// Only relevant when originates from <see cref="EnumMapper"/>
+        /// Only relevant when originates from <see cref="PropertyKeyMapper"/>
         /// Constitutes the "strict" version of <see cref="PropertyKey"/>
         /// </summary>
         public PropertyKeyWithIndex PropertyKeyWithIndex {
@@ -45,7 +45,7 @@ namespace AgoRapide.Core {
                             "Possible reason: " +
                             new Func<string>(() => {
                                 if (Key.A.IsMany) return nameof(PropertyKeyAttribute.IsMany) + "(" + Key.A.IsMany + ") = TRUE";
-                                return "Maybe this instance does not originate from " + nameof(EnumMapper);
+                                return "Maybe this instance does not originate from " + nameof(PropertyKeyMapper);
                             })() +
                             "\r\n" +
                             "Details: " + ToString() + "\r\n" +
@@ -61,9 +61,9 @@ namespace AgoRapide.Core {
         private PropertyKeyWithIndex _propertyKeyWithIndexAsIsManyParentOrTemplate;
         /// <summary>
         /// HACK. See <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
-        /// Only relevant when originates from <see cref="EnumMapper"/>
+        /// Only relevant when originates from <see cref="PropertyKeyMapper"/>
         /// </summary>
-        public PropertyKeyWithIndex PropertyKeyAsIsManyParentOrTemplate => _propertyKeyWithIndexAsIsManyParentOrTemplate ?? throw new NullReferenceException(nameof(_propertyKeyWithIndexAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(EnumMapper) + ".\r\nDetails: " + ToString());
+        public PropertyKeyWithIndex PropertyKeyAsIsManyParentOrTemplate => _propertyKeyWithIndexAsIsManyParentOrTemplate ?? throw new NullReferenceException(nameof(_propertyKeyWithIndexAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(PropertyKeyMapper) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// This is a hack to allow <see cref="Property.IsIsManyParent"/> and <see cref="Property.IsTemplateOnly"/> 
@@ -80,7 +80,7 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// HACK. See <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
-        /// Only relevant when originates from <see cref="EnumMapper"/>
+        /// Only relevant when originates from <see cref="PropertyKeyMapper"/>
         /// </summary>
         public void SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate() {
             if (!Key.A.IsMany) _propertyKeyWithIndex = new PropertyKeyWithIndex(Key);
