@@ -8,11 +8,11 @@ using AgoRapide.Database;
 namespace AgoRapide.Core {
 
     [Class(
-    Description =
-        "Represents a Class. " +
-        "Based on -" + nameof(ClassAttribute) + "-.",
-    AccessLevelRead = AccessLevel.Anonymous,
-    AccessLevelWrite = AccessLevel.System
+        Description =
+            "Represents a Class. " +
+            "Based on -" + nameof(ClassAttribute) + "-.",
+        AccessLevelRead = AccessLevel.Anonymous,
+        AccessLevelWrite = AccessLevel.System
     )]
     public class Class : ApplicationPart {
 
@@ -24,10 +24,8 @@ namespace AgoRapide.Core {
         public Class() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
         public Class(ClassAttribute attribute) : base(attribute) { }
 
-        public static void RegisterAndIndexCoreClass(IDatabase db) {
-            typeof(Configuration).Assembly.GetTypes().Where(t => !t.IsEnum).ForEach(t => RegisterAndIndexClass(t, db)); /// Going through <see cref="Configuration"/> ensures we get a reference to the AgoRapide assembly
-        }
-
+        public static void RegisterAndIndexCoreClass(IDatabase db) =>typeof(Configuration).Assembly.GetTypes().Where(t => !t.IsEnum).ForEach(t => RegisterAndIndexClass(t, db)); /// Going through <see cref="Configuration"/> ensures we get a reference to the AgoRapide assembly
+        
         /// <summary>
         /// Note how only public members are found by this method. 
         /// Later calls to <see cref="ApplicationPart.GetClassMember"/> may identify further members.

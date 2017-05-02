@@ -10,7 +10,7 @@ using AgoRapide.Database;
 namespace AgoRapide.Core {
 
     [Class(
-        Description = 
+        Description =
             "Represents a class' method in your application like \"{className}.{methodName}\". " +
             "Based on -" + nameof(ClassMemberAttribute) + "-.",
         LongDescription =
@@ -22,6 +22,8 @@ namespace AgoRapide.Core {
         AccessLevelWrite = AccessLevel.System
     )]
     public class ClassMember : ApplicationPart {
+
+        public ClassMemberAttribute CMA { get; private set; }
 
         /// <summary>
         /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
@@ -36,7 +38,20 @@ namespace AgoRapide.Core {
         /// in order to set <see cref="ApplicationPart.A"/> correctly.
         /// </summary>
         public ClassMember() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
-        public ClassMember(ClassMemberAttribute attribute) : base(attribute) { }
+        public ClassMember(ClassMemberAttribute attribute) : base(attribute) => CMA = attribute;
+
+        /// <summary>
+        /// TODO: This overload may be removed by a general relation mechanism for parent-child
+        /// TODO: (marking with attributes what the parent is)
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public override string ToHTMLDetailed(Request request) {
+            var retval = new StringBuilder();
+            var ca = CMA.MemberInfo.DeclaringType.GetClassAttribute();
+            retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Class " + ca.ClassType.ToStringVeryShort(), typeof(Class), new QueryIdString(ca.Id.IdString)) + "</p>");
+            return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
+        }
 
         public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
