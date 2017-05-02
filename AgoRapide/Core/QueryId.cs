@@ -45,9 +45,16 @@ namespace AgoRapide.Core {
         public void AssertIsSingle() {
             if (!IsSingle) throw new InvalidCountException("!" + nameof(IsSingle) + " for " + ToString());
         }
+        public void AssertIsSingle(Func<string> detailer) {
+            if (!IsSingle) throw new InvalidCountException("!" + nameof(IsSingle) + " for " + ToString() + detailer.Result("\r\nDetails: "));
+        }
+
         public bool IsMultiple { get; protected set; }
         public void AssertIsMultiple() {
             if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString());
+        }
+        public void AssertIsMultiple(Func<string> detailer) {
+            if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString() + detailer.Result("\r\nDetails: "));
         }
 
         [ClassMember(Description = "Corresponds to -" + nameof(ToString) + "- returning \"All\"")]

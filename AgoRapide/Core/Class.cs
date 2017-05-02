@@ -11,6 +11,7 @@ namespace AgoRapide.Core {
         Description =
             "Represents a Class. " +
             "Based on -" + nameof(ClassAttribute) + "-.",
+        ChildrenType = typeof(ClassMember),
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]

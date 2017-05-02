@@ -53,7 +53,7 @@ namespace AgoRapide.Core {
 
         public override string ToString() => nameof(MemberInfo) + ": " + (_memberInfo?.DeclaringType.ToString() ?? "[NULL]") + "." + (_memberInfo?.ToString() ?? "") + "\r\n" + base.ToString();
         protected override Id GetId() => new Id(
-            idString:
+            idString: new QueryIdString(
                 GetType().ToStringShort().Replace("Attribute", "")
                 + "_" +
                 MemberInfo.ReflectedType.ToStringShort().Replace
@@ -73,7 +73,8 @@ namespace AgoRapide.Core {
                     ("+", "_").Replace
                     ("(", "_").Replace
                     (")", "_").Replace
-                    ("Void_", ""),
+                    ("Void_", "")
+                ),
             idFriendly: MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.Name, /// Note choice of Name here instead of ToString(). See use of ToString() below when storing <see cref="CoreP.IdFriendlyDetailed"/>
             idDoc: new List<string> {
                  MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.Name,

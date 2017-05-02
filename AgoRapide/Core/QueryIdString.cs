@@ -18,6 +18,7 @@ namespace AgoRapide.Core {
     public class QueryIdString : QueryIdKeyOperatorValue {
         public QueryIdString(string value) : base(CoreP.IdString.A().Key, Operator.EQ, value) {
             CoreP.IdString.A().Key.A.AssertIsUniqueInDatabase();
+            InvalidIdentifierException.AssertValidIdentifier(value);
             _toString = value; /// Improve on use of <see cref="QueryId.ToString"/>
         }
     }

@@ -32,7 +32,7 @@ namespace AgoRapide.Core {
 
         public override string ToString() => nameof(EnumType) + ": " + (_enumType?.ToString() ?? "[NULL]") + ", " + nameof(AgoRapideEnumType) + ": " + AgoRapideEnumType + "\r\n" + base.ToString();
         protected override Id GetId() => new Id(
-            idString: GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumType.ToStringShort().Replace("+",""), /// + will show up for local classes like <see cref="ConfigurationAttribute.ConfigurationKey"/>
+            idString: new QueryIdString(GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumType.ToStringShort().Replace("+","")), /// + will show up for local classes like <see cref="ConfigurationAttribute.ConfigurationKey"/>
             idFriendly: EnumType.ToStringShort(),
             idDoc: new List<string> { EnumType.ToStringShort() }
         );

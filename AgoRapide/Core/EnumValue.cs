@@ -13,6 +13,7 @@ namespace AgoRapide.Core {
         Description = 
             "Represents an Enum with values. " + 
             "Based on -" + nameof(EnumValueAttribute) + "- / -" + nameof(PropertyKeyAttribute) + "-.",
+        ParentType = typeof(AgoRapide.Core.Enum),
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]
@@ -36,7 +37,7 @@ namespace AgoRapide.Core {
         public override string ToHTMLDetailed(Request request) {
             var retval = new StringBuilder();
             var ea = EVA.EnumValue.GetType().GetEnumAttribute();
-            retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Enum " + ea.EnumType.ToStringVeryShort(), typeof(Enum), new QueryIdString(ea.Id.IdString)) + "</p>");
+            retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Enum " + ea.EnumType.ToStringVeryShort(), typeof(Enum), ea.Id.IdString) + "</p>");
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
 

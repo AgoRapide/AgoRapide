@@ -55,10 +55,11 @@ namespace AgoRapide.Core {
 
         public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
         protected override Id GetId() => new Id(
-            idString:
+            idString: new QueryIdString(
                 GetType().ToStringShort().Replace("Attribute", "") + "_" +
                 EnumValue.GetType().ToStringShort().Replace("+", "") + "_" +/// + is for local classes like <see cref="ConfigurationAttribute.ConfigurationKey"/> 
-                EnumValue.ToString(),
+                EnumValue.ToString()
+            ),
             idFriendly: EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),
             idDoc: new List<string> {
                 EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),

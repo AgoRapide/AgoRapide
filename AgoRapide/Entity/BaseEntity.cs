@@ -349,6 +349,11 @@ namespace AgoRapide {
                     (string.IsNullOrEmpty(description) ? "" : " (+)</span>") +
                     "<br>Name: " + IdFriendly.HTMLEncode() + "</h1>");
             }
+            var a = GetType().GetClassAttribute();
+            if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) {
+                queryIdParent.AssertIsSingle(() => ToString());
+                retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Parent " + a.ParentType.ToStringVeryShort(), a.ParentType, queryIdParent) + "</p>");
+            }
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
             retval.AppendLine(CreateHTMLForAddingProperties(request));
@@ -473,7 +478,7 @@ namespace AgoRapide {
                         });
                     } else {
                         retval.Properties.Add(i.Value.Key.ToString(), i.Value.ToJSONProperty());
-                    } 
+                    }
                 });
                 // Note that we do not bother with Type when Properties is not set
                 if (!retval.Properties.ContainsKey(nameof(CoreP.RootProperty))) retval.Properties.Add(nameof(CoreP.RootProperty), new JSONProperty0 { Value = GetType().ToStringShort() });

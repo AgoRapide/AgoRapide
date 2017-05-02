@@ -16,7 +16,7 @@ namespace AgoRapide.Core {
         [ClassMember(Description = 
             "Corresponds to -" + nameof(CoreP.IdString) + "- and -" + nameof(QueryIdString) + "-.\r\n"+
             "See -" + nameof(CoreP.IdString) + "- for documentation.")]
-        public string IdString { get; private set; }
+        public QueryIdString IdString { get; private set; }
 
         [ClassMember(Description =
             "Corresponds to -" + nameof(CoreP.IdFriendly) + "-.\r\n" +
@@ -28,9 +28,9 @@ namespace AgoRapide.Core {
             "See -" + nameof(CoreP.IdDoc) + "- for documentation.")]
         public List<string> IdDoc { get; private set; }
 
-        public Id(string idString, string idFriendly, List<string> idDoc) {
+        public Id(QueryIdString idString, string idFriendly, List<string> idDoc) {
             IdString = idString ?? throw new NullReferenceException(nameof(idString));
-            InvalidIdentifierException.AssertValidIdentifier(IdString);
+            // InvalidIdentifierException.AssertValidIdentifier(IdString);
             IdFriendly = idFriendly ?? throw new NullReferenceException(nameof(idFriendly));
             IdDoc = idDoc ?? throw new NullReferenceException(nameof(idDoc));
         }

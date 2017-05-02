@@ -312,7 +312,7 @@ namespace AgoRapide.Core {
 
         public override string ToString() => base.ToString();
         protected override Id GetId() => new Id (
-            idString: GetType().ToStringShort().Replace("Attribute", "") + "_Configuration",
+            idString: new QueryIdString(GetType().ToStringShort().Replace("Attribute", "") + "_Configuration"),
             idFriendly: "Configuration",
             idDoc: new List<string> { "Configuration" }
         );

@@ -122,6 +122,7 @@ namespace AgoRapide {
                 "The approach chosen is therefore to assure that values -" + nameof(PropertyKeyAttribute.MustBeValidCSharpIdentifier) + "-. " +
                 "See accompanying -" + nameof(IdFriendly) + "- which is the more readable form.\r\n" +
                 "Note how -" + nameof(IdString) + "- will be the same among different database instances, in contrast to -" + nameof(DBId) + "-.",
+            Type = typeof(QueryIdString),
             IsUniqueInDatabase = true,
             MustBeValidCSharpIdentifier = true,
             PriorityOrder = PriorityOrder.Important,
@@ -154,7 +155,18 @@ namespace AgoRapide {
             )]
         IdDoc,
 
-        [PropertyKey(Description = "Application specific general query request", Type = typeof(string), SampleValues = new string[] { "a", "b", "c" })]
+        [PropertyKey(
+            Description = "Id of parent",
+            Type = typeof(QueryId)
+        )]
+        QueryIdParent,
+
+        [PropertyKey(
+            Description =
+                "Application specific general query request.\r\n" +
+                "(no connection with -" + nameof(Core.QueryId) + "-.",
+            Type = typeof(string),
+            SampleValues = new string[] { "a", "b", "c" })]
         GeneralQueryId,
 
         [PropertyKey(
@@ -164,11 +176,19 @@ namespace AgoRapide {
         [PropertyKey(
             Type = typeof(QueryIdInteger),
             ValidValues = new string[] { "42" })]
-        IntegerQueryId,
+        QueryIdInteger,
 
-        [PropertyKey(
-            Type = typeof(QueryIdKeyOperatorValue))]
-        PropertyAndValueQueryId,
+        //[PropertyKey(
+        //    Type = typeof(QueryIdKeyOperatorValue))]
+        //QueryIdKeyOperatorValue,
+
+        //[PropertyKey(
+        //    Type = typeof(QueryIdMultiple))]
+        //QueryIdMultiple,
+
+        //[PropertyKey(
+        //    Type = typeof(QueryIdString))]
+        //QueryIdString,
 
         /// <summary>
         /// Note how this is deliberately <see cref="PropertyKey"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to

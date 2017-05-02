@@ -11,6 +11,7 @@ namespace AgoRapide.Core {
         Description =
             "Represents an Enum. " +
             "Based on -" + nameof(EnumAttribute) + "-.",
+        ChildrenType =typeof(EnumValue), 
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]

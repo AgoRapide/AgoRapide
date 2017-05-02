@@ -18,6 +18,7 @@ namespace AgoRapide.Core {
             "\"the system itself\" making changes to your database " +
             "(but this should be the exception, usually -" + nameof(Request.CurrentUser) + "-'s -" + nameof(DBField.id) + "- " +
             "is used in order to pin-point which user credentials was used for any given change in the database).",
+        ParentType = typeof(Class),
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.System
     )]
@@ -49,7 +50,7 @@ namespace AgoRapide.Core {
         public override string ToHTMLDetailed(Request request) {
             var retval = new StringBuilder();
             var ca = CMA.MemberInfo.DeclaringType.GetClassAttribute();
-            retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Class " + ca.ClassType.ToStringVeryShort(), typeof(Class), new QueryIdString(ca.Id.IdString)) + "</p>");
+            retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Class " + ca.ClassType.ToStringVeryShort(), typeof(Class), ca.Id.IdString) + "</p>");
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
 

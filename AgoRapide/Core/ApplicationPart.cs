@@ -123,14 +123,14 @@ namespace AgoRapide.Core {
         )]
         protected static T Get<T>(BaseAttribute attribute, IDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
             ClassMember cid = null; /// This method as <see cref="DBField.cid"/>
-            var retvalTemp = AllApplicationParts.GetOrAdd(attribute.Id.IdString, i => {
+            var retvalTemp = AllApplicationParts.GetOrAdd(attribute.Id.IdString.ToString(), i => {
                 InvalidIdentifierException.AssertValidIdentifier(i); // TODO: As of Apr 2017 this will fail for abstract types.
 
                 // Alternative 1) This becomes very messy, something like ApplicationPart___c__DisplayClass10_0_T__AgoRapide_Core_ApplicationPart__GetOrAdd_b__0_System_String_
                 //   var thisA = MethodBase.GetCurrentMethod().GetClassMemberAttribute();
                 // Alternative 2) Instead ask for the "parent" method lower down in the stack
                 var thisA = MethodBase.GetCurrentMethod().GetClassMemberAttribute(nameof(Get)); /// Do not rename method <see cref="Get{T}"/> into GetOrAdd as it would collide with <see cref="ConcurrentDictionary{TKey, TValue}.GetOrAdd"/>
-                
+
                 cid = thisA.Id.IdString.Equals(i) ?
                     null : // Avoid recursive call
                     Get<ClassMember>(thisA, db, null); /// Get this method as <see cref="ApplicationPart"/>
@@ -146,7 +146,7 @@ namespace AgoRapide.Core {
                     key: CoreP.RootProperty.A().PropertyKeyWithIndex,
                     value: typeof(T).ToStringDB(),
                     result: null
-                ));                
+                ));
                 if (cid == null) {
                     cid = r as ClassMember ?? throw new InvalidObjectTypeException(r, typeof(ClassMember), nameof(cid) + " should only be null when " + nameof(T) + " is " + typeof(ClassMember));
                     /// This is not possible to do, since A is <see cref="BaseAttribute.GetStaticNotToBeUsedInstance"/>
@@ -166,7 +166,14 @@ namespace AgoRapide.Core {
                             result: null
                         );
                     });
-
+                    db.CreateProperty(
+                        cid: cid.Id,
+                        pid: r.Id,
+                        fid: null,
+                        key: CoreP.QueryId.A().PropertyKeyWithIndex,
+                        value: attribute.Id.IdString,
+                        result: null
+                    );
                 }
 
                 /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
@@ -179,6 +186,10 @@ namespace AgoRapide.Core {
 
             /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
             if (enrichAndReturnThisObject == null) return retval;
+            /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
+
+            /// Update in cache also. TODO: Check thread-safety of this. Next thread may already have gotten the cached value, before we put back the updated value here
+            AllApplicationParts[attribute.Id.IdString.ToString()] = enrichAndReturnThisObject;
             /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
 
             // Update all properties in database
@@ -199,6 +210,7 @@ namespace AgoRapide.Core {
                     throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
                 }
             });
+            db.UpdateProperty(cid.Id, retval, CoreP.QueryId.A(), attribute.Id.IdString, result: null);
 
             enrichAndReturnThisObject.Use(e => {
                 e.Id = retval.Id;
@@ -210,10 +222,6 @@ namespace AgoRapide.Core {
                     e.Properties.AddValue2(p.Key, p.Value);
                 });
             });
-
-            /// Update in cache also. 
-            AllApplicationParts[attribute.Id.IdString] = enrichAndReturnThisObject;
-            /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
 
             return enrichAndReturnThisObject;
         }

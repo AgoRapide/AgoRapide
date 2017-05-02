@@ -596,20 +596,20 @@ namespace AgoRapide.API {
                     methodAttribute: new APIMethodAttribute {
                         CoreMethod = CoreAPIMethod.History,
                         Description =
-                            "Shows history for entity identified by {" + CoreP.IntegerQueryId + "}.",
+                            "Shows history for entity identified by {" + CoreP.QueryIdInteger + "}.",
                         AccessLevelUse = t.GetClassAttribute().AccessLevelRead // Use of method equals writing to entity
                     },
                     /// TODO: MAKE SURE HTTP-METHODS ARE STORED IN DATABASE (keeping historical track of changes)
                     httpMethods: new List<HTTPMethod> { HTTPMethod.GET },
                     routeSegments: new List<RouteSegmentClass> {
                         new RouteSegmentClass(t.ToStringVeryShort(), t, detailer),
-                        new RouteSegmentClass(nameof(CoreP.IntegerQueryId), CoreP.IntegerQueryId , detailer),
+                        new RouteSegmentClass(nameof(CoreP.QueryIdInteger), CoreP.QueryIdInteger , detailer),
                         new RouteSegmentClass(nameof(CoreAPIMethod.History), CoreAPIMethod.History.ToString() , detailer)
                     },
                     parameters: new List<PropertyKey> {
-                        CoreP.IntegerQueryId.A()
+                        CoreP.QueryIdInteger.A()
                     },
-                    routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.IntegerQueryId + "}/" + CoreAPIMethod.History // Do not use M here!
+                    routeTemplate: t.ToStringVeryShort() + "/{" + CoreP.QueryIdInteger + "}/" + CoreAPIMethod.History // Do not use M here!
                     );
                 connector(method);
             });
@@ -683,19 +683,19 @@ namespace AgoRapide.API {
                 switch (method.MA.CoreMethod) {
                     case CoreAPIMethod.RootIndex:
                         return new Id(
-                            idString: method.MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + method.MA.CoreMethod.ToString(),
+                            idString: new QueryIdString(method.MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + method.MA.CoreMethod.ToString()),
                             idFriendly: "(" + method.MA.CoreMethod + ")", /// <see cref="APIMethod.RouteTemplates"/> can not be used as it is empty
                             idDoc: new List<string> { "(" + method.MA.CoreMethod + ")" }
                         );
                     case CoreAPIMethod.GenericMethod:
                         return new Id (
-                            idString: method.MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + method.MA.CoreMethod.ToString(),
+                            idString: new QueryIdString(method.MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + method.MA.CoreMethod.ToString()),
                             idFriendly: method.RouteTemplates[0],
                             idDoc: new List<string> { method.RouteTemplates[0] } // Most probably little useful
                         );
                     default:
                         return new Id (
-                           idString: method.MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + method.RouteTemplates[0].Replace("/", "_").Replace("{", "_").Replace("}", "_"),
+                           idString: new QueryIdString(method.MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + method.RouteTemplates[0].Replace("/", "_").Replace("{", "_").Replace("}", "_")),
                            idFriendly: method.RouteTemplates[0],
                            idDoc: new List<string> { method.RouteTemplates[0] } // Most probably little useful
                        );

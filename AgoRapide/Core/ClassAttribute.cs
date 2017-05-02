@@ -15,14 +15,20 @@ namespace AgoRapide.Core {
     public class ClassAttribute : BaseAttribute {
 
         private Type _classType;
-        [ClassMember(Description= "The actual type that we are a -" + nameof(ClassAttribute) + "- for")]
+        [ClassMember(Description = "The actual type that we are a -" + nameof(ClassAttribute) + "- for")]
         public Type ClassType => _classType ?? throw new NullReferenceException(nameof(_classType) + ". Should have been set by " + nameof(GetAttribute));
+
+        [ClassMember(Description = "The type of the parent (if any). See also ...")]
+        public Type ParentType;
+
+        [ClassMember(Description = "The type of the children (if any). See also ...")]
+        public Type ChildrenType;
 
         /// <summary>
         /// See <see cref="CoreP.AccessLevelRead"/> 
         /// Note strict default of <see cref="AccessLevel.System"/> 
         /// </summary>        
-        [ClassMember(Description="Only relevant when attribute for -" + nameof(BaseEntity) + "-")]
+        [ClassMember(Description = "Only relevant when attribute for -" + nameof(BaseEntity) + "-")]
         public AccessLevel AccessLevelRead { get; set; } = AccessLevel.System;
 
         /// <summary>
@@ -35,7 +41,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Only relevant when attribute for a class implementing <see cref="ITypeDescriber"/>
         /// </summary>
-        [ClassMember(Description= "Used for unit testing in order to assert failure of validation.")]
+        [ClassMember(Description = "Used for unit testing in order to assert failure of validation.")]
         public string[] InvalidValues { get; set; }
 
         /// <summary>
@@ -97,9 +103,9 @@ namespace AgoRapide.Core {
             if (AccessLevelWrite == AccessLevel.System) AccessLevelWrite = other.AccessLevelWrite; // Careful with what is default value here
         }
 
-        public override string ToString() => nameof(ClassType) + ": " + ( _classType?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
-        protected override Id GetId() => new Id (
-            idString: GetType().ToStringShort().Replace("Attribute", "") + "_" + ClassType.ToStringVeryShort().Replace("+",""), /// + will show up for local classes like <see cref="BaseAttribute.IncorrectAttributeTypeUsedException"/>
+        public override string ToString() => nameof(ClassType) + ": " + (_classType?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
+        protected override Id GetId() => new Id(
+            idString: new QueryIdString(GetType().ToStringShort().Replace("Attribute", "") + "_" + ClassType.ToStringVeryShort().Replace("+", "")), /// + will show up for local classes like <see cref="BaseAttribute.IncorrectAttributeTypeUsedException"/>
             idFriendly: ClassType.ToStringShort(),
             idDoc: new List<string> { ClassType.ToStringShort() }
         );
