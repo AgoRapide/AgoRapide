@@ -62,15 +62,15 @@ namespace AgoRapideSample {
         /// <summary>
         /// TODO: Implement 
         /// </summary>
-        /// <param name="IntegerQueryId"></param>
+        /// <param name="QueryIdInteger"></param>
         /// <returns></returns>
         [HttpGet]
         [APIMethod(
             Description = "Demonstrates use of " + nameof(PropertyKeyAttribute.IsMany) + ". Call with id of a -" + nameof(Car) + "--object",
             S1 = nameof(CarIsManyExample), S2 = CoreP.QueryIdInteger)]
-        public object CarIsManyExample(string IntegerQueryId) {
+        public object CarIsManyExample(string QueryIdInteger) {
             try {
-                if (!TryGetRequest(IntegerQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
+                if (!TryGetRequest(QueryIdInteger, out var request, out var completeErrorResponse)) return completeErrorResponse;
                 if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, useCache: false, entity: out Car car, errorResponse: out var errorResponse)) return request.GetErrorResponse(errorResponse);
 
                 var v1 = "All colours (variant 1): " + string.Join(", ", car.PV<List<Colour>>(P.Colour2.A()).Select(c => c.ToString()));

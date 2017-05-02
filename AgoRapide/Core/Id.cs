@@ -14,8 +14,8 @@ namespace AgoRapide.Core {
     public class Id {
 
         [ClassMember(Description = 
-            "Corresponds to -" + nameof(CoreP.IdString) + "- and -" + nameof(QueryIdString) + "-.\r\n"+
-            "See -" + nameof(CoreP.IdString) + "- for documentation.")]
+            "Corresponds to -" + nameof(CoreP.QueryId) + "- and -" + nameof(QueryIdString) + "-.\r\n"+
+            "See -" + nameof(CoreP.QueryId) + "- for documentation.")]
         public QueryIdString IdString { get; private set; }
 
         [ClassMember(Description =

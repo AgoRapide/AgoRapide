@@ -115,26 +115,9 @@ namespace AgoRapide {
 
         [PropertyKey(
             Description =
-                "General identifier usable in URLs and similar.\r\n" +
-                "Corresponds to -" + nameof(QueryIdString) + "- and -" + nameof(Id.IdString) + "-.",
-            LongDescription =
-                "Values chosen should be compatible with HTTP GET URLs (without any escaping of characters). " +
-                "The approach chosen is therefore to assure that values -" + nameof(PropertyKeyAttribute.MustBeValidCSharpIdentifier) + "-. " +
-                "See accompanying -" + nameof(IdFriendly) + "- which is the more readable form.\r\n" +
-                "Note how -" + nameof(IdString) + "- will be the same among different database instances, in contrast to -" + nameof(DBId) + "-.",
-            Type = typeof(QueryIdString),
-            IsUniqueInDatabase = true,
-            MustBeValidCSharpIdentifier = true,
-            PriorityOrder = PriorityOrder.Important,
-            AccessLevelRead = AccessLevel.Anonymous,
-            Parents = new Type[] { typeof(ApplicationPart) })]
-        IdString,
-
-        [PropertyKey(
-            Description =
                 "Generic property for naming objects in a human friendly manner.\r\n" +
                 "The values used are meant for human consumption and are normally not very useful in HTTP GET query URLs.\r\n" +
-                "Corresponds to -" + nameof(Core.Id.IdFriendly) + "-.",
+                "Corresponds to -" + nameof(BaseEntity.IdFriendly) + "- and -" + nameof(Core.Id.IdFriendly) + "-.",
             Type = typeof(string),
             PriorityOrder = PriorityOrder.Important)]
         IdFriendly,
@@ -146,6 +129,9 @@ namespace AgoRapide {
             Description = "Detailed version of -" + nameof(IdFriendly) + "-.")]
         IdFriendlyDetailed,
 
+        /// <summary>
+        /// Note how <see cref="QueryId.TryParse"/> can recognize <see cref="CoreP.IdDoc"/> and replace with the full <see cref="CoreP.QueryId"/>
+        /// </summary>
         [PropertyKey(
             Description =
                 "Very short form of id used when linking to documentation in comments.\r\n" +
@@ -170,7 +156,15 @@ namespace AgoRapide {
         GeneralQueryId,
 
         [PropertyKey(
-            Type = typeof(QueryId))]
+            Description =
+                "Will often be a -" + nameof(QueryIdString) + "- instance.",
+            LongDescription =
+                "See accompanying -" + nameof(IdFriendly) + "- which is the more readable form.\r\n",
+            Type = typeof(QueryId),
+            IsUniqueInDatabase = true, /// This is relevant for <see cref="IDatabase.CreateProperty"/> but does not necessarily hold for other uses.
+            PriorityOrder = PriorityOrder.Important,
+            AccessLevelRead = AccessLevel.Anonymous,
+            Parents = new Type[] { typeof(ApplicationPart) })]
         QueryId,
 
         [PropertyKey(

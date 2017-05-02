@@ -258,7 +258,7 @@ namespace AgoRapide.Core {
         [ClassMember(
             Description =
                 "TRUE indicates that the value given must be a valid C# identifier. " +
-                "Especially used for -" + nameof(CoreP.IdString) + "-. " +
+                "Especially used for -" + nameof(CoreP.QueryId) + "-. " +
                 "Only allowed for -" + nameof(Type) + "- string",
             LongDescription =
                 "A practical consequence will be that the value can also be used in a HTTP GET query-string without escaping)")]

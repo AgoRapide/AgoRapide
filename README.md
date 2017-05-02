@@ -278,7 +278,7 @@ Properties are only added to the database, with older properties marked as inval
 
 The entity (the user) doing the change is also logged telling you who changed what data. 
 
-See methods like [Property/{IntegerQueryId}/History](http://sample.agorapide.com/api/APIMethod/1360/HTML) and [example](http://sample.agorapide.com/api/Property/1744/History/HTML)
+See methods like [Property/{QueryIdInteger}/History](http://sample.agorapide.com/api/APIMethod/1360/HTML) and [example](http://sample.agorapide.com/api/Property/1744/History/HTML)
 
 ## A C# centric approach. 
 AgoRapide is more C# centric than database centric in the sense that the database schema is in reality stored as C# code. Auto generated libraries are then used as basis for access through other programming environment (like Java, Swift, ObjectiveC and so on). 

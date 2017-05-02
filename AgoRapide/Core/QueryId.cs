@@ -19,18 +19,21 @@ namespace AgoRapide.Core {
     [Class(
         Description =
             "Represents a search term in the API.\r\n" +
+            "Also used as a general identifier usable in URLs and similar.\r\n"  +
+            "(-" + nameof(QueryIdString) + "- is a human friendly alternative to -" + nameof(BaseEntity.Id) + "-.)r\n" +
             "In its simplest form it is just a long integer that corresponds directly to " + nameof(DBField.id) + " " +
             "(see -" + nameof(QueryIdInteger) + "-).\r\n" +
             "It can also be more complex like 'WHERE -" + nameof(CoreP.IdFriendly) + "- LIKE 'John%' ORDER BY -" + nameof(DBField.id) + "- " +
-            "(see -" + nameof(QueryIdKeyOperatorValue) + "-).\r\n" +
-            "This class does NOT contain information about what type of entity is being queried.",
+            "(see -" + nameof(QueryIdKeyOperatorValue) + "-).\r\n",
         LongDescription =
+            "This class does NOT contain information about what type of entity is being queried.\r\n" +
             "This class translates an (untrusted) SQL-like expression to a sanitized intermediate format " +
             "that is safe to use in order to build up a real SQL query against the database backend.\r\n" +
             "Sub classes:\r\n" +
-            nameof(QueryIdInteger) + "\r\n" +
-            nameof(QueryIdString) + "\r\n" +
-            nameof(QueryIdKeyOperatorValue),
+            "-" + nameof(QueryIdInteger) + "-\r\n" +
+            "-" + nameof(QueryIdKeyOperatorValue) + "-\r\n" +
+            "-" + nameof(QueryIdString) + "-\r\n" +
+            "-" + nameof(QueryIdMultiple) + "-",
         SampleValues = new string[] { "All" },
         InvalidValues = new string[] {
             "WHERE value IN ('A', 'B'" /// TODO: Add more common syntax errors and check that <see cref="TryParse"/> returns good error messages for each kind if syntax error
@@ -142,9 +145,10 @@ namespace AgoRapide.Core {
                     case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
                     case 1:
                         var singleEntity = list[0].Entity;
-                        id = singleEntity.IdString.Equals(singleEntity.Id.ToString()) ?
-                            (QueryId)new QueryIdInteger(singleEntity.Id) : // A bit surprising, but really no problem 
-                            (QueryId)new QueryIdString(singleEntity.IdString);  /// Replace with <see cref="CoreP.IdString"/> since that one also works against the database
+                        id = singleEntity.IdString;
+                        //id = singleEntity.IdString.Equals(singleEntity.Id.ToString()) ?
+                        //    (QueryId)new QueryIdInteger(singleEntity.Id) : // A bit surprising, but really no problem 
+                        //    (QueryId)new QueryIdString(singleEntity.IdString);  /// Replace with <see cref="CoreP.IdString"/> since that one also works against the database
                         errorResponse = null;
                         return true;
                     default:

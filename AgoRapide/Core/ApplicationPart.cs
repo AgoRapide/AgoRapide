@@ -56,7 +56,8 @@ namespace AgoRapide.Core {
                 GetFromDatabaseInProgress = true;
 
                 db.GetAllEntities<T>().ForEach(ap => {
-                    var identifier = ap.PV<string>(CoreP.IdString.A());
+                    // var identifier = ap.PV<string>(CoreP.IdString.A());
+                    var identifier = ap.IdString.ToString(); /// Note how this assumes that <see cref="CoreP.QueryId"/> actually has been set, if not we will just get <see cref="BaseEntity.Id"/> back now
                     if (!AllApplicationParts.TryAdd(identifier, ap)) {
                         // This is a known weakness as of Jan 2017 since creation of ApplicationPart is not thread safe regarding database operations
                         logger("Duplicate " + ap.GetType() + " found (" + identifier + "), suggestion: Keep " + AllApplicationParts[identifier].Id + " but delete " + ap.Id + " (since that is the one being ignored now)");
@@ -131,7 +132,7 @@ namespace AgoRapide.Core {
                 // Alternative 2) Instead ask for the "parent" method lower down in the stack
                 var thisA = MethodBase.GetCurrentMethod().GetClassMemberAttribute(nameof(Get)); /// Do not rename method <see cref="Get{T}"/> into GetOrAdd as it would collide with <see cref="ConcurrentDictionary{TKey, TValue}.GetOrAdd"/>
 
-                cid = thisA.Id.IdString.Equals(i) ?
+                cid = thisA.Id.IdString.ToString().Equals(i) ?
                     null : // Avoid recursive call
                     Get<ClassMember>(thisA, db, null); /// Get this method as <see cref="ApplicationPart"/>
 
@@ -154,8 +155,7 @@ namespace AgoRapide.Core {
                 }
 
                 if (enrichAndReturnThisObject == null) { /// Will typically happen when called from <see cref="GetClassMember"/>
-                    r._a = attribute; // HACK: Since dummy constructor was used, set attribute now.
-                    /// Since <see cref="IDatabase.UpdateProperty{T}"/> will not be called below, create properties now. 
+                                                         /// Since <see cref="IDatabase.UpdateProperty{T}"/> will not be called below, create properties now. 
                     attribute.Properties.Flatten().ForEach(p => {
                         db.CreateProperty(
                             cid: cid.Id,
@@ -166,14 +166,18 @@ namespace AgoRapide.Core {
                             result: null
                         );
                     });
-                    db.CreateProperty(
-                        cid: cid.Id,
-                        pid: r.Id,
-                        fid: null,
-                        key: CoreP.QueryId.A().PropertyKeyWithIndex,
-                        value: attribute.Id.IdString,
-                        result: null
-                    );
+                    // Unnecessary, included in attribute.Properties
+                    //db.CreateProperty(
+                    //    cid: cid.Id,
+                    //    pid: r.Id,
+                    //    fid: null,
+                    //    key: CoreP.QueryId.A().PropertyKeyWithIndex,
+                    //    value: attribute.Id.IdString,
+                    //    result: null
+                    //);
+                    /// Read r once more since properties are not reflected (since we called <see cref="IDatabase.CreateProperty"/> and not <see cref="IDatabase.UpdateProperty{T}"/>
+                    r = db.GetEntityById<T>(r.Id);
+                    r._a = attribute; // HACK: Since dummy constructor was used, set attribute now.
                 }
 
                 /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
@@ -188,7 +192,8 @@ namespace AgoRapide.Core {
             if (enrichAndReturnThisObject == null) return retval;
             /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
 
-            /// Update in cache also. TODO: Check thread-safety of this. Next thread may already have gotten the cached value, before we put back the updated value here
+            /// Update in cache also. 
+            /// TODO: Check thread-safety of this. Next thread may already have gotten the cached value, before we put back the updated value here
             AllApplicationParts[attribute.Id.IdString.ToString()] = enrichAndReturnThisObject;
             /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
 
@@ -204,13 +209,16 @@ namespace AgoRapide.Core {
                     db.UpdateProperty(cid.Id, retval, p.Key, p.V<bool>(), result: null);
                     // TODO: Fix code below. No reason for not supporting all types (long, double, datetime and so on)
                     // TODO: Maybe replace this check with a new extension-method called IsStoredAsStringInDatabase or similar...
+                } else if (typeof(QueryId).Equals(p.Key.Key.A.Type)) {
+                    db.UpdateProperty(cid.Id, retval, p.Key, p.V<QueryId>(), result: null);
                 } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
                     db.UpdateProperty(cid.Id, retval, p.Key, p.V<string>(), result: null);
                 } else {
                     throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
                 }
             });
-            db.UpdateProperty(cid.Id, retval, CoreP.QueryId.A(), attribute.Id.IdString, result: null);
+            // Unnecessary, included in attribute.Properties
+            // db.UpdateProperty(cid.Id, retval, CoreP.QueryId.A(), attribute.Id.IdString, result: null);
 
             enrichAndReturnThisObject.Use(e => {
                 e.Id = retval.Id;

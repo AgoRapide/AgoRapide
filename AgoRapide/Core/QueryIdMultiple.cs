@@ -13,21 +13,25 @@ namespace AgoRapide.Core {
     public class QueryIdMultiple : QueryId {
         public List<QueryId> Ids;
         public QueryIdMultiple(string ids) : this(ids.Split(",").ToList()) => _toString = ids;
-        public QueryIdMultiple(List<string> ids) {
-            if (ids.Count <= 1) throw new InvalidCountException(nameof(ids) + ".Count: " + ids.Count + ". Meaningless / unneccessary complex. Therefore not allowed");
+        public QueryIdMultiple(List<string> ids) => ids.Select(id =>
             /// TODO: Because of the use of <see cref="CoreP.IdString"/> 
             /// TODO: <see cref="QueryId.TryParse"/> will most probably never return FALSE. 
             /// TODO: Therefore, change the method's signature into void Parse.
-            Ids = ids.Select(id => QueryId.TryParse(id, out var retval) ?
+            QueryId.TryParse(id, out var retval) ?
                 (!(retval is QueryIdMultiple) ? retval : throw new InvalidObjectTypeException(retval)) :
-                throw new NotImplementedException()).ToList();
+                throw new NotImplementedException()
+        ).ToList();
+
+        public QueryIdMultiple(List<QueryId> ids) {
+            if (ids.Count <= 1) throw new InvalidCountException(nameof(ids) + ".Count: " + ids.Count + ". Meaningless / unneccessary complex. Therefore not allowed");
+            Ids = ids;
 
             IsMultiple = true;
 
             /// TODO: This does not work, we will get something like
             /// TODO: (key = 'IdString' AND strv = :strv1) OR
             /// TODO: (key = 'IdString' AND strv = :strv1) AND
-            _SQLWhereStatement = "\r\n(" + 
+            _SQLWhereStatement = "\r\n(" +
                  string.Join(" OR\r\n", Ids.Select(id => "(" + id.SQLWhereStatement + ")")) +
                  "-- TODO: This SQL code does not work. ids are wrongly named" +
             ")\r\n";

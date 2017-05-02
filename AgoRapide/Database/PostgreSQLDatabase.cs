@@ -588,6 +588,10 @@ namespace AgoRapide.Database {
                     cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.strv.ToString(), NpgsqlTypes.NpgsqlDbType.Text) { Value = strValue }); break;
                 case bool blnValue:
                     cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.key + " = '" + keyAsString + "' AND " + DBField.blnv + " = " + (blnValue ? "TRUE" : "FALSE") + " AND " + DBField.invalid + " IS NULL", _cn1); break;
+                case QueryId queryIdValue:
+                    cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.key + " = '" + keyAsString + "' AND " + DBField.strv + " = :" + DBField.strv + " AND " + DBField.invalid + " IS NULL", _cn1);
+                    cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.strv.ToString(), NpgsqlTypes.NpgsqlDbType.Text) { Value = queryIdValue.ToString() });
+                    break;
                 default: throw new InvalidObjectTypeException(value, nameof(a.Key.A.IsUniqueInDatabase) + " only implemented for string and bool");
             }
             var existing = ReadAllPropertyValues(cmd);

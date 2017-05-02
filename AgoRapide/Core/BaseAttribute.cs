@@ -175,7 +175,7 @@ namespace AgoRapide.Core {
             PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
             Func<string> d = () => ToString();
 
-            PropertiesParent.AddProperty(CoreP.IdString.A(), Id.IdString, d);
+            PropertiesParent.AddProperty(CoreP.QueryId.A(), Id.IdString, d);
             PropertiesParent.AddProperty(CoreP.IdFriendly.A(), Id.IdFriendly, d);
             PropertiesParent.AddProperty(CoreP.IdDoc.A(), Id.IdDoc, d);
 

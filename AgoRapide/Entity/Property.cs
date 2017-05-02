@@ -342,21 +342,28 @@ namespace AgoRapide {
         /// </summary>
         /// <returns></returns>
         public string ValueHTML => _valueHTML ?? (_valueHTML = new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
-            var v = V<string>();
             switch (Key.Key.CoreP) {
-                case CoreP.IdString: return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v, (Parent != null ? Parent.GetType() : typeof(BaseEntity)), new QueryIdString(v));
-                case CoreP.DBId:
-                    return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
-                       (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
-                            Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
-                            typeof(BaseEntity)), new QueryIdInteger(V<long>()));
-                default:
-                    if (Key.Key.A.IsDocumentation) {
-                        return Documentator.ReplaceKeys(v.HTMLEncode());
-                    } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
-                        return Documentator.GetSingleReplacement(v, list);
-                    } else {
-                        return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance);
+                case CoreP.QueryId: {
+                        var v = V<QueryId>();
+                        return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v.ToString(), (Parent != null ? Parent.GetType() : typeof(BaseEntity)), v);
+                    }
+                case CoreP.DBId: {
+                        var v = V<string>();
+                        return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
+                           (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
+                                Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
+                            typeof(BaseEntity)
+                           ), new QueryIdInteger(V<long>()));
+                    }
+                default: {
+                        var v = V<string>();
+                        if (Key.Key.A.IsDocumentation) {
+                            return Documentator.ReplaceKeys(v.HTMLEncode());
+                        } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
+                            return Documentator.GetSingleReplacement(v, list);
+                        } else {
+                            return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance);
+                        }
                     }
             }
         })());

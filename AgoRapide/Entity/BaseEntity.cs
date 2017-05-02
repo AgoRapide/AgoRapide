@@ -45,18 +45,36 @@ namespace AgoRapide {
             public IdNotSetException(string message) : base(nameof(BaseEntity.Id) + " was not set. Possible cause: An object was assumed to originate from the database but did not.\r\nDetails:\r\n" + message) { }
         }
 
-        public virtual string IdString => PV(CoreP.IdString.A(), Id.ToString());
+        private QueryId _idString;
+        /// <summary>
+        /// <see cref="IdString"/> is used against <see cref="CoreAPIMethod.EntityIndex"/>. 
+        /// <see cref="IdFriendly"/> is used in textual contexts 
+        /// <see cref="ToString"/> is used in logs and in exception messages. 
+        /// 
+        /// Note how this is a always available "safe-to-use" property degrading to <see cref="BaseEntity.Id"/> as necessary.
+        /// </summary>
+        [ClassMember(Description =
+            "May be used as replacement of -" + nameof(BaseEntity.Id) + "-, for instance for use as parameter against -" + nameof(CoreAPIMethod.EntityIndex) + "- " +
+            "(because will often give a more human friendly value)."
+        )]
+        public QueryId IdString => _idString ?? (_idString = PV<QueryId>(CoreP.QueryId.A(), new QueryIdInteger(Id)));
 
         /// <summary>
+        /// <see cref="IdString"/> is used against <see cref="CoreAPIMethod.EntityIndex"/>. 
+        /// <see cref="IdFriendly"/> is used in textual contexts 
         /// <see cref="ToString"/> is used in logs and in exception messages. 
-        /// <see cref="IdFriendly"/> is used in contexts when a more user friendly value is needed. 
+        /// 
+        /// Note how this is a always available "safe-to-use" property degrading to <see cref="BaseEntity.Id"/> as necessary.
+        /// 
+        /// Made virtual in cases where it is not practical to add a <see cref="CoreP.IdFriendly"/> property.
         /// </summary>
         /// <returns></returns>
         public virtual string IdFriendly => PV(CoreP.IdFriendly.A(), Id.ToString());
 
         /// <summary>
+        /// <see cref="IdString"/> is used against <see cref="CoreAPIMethod.EntityIndex"/>. 
+        /// <see cref="IdFriendly"/> is used in textual contexts 
         /// <see cref="ToString"/> is used in logs and in exception messages. 
-        /// <see cref="IdFriendly"/> is used in contexts when a more user friendly value is needed. 
         /// </summary>
         /// <returns></returns>
         public override string ToString() => GetType().ToString() + ": " + Id + ", created: " + Created.ToString(DateTimeFormat.DateHourMin);
