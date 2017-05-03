@@ -18,24 +18,36 @@ namespace AgoRapide.Core {
         [ClassMember(Description = "The actual type that we are a -" + nameof(ClassAttribute) + "- for")]
         public Type ClassType => _classType ?? throw new NullReferenceException(nameof(_classType) + ". Should have been set by " + nameof(GetAttribute));
 
+        /// <summary>
+        /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
+        /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
+        /// </summary>
         [ClassMember(Description = "The type of the parent (if any). See also ...")]
         public Type ParentType;
 
+        /// <summary>
+        /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
+        /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
+        /// </summary>
         [ClassMember(Description = "The type of the children (if any). See also ...")]
         public Type ChildrenType;
 
         /// <summary>
-        /// See <see cref="CoreP.AccessLevelRead"/> 
-        /// Note strict default of <see cref="AccessLevel.System"/> 
+        /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
+        /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
         /// </summary>        
-        [ClassMember(Description = "Only relevant when attribute for -" + nameof(BaseEntity) + "-")]
+        [ClassMember(Description =
+            "See -" + nameof(CoreP.AccessLevelRead) + "-. " +
+            "Note strict default of -" + nameof(AccessLevel.System) + "-.")]
         public AccessLevel AccessLevelRead { get; set; } = AccessLevel.System;
 
         /// <summary>
-        /// See <see cref="CoreP.AccessLevelWrite"/> 
-        /// Note strict default of <see cref="AccessLevel.System"/> 
+        /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
+        /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
         /// </summary>
-        [ClassMember(Description = "Only relevant when attribute for -" + nameof(BaseEntity) + "-")]
+        [ClassMember(Description =
+                    "See -" + nameof(CoreP.AccessLevelWrite) + "-. " +
+                    "Note strict default of -" + nameof(AccessLevel.System) + "-.")]
         public AccessLevel AccessLevelWrite { get; set; } = AccessLevel.System;
 
         /// <summary>

@@ -179,7 +179,7 @@ Code that comes easy to mind has been looked upon with suspicion because "easy" 
 
 (The inavoidable higher level of abstraction that comes as a consequence of all this has been somewhat mitigated by extensive use of linked comments and very detailed exception messages)
 
-Some forms of repetition that we strive to avoid in AgoRapide are:
+Some forms of repetition that we have identified and attempt to avoid in AgoRapide are:
 
 ## Creating API-methods is a repetition:
 API-methods of the form GetSomeObjectTypeBySomePropertyValue have been generalised in AgoRapide into one single idea, Api/SomeObjectType/WHERE property = 'value', meaning you do not have to repeatedly create API-methods that in essence are copies of each other. And since the general mechanism supports all kinds of operators like "greater than", "less than" and so on, you get all that flexibility for all your object classes, not only those that you write specific API-methods for.
