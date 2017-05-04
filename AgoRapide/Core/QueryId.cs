@@ -124,7 +124,15 @@ namespace AgoRapide.Core {
             }
 
             if (valueToLower.StartsWith("where")) {  // TODO: Implement parsing of WHERE ... format.
-                errorResponse = "Invalid long integer, not recognized as " + nameof(QueryIdString) + " and parsing as " + nameof(QueryIdKeyOperatorValue) + " not yet implemented.";
+                value = value.Replace("%3D", "="); // HACK: FIX THIS!
+                var s = "WHERE " + CoreP.QueryIdParent + " = '";
+                if (value.StartsWith(s)) {
+                    // TODO: IMPLEMENT MORE COMPLETE PARSER HERE!
+                    id = new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, value.Substring(s.Length, value.Length - s.Length - 1));
+                    errorResponse = null;
+                    return true;
+                }
+                errorResponse = "Invalid long integer, not recognized as " + nameof(QueryIdString) + " and parsing as " + nameof(QueryIdKeyOperatorValue) + " not yet implemented fully.";
                 id = null;
                 return false;
             }

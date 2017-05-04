@@ -158,7 +158,9 @@ namespace AgoRapide.Core {
                         default:
                             return (
                                 "Multiple mappings exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + ".\r\n" +
-                                "The actual mappings found where: " + string.Join(", ", candidates.Select(c => c.Key.PToString + " (" + nameof(CoreP) + "." + c.Key.CoreP + ")")) + ".",
+                                "The actual mappings found where:\r\n" + string.Join(", ", candidates.Select(c => c.Key.PToString + " (" + nameof(CoreP) + "." + c.Key.CoreP + ")")) + ".\r\n" +
+                                /// TODO: Search for <see cref="System.Diagnostics.StackFrame"/> to see if tip below is relevant:
+                                "Possible resolution: Call " + nameof(BaseEntity) + "." + nameof(BaseEntity.PV) + " instead of " + nameof(BaseEntity) + "." + nameof(BaseEntity.PVM) + ", that is, specify the actual " + nameof(CoreP) + " to use.",
                                 null);
                     }
                 });
@@ -598,7 +600,7 @@ namespace AgoRapide.Core {
                 return false;
             }
             errorResponse = null;
-            return true;            
+            return true;
         }
 
         public static void AssertValidIdentifier(string identifier) {

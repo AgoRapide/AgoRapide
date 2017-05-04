@@ -11,16 +11,17 @@ using System.Reflection;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: MOVE INTO CORE-FOLDER!
-    /// 
     /// Inheriting classes:<br>
     /// <see cref="APIMethod"/><br>
+    /// <see cref="Class"/><br>
     /// <see cref="ClassMember"/><br>
+    /// <see cref="Enum"/><br>
     /// <see cref="EnumValue"/><br>
     /// <see cref="Configuration"/><br>
-    /// 
-    /// All these classes are stored in the database for documentation purposes (write only).
     /// </summary>
+    [Class(Description = 
+        "Represents some internal part of your application (in contrast to -" + nameof(APIDataObject) + "- which represents actual data entities that your API is supposed to provide)"
+    )]
     public abstract class ApplicationPart : BaseEntityWithLogAndCount {
 
         private BaseAttribute _a;
@@ -124,6 +125,9 @@ namespace AgoRapide.Core {
         )]
         protected static T Get<T>(BaseAttribute attribute, IDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
             ClassMember cid = null; /// This method as <see cref="DBField.cid"/>
+            if (attribute.Id.IdString.ToString().Equals("ClassMember_BaseEntity_AgoRapide_Core_QueryId_IdString")) {
+                var x = 1;
+            }
             var retvalTemp = AllApplicationParts.GetOrAdd(attribute.Id.IdString.ToString(), i => {
                 InvalidIdentifierException.AssertValidIdentifier(i); // TODO: As of Apr 2017 this will fail for abstract types.
 
@@ -154,31 +158,36 @@ namespace AgoRapide.Core {
                     /// if (cid.A.Identifier != thisA.Identifier) throw new ApplicationException("Mismatching identifiers:\r\n" + cid.A.Identifier + "\r\nand\r\n" + thisA.Identifier);                    
                 }
 
-                if (enrichAndReturnThisObject == null) { /// Will typically happen when called from <see cref="GetClassMember"/>
-                                                         /// Since <see cref="IDatabase.UpdateProperty{T}"/> will not be called below, create properties now. 
-                    attribute.Properties.Flatten().ForEach(p => {
-                        db.CreateProperty(
-                            cid: cid.Id,
-                            pid: r.Id,
-                            fid: null,
-                            key: p.Key,
-                            value: p.Value,
-                            result: null
-                        );
-                    });
-                    // Unnecessary, included in attribute.Properties
-                    //db.CreateProperty(
-                    //    cid: cid.Id,
-                    //    pid: r.Id,
-                    //    fid: null,
-                    //    key: CoreP.QueryId.A().PropertyKeyWithIndex,
-                    //    value: attribute.Id.IdString,
-                    //    result: null
-                    //);
-                    /// Read r once more since properties are not reflected (since we called <see cref="IDatabase.CreateProperty"/> and not <see cref="IDatabase.UpdateProperty{T}"/>
-                    r = db.GetEntityById<T>(r.Id);
-                    r._a = attribute; // HACK: Since dummy constructor was used, set attribute now.
-                }
+                // TODO: Delete this comment. Natural to execute this always
+                //if (enrichAndReturnThisObject == null) { /// Will typically happen when called from <see cref="GetClassMember"/>
+                //                                         /// Since <see cref="IDatabase.UpdateProperty{T}"/> will not be called below, create properties now. 
+                
+
+                attribute.Properties.Flatten().ForEach(p => { /// Note that <see cref="IDatabase.UpdateProperty{T}"/> is much more complicated to use because of the generics involved.
+                    db.CreateProperty(
+                        cid: cid.Id,
+                        pid: r.Id,
+                        fid: null,
+                        key: p.Key,
+                        value: p.Value,
+                        result: null
+                    );
+                });
+                // Unnecessary, included in attribute.Properties
+                //db.CreateProperty(
+                //    cid: cid.Id,
+                //    pid: r.Id,
+                //    fid: null,
+                //    key: CoreP.QueryId.A().PropertyKeyWithIndex,
+                //    value: attribute.Id.IdString,
+                //    result: null
+                //);
+                /// Read r once more since properties are not reflected yet 
+                /// (since we called <see cref="IDatabase.CreateProperty"/> and not <see cref="IDatabase.UpdateProperty{T}"/>
+                r = db.GetEntityById<T>(r.Id);
+                r._a = attribute; // HACK: Since dummy constructor was used, set attribute now.
+
+                // }
 
                 /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
                 return r;
@@ -195,32 +204,33 @@ namespace AgoRapide.Core {
             /// Update in cache also. 
             /// TODO: Check thread-safety of this. Next thread may already have gotten the cached value, before we put back the updated value here
             AllApplicationParts[attribute.Id.IdString.ToString()] = enrichAndReturnThisObject;
+            /// TODO: BAD THREAD SAFETY. <param name="enrichAndReturnThisObject"/> has not been initialized yet.
             /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
 
-            // Update all properties in database
-            if (cid == null) cid = Get<ClassMember>(MethodBase.GetCurrentMethod().GetClassMemberAttribute(), db, null); /// Get this method as <see cref="ApplicationPart"/>
+            //// Update all properties in database
+            //if (cid == null) cid = Get<ClassMember>(MethodBase.GetCurrentMethod().GetClassMemberAttribute(), db, null); /// Get this method as <see cref="ApplicationPart"/>
 
-            /// TODO: BIG WEAKNESS HERE. We do not know the generic value of what we are asking for
-            /// TODO: The result will be to store as <see cref="DBField.strv"/> instead of a more precise type.
-            /// TODO: Implement some kind of copying of properties in order to avoid this!
-            /// TODO: (or rather, solve the general problem of using generics with properties)
-            attribute.Properties.Flatten().ForEach(p => {
-                if (typeof(bool).Equals(p.Key.Key.A.Type)) {
-                    db.UpdateProperty(cid.Id, retval, p.Key, p.V<bool>(), result: null);
-                    // TODO: Fix code below. No reason for not supporting all types (long, double, datetime and so on)
-                    // TODO: Maybe replace this check with a new extension-method called IsStoredAsStringInDatabase or similar...
-                } else if (typeof(QueryId).Equals(p.Key.Key.A.Type)) {
-                    db.UpdateProperty(cid.Id, retval, p.Key, p.V<QueryId>(), result: null);
-                } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
-                    db.UpdateProperty(cid.Id, retval, p.Key, p.V<string>(), result: null);
-                } else {
-                    throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
-                }
-            });
-            // Unnecessary, included in attribute.Properties
-            // db.UpdateProperty(cid.Id, retval, CoreP.QueryId.A(), attribute.Id.IdString, result: null);
+            ///// TODO: BIG WEAKNESS HERE. We do not know the generic value of what we are asking for
+            ///// TODO: The result will be to store as <see cref="DBField.strv"/> instead of a more precise type.
+            ///// TODO: Implement some kind of copying of properties in order to avoid this!
+            ///// TODO: (or rather, solve the general problem of using generics with properties)
+            //attribute.Properties.Flatten().ForEach(p => {
+            //    if (typeof(bool).Equals(p.Key.Key.A.Type)) {
+            //        db.UpdateProperty(cid.Id, retval, p.Key, p.V<bool>(), result: null);
+            //        // TODO: Fix code below. No reason for not supporting all types (long, double, datetime and so on)
+            //        // TODO: Maybe replace this check with a new extension-method called IsStoredAsStringInDatabase or similar...
+            //    } else if (typeof(QueryId).Equals(p.Key.Key.A.Type)) {
+            //        db.UpdateProperty(cid.Id, retval, p.Key, p.V<QueryId>(), result: null);
+            //    } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
+            //        db.UpdateProperty(cid.Id, retval, p.Key, p.V<string>(), result: null);
+            //    } else {
+            //        throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
+            //    }
+            //});
+            //// Unnecessary, included in attribute.Properties
+            //// db.UpdateProperty(cid.Id, retval, CoreP.QueryId.A(), attribute.Id.IdString, result: null);
 
-            enrichAndReturnThisObject.Use(e => {
+            enrichAndReturnThisObject.Use(e => { /// Turn <param name="enrichAndReturnThisObject"/> "into" the object found in database
                 e.Id = retval.Id;
                 e.Created = retval.Created;
                 e.RootProperty = retval.RootProperty;

@@ -437,13 +437,23 @@ namespace AgoRapide {
         /// </summary>
         public BaseAttribute ValueA => _valueA ?? (_valueA = new Func<BaseAttribute>(() => {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
+            switch (_value) {
+                case ApplicationPart applicationPart: return applicationPart.A;                    
+            }
             var type = _value.GetType();
             if (type.IsEnum) return _value.GetEnumValueAttribute();
-            if (typeof(ITypeDescriber).IsAssignableFrom(type)) {
-                /// TODO: Add check for <see cref="ClassAttribute"/> here? 
-                /// Especially for <see cref="ITypeDescriber"/>
-                throw new NotImplementedException();
-            }
+            
+            // NOT RELEVANT
+            // if (type.IsClass) return type.GetClassAttribute(); // TODO: Check validity of this
+
+            // TOOD: Add some more code here!
+
+            // TODO: Remove comment. Old attempt.
+            //if (typeof(ITypeDescriber).IsAssignableFrom(type)) {
+            //    /// TODO: Add check for <see cref="ClassAttribute"/> here? 
+            //    /// Especially for <see cref="ITypeDescriber"/>
+            //    throw new NotImplementedException();
+            //}
             return DefaultAgoRapideAttribute;
         })());
 
@@ -505,7 +515,7 @@ namespace AgoRapide {
                 return p.Value.ToHTMLTableRow(request);
             }));
             var a = Key.Key.A;
-            return "<tr><td>" +
+            return "<tr><td>" + /// TODO: Use StringBuilder. Makes for more efficient code and also code that is easier to debug.
 
                 // --------------------
                 // Column 1, Key

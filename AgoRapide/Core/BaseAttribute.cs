@@ -178,6 +178,7 @@ namespace AgoRapide.Core {
             PropertiesParent.AddProperty(CoreP.QueryId.A(), Id.IdString, d);
             PropertiesParent.AddProperty(CoreP.IdFriendly.A(), Id.IdFriendly, d);
             PropertiesParent.AddProperty(CoreP.IdDoc.A(), Id.IdDoc, d);
+            if (Id.Parent != null) PropertiesParent.AddProperty(CoreP.QueryIdParent.A(), Id.Parent, d);
 
             PropertiesParent.AddProperty(CoreP.Description.A(), Description + "", Description + "", GetType().GetClassMemberAttribute(nameof(Description)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
             PropertiesParent.AddProperty(CoreP.LongDescription.A(), LongDescription + "", LongDescription + "", GetType().GetClassMemberAttribute(nameof(LongDescription)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
@@ -199,8 +200,8 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         protected virtual Id GetId() => throw new NullReferenceException(
             nameof(GetId) + ". " +
-            (GetType().Equals(typeof(BaseAttribute)) ? 
-                ("Illegal to call " + System.Reflection.MethodBase.GetCurrentMethod().Name + " for " + GetType() + " / " + nameof(IsDefault)) : 
+            (GetType().Equals(typeof(BaseAttribute)) ?
+                ("Illegal to call " + System.Reflection.MethodBase.GetCurrentMethod().Name + " for " + GetType() + " / " + nameof(IsDefault)) :
                 ("Should have been implemented by sub-class " + GetType())
             ) + ".\r\n" +
             "Details: " + ToString()

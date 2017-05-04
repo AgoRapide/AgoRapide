@@ -11,14 +11,13 @@ using AgoRapide.API;
 namespace AgoRapide.Database {
 
     /// <summary>
-    /// PostgreSQL database implementation of <see cref="IDatabase"/> (see that for documentation). 
-    /// 
     /// You should probably inherit this class, and use that subclass in your project, in order to have the necessary flexibility.
     /// (even better would of course be some interface implementation in order not to depend on PostgreSQL)
     /// 
     /// TODO: Add TryGetEntityIds and GetEntityIds with <see cref="QueryId"/> as parameter just like done with 
     /// <see cref="GetEntities{T}"/> and <see cref="TryGetEntities{T}"/>
     /// </summary>
+    [Class(Description = "PostgreSQL database implementation of -" + nameof(IDatabase) + "- (see that for documentation).")]
     public class PostgreSQLDatabase : BaseCore, IDatabase {
 
         protected string _connectionString;

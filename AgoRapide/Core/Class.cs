@@ -47,7 +47,7 @@ namespace AgoRapide.Core {
                 }
             }
 
-            type.GetMembers().ForEach(e => {
+            type.GetMembers().ForEach(e => { /// Note that duplicate calls will be made for inherited members (both for base class and for sub class, by separate calls to <see cref="RegisterAndIndexClass"/>)
                 if ((e.MemberType & System.Reflection.MemberTypes.NestedType) == System.Reflection.MemberTypes.NestedType) return; /// Would most probably result in a <see cref="BaseAttribute.IncorrectAttributeTypeUsedException"/>
                 var a = e.GetClassMemberAttribute();
                 if (a.IsDefault) return; // We have no interest in documenting members without attributes. Will only generate noise.

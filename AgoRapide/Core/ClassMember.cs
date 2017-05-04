@@ -41,18 +41,18 @@ namespace AgoRapide.Core {
         public ClassMember() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
         public ClassMember(ClassMemberAttribute attribute) : base(attribute) => CMA = attribute;
 
-        /// <summary>
-        /// TODO: This overload may be removed by a general relation mechanism for parent-child
-        /// TODO: (marking with attributes what the parent is)
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        public override string ToHTMLDetailed(Request request) {
-            var retval = new StringBuilder();
-            var ca = CMA.MemberInfo.DeclaringType.GetClassAttribute();
-            retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Class " + ca.ClassType.ToStringVeryShort(), typeof(Class), ca.Id.IdString) + "</p>");
-            return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
-        }
+        ///// <summary>
+        ///// TODO: This overload may be removed by a general relation mechanism for parent-child
+        ///// TODO: (marking with attributes what the parent is)
+        ///// </summary>
+        ///// <param name="request"></param>
+        ///// <returns></returns>
+        //public override string ToHTMLDetailed(Request request) {
+        //    var retval = new StringBuilder();
+        //    var ca = CMA.MemberInfo.DeclaringType.GetClassAttribute();
+        //    retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Class " + ca.ClassType.ToStringVeryShort(), typeof(Class), ca.Id.IdString) + "</p>");
+        //    return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
+        //}
 
         public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }

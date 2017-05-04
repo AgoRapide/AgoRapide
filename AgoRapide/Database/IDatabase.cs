@@ -14,7 +14,7 @@ namespace AgoRapide.Database {
     public interface IDatabase : IDisposable { 
 
         /// <summary>
-        /// An implementation should support use of 
+        /// An implementation should support use of the following <see cref="CoreP"/> properties: 
         /// <see cref="CoreP.Username"/>
         /// <see cref="CoreP.Password"/>
         /// <see cref="CoreP.AuthResult"/>

@@ -119,7 +119,6 @@
     <Compile Include="Entity\Car.cs" />
     <Compile Include="Entity\Person.cs" />
     <Compile Include="Enum\Colour.cs" />
-    <Compile Include="Enum\EntityId.cs" />
     <Compile Include="Enum\P.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />

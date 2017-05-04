@@ -1,4 +1,8 @@
-﻿using System;
+﻿
+
+
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -13,7 +17,7 @@ namespace AgoRapideSample {
         AccessLevelRead = AccessLevel.Relation,
         AccessLevelWrite = AccessLevel.Relation
     )]
-    public class Person : BaseEntity {
+    public class Person : APIDataObject {
 
         /// <summary>
         /// Note that this way of storing names is valid for only some cultures. See instead 

@@ -22,7 +22,7 @@ namespace AgoRapide.Core {
         /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
         /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
         /// </summary>
-        [ClassMember(Description = "The type of the parent (if any). See also ...")]
+        [ClassMember(Description = "The type of the parent (if any). See also -" + nameof(CoreP.QueryIdParent) + "-.")]
         public Type ParentType;
 
         /// <summary>

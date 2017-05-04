@@ -137,12 +137,13 @@ namespace AgoRapide {
                 "Very short form of id used when linking to documentation in comments.\r\n" +
                 "Values used are not expected to be unique.\r\n" +
                 "Corresponds to -" + nameof(Core.Id.IdDoc) + "-.",
+            IsDocumentation = true,
             IsMany = true
             )]
         IdDoc,
 
         [PropertyKey(
-            Description = "Id of parent",
+            Description = "-" + nameof(BaseEntity.IdString) + "- of parent. See also -" + nameof(ClassAttribute.ParentType) + "-.",
             Type = typeof(QueryId)
         )]
         QueryIdParent,
@@ -213,9 +214,14 @@ namespace AgoRapide {
         [PropertyKey(Description = "The entity that this entity is represented by. See also -" + nameof(EntityToRepresent) + "-.")]
         RepresentedByEntity,
 
+        /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
+
         [PropertyKey(
-            Description = "Used to simulate 'logout'. Value 1 means that the next 'login' (that is, the next authentication attempt) will be denied.",
-            LongDescription = "Set by an API-method called Logout. See -" + nameof(IDatabase.TryVerifyCredentials) + "-. Usually set no-longer-current after each use.",
+            Description = 
+                "Used to simulate 'logout'. " +
+                "TRUE means that the next 'login' (that is, the next authentication attempt) " +
+                "will be denied by -" + nameof(IDatabase.TryVerifyCredentials) + "- " +
+                "(which then will do -" + nameof(AgoRapide.PropertyOperation.SetInvalid) + " for this property).",
             Type = typeof(bool))]
         RejectCredentialsNextTime,
 

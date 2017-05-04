@@ -11,9 +11,11 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
-    /// Also used internally by AgoRapide like <see cref="Parameters"/>, <see cref="Result"/>, 
-    /// <see cref="ApplicationPart"/>, <see cref="APIMethod"/> and so on, in order to reuse the
-    /// mechanisms developed for storing, querying and presenting data.-
+    /// Main inheriting classes:
+    /// <see cref="ApplicationPart"/>
+    /// <see cref="APIDataObject"/> 
+    /// 
+    /// Other examples of inheriting classes: <see cref="Parameters"/>, <see cref="Result"/>. 
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
     /// <see cref="IDatabase.GetEntityById{T}(long)"/> 
@@ -24,11 +26,7 @@ namespace AgoRapide {
     /// Note however <see cref="BaseEntityWithLogAndCount.LogInternal"/> 
     /// </summary>
     [Class(
-        Description = "Represents a basic data object in your model like Person, Order, Product",
-
-        /// Do not do this. Make exception for <see cref="CoreP.AccessLevelUse"/> for <see cref="CoreAPIMethod.EntityIndex"/> instead
-        // AccessLevelRead = AccessLevel.Anonymous, /// Necessary for <see cref="CoreMethod.EntityIndex"/> to accept all kind of queries. 
-
+        Description = "Basic entity supporting storage in database and collection of -" + nameof(Properties) + "-",
         DefinedForClass = nameof(BaseEntity) /// Necessary for <see cref="ClassAttribute.IsInherited"/> to be set correctly. TODO: Turn into Type (will require more work for deducing <see cref="ClassAttribute.IsInherited"/>). 
     )]
     public class BaseEntity : BaseCore {
@@ -52,6 +50,8 @@ namespace AgoRapide {
         /// <see cref="ToString"/> is used in logs and in exception messages. 
         /// 
         /// Note how this is a always available "safe-to-use" property degrading to <see cref="BaseEntity.Id"/> as necessary.
+        /// 
+        /// Is often of type <see cref="QueryIdString"/>, therefore called <see cref="IdString"/>.
         /// </summary>
         [ClassMember(Description =
             "May be used as replacement of -" + nameof(BaseEntity.Id) + "-, for instance for use as parameter against -" + nameof(CoreAPIMethod.EntityIndex) + "- " +
@@ -368,10 +368,15 @@ namespace AgoRapide {
                     "<br>Name: " + IdFriendly.HTMLEncode() + "</h1>");
             }
             var a = GetType().GetClassAttribute();
-            if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) {
+            /// TOOD: Consider removing this. Should be available from <see cref="Property.ToHTMLTableRow"/> anyway.
+            if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) { // Link from child to parent
                 queryIdParent.AssertIsSingle(() => ToString());
                 retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Parent " + a.ParentType.ToStringVeryShort(), a.ParentType, queryIdParent) + "</p>");
             }
+            if (a.ChildrenType != null) { // Link from parent to children
+                retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Children " + a.ChildrenType.ToStringVeryShort(), a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString())) + "</p>");
+            }
+
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
             retval.AppendLine(CreateHTMLForAddingProperties(request));

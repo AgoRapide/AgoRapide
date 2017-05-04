@@ -13,8 +13,8 @@ namespace AgoRapide.Core {
         "Note that does not contain -" + nameof(DBField.id) + "- / - " + nameof(BaseEntity.Id) + "-.")]
     public class Id {
 
-        [ClassMember(Description = 
-            "Corresponds to -" + nameof(CoreP.QueryId) + "- and -" + nameof(QueryIdString) + "-.\r\n"+
+        [ClassMember(Description =
+            "Corresponds to -" + nameof(CoreP.QueryId) + "- and -" + nameof(QueryIdString) + "-.\r\n" +
             "See -" + nameof(CoreP.QueryId) + "- for documentation.")]
         public QueryIdString IdString { get; private set; }
 
@@ -28,11 +28,27 @@ namespace AgoRapide.Core {
             "See -" + nameof(CoreP.IdDoc) + "- for documentation.")]
         public List<string> IdDoc { get; private set; }
 
-        public Id(QueryIdString idString, string idFriendly, List<string> idDoc) {
+        /// <summary>
+        /// May be null. 
+        /// </summary>
+        [ClassMember(Description =
+            "Corresponds to -" + nameof(CoreP.QueryIdParent) + "-.\r\n" +
+            "See -" + nameof(CoreP.QueryIdParent) + "- for documentation.")]
+        public QueryId Parent { get; private set; }
+
+        public Id(QueryIdString idString, string idFriendly, List<string> idDoc) : this(idString, idFriendly, idDoc, null) { }
+        /// <summary>
+        /// </summary>
+        /// <param name="idString"></param>
+        /// <param name="idFriendly"></param>
+        /// <param name="idDoc"></param>
+        /// <param name="parent">May be null</param>
+        public Id(QueryIdString idString, string idFriendly, List<string> idDoc, QueryId parent) {
             IdString = idString ?? throw new NullReferenceException(nameof(idString));
             // InvalidIdentifierException.AssertValidIdentifier(IdString);
             IdFriendly = idFriendly ?? throw new NullReferenceException(nameof(idFriendly));
             IdDoc = idDoc ?? throw new NullReferenceException(nameof(idDoc));
+            Parent = parent; // May be null
         }
     }
 }

@@ -7,11 +7,11 @@ using AgoRapide.Core;
 
 namespace AgoRapideSample {
     [Class(
-        Description ="A car is a personal transportation device.",
+        Description = "A car is a personal transportation device.",
         AccessLevelRead = AccessLevel.Anonymous,
         AccessLevelWrite = AccessLevel.Anonymous
     )]
-    public class Car : BaseEntity {
+    public class Car : APIDataObject {
         public override string IdFriendly => "The " + PV<Colour>(P.Colour.A()) + " car";
     }
 }

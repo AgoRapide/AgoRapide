@@ -64,7 +64,8 @@ namespace AgoRapide.Core {
             idDoc: new List<string> {
                 EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),
                 EnumValue.ToString()
-            }
+            },
+            parent: EnumValue.GetType().GetEnumAttribute().Id.IdString
         );
     }
 }

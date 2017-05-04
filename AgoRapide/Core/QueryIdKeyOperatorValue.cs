@@ -22,7 +22,7 @@ namespace AgoRapide.Core {
 
         protected string _toString;
         /// <summary>
-        /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatiable with parser)
+        /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatible with parser)
         /// </summary>
         /// <returns></returns>
         public override string ToString() => _toString ?? throw new NullReferenceException(nameof(_toString));
@@ -52,6 +52,7 @@ namespace AgoRapide.Core {
             Properties = null;
             Operator = Operator.None;
             Value = null;
+            _toString = "All"; /// TODO: Improve on use of <see cref="QueryId.ToString"/>
             Initialize();
         }
 
@@ -76,6 +77,10 @@ namespace AgoRapide.Core {
             if (Properties.Count == 0) throw new InvalidCountException(nameof(Properties) + ": " + Properties.Count);
             Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
             Value = value ?? throw new ArgumentNullException(nameof(value));
+            switch (properties.Count) {
+                case 1: _toString = "WHERE " + properties[0].PToString + " = '" + value + "'"; break; /// TODO: Improve on use of <see cref="QueryId.ToString"/>
+                default: throw new NotImplementedException(nameof(properties.Count) + ": " + properties.Count);
+            }
             Initialize();
         }
 
@@ -102,7 +107,6 @@ namespace AgoRapide.Core {
             if ((Properties == null || Properties.Count == 0) && Operator == Operator.None && Value == null) {
                 // Use empty SQL statement
                 _SQLWhereStatement = "";
-                _toString = "All"; /// Improve on use of <see cref="QueryId.ToString"/>
                 IsAll = true;
                 return;
             }
@@ -235,8 +239,6 @@ namespace AgoRapide.Core {
                 // TODO: Which clearly does not look optimal...
                 _SQLWhereStatement = "(\r\n   " + string.Join(" OR\r\n   ", Properties.Select(p => "(" + singlePropertySQLConstructor(p) + ")")) + "\r\n)";
             }
-
-            _toString = ToStringDebug(); /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatiable with parser)
         }
 
         // Should the property be put in the base-class? 

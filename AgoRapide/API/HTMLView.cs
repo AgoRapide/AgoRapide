@@ -150,21 +150,15 @@ namespace AgoRapide.API {
                     ) +
                 "</p>"
             ) +
-            (Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity != null ? "" :
-                /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
-                /// TODO: Consider creating a <see cref="CoreAPIMethod"/>.Logout in which to hide this code
-                /// TODO: Create better HTML-layout. Move to upper right corner for instance
-                "<p>" + Request.API.CreateAPILink(
-                    CoreAPIMethod.UpdateProperty,
+            (Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity != null ? "" : // Create logout link
+                "<p>" + Request.API.CreateAPILink(    /// TODO: Consider creating <see cref="CoreAPIMethod"/>.Logout in which to hide this code                                                                               
+                    CoreAPIMethod.UpdateProperty,     /// TODO: Create better HTML-layout. Move to upper right corner for instance
                     "Logout as " + Request.CurrentUser.IdFriendly,
                     Request.CurrentUser.GetType(),
                     new QueryIdInteger(Request.CurrentUser.Id),
                     CoreP.RejectCredentialsNextTime.A(),
-                    true.ToString() /// Note how <see cref="APIMethod"/> only knows that <see cref="CoreP.Value"/> is a string at this stage
-                                    /// (<see cref = "CoreAPIMethod.UpdateProperty" /> does not know anything about which values are valid for which keys.)
-                                    /// TODO: CONSIDER MAKING THIS EVEN SMARTER!
-                    ) +
-                "</p>"
+                    true
+                ) + "</p>"
             );
 
         /// <summary>
@@ -174,10 +168,14 @@ namespace AgoRapide.API {
         public virtual string GetHTMLEnd() =>
             "<br>\r\n" +
             "<p><a href=\"" + Request.JSONUrl + "\">JSON format for this request</a></p>\r\n<p>" +
-            (Request.CurrentUser != null ? "" :
-                "You are not logged in. Access is limited to methods with " + nameof(CoreP.AccessLevelUse) + " = " + nameof(AccessLevel.Anonymous) 
-            ) +
+            (Request.CurrentUser != null ? "" : NotLoggedInExplanation) +
             "</body>\r\n" +
             "</html>\r\n";
+
+        private static string _notLoggedInExplanation;
+        private static string NotLoggedInExplanation => _notLoggedInExplanation ?? (_notLoggedInExplanation =
+            Documentator.ReplaceKeys((
+                "You are not logged in. " +
+                "Access is limited to methods with -" + nameof(CoreP.AccessLevelUse) + "- = -" + nameof(AccessLevel.Anonymous) + "-.").HTMLEncode()));
     }
 }

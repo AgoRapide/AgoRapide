@@ -209,7 +209,7 @@ namespace AgoRapide.API {
             Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(id) + ": " + id);
             method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
             if (!TryGetRequest(id, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
-            var queryId = request.Parameters.PVM<QueryId>();
+            var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
 
             /// TODO: Mark all <see cref="ClassAttribute"/> with bool UseCache and 
             /// TODO: always read from cache for corresponding <see cref="APIMethod.EntityType"/>
@@ -237,7 +237,7 @@ namespace AgoRapide.API {
             Log(nameof(id) + ": " + id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value);
             method.MA.AssertCoreMethod(CoreAPIMethod.UpdateProperty);
             if (!TryGetRequest(id, key, value, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
-            var queryId = request.Parameters.PVM<QueryId>();
+            var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
             var propertyKeyNonStrict = request.Parameters.PVM<PropertyKey>();
             var strValue = request.Parameters.PV<string>(CoreP.Value.A());
             /// Validate value. Note how TryGetRequest was only able to validate value as string 
@@ -265,7 +265,7 @@ namespace AgoRapide.API {
             Log(nameof(id) + ": " + id + ", " + nameof(operation) + ": " + operation);
             method.MA.AssertCoreMethod(CoreAPIMethod.PropertyOperation);
             if (!TryGetRequest(id, operation, method, out var request, out var objErrorResponse)) return objErrorResponse;
-            var queryId = request.Parameters.PVM<QueryId>();
+            var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, entities: out List<Property> properties, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;

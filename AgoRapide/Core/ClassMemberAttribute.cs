@@ -79,7 +79,8 @@ namespace AgoRapide.Core {
             idDoc: new List<string> {
                  MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.Name,
                  MemberInfo.Name,
-            }
+            },
+            parent: MemberInfo.ReflectedType.GetClassAttribute().Id.IdString
          );
 
         protected override Dictionary<CoreP, Property> GetProperties() {

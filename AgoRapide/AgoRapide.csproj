@@ -133,6 +133,7 @@
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Database\IDatabase.cs" />
     <Compile Include="Database\PostgreSQLDatabase.cs" />
+    <Compile Include="Entity\APIDataObject.cs" />
     <Compile Include="Entity\BaseEntity.cs" />
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />
     <Compile Include="Entity\Property.cs" />
