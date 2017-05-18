@@ -331,8 +331,8 @@ namespace AgoRapide.Core {
                 Replace("`2[", "<").
                 Replace("`3[", "<").
                 Replace("`1+", "+").  // Necessary for 
-                Replace("`2+", "+").  // inner classes like 
-                Replace("`3+", "+").  // "AgoRapide.Database.PostgreSQLDatabase`1+PostgreSQLDatabaseException[AgoRapideSample.P]"
+                Replace("`2+", "+").  // inner classes 
+                Replace("`3+", "+").  
                 Replace("[", "<").
                 Replace("]", ">").ForEach(c => {
                     switch (c) {
