@@ -49,7 +49,7 @@ namespace AgoRapide {
 
         [EnumValue(Description = 
             "Calls -" + nameof(IDatabase.GetEntityHistory) + "- for the given property. " +
-            "If the property is an entity root-property then all history information for that entity is returned.")]
+            "If the property is an entity root property (" + nameof(CoreP.RootProperty) + ") then all history information for that entity is returned.")]
         History,
 
         [EnumValue(Description = 

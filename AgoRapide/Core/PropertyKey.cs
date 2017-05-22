@@ -8,8 +8,6 @@ using AgoRapide.Database;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: Rename into PropertyKey
-    /// 
     /// TODO: Note how <see cref="Core.PropertyKeyWithIndex"/> became ubiquitous throughout the library at introduction.
     /// TDOO: Consider if some use of it can be changed back to use of <see cref="PropertyKeyAttributeEnriched"/> instead. 
     /// TODO: Notice how connected everything is, starting with the need for describing <see cref="Property.Key"/>.

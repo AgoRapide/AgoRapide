@@ -71,7 +71,7 @@ namespace AgoRapide {
         lngv = 6,
 
         [PropertyKey(
-            Description = "Double Long value",
+            Description = "Double value",
             Type = typeof(double))]
         dblv = 7,
 
@@ -106,7 +106,7 @@ namespace AgoRapide {
         vid = 13,
 
         [PropertyKey(
-            Description = "Timestamp when invalidated (NULL if still valid (indicates 'current' properties))",
+            Description = "Timestamp when invalidated (NULL if still valid (that is NULL indicates 'current' properties))",
             Type = typeof(DateTime))]
         invalid = 14,
 

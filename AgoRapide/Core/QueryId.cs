@@ -71,7 +71,7 @@ namespace AgoRapide.Core {
                 "\"key = 'IsAnonymous' AND blnv = TRUE\" or\r\n" +
                 "\"key = 'Name' AND strv LIKE :strv\" (with corresponding parameter in -" + nameof(SQLWhereStatementParameters) + "-)\r\n" +
                 "Supposed to be combined in a SQL query with filter for a specific type.\r\n" +
-                "May be empty(understood as an \"All\" - query)",
+                "May be empty (understood as an \"All\" - query)",
             LongDescription =
                 "More advanced versions:\r\n" +
                 "\"key = 'AccessRight' AND strv IN ('User', 'Relation', 'Admin')\"\r\n" +

@@ -229,7 +229,7 @@ namespace AgoRapide.Database {
                 throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + PropertyKeyMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
                     (requiredType == null ?
                         ("Possible cause: Method " + MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
-                        ("Possible cause: " + nameof(id) + " does not point to an 'entity root-property'")
+                        ("Possible cause: " + nameof(id) + " does not point to an 'entity root property' (" + nameof(CoreP.RootProperty) + ")")
                     )
                 );
             }
@@ -490,7 +490,7 @@ namespace AgoRapide.Database {
 
             // TODO: FIX THIS!
             if (retval.ParentId == 0) {
-                /// This is an entity root property. We can not put that into cache because the same id will be used
+                /// This is an entity root property (<see cref="CoreP.RootProperty"/>). We can not put that into cache because the same id will be used
                 /// to store the entity itself. We do not have any use for it either (because <see cref="CreateProperty"/> does not need it)
             } else {
                 /// Note how putting properties in cache is used for invalidating cached entries by <see cref="CreateProperty"/>

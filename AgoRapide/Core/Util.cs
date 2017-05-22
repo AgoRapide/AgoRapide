@@ -398,7 +398,7 @@ namespace AgoRapide.Core {
         /// The system does however make a "best effort" attempt at keeping the cache up-to-date
         /// and invalidating known no-longer-valid  entries
         /// 
-        /// Note subtle point about the entity being stored in the cache, not the root-property (in other words, entity root-properties
+        /// Note subtle point about the entity being stored in the cache, not the root-property (in other words, entity root properties (<see cref="CoreP.RootProperty"/>)
         /// are not found in cache per se)
         /// </summary>
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();

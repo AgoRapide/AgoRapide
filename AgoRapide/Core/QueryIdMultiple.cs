@@ -9,6 +9,8 @@ namespace AgoRapide.Core {
 
     /// <summary>
     /// TODO: Consider whether this class is really needed.
+    /// 
+    /// Contains union of multiple <see cref="QueryId"/>. 
     /// </summary>
     public class QueryIdMultiple : QueryId {
         public List<QueryId> Ids;

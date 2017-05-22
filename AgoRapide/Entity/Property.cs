@@ -128,7 +128,7 @@ namespace AgoRapide {
         /// 
         /// For entity root properties this will usually be 0 (since pid is NULL in the database for those)
         /// 
-        /// Note that could theoretically be two choices for parent, either the parent entity or the entity root property 
+        /// Note that could theoretically be two choices for parent, either the parent entity (chosen variant) or the entity root property (<see cref="CoreP.RootProperty"/>)
         /// but having the latter as parent is deemed quite unnatural
         /// </summary>
         public BaseEntity Parent;
