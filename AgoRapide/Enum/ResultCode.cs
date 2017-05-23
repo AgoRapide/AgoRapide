@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+// MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
+using System.ComponentModel;
 using AgoRapide.Core;
 using AgoRapide.API;
 using AgoRapide.Database;

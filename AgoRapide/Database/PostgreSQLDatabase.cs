@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+// MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -91,10 +93,10 @@ namespace AgoRapide.Database {
             }
 
             var cmd = new Npgsql.NpgsqlCommand(
-                "SELECT DISTINCT(pid) FROM p WHERE\r\n" +
+                "SELECT DISTINCT(pid) FROM " + Util.Configuration.C.DatabaseTableName + " WHERE\r\n" +
                 /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all sub-classes.
                 DBField.pid + " IN\r\n" +
-                "(SELECT " + DBField.id + " FROM p WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
+                "(SELECT " + DBField.id + " FROM " + Util.Configuration.C.DatabaseTableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
                 (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
                 DBField.invalid + " IS NULL "
                 // + "ORDER BY " + DBField.id
@@ -297,13 +299,13 @@ namespace AgoRapide.Database {
             Npgsql.NpgsqlCommand cmd;
             switch (operation) {
                 case PropertyOperation.SetValid:
-                    cmd = new Npgsql.NpgsqlCommand("UPDATE p SET " +
+                    cmd = new Npgsql.NpgsqlCommand("UPDATE " + Util.Configuration.C.DatabaseTableName + " SET " +
                         DBField.valid + " = :" + DBField.valid + ", " + // TODO: Use the database engine's clock here instead?
                         DBField.vid + " = " + (operatorId?.ToString() ?? "NULL") + " " +
                         "WHERE " + DBField.id + " = " + property.Id, _cn1);
                     cmd.Parameters.Add(new Npgsql.NpgsqlParameter(DBField.valid.ToString(), NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = now }); break; // TODO: Use the database engine's clock here instead?
                 case PropertyOperation.SetInvalid:
-                    cmd = new Npgsql.NpgsqlCommand("UPDATE p SET " +
+                    cmd = new Npgsql.NpgsqlCommand("UPDATE " + Util.Configuration.C.DatabaseTableName + " SET " +
                         DBField.invalid + " = :" + DBField.invalid + ", " + // TODO: Use the database engine's clock here instead?
                         DBField.iid + " = " + (operatorId?.ToString() ?? "NULL") + " " +
                         "WHERE " + DBField.id + " = " + property.Id, _cn1);
@@ -343,7 +345,7 @@ namespace AgoRapide.Database {
         public List<long> GetRootPropertyIds(Type type) {
             Log(nameof(type) + ": " + type.ToStringShort());
             var cmd = new Npgsql.NpgsqlCommand(
-                "SELECT " + DBField.id + " FROM p WHERE " +
+                "SELECT " + DBField.id + " FROM " + Util.Configuration.C.DatabaseTableName + " WHERE " +
                 DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
                 DBField.strv + " = '" + type.ToStringDB() + "' AND " +
                 DBField.invalid + " IS NULL " +
@@ -364,7 +366,7 @@ namespace AgoRapide.Database {
         }
 
         public List<T> GetAllEntities<T>() where T : BaseEntity, new() {
-            Log(typeof(T).ToStringShort());
+            Log(typeof(T).ToStringShort());            
             var retval = GetRootPropertyIds(typeof(T)).Select(id => GetEntityById<T>(id)).ToList();
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
@@ -427,18 +429,18 @@ namespace AgoRapide.Database {
             var keyDB = r.IsDBNull((int)DBField.key) ? throw new PropertyKey.InvalidPropertyKeyException(
                 DBField.key + " not given at all for " + nameof(DBField.id) + " = " + id + ".\r\n" +
                 "Possible resolution:\r\n" +
-                "  DELETE FROM p WHERE " + DBField.id + " = " + id + "\r\n"
+                "  DELETE FROM " + Util.Configuration.C.DatabaseTableName + " WHERE " + DBField.id + " = " + id + "\r\n"
             ) : r.GetString((int)DBField.key);
 
             if (!PropertyKeyWithIndex.TryParse(keyDB, out var key, out var strErrorResponse, out var enumErrorResponse, out _, out var unrecognizedCoreP)) {
                 switch (enumErrorResponse) {
                     case PropertyKeyWithIndex.IsManyInconsistency.IsManyButIndexNotGiven:
                         keyDB += "#1";
-                        isManyCorrections.Add("UPDATE p SET " + DBField.key + " = '" + keyDB + "' WHERE " + DBField.id + " = " + id);
+                        isManyCorrections.Add("UPDATE " + Util.Configuration.C.DatabaseTableName + " SET " + DBField.key + " = '" + keyDB + "' WHERE " + DBField.id + " = " + id);
                         Log(nameof(isManyCorrections) + ".Add(" + isManyCorrections[isManyCorrections.Count - 1]); break;
                     case PropertyKeyWithIndex.IsManyInconsistency.NotIsManyButIndexGiven:
                         keyDB = keyDB.Replace("#", "_");
-                        isManyCorrections.Add("UPDATE p SET " + DBField.key + " = '" + keyDB + "' WHERE " + DBField.id + " = " + id);
+                        isManyCorrections.Add("UPDATE " + Util.Configuration.C.DatabaseTableName + " SET " + DBField.key + " = '" + keyDB + "' WHERE " + DBField.id + " = " + id);
                         Log(nameof(isManyCorrections) + ".Add(" + isManyCorrections[isManyCorrections.Count - 1]);
                         unrecognizedCoreP = (keyDB, false); break;
                 }
@@ -451,7 +453,7 @@ namespace AgoRapide.Database {
                         throw new PropertyKey.InvalidPropertyKeyException(
                            DBField.key + " invalid for " + DBField.id + " = " + id + ".\r\n" +
                            "Possible resolution:\r\n" +
-                           "  DELETE FROM p WHERE " + DBField.id + " = " + id + "\r\n" +
+                           "  DELETE FROM " + Util.Configuration.C.DatabaseTableName + " WHERE " + DBField.id + " = " + id + "\r\n" +
                            "Details: " + strErrorResponse
                         );
                     }
@@ -512,7 +514,7 @@ namespace AgoRapide.Database {
             if (string.IsNullOrEmpty(password) || password.Length > 100) return false;
             username = username.ToLower();
             Log("Searching " + CoreP.Username.A().Key.PToString + " = '" + username + "'");
-            var cmd = new Npgsql.NpgsqlCommand("SELECT pid FROM p WHERE " + DBField.key + " = '" + CoreP.Username.A().Key.PToString + "' AND " + DBField.strv + " = :" + CoreP.Username + " AND " + DBField.invalid + " IS NULL", _cn1);
+            var cmd = new Npgsql.NpgsqlCommand("SELECT pid FROM " + Util.Configuration.C.DatabaseTableName + " WHERE " + DBField.key + " = '" + CoreP.Username.A().Key.PToString + "' AND " + DBField.strv + " = :" + CoreP.Username + " AND " + DBField.invalid + " IS NULL", _cn1);
             cmd.Parameters.Add(new Npgsql.NpgsqlParameter(CoreP.Username.ToString(), NpgsqlTypes.NpgsqlDbType.Text) { Value = username });
             if (!TryExecuteScalarLong(cmd, out var entityId)) return false;
             if (entityId == 0) return false; // Not really necessary check
@@ -608,7 +610,7 @@ namespace AgoRapide.Database {
                         "Found " + existing.Count + " existing properties for " + nameof(a.Key.A.IsUniqueInDatabase) + " property " + keyAsString + " = '" + value + "'\r\n" +
                         "Expected at most only one existing property.\r\n" +
                         "Resolution: Delete from database all but one of the existing properties with the following SQL expression:\r\n" +
-                        "  DELETE FROM p WHERE id IN (" + string.Join(", ", existing.Select(p => p.Id)) + ")\r\n" +
+                        "  DELETE FROM " + Util.Configuration.C.DatabaseTableName + " WHERE id IN (" + string.Join(", ", existing.Select(p => p.Id)) + ")\r\n" +
                         "The actual existing properties are:\r\n" +
                         string.Join("\r\n", existing.Select(p => p.ToString())));
             }
@@ -678,7 +680,7 @@ namespace AgoRapide.Database {
 
             // TODO: Idea for performance improvement. We could read some sequence values in a separate
             // TODO: thread and store them in a concurrent queue for later thread safe retrieval
-            cmd = new Npgsql.NpgsqlCommand("SELECT nextval('seq_property_id')", _cn1);
+            cmd = new Npgsql.NpgsqlCommand("SELECT nextval('" + SEQUENCE_NAME + "')", _cn1);
             var id = ExecuteScalarLong(cmd, () => cmd.CommandText);
 
             var valueStrings = new Func<(string nameOfDbField, string valueOrParameter, NpgsqlTypes.NpgsqlDbType? dbType)>(() => {
@@ -1015,6 +1017,8 @@ namespace AgoRapide.Database {
         }
 
 
+        public static string SEQUENCE_NAME = "sequence_" + Util.Configuration.C.DatabaseTableName + "_" + DBField.id;
+
         /// <summary>
         /// TODO: Split this into List{string} of SQL-statements (or maybe a Dictionary and some kind of auto-discovery for missing elements in the database). 
         /// TODO: In other words, check for existence of each and every element at startup and run the corresponding SQL code to initialize them.
@@ -1053,14 +1057,14 @@ namespace AgoRapide.Database {
                     throw new InvalidTypeException(a.Key.A.Type, nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " (" + a.Key.A.Type + ") defined for " + typeof(DBField) + "." + f.ToString() + " is not valid");
                 })();
             })) + "\r\n" +
-            "  CONSTRAINT p_pk PRIMARY KEY (" + DBField.id + ")\r\n" +
-        @")
+            "  CONSTRAINT p_pk PRIMARY KEY (" + DBField.id + @") +
+        )
 WITH(
   OIDS = FALSE
 );
 
 ALTER TABLE p
-  OWNER TO agorapide;
+  OWNER TO " + Util.Configuration.C.DatabaseObjectsOwner + @";
 
 COMMENT ON TABLE p IS 'Main property table'; 
 " +
@@ -1069,14 +1073,15 @@ COMMENT ON TABLE p IS 'Main property table';
 
         // TODO: As of Jan 2017 we have troubles with newlines in the CREATE SEQUENCE below with the Visual Studio RC 2017 editor.
         @"
-CREATE SEQUENCE seq_property_id
+CREATE SEQUENCE " + SEQUENCE_NAME + @"
 INCREMENT 1
 MINVALUE 1
 MAXVALUE 9223372036854775807
 START 1000  -- Starting with 1000 is a trick that makes it possible in API calls to have the range 1 to 999 signify entity specific id's (for instance like node-id's for an IoT gateway (like Z-Wave Node ID))
 CACHE 1;
-ALTER TABLE seq_property_id
-OWNER TO agorapide;
+ALTER TABLE " + SEQUENCE_NAME + @"
+OWNER TO " + Util.Configuration.C.DatabaseObjectsOwner + @";
+
 "; // TOOD: Add some configuration value for username here 
         })();
 
@@ -1084,7 +1089,7 @@ OWNER TO agorapide;
         public static string PropertySelect =>
             "SELECT " +
             string.Join(", ", Util.EnumGetValues((DBField)(-1)).Select(e => e.ToString())) + " " +
-            "FROM p "; // Do not terminate with ";" here. Usually a WHERE-clause will be added
+            "FROM " + Util.Configuration.C.DatabaseTableName + " "; // Do not terminate with ";" here. Usually a WHERE-clause will be added
 
         protected bool IsDisposed = false;
         /// <summary>
