@@ -39,7 +39,10 @@ namespace AgoRapide {
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
     /// </summary>
     [Enum(
-        Description = "The core -" + nameof(EnumType.PropertyKey) + "-. All other -" + nameof(EnumType.PropertyKey) + "- are mapped to -" + nameof(CoreP) + "- at application startup through -" + nameof(PropertyKeyMapper) + "-.",
+        Description = 
+            "The core -" + nameof(EnumType.PropertyKey) + "-. " +
+            "All other -" + nameof(EnumType.PropertyKey) + "- are mapped to -" + nameof(CoreP) + "- " +
+            "at application startup through -" + nameof(PropertyKeyMapper) + "-.",
         AgoRapideEnumType = EnumType.PropertyKey
     )]
     public enum CoreP {

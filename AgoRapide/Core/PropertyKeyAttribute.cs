@@ -68,7 +68,7 @@ namespace AgoRapide.Core {
                 "A corresponding uniqueness index could also be created in the database")] // TODO: FUTURE DEVELOPEMENT, create such 
         public bool IsUniqueInDatabase { get; set; }
         public void AssertIsUniqueInDatabase() {
-            if (!IsUniqueInDatabase) throw new UniquenessException("!" + nameof(IsUniqueInDatabase) + ". Details: " + ToString());
+            if (!IsUniqueInDatabase) throw new BaseDatabase.UniquenessException("!" + nameof(IsUniqueInDatabase) + ". Details: " + ToString());
         }
 
         [ClassMember(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]

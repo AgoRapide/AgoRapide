@@ -21,6 +21,8 @@ namespace AgoRapide.Database {
     /// </summary>
     public abstract class BaseDatabase : BaseCore, IDisposable {
 
+        public void UseInMemoryCache<T>(BaseSynchronizer synchronizer) {
+        }
         /// <summary>
         /// An implementation should support use of the following <see cref="CoreP"/> properties: 
         /// <see cref="CoreP.Username"/>
@@ -258,46 +260,46 @@ namespace AgoRapide.Database {
         public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
 
         public abstract void Dispose();
-    }
 
-    /// <summary>
-    /// TODO: Move into <see cref="BaseDatabase"/>
-    /// </summary>
-    public class ExactOneEntityNotFoundException : ApplicationException {
-        public ExactOneEntityNotFoundException() : base() { }
-        public ExactOneEntityNotFoundException(string message) : base(message) { }
-        public ExactOneEntityNotFoundException(long id) : base("Entity id " + id + " not found") { }
-    }
+        /// <summary>
+        /// TODO: Move into <see cref="BaseDatabase"/>
+        /// </summary>
+        public class ExactOneEntityNotFoundException : ApplicationException {
+            public ExactOneEntityNotFoundException() : base() { }
+            public ExactOneEntityNotFoundException(string message) : base(message) { }
+            public ExactOneEntityNotFoundException(long id) : base("Entity id " + id + " not found") { }
+        }
 
-    /// <summary>
-    /// TODO: Move into <see cref="BaseDatabase"/>
-    /// </summary>
-    public class ExactOnePropertyNotFoundException : ApplicationException {
-        public ExactOnePropertyNotFoundException(string message) : base(message) { }
-        public ExactOnePropertyNotFoundException(string message, Exception inner) : base(message, inner) { }
-    }
+        /// <summary>
+        /// TODO: Move into <see cref="BaseDatabase"/>
+        /// </summary>
+        public class ExactOnePropertyNotFoundException : ApplicationException {
+            public ExactOnePropertyNotFoundException(string message) : base(message) { }
+            public ExactOnePropertyNotFoundException(string message, Exception inner) : base(message, inner) { }
+        }
 
-    /// <summary>
-    /// TODO: Move into <see cref="BaseDatabase"/>
-    /// </summary>
-    public class UniquenessException : ApplicationException {
-        public UniquenessException(string message) : base(message) { }
-        public UniquenessException(string message, Exception inner) : base(message, inner) { }
-    }
+        /// <summary>
+        /// TODO: Move into <see cref="BaseDatabase"/>
+        /// </summary>
+        public class UniquenessException : ApplicationException {
+            public UniquenessException(string message) : base(message) { }
+            public UniquenessException(string message, Exception inner) : base(message, inner) { }
+        }
 
-    /// <summary>
-    /// TODO: Move into <see cref="BaseDatabase"/>
-    /// </summary>
-    public class InvalidPasswordException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-        public InvalidPasswordException(T property) : this(property, null, null) { }
-        public InvalidPasswordException(T property, string message) : this(property, message, null) { }
-        public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetEnumValueAttribute().EnumValueExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
-    }
+        /// <summary>
+        /// TODO: Move into <see cref="BaseDatabase"/>
+        /// </summary>
+        public class InvalidPasswordException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            public InvalidPasswordException(T property) : this(property, null, null) { }
+            public InvalidPasswordException(T property, string message) : this(property, message, null) { }
+            public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetEnumValueAttribute().EnumValueExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
+        }
 
-    /// <summary>
-    /// TODO: Move into <see cref="BaseDatabase"/>
-    /// </summary>
-    public class PropertyNotFoundException : ApplicationException {
-        public PropertyNotFoundException(long id) : base("Property with id '" + id + "' not found") { }
+        /// <summary>
+        /// TODO: Move into <see cref="BaseDatabase"/>
+        /// </summary>
+        public class PropertyNotFoundException : ApplicationException {
+            public PropertyNotFoundException(long id) : base("Property with id '" + id + "' not found") { }
+        }
     }
 }

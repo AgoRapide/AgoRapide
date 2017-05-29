@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+// MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
+using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -9,9 +11,9 @@ using AgoRapide.Core;
 namespace AgoRapide.Database {
 
     /// <summary>
-    /// TODO: Now that useCache was removed as parameter to <see cref="BaseDatabase"/>-methods we may
-    /// TODO: add convenience methods here like TryGetEntityById which take a <see cref="BaseDatabase"/> instance as parameter
-    /// TODO: and uses that if result not our cache. 
+    /// TODO: Now that useCache was removed as parameter to <see cref="BaseDatabase"/>-methods we may 
+    /// TODO: add convenience methods here like TryGetEntityById which take a <see cref="BaseDatabase"/> instance as parameter 
+    /// TODO: and uses that if result is not found in our cache. 
     /// </summary>
     [Class(
         Description =
@@ -27,6 +29,8 @@ namespace AgoRapide.Database {
         /// 
         /// Also used directly by methods such as <see cref="Extensions.AsEntityName(long)"/>
         /// 
+        /// TODO: Improve on this situation.
+        /// TODO: Make the cache foolproof, that is, ensure that it always returns correct information. 
         /// As of May 2017 the cache is not guaranteed to be 100% correct.
         /// In general the cache should therefore mostly be used for nice-to-have functionality, like showing names instead
         /// of ids in HTML interface without any performance hits. 
