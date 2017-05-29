@@ -40,7 +40,7 @@ namespace AgoRapide.Core {
     /// 
     /// The implementing class should also override <see cref="object.ToString"/> to a value that is understood by 
     /// the <see cref="PropertyKeyAttributeEnriched.ValidatorAndParser"/> used. 
-    /// This result of ToString is also what will be used by <see cref="IDatabase.CreateProperty"/>
+    /// This result of ToString is also what will be used by <see cref="BaseDatabase.CreateProperty"/>
     /// 
     /// <see cref="ITypeDescriber"/> is not to be confused with <see cref="IGroupDescriber"/>. 
     /// The former is specified through <see cref="PropertyKeyAttribute.Type"/> describing an actual class (usually used for a single TProperty), 

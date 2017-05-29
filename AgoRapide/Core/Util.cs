@@ -389,27 +389,6 @@ namespace AgoRapide.Core {
             });
         }
 
-        /// <summary>
-        /// TODO: Move <see cref="EntityCache"/> into <see cref="AgoRapide.Database.IDatabase"/>?
-        /// 
-        /// Contains cache for entities. 
-        /// 
-        /// The cache is not guaranteed to be 100% correct.
-        /// In general the cache should therefore mostly be used for nice-to-have functionality, like showing names instead
-        /// of ids in HTML interface without any performance hits. 
-        /// The system does however make a "best effort" attempt at keeping the cache up-to-date
-        /// and invalidating known no-longer-valid  entries
-        /// 
-        /// Note subtle point about the entity being stored in the cache, not the root-property (in other words, entity root properties (<see cref="CoreP.RootProperty"/>)
-        /// are not found in cache per se)
-        /// </summary>
-        public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
-        /// <summary>
-        /// Usually reset is done as a precaution when exceptions occur. 
-        /// TODO: Move <see cref="ResetEntityCache"/> into <see cref="AgoRapide.Database.IDatabase"/>?
-        /// </summary>
-        public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
-
         public static System.Security.Cryptography.MD5 MD5 = System.Security.Cryptography.MD5.Create();
         /// <summary>
         /// See good article about salting and hashing at https://crackstation.net/hashing-security.htm

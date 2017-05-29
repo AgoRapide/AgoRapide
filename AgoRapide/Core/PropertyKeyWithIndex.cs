@@ -73,7 +73,7 @@ namespace AgoRapide.Core {
         /// <param name="strErrorResponse"></param>
         /// <param name="enumErrorResponse">
         /// Facilitates cleanup in database when value of <see cref="PropertyKeyAttribute.IsMany"/> has been changed. 
-        /// Normally used by <see cref="IDatabase"/>-implementation when reading a single <see cref="Property"/> from database. 
+        /// Normally used by <see cref="BaseDatabase"/>-implementation when reading a single <see cref="Property"/> from database. 
         /// </param>
         /// <param name="nonStrictAlternative">
         /// Used by <see cref="PropertyKey.TryParse"/> in order to have only one parser (not duplicating code)
@@ -81,7 +81,7 @@ namespace AgoRapide.Core {
         /// <param name="unrecognizedCoreP">
         /// Facilitates dynamic mapping of any unknown properties found. 
         /// IsMany is determined by presence of # in <paramref name="value"/>   
-        /// Caller (normally used by <see cref="IDatabase"/>-implementation when reading a single <see cref="Property"/> from database) 
+        /// Caller (normally used by <see cref="BaseDatabase"/>-implementation when reading a single <see cref="Property"/> from database) 
         /// uses this value in order to present <see cref="PropertyKeyMapper"/> with a new
         /// </param>
         /// <returns></returns>

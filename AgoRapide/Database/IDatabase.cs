@@ -10,10 +10,16 @@ using AgoRapide.API;
 
 namespace AgoRapide.Database {
     /// <summary>
+    /// TODO: RENAME FILE TO BaseDatabase.
+    /// 
+    /// TOOD: Move functionality from <see cref="PostgreSQLDatabase"/> into <see cref="BaseDatabase"/>
+    /// TODO: Abstract the basic <see cref="Npgsql.NpgsqlCommand"/> and similar, in order to support multiple databases
+    /// TODO: without implementing full sub classes of <see cref="BaseDatabase"/>.
+    /// 
     /// TODO: Add TryGetEntityIds and GetEntityIds with <see cref="QueryId"/> as parameter just like done with 
     /// <see cref="GetEntities{T}"/> and <see cref="TryGetEntities{T}"/>
     /// </summary>
-    public interface IDatabase : IDisposable { 
+    public abstract class BaseDatabase : BaseCore, IDisposable {
 
         /// <summary>
         /// An implementation should support use of the following <see cref="CoreP"/> properties: 
@@ -26,7 +32,7 @@ namespace AgoRapide.Database {
         /// <param name="password"></param>
         /// <param name="currentUser"></param>
         /// <returns></returns>
-        bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser);
+        public abstract bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser);
 
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
@@ -37,10 +43,9 @@ namespace AgoRapide.Database {
         /// <param name="currentUser"></param>
         /// <param name="id"></param>
         /// <param name="accessTypeRequired"></param>
-        /// <param name="useCache"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out T entity, out ErrorResponse errorResponse) where T : BaseEntity, new();
+        public abstract bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out T entity, out ErrorResponse errorResponse) where T : BaseEntity, new();
 
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
@@ -51,9 +56,8 @@ namespace AgoRapide.Database {
         /// <param name="currentUser"></param>
         /// <param name="id"></param>
         /// <param name="accessTypeRequired"></param>
-        /// <param name="useCache"></param>
         /// <returns></returns>
-        List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache) where T : BaseEntity, new();
+        public abstract List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new();
 
         /// <summary>
         /// Generic alternative to <see cref="TryGetEntities"/>
@@ -62,11 +66,10 @@ namespace AgoRapide.Database {
         /// <param name="currentUser"></param>
         /// <param name="id"></param>
         /// <param name="accessTypeRequired"></param>
-        /// <param name="useCache"></param>
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new();
+        public abstract bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new();
 
         /// <summary>
         /// TODO: We could consider having the whole <see cref="AgoRapide.API.Request"/> object as parameter here but
@@ -77,13 +80,12 @@ namespace AgoRapide.Database {
         /// 
         /// With <paramref name="id"/> as <see cref="QueryIdKeyOperatorValue"/> then true is returned even if only an empty list was found. 
         /// 
-        /// Throws exception (usually through <see cref="IDatabase.TryGetEntityById"/>) if entity not corresponding to <typeparamref name="T"/> is found. 
+        /// Throws exception (usually through <see cref="BaseDatabase.TryGetEntityById"/>) if entity not corresponding to <typeparamref name="T"/> is found. 
         /// 
         /// See also generic <see cref="TryGetEntities{T}"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        /// <param name="useCache"></param>
         /// <param name="requiredType">
         /// Must be set. 
         /// TODO: Note how (as of Feb 2017) <see cref="QueryId.IsMultiple"/>-search will always be according to exactly this type. 
@@ -95,7 +97,7 @@ namespace AgoRapide.Database {
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, bool useCache, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse);
+        public abstract bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse);
 
         /// <summary>
         /// See <see cref="CoreAPIMethod.History"/>. 
@@ -105,7 +107,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        List<Property> GetEntityHistory(BaseEntity entity);
+        public abstract List<Property> GetEntityHistory(BaseEntity entity);
 
         /// <summary>
         /// TODO: NOT YET IMPLEMENTED IN IMPLEMENTATION
@@ -115,12 +117,11 @@ namespace AgoRapide.Database {
         /// <param name="accessTypeRequired"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        bool TryVerifyAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired, out string errorResponse);
+        public abstract bool TryVerifyAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired, out string errorResponse);
 
-        T GetEntityById<T>(long id) where T : BaseEntity, new();
-        T GetEntityById<T>(long id, bool useCache) where T : BaseEntity, new();
-        BaseEntity GetEntityById(long id, bool useCache, Type requiredType);
-        bool TryGetEntityById<T>(long id, bool useCache, out T entity) where T : BaseEntity, new();
+        public abstract T GetEntityById<T>(long id) where T : BaseEntity, new();
+        public abstract BaseEntity GetEntityById(long id, Type requiredType);
+        public abstract bool TryGetEntityById<T>(long id, out T entity) where T : BaseEntity, new();
         /// <summary>
         /// TODO: Rename into TryGetEntityDirect? 
         /// 
@@ -134,36 +135,35 @@ namespace AgoRapide.Database {
         /// For other failure scenarios (like <paramref name="requiredType"/> not matching) an exception will be thrown. 
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="useCache"></param>
         /// <param name="requiredType"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        bool TryGetEntityById(long id, bool useCache, Type requiredType, out BaseEntity entity);
+        public abstract bool TryGetEntityById(long id, Type requiredType, out BaseEntity entity);
 
-        Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
+        public abstract Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
 
-        Property GetPropertyById(long id);
-        bool TryGetPropertyById(long id, out Property property);
+        public abstract Property GetPropertyById(long id);
+        public abstract bool TryGetPropertyById(long id, out Property property);
 
         /// <summary>
         /// Gets all root properties of a given type. Result should be in increasing order.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        List<long> GetRootPropertyIds(Type type);
+        public abstract List<long> GetRootPropertyIds(Type type);
 
         /// <summary>
         /// Gets all entities of type <typeparamref name="T"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        List<T> GetAllEntities<T>() where T : BaseEntity, new();
+        public abstract List<T> GetAllEntities<T>() where T : BaseEntity, new();
 
-        long CreateEntity<T>(long cid, Result result) where T : BaseEntity;
-        long CreateEntity(long cid, Type entityType, Result result);
-        long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntity;
-        long CreateEntity(long cid, Type entityType, Parameters properties, Result result);
-        long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) where T : BaseEntity;
+        public abstract long CreateEntity<T>(long cid, Result result) where T : BaseEntity;
+        public abstract long CreateEntity(long cid, Type entityType, Result result);
+        public abstract long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntity;
+        public abstract long CreateEntity(long cid, Type entityType, Parameters properties, Result result);
+        public abstract long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) where T : BaseEntity;
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -172,7 +172,7 @@ namespace AgoRapide.Database {
         /// <param name="properties">May be null or empty. Turn this into an Properties collection? Or just a BaseEntity template or similar?</param>
         /// <param name="result"></param>
         /// <returns></returns>
-        long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result);
+        public abstract long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result);
 
         /// <summary>
         /// Changes to entity given in <see cref="CoreP.EntityToRepresent"/> if that property exists for the entity given
@@ -190,9 +190,9 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        void SwitchIfHasEntityToRepresent(ref BaseEntity entity);
+        public abstract void SwitchIfHasEntityToRepresent(ref BaseEntity entity);
 
-        void AssertUniqueness(PropertyKeyWithIndex key, object value);
+        public abstract void AssertUniqueness(PropertyKeyWithIndex key, object value);
         /// <summary>
         /// Only relevant for <paramref name="key"/> <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> 
         /// </summary>
@@ -201,7 +201,7 @@ namespace AgoRapide.Database {
         /// <param name="existingProperty">Useful for including in exception response (for logging purposes)</param>
         /// <param name="errorResponse">Suitable for returning to API client</param>
         /// <returns></returns>
-        bool TryAssertUniqueness(PropertyKeyWithIndex key, object value, out Property existingProperty, out string errorResponse);
+        public abstract bool TryAssertUniqueness(PropertyKeyWithIndex key, object value, out Property existingProperty, out string errorResponse);
 
         /// <summary>
         /// Returns id (database primary-key) of property created
@@ -224,7 +224,7 @@ namespace AgoRapide.Database {
         /// <param name="value">TODO: Consider strongly typed overloads which leads to less processing here</param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        long CreateProperty(long? cid, long? pid, long? fid, PropertyKeyWithIndex key, object value, Result result);
+        public abstract long CreateProperty(long? cid, long? pid, long? fid, PropertyKeyWithIndex key, object value, Result result);
 
         /// <summary>
         /// See <see cref="CoreAPIMethod.UpdateProperty"/>
@@ -242,7 +242,7 @@ namespace AgoRapide.Database {
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result);
+        public abstract void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result);
 
         /// <summary>
         /// 
@@ -255,32 +255,48 @@ namespace AgoRapide.Database {
         /// <param name="property"></param>
         /// <param name="operation"></param>
         /// <param name="result"></param>
-        void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
+        public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
 
+        public abstract void Dispose();
     }
 
+    /// <summary>
+    /// TODO: Move into <see cref="BaseDatabase"/>
+    /// </summary>
     public class ExactOneEntityNotFoundException : ApplicationException {
         public ExactOneEntityNotFoundException() : base() { }
         public ExactOneEntityNotFoundException(string message) : base(message) { }
         public ExactOneEntityNotFoundException(long id) : base("Entity id " + id + " not found") { }
     }
 
+    /// <summary>
+    /// TODO: Move into <see cref="BaseDatabase"/>
+    /// </summary>
     public class ExactOnePropertyNotFoundException : ApplicationException {
         public ExactOnePropertyNotFoundException(string message) : base(message) { }
         public ExactOnePropertyNotFoundException(string message, Exception inner) : base(message, inner) { }
     }
 
+    /// <summary>
+    /// TODO: Move into <see cref="BaseDatabase"/>
+    /// </summary>
     public class UniquenessException : ApplicationException {
         public UniquenessException(string message) : base(message) { }
         public UniquenessException(string message, Exception inner) : base(message, inner) { }
     }
 
+    /// <summary>
+    /// TODO: Move into <see cref="BaseDatabase"/>
+    /// </summary>
     public class InvalidPasswordException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
         public InvalidPasswordException(T property) : this(property, null, null) { }
         public InvalidPasswordException(T property, string message) : this(property, message, null) { }
         public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetEnumValueAttribute().EnumValueExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
     }
 
+    /// <summary>
+    /// TODO: Move into <see cref="BaseDatabase"/>
+    /// </summary>
     public class PropertyNotFoundException : ApplicationException {
         public PropertyNotFoundException(long id) : base("Property with id '" + id + "' not found") { }
     }

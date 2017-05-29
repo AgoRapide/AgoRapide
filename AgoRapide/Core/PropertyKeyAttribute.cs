@@ -40,6 +40,9 @@ namespace AgoRapide.Core {
             IsMany = isMany;
         }
 
+        /// <summary>
+        /// TODO: Is this relevant? Is not <see cref="EnumValue.EnumValue"/> always set for this class?
+        /// </summary>
         public void AssertProperty() {
             if (_enumValue == null) throw new NullReferenceException(nameof(_enumValue) + " for " + ToString());
         }
@@ -61,7 +64,7 @@ namespace AgoRapide.Core {
                 "TRUE means that only one unique (based on case insensitive comparision) value is expected to exist in the database. " +
                 "Use this attribute for user account names for instance (like email addresses)",
             LongDescription =
-                "See -" + nameof(IDatabase.TryAssertUniqueness) + "-. " +
+                "See -" + nameof(BaseDatabase.TryAssertUniqueness) + "-. " +
                 "A corresponding uniqueness index could also be created in the database")] // TODO: FUTURE DEVELOPEMENT, create such 
         public bool IsUniqueInDatabase { get; set; }
         public void AssertIsUniqueInDatabase() {
@@ -81,11 +84,6 @@ namespace AgoRapide.Core {
 
         [ClassMember(Description = "Instructs -" + nameof(AgoRapide.Property.Create) + "- to generate a -" + nameof(PropertyT<string>) + "- object if -" + nameof(PropertyKeyAttributeEnriched.TryValidateAndParse) + "- fails")]
         public bool IsNotStrict { get; set; }
-
-        /// <summary>
-        /// Only relevant when <see cref="Type"/> is <see cref="DateTime"/>
-        /// </summary>
-        public DateTimeFormat DateTimeFormat { get; set; }
 
         /// <summary>
         /// See <see cref="CoreP.AccessLevelRead"/> 
@@ -136,33 +134,19 @@ namespace AgoRapide.Core {
                 "Signifies that several active current instances may exist " +
                 "(like PhoneNumber#1, PhoneNumber#2 for a customer for instance)",
             LongDescription =
-                "The -" + nameof(IDatabase) + "- implementation should be able to handle on-the-fly changes between TRUE and FALSE for this attribute. " +
+                "The -" + nameof(BaseDatabase) + "- implementation should be able to handle on-the-fly changes between TRUE and FALSE for this attribute. " +
                 "Going from FALSE to TRUE should result in #1 being added to the relevant existing keys in the database, and " +
                 "going from TRUE to FALSE should result in # being replaced by _ (resulting in PhoneNumber_1, PhoneNumber_2 and so on) " +
                 "Note that -" + nameof(IsMany) + "- combined with -" + nameof(IsObligatory) + "- will result in -" + nameof(PropertyKeyWithIndex.Index) + "-#1 being used"
         )]
         public bool IsMany { get => _isMany; set { _isMany = value; _isManyIsSet = true; } }
-
         /// <summary>
         /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
         /// </summary>
         private bool _isManyIsSet = false;
         private bool IsManyIsSet => _isManyIsSet;
 
-        private bool _isDocumentation;
-        [ClassMember(
-            Description = 
-                "Signifies that value may contain keys on the form -xxx- " +
-                "which should be replaced with respective links by -" + nameof(Documentator.ReplaceKeys) + "-."
-        )]
-        public bool IsDocumentation { get => _isDocumentation; set { _isDocumentation = value; _isDocumentationIsSet = true; } }
-        private bool _isDocumentationIsSet = false;
-        private bool IsDocumentationIsSet => _isDocumentationIsSet;
-
-
-
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="detailer">May be null</param>
         public void AssertIsMany(Func<string> detailer) {
@@ -173,6 +157,45 @@ namespace AgoRapide.Core {
             public IsManyException(string message) : base(message) { }
             public IsManyException(string message, Exception inner) : base(message, inner) { }
         }
+
+        private bool _isExternal;
+        [ClassMember(
+            Description =
+                "Denotes properties that originates from external systems through -" + nameof(BaseSynchronizer) + "-"
+        )]
+        public bool IsExternal { get => _isExternal; set { _isExternal = value; _isExternalIsSet = true; } }
+        private bool _isExternalIsSet = false;
+        private bool IsExternalIsSet => _isExternalIsSet;
+
+        [ClassMember(
+            Description = 
+                "Only relevant when -" + nameof(IsExternal) + "-." +
+                "Used to link together data from external sources")]
+        public Type PrimaryKeyOf;
+
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertIsExternal(Func<string> detailer) {
+            if (!true.Equals(IsExternal)) throw new IsExternalException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        public class IsExternalException : ApplicationException {
+            public IsExternalException(string message) : base(message) { }
+            public IsExternalException(string message, Exception inner) : base(message, inner) { }
+        }
+
+        private bool _isDocumentation;
+        [ClassMember(
+            Description =
+                "Signifies that value may contain keys on the form -xxx- " +
+                "which should be replaced with respective links by -" + nameof(Documentator.ReplaceKeys) + "-.",
+            LongDescription =
+                "This actual description is for instance marked as " + nameof(IsDocumentation) + " (see " + nameof(CoreP.LongDescription) + ")"
+        )]
+        public bool IsDocumentation { get => _isDocumentation; set { _isDocumentation = value; _isDocumentationIsSet = true; } }
+        private bool _isDocumentationIsSet = false;
+        private bool IsDocumentationIsSet => _isDocumentationIsSet;
 
         /// <summary>
         /// May be null. 
@@ -196,6 +219,11 @@ namespace AgoRapide.Core {
             )]
         public Type Type { get => _type ?? throw new NullReferenceException(nameof(Type) + ". Supposed to always be set from " + nameof(PropertyKeyAttributeEnriched) + ".\r\nDetails: " + ToString()); set => _type = value; }
         public bool TypeIsSet => _type != null;
+
+        /// <summary>
+        /// Only relevant when <see cref="Type"/> is <see cref="DateTime"/>
+        /// </summary>
+        public DateTimeFormat DateTimeFormat { get; set; }
 
         /// <summary>
         /// Describes entities for which this property is used.
@@ -399,21 +427,29 @@ namespace AgoRapide.Core {
             /// TODO: (the whole change could be without breaking code at the client side)
             // if (other.IsDefault) SetAsDefault(); // Removed 8 Mar 2017
 
+            // Not allowed since no rationale seen, and it only seems to add complexity
+            if (other.IsExternalIsSet) throw new IsExternalException(nameof(IsExternalIsSet) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":" +  other.ToString());
+            if (other.PrimaryKeyOf!=null) throw new IsExternalException(nameof(PrimaryKeyOf) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":"  + other.ToString());
+
             /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsManyIsSet) IsMany = other.IsMany;
             if (other.IsDocumentationIsSet) IsDocumentation = other.IsDocumentation;
 
+            /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsObligatory) IsObligatory = other.IsObligatory;
+            /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsNotStrict) IsNotStrict = other.IsNotStrict;
+            /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsUniqueInDatabase) IsUniqueInDatabase = other.IsUniqueInDatabase;
+            /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsPassword) IsPassword = other.IsPassword;
+            /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.CanHaveChildren) CanHaveChildren = other.CanHaveChildren;
 
             if (DateTimeFormat == DateTimeFormat.None) DateTimeFormat = other.DateTimeFormat;
         }
 
         /// <summary>
-        /// This method facilitates the following:
         /// --------------------------
         /// Note how we DO NOT set any <see cref="PropertyKeyAttribute.Description"/> for <see cref="CoreP.CoreAPIMethod"/> 
         /// but instead rely on the <see cref="ClassAttribute.Description"/> set here. 

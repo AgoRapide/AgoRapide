@@ -20,12 +20,12 @@ namespace AgoRapide.Core {
         public ConfigurationAttribute C { get => _c ?? throw new NullReferenceException(nameof(C)); set => _c = value ?? throw new NullReferenceException(nameof(value)); }
 
         /// <summary>
-        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
+        /// Dummy constructor for use by <see cref="BaseDatabase.TryGetEntityById"/>. 
         /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.Get{T}"/>. 
         /// DO NOT USE!
         /// </summary>
         public Configuration() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
         public Configuration(ConfigurationAttribute configurationAttribute) :base(configurationAttribute) => C = configurationAttribute;        
-        public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);        
+        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);        
     }
 }

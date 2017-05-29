@@ -21,17 +21,28 @@ namespace AgoRapide.Core {
         public Type ClassType => _classType ?? throw new NullReferenceException(nameof(_classType) + ". Should have been set by " + nameof(GetAttribute));
 
         /// <summary>
-        /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
-        /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
+        /// TODO: Implement inheritance of <see cref="ClassAttribute"/>-members
         /// </summary>
-        [ClassMember(Description = "The type of the parent (if any). See also -" + nameof(CoreP.QueryIdParent) + "-.")]
-        public Type ParentType;
+        [ClassMember(Description = "Only relevant when attribute for a -" + nameof(ApplicationPart) + "- / -" + nameof(APIDataObject) + "-.")]
+        public CacheUse CacheUse;
 
         /// <summary>
         /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
         /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
         /// </summary>
-        [ClassMember(Description = "The type of the children (if any). See also ...")]
+        [ClassMember(
+            Description = "The type of the parent (if any). See also -" + nameof(CoreP.QueryIdParent) + "-.",
+            LongDescription = "Used for instance by " + nameof(BaseEntity.ToHTMLDetailed) + " in order to give useful links"
+        )]
+        public Type ParentType;
+
+        [ClassMember(
+            Description =
+                "The type of the children (if any), like " +
+                "-" + nameof(ClassMember) + "- being children of -" + nameof(Class) + "- or " +
+                "-" + nameof(EnumValue) + "- being children of -" + nameof(AgoRapide.Core.Enum) + "-.",
+            LongDescription = "Used for instance by " + nameof(BaseEntity.ToHTMLDetailed) + " in order to give useful links"
+        )]
         public Type ChildrenType;
 
         /// <summary>
@@ -91,6 +102,9 @@ namespace AgoRapide.Core {
             var retval = GetAttributeThroughType<ClassAttribute>(type);
             retval._classType = type;
             if (string.IsNullOrEmpty(retval.DefinedForClass) || type.ToStringVeryShort().Equals(retval.DefinedForClass)) {
+                if (type.BaseType != null) { /// Important to inherit, like <see cref="ClassAttribute.CacheUse"/> as defined for <see cref="ApplicationPart"/>. 
+                    retval.EnrichFrom(type.BaseType.GetClassAttribute());
+                }
                 return retval; /// retval is not inherited from super class
             }
             /// Create whole new instance and set <see cref="IsInherited"/> for it. 
@@ -105,13 +119,15 @@ namespace AgoRapide.Core {
             if (string.IsNullOrEmpty(Description)) {
                 Description = other.Description;
             } else {
-                Description += (Description.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(other.Description) + ": " + other.Description;
+                Description += (Description.EndsWith(".") ? "" : ".") + "\r\nSuper class " + nameof(other.Description) + ": " + other.Description;
             }
             if (string.IsNullOrEmpty(LongDescription)) {
                 LongDescription = other.LongDescription;
             } else {
-                LongDescription += (LongDescription.EndsWith(".") ? "" : ".") + "\r\nCore " + nameof(other.LongDescription) + ": " + other.LongDescription;
+                LongDescription += (LongDescription.EndsWith(".") ? "" : ".") + "\r\nSuper class " + nameof(other.LongDescription) + ": " + other.LongDescription;
             }
+
+            if (CacheUse == CacheUse.None) CacheUse = other.CacheUse;
 
             if (AccessLevelRead == AccessLevel.System) AccessLevelRead = other.AccessLevelRead; // Careful with what is default value here
             if (AccessLevelWrite == AccessLevel.System) AccessLevelWrite = other.AccessLevelWrite; // Careful with what is default value here

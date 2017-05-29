@@ -20,7 +20,7 @@ namespace AgoRapide {
     /// Other examples of inheriting classes: <see cref="Parameters"/>, <see cref="Result"/>. 
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
-    /// <see cref="IDatabase.GetEntityById{T}(long)"/> 
+    /// <see cref="BaseDatabase.GetEntityById{T}(long)"/> 
     /// 
     /// Note how <see cref="BaseEntity"/> inherits <see cref="BaseCore"/> meaning you can listen to <see cref="BaseCore.LogEvent"/> and
     /// <see cref="BaseCore.HandledExceptionEvent"/> but these are not used internally in AgoRapide as of Januar 2017 
@@ -108,7 +108,7 @@ namespace AgoRapide {
         public virtual AccessLevel AccessLevelGiven => AccessLevel.None;
         /// <summary>
         /// The entity which represents this entity. 
-        /// See <see cref="IDatabase.SwitchIfHasEntityToRepresent"/>. 
+        /// See <see cref="BaseDatabase.SwitchIfHasEntityToRepresent"/>. 
         /// </summary>
         public BaseEntity RepresentedByEntity { get; set; }
 
@@ -124,7 +124,7 @@ namespace AgoRapide {
         /// <summary>
         /// Note that also <see cref="Property"/> inherits <see cref="BaseEntity"/> 
         /// and may therefore have <see cref="Properties"/> (although not set as default). 
-        /// (you may check for <see cref="Properties"/> == null and call <see cref="IDatabase.GetChildProperties"/> accordingly)
+        /// (you may check for <see cref="Properties"/> == null and call <see cref="BaseDatabase.GetChildProperties"/> accordingly)
         /// 
         /// Note how <see cref="PropertyKeyAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="PropertyKeyAttribute.IsMany"/>-parent and
         /// the different properties as properties under that again with dictionary index equal to <see cref="int.MaxValue"/> minus index

@@ -58,7 +58,7 @@ namespace AgoRapide {
         /// <summary>
         /// General type of entity.
         /// 
-        /// Added to <see cref="BaseEntity.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
+        /// Added to <see cref="BaseEntity.Properties"/> by <see cref="BaseDatabase.TryGetEntityById"/>
         /// </summary>
         [PropertyKey(
             Description = "Corresponds to C# / .NET Type-object.",
@@ -108,7 +108,7 @@ namespace AgoRapide {
         AccessLevelWrite,
 
         /// <summary>
-        /// Added to <see cref="BaseEntity.Properties"/> by <see cref="IDatabase.TryGetEntityById"/>
+        /// Added to <see cref="BaseEntity.Properties"/> by <see cref="BaseDatabase.TryGetEntityById"/>
         /// </summary>
         [PropertyKey(
             Description = "-" + nameof(DBField.id) + "- of entity as stored in database.",
@@ -164,7 +164,7 @@ namespace AgoRapide {
             LongDescription =
                 "See accompanying -" + nameof(IdFriendly) + "- which is the more readable form.\r\n",
             Type = typeof(QueryId),
-            IsUniqueInDatabase = true, /// This is relevant for <see cref="IDatabase.CreateProperty"/> but does not necessarily hold for other uses.
+            IsUniqueInDatabase = true, /// This is relevant for <see cref="BaseDatabase.CreateProperty"/> but does not necessarily hold for other uses.
             PriorityOrder = PriorityOrder.Important,
             AccessLevelRead = AccessLevel.Anonymous,
             Parents = new Type[] { typeof(ApplicationPart) })]
@@ -200,10 +200,10 @@ namespace AgoRapide {
         Value,
 
         /// <summary>
-        /// See <see cref="IDatabase.SwitchIfHasEntityToRepresent"/>
+        /// See <see cref="BaseDatabase.SwitchIfHasEntityToRepresent"/>
         /// 
         /// TODO: DO WE NEED THE AccessLevelWrite = AgoRapide.AccessLevel.Admin restriction here? Or can we
-        /// TODO: instead have <see cref="IDatabase.SwitchIfHasEntityToRepresent"/> be more strict?
+        /// TODO: instead have <see cref="BaseDatabase.SwitchIfHasEntityToRepresent"/> be more strict?
         /// </summary>
         [PropertyKey(
             Description = "The entity from whose perspective the API will show data. See also -" + nameof(RepresentedByEntity) + "-.",
@@ -211,7 +211,7 @@ namespace AgoRapide {
         EntityToRepresent,
 
         /// <summary>
-        /// See <see cref="IDatabase.SwitchIfHasEntityToRepresent"/>
+        /// See <see cref="BaseDatabase.SwitchIfHasEntityToRepresent"/>
         /// </summary>
         [PropertyKey(Description = "The entity that this entity is represented by. See also -" + nameof(EntityToRepresent) + "-.")]
         RepresentedByEntity,
@@ -222,7 +222,7 @@ namespace AgoRapide {
             Description = 
                 "Used to simulate 'logout'. " +
                 "TRUE means that the next 'login' (that is, the next authentication attempt) " +
-                "will be denied by -" + nameof(IDatabase.TryVerifyCredentials) + "- " +
+                "will be denied by -" + nameof(BaseDatabase.TryVerifyCredentials) + "- " +
                 "(which then will do -" + nameof(AgoRapide.PropertyOperation.SetInvalid) + " for this property).",
             Type = typeof(bool))]
         RejectCredentialsNextTime,

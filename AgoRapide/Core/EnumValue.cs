@@ -23,7 +23,7 @@ namespace AgoRapide.Core {
 
         public EnumValueAttribute EVA { get; private set; }
         /// <summary>
-        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
+        /// Dummy constructor for use by <see cref="BaseDatabase.TryGetEntityById"/>. 
         /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.Get{T}"/>. 
         /// DO NOT USE!
         /// </summary>
@@ -43,6 +43,6 @@ namespace AgoRapide.Core {
         //    return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         //}
 
-        public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

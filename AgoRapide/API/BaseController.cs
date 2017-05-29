@@ -15,7 +15,7 @@ using System.Reflection;
 namespace AgoRapide.API {
     public abstract class BaseController : ApiController {
 
-        protected abstract IDatabase DB { get; }
+        protected abstract BaseDatabase DB { get; }
         public event Action<string> LogEvent;
         protected void Log(string text, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogEvent?.Invoke(GetType().ToStringShort() + "." + caller + ": " + text);
         /// <summary>
@@ -213,8 +213,11 @@ namespace AgoRapide.API {
             if (!TryGetRequest(id, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
 
+            /// TODO: Replace code below with automatic use of <see cref="InMemoryCache"/> from <see cref="BaseDatabase"/>
+            /// -------------------
             /// TODO: Mark all <see cref="ClassAttribute"/> with bool UseCache and 
             /// TODO: always read from cache for corresponding <see cref="APIMethod.EntityType"/>
+            /// TODO: (use <see cref="InMemoryCache"/> for this)
             if (typeof(ApplicationPart).IsAssignableFrom(method.EntityType)) { // Fetch from cache if possible
                 if (queryId.IsAll) {
                     return request.GetOKResponseAsMultipleEntities(ApplicationPart.AllApplicationParts.Values.Where(
@@ -231,7 +234,7 @@ namespace AgoRapide.API {
             }
 
             /// TODO: Utilize <see cref="APIMethod.EntityType"/> here. Maybe give up having TryGetEntities generic?
-            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
         }
 
@@ -251,9 +254,9 @@ namespace AgoRapide.API {
             if (propertyKeyNonStrict.Key.A.IsUniqueInDatabase) {
                 /// TODO: Improve on error message here if call to <see cref="PropertyKey.PropertyKeyWithIndex"/> fails.
                 if (!DB.TryAssertUniqueness(propertyKeyNonStrict.PropertyKeyWithIndex, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
-                /// Note that <see cref="IDatabase.CreateProperty"/> will also repeat the check above
+                /// Note that <see cref="BaseDatabase.CreateProperty"/> will also repeat the check above
             }
-            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, propertyKeyNonStrict, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
@@ -268,7 +271,7 @@ namespace AgoRapide.API {
             method.MA.AssertCoreMethod(CoreAPIMethod.PropertyOperation);
             if (!TryGetRequest(id, operation, method, out var request, out var objErrorResponse)) return objErrorResponse;
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
-            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, useCache: false, entities: out List<Property> properties, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, entities: out List<Property> properties, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
@@ -282,7 +285,7 @@ namespace AgoRapide.API {
             Log(nameof(id) + ": " + id);
             method.MA.AssertCoreMethod(CoreAPIMethod.History);
             if (!TryGetRequest(id, method, out var request, out var objErrorResponse)) return objErrorResponse;
-            if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, useCache: false, entity: out BaseEntity entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
+            if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, entity: out BaseEntity entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntity)p).ToList());
         }
 
@@ -544,7 +547,7 @@ namespace AgoRapide.API {
         protected object HandleExceptionAndGenerateResponse(Exception ex, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             HandledExceptionEvent?.Invoke(ex);
             var exceptionMessage = "";
-            Util.ResetEntityCache(); // Reset as a precaution
+            InMemoryCache.ResetEntityCache(); // Reset as a precaution
             var msg = "An internal exception of type " + ex.GetType().ToStringShort() + " occurred in " + GetType().ToStringShort() + ".\r\n" +
                     (string.IsNullOrEmpty(exceptionMessage) ? "" : "Exception message: " + exceptionMessage + ".\r\n") +
                     (string.IsNullOrEmpty(caller) ? "" : "Method that failed: " + caller + ".\r\n") +

@@ -21,8 +21,13 @@ namespace AgoRapide.Core {
     /// <see cref="EnumValue"/><br>
     /// <see cref="Configuration"/><br>
     /// </summary>
-    [Class(Description = 
-        "Represents some internal part of your application (in contrast to -" + nameof(APIDataObject) + "- which represents actual data entities that your API is supposed to provide)"
+    [Class(
+        Description = 
+            "Represents some internal part of your application " +
+            "(in contrast to -" + nameof(APIDataObject) + "- which represents actual data entities that your API is supposed to provide)",
+        /// TODO: Implement inheritance of <see cref="ClassAttribute"/>-members. 
+        /// TODO: Fixed 26 May 2017 but check that works properly. 
+        CacheUse = CacheUse.All
     )]
     public abstract class ApplicationPart : BaseEntityWithLogAndCount {
 
@@ -37,7 +42,7 @@ namespace AgoRapide.Core {
         public static ConcurrentDictionary<string, ApplicationPart> AllApplicationParts = new ConcurrentDictionary<string, ApplicationPart>();
 
         /// <summary>
-        /// Hack for <see cref="IDatabase"/>-implementation in order for <see cref="GetClassMember"/> not to be called. 
+        /// Hack for <see cref="BaseDatabase"/>-implementation in order for <see cref="GetClassMember"/> not to be called. 
         /// (that is, in order for not to create <see cref="ClassMember"/> unnecessarily just because <see cref="GetFromDatabase{T}"/> has not finished). 
         /// </summary>
         public static bool GetFromDatabaseInProgress;
@@ -54,7 +59,7 @@ namespace AgoRapide.Core {
         /// <typeparam name="T"></typeparam>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public static void GetFromDatabase<T>(IDatabase db, Action<string> logger) where T : ApplicationPart, new() {
+        public static void GetFromDatabase<T>(BaseDatabase db, Action<string> logger) where T : ApplicationPart, new() {
             try {
                 GetFromDatabaseInProgress = true;
 
@@ -77,13 +82,13 @@ namespace AgoRapide.Core {
         /// 2) This object and 
         /// 3) The cached value in <see cref="AllApplicationParts"/> 
         /// against <see cref="A"/>
+        /// by calling <see cref="Get{T}"/>
         /// 
         /// Note that becausae of the generics involved in calling <see cref="Get{T}"/> we can not have the implementator here 
         /// but must leave the implementation to each individual sub class. 
-        /// <see cref="APIMethodAttribute"/>.
         /// </summary>
         /// <param name="db"></param>
-        public abstract void ConnectWithDatabase(IDatabase db);
+        public abstract void ConnectWithDatabase(BaseDatabase db);
 
         /// <summary>
         /// Usually used for getting an <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> in 
@@ -95,7 +100,7 @@ namespace AgoRapide.Core {
         /// <param name="db"></param>
         /// <returns></returns>
         [ClassMember(Description = "Used randomly within application lifetime.")]
-        public static ClassMember GetClassMember(MemberInfo memberInfo, IDatabase db) => Get<ClassMember>(memberInfo.GetClassMemberAttribute(), db, null);
+        public static ClassMember GetClassMember(MemberInfo memberInfo, BaseDatabase db) => Get<ClassMember>(memberInfo.GetClassMemberAttribute(), db, null);
 
         /// <summary>
         /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
@@ -125,11 +130,8 @@ namespace AgoRapide.Core {
                 "After application startup only called indirectly via -" + nameof(Get) + "- for -" + nameof(MemberInfo) + "-, " +
                 "except from -" + nameof(PropertyKeyMapper.TryAddA) + "- for API originated enums"
         )]
-        protected static T Get<T>(BaseAttribute attribute, IDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
+        protected static T Get<T>(BaseAttribute attribute, BaseDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
             ClassMember cid = null; /// This method as <see cref="DBField.cid"/>
-            if (attribute.Id.IdString.ToString().Equals("ClassMember_BaseEntity_AgoRapide_Core_QueryId_IdString")) {
-                var x = 1;
-            }
             var retvalTemp = AllApplicationParts.GetOrAdd(attribute.Id.IdString.ToString(), i => {
                 InvalidIdentifierException.AssertValidIdentifier(i); // TODO: As of Apr 2017 this will fail for abstract types.
 
@@ -159,13 +161,8 @@ namespace AgoRapide.Core {
                     /// This is not possible to do, since A is <see cref="BaseAttribute.GetStaticNotToBeUsedInstance"/>
                     /// if (cid.A.Identifier != thisA.Identifier) throw new ApplicationException("Mismatching identifiers:\r\n" + cid.A.Identifier + "\r\nand\r\n" + thisA.Identifier);                    
                 }
-
-                // TODO: Delete this comment. Natural to execute this always
-                //if (enrichAndReturnThisObject == null) { /// Will typically happen when called from <see cref="GetClassMember"/>
-                //                                         /// Since <see cref="IDatabase.UpdateProperty{T}"/> will not be called below, create properties now. 
                 
-
-                attribute.Properties.Flatten().ForEach(p => { /// Note that <see cref="IDatabase.UpdateProperty{T}"/> is much more complicated to use because of the generics involved.
+                attribute.Properties.Flatten().ForEach(p => { /// Note that <see cref="BaseDatabase.UpdateProperty{T}"/> is much more complicated to use because of the generics involved.
                     db.CreateProperty(
                         cid: cid.Id,
                         pid: r.Id,
@@ -185,7 +182,7 @@ namespace AgoRapide.Core {
                 //    result: null
                 //);
                 /// Read r once more since properties are not reflected yet 
-                /// (since we called <see cref="IDatabase.CreateProperty"/> and not <see cref="IDatabase.UpdateProperty{T}"/>
+                /// (since we called <see cref="BaseDatabase.CreateProperty"/> and not <see cref="BaseDatabase.UpdateProperty{T}"/>
                 r = db.GetEntityById<T>(r.Id);
                 r._a = attribute; // HACK: Since dummy constructor was used, set attribute now.
 
@@ -208,29 +205,6 @@ namespace AgoRapide.Core {
             AllApplicationParts[attribute.Id.IdString.ToString()] = enrichAndReturnThisObject;
             /// TODO: BAD THREAD SAFETY. <param name="enrichAndReturnThisObject"/> has not been initialized yet.
             /// TODO: Add to <see cref="Util.EntityCache"/> somewhere here.
-
-            //// Update all properties in database
-            //if (cid == null) cid = Get<ClassMember>(MethodBase.GetCurrentMethod().GetClassMemberAttribute(), db, null); /// Get this method as <see cref="ApplicationPart"/>
-
-            ///// TODO: BIG WEAKNESS HERE. We do not know the generic value of what we are asking for
-            ///// TODO: The result will be to store as <see cref="DBField.strv"/> instead of a more precise type.
-            ///// TODO: Implement some kind of copying of properties in order to avoid this!
-            ///// TODO: (or rather, solve the general problem of using generics with properties)
-            //attribute.Properties.Flatten().ForEach(p => {
-            //    if (typeof(bool).Equals(p.Key.Key.A.Type)) {
-            //        db.UpdateProperty(cid.Id, retval, p.Key, p.V<bool>(), result: null);
-            //        // TODO: Fix code below. No reason for not supporting all types (long, double, datetime and so on)
-            //        // TODO: Maybe replace this check with a new extension-method called IsStoredAsStringInDatabase or similar...
-            //    } else if (typeof(QueryId).Equals(p.Key.Key.A.Type)) {
-            //        db.UpdateProperty(cid.Id, retval, p.Key, p.V<QueryId>(), result: null);
-            //    } else if (typeof(Type).Equals(p.Key.Key.A.Type) || p.Key.Key.A.Type.IsEnum || typeof(string).Equals(p.Key.Key.A.Type)) {
-            //        db.UpdateProperty(cid.Id, retval, p.Key, p.V<string>(), result: null);
-            //    } else {
-            //        throw new InvalidTypeException(p.Key.Key.A.Type, "Not implemented copying of properties. Details: " + p.ToString());
-            //    }
-            //});
-            //// Unnecessary, included in attribute.Properties
-            //// db.UpdateProperty(cid.Id, retval, CoreP.QueryId.A(), attribute.Id.IdString, result: null);
 
             enrichAndReturnThisObject.Use(e => { /// Turn <param name="enrichAndReturnThisObject"/> "into" the object found in database
                 e.Id = retval.Id;

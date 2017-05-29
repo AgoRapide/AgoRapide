@@ -17,10 +17,10 @@ namespace AgoRapide {
     /// 
     /// Properties are created and validated through the following paths:
     /// 
-    /// 1) Creation in database (<see cref="IDatabase.CreateProperty"/>)
+    /// 1) Creation in database (<see cref="BaseDatabase.CreateProperty"/>)
     ///    Note that this does not involve the <see cref="Property"/>-class at all.
     /// 
-    /// 2) When originating from database (<see cref="IDatabase.TryGetPropertyById"/>): 
+    /// 2) When originating from database (<see cref="BaseDatabase.TryGetPropertyById"/>): 
     /// 
     ///    Through <see cref="Property.Create"/> which 
     ///    
@@ -55,7 +55,7 @@ namespace AgoRapide {
     /// Subclass: <see cref="PropertyT{T}"/>
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
-    /// <see cref="IDatabase.TryGetEntities{T}"/> 
+    /// <see cref="BaseDatabase.TryGetEntities{T}"/> 
     /// </summary>
     [Class(
         Description = "Represents a single property of a -" + nameof(BaseEntity) + "-.",
@@ -215,10 +215,10 @@ namespace AgoRapide {
         public Property() => throw new InvalidPropertyException(
             "Do not use this constructor. " +
             "This parameterless public constructor only exists in order to satisfy restrictions in " +
-            nameof(IDatabase) + " like \"where T : BaseEntity, new()\" for " +
-            nameof(IDatabase.TryGetEntities) + " and " +
-            nameof(IDatabase.TryGetEntityById) + ". " +
-            "(None of these actually use this constructor anyway because they redirect to " + nameof(IDatabase.TryGetPropertyById) + " when relevant)");
+            nameof(BaseDatabase) + " like \"where T : BaseEntity, new()\" for " +
+            nameof(BaseDatabase.TryGetEntities) + " and " +
+            nameof(BaseDatabase.TryGetEntityById) + ". " +
+            "(None of these actually use this constructor anyway because they redirect to " + nameof(BaseDatabase.TryGetPropertyById) + " when relevant)");
 
         /// <summary>
         /// Dummy constructor for internal use in order to being able to disable parameterless constructor above. 
@@ -634,7 +634,7 @@ namespace AgoRapide {
                     field.ToString().HTMLEncloseWithinTooltip(field.A().Key.A.WholeDescription) +
                     "</td><td>" +
                     (value != null && value != 0 ?
-                        (Util.EntityCache.TryGetValue((long)value, out var entity) ?
+                        (InMemoryCache.EntityCache.TryGetValue((long)value, out var entity) ?
                             request.API.CreateAPILink(entity) :
                             value.ToString()) :
                         "&nbsp;"
