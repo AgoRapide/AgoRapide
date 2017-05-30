@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Linq;
 using System.Collections.Generic;
 // Due to some perceived confusion about origin of some methods, we deliberately omit some using-statements here
@@ -139,11 +140,12 @@ namespace AgoRapideSample {
                 );
 
                 Log("Miscellaneous testing");
-                if (!Extensions.A(P.Password).Key.A.IsPassword) throw new AgoRapide.Core.InvalidEnumException(P.Password, "Not marked as " + nameof(AgoRapide.Core.PropertyKeyAttribute) + "." + nameof(AgoRapide.Core.PropertyKeyAttribute.IsPassword));
+                AgoRapideSample.ExtensionsP.A(AgoRapideSample.P.Password).Key.A.AssertIsPassword(null);
 
                 Log("(See corresponding code in Startup.cs for above. Add for more types as you develop your application)");
 
-                Log("SQL_CREATE_TABLE\r\n\r\n" + AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE + "\r\n");
+                Log(nameof(AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE) + ":\r\n\r\n" + new AgoRapide.Database.PostgreSQLDatabase(BaseController.DATABASE_OBJECTS_OWNER, null, BaseController.DATABASE_TABLE_NAME, typeof(Startup)).SQL_CREATE_TABLE + "\r\n");
+                Log("Attempting to connect to database. If connection fails check that the database has been created according to above logged SQL-code");
                 var db = BaseController.GetDatabase(GetType());
 
                 Log("Reading all " + typeof(AgoRapide.Core.ClassMember)); // Important before we ask for startupAsApplicationPart
@@ -167,7 +169,7 @@ namespace AgoRapideSample {
 
                 Log("Looking for " + AgoRapide.CoreP.IsAnonymous + " persons");
                 var queryId = new AgoRapide.Core.QueryIdKeyOperatorValue(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.IsAnonymous).Key, AgoRapide.Operator.EQ, true);
-                if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.C.SystemUser, queryId, AgoRapide.AccessType.Read, useCache: true, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
+                if (!db.TryGetEntity(AgoRapide.Core.Util.Configuration.C.SystemUser, queryId, AgoRapide.AccessType.Read, entity: out Person anonymousUser, errorResponse: out var errorResponse)) {
                     Log(AgoRapide.CoreP.IsAnonymous + " person not found, creating one");
                     AgoRapide.Core.Util.Configuration.C.AnonymousUser = db.GetEntityById<Person>(db.CreateEntity<Person>(
                         cid: startupAsApplicationPart.Id,

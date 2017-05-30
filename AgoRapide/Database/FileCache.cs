@@ -148,7 +148,7 @@ namespace AgoRapide.Database {
         //}
 
         private static string _dataFolder;
-        private static string DataFolder => _dataFolder ?? System.IO.Path.GetDirectoryName(Util.Configuration.C.LogPath) + System.IO.Path.DirectorySeparatorChar + "Data" + System.IO.Path.DirectorySeparatorChar;
+        private static string DataFolder => _dataFolder ?? (_dataFolder = System.IO.Path.GetDirectoryName(Util.Configuration.C.LogPath) + System.IO.Path.DirectorySeparatorChar + "Data" + System.IO.Path.DirectorySeparatorChar);
 
         private static string GetFilePath(Type type) => DataFolder + type.ToStringVeryShort() + ".txt";
 

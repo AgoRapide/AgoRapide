@@ -11,30 +11,27 @@ using AgoRapide.Database;
 namespace AgoRapideSample {
     public abstract class BaseController : AgoRapide.API.BaseController {
 
-        //protected override string GetConnectionString() =>
-        //    "Pooling=false;" +
-        //    "CommandTimeout=20;" + // 20 seconds. Corresponds to default value
-        //    "Server=127.0.0.1;" +
-        //    "Port=5432;" +
-        //    "User Id=agorapide;" +
-        //    "Password=agorapide;" +
-        //    "Database=agorapide";
+        public const string DATABASE_OBJECTS_OWNER = "agorapide";
+        public const string DATABASE_TABLE_NAME = "p";
 
         public BaseController() {
             LogEvent += LogFinal;
             HandledExceptionEvent += LogException;
         }
 
-        public static IDatabase GetDatabase(Type ownersType) {
+        public static BaseDatabase GetDatabase(Type ownersType) {
             var retval = new PostgreSQLDatabase(
-                "Pooling=false;" +
-                "CommandTimeout=20;" + // 20 seconds. Corresponds to default value
-                "Server=127.0.0.1;" +
-                "Port=5432;" +
-                "User Id=agorapide;" +   // TODO: Do of course not store details like this in source-code. 
-                "Password=agorapide;" +  // TODO: Instead use a configuration file kept outside of your source-code repository (outside of GitHub)
-                "Database=agorapide",    // TODO: In this case database is just for sample purposes so nothing sensitive is exposed. 
-                ownersType
+                objectsOwner: DATABASE_OBJECTS_OWNER,
+                connectionString:
+                    "Pooling=false;" +
+                    "CommandTimeout=20;" + // 20 seconds. Corresponds to default value
+                    "Server=127.0.0.1;" +
+                    "Port=5432;" +
+                    "User Id=agorapide;" +   // TODO: Do of course not store details like this in source-code. 
+                    "Password=agorapide;" +  // TODO: Instead use a configuration file kept outside of your source-code repository (outside of GitHub)
+                    "Database=agorapide",    // TODO: In this case database is just for sample purposes so nothing sensitive is exposed. 
+                tableName: DATABASE_TABLE_NAME,
+                applicationType: ownersType
             );
             retval.LogEvent += LogFinal; // Note how LogEvent and HandledExceptionEvent is deliberately left out of IDatabase[TProperty] so you may implement your own logging mechanism instead
             retval.HandledExceptionEvent += LogException; // TODO: Is that a good idea? Why not have them as standard within the AgoRapide-library?
@@ -46,8 +43,8 @@ namespace AgoRapideSample {
         /// <see cref="PostgreSQLDatabase"/> instead of 
         /// <see cref="IDatabase"/>
         /// </summary>
-        protected IDatabase _db;
-        protected override IDatabase DB => _db ?? (_db = GetDatabase(GetType()));
+        protected BaseDatabase _db;
+        protected override BaseDatabase DB => _db ?? (_db = GetDatabase(GetType()));
 
         protected void DBDispose() {
             if (_db != null) _db.Dispose();

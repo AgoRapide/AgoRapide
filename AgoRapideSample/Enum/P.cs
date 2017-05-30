@@ -134,7 +134,7 @@ namespace AgoRapideSample {
         #endregion
     }
 
-    public static class Extensions {
+    public static class ExtensionsP {
         public static PropertyKey A(this P p) => PropertyKeyMapper.GetA(p);
     }
 

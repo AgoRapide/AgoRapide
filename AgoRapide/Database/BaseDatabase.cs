@@ -21,6 +21,21 @@ namespace AgoRapide.Database {
     /// </summary>
     public abstract class BaseDatabase : BaseCore, IDisposable {
 
+        [ClassMember(Description = "Name of main table in database. Also used for naming other objects in database like sequence_p_id.")]
+        protected string _tableName { get; private set; }
+
+        [ClassMember(Description =
+            "Used for logging purposes. Will for instance show in pgAdmin Tools | Server status. " +
+            "Use a type that best describes your application, for instance typeof(CustomerController) or similar. "
+        )]
+        protected Type _applicationType { get; private set; }
+
+        public BaseDatabase(string tableName, Type applicationType) {
+            Log(nameof(tableName) + ": " + tableName + ", " + nameof(applicationType) + ": " + applicationType.ToString());
+            _tableName = tableName;
+            _applicationType = applicationType;
+        }
+
         public void UseInMemoryCache<T>(BaseSynchronizer synchronizer) {
         }
         /// <summary>

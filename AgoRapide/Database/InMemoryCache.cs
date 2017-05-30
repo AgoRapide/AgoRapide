@@ -43,7 +43,6 @@ namespace AgoRapide.Database {
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
-        /// TODO: Move <see cref="ResetEntityCache"/> into <see cref="AgoRapide.Database.BaseDatabase"/>?
         /// </summary>
         public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 

@@ -73,6 +73,17 @@ namespace AgoRapide.Core {
 
         [ClassMember(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
         public bool IsPassword { get; set; }
+        public void AssertIsPassword(Func<string> detailer) {
+            if (!IsPassword) throw new IsPasswordException(
+                "Not marked as " + nameof(PropertyKeyAttribute) + "." + nameof(IsPassword) + "\r\n" + 
+                ToString() + "\r\n" + 
+                detailer.Result("\r\nDetails: ")
+            );
+        }
+        public class IsPasswordException : ApplicationException {
+            public IsPasswordException(string message) : base(message) { }
+            public IsPasswordException(string message, Exception inner) : base(message, inner) { }
+        }
 
         [ClassMember(
             Description =
@@ -150,7 +161,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="detailer">May be null</param>
         public void AssertIsMany(Func<string> detailer) {
-            if (!true.Equals(IsMany)) throw new IsManyException(ToString() + detailer.Result("\r\nDetails: "));
+            if (!IsMany) throw new IsManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
         public class IsManyException : ApplicationException {
