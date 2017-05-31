@@ -178,10 +178,15 @@ namespace AgoRapide.Core {
         private bool _isExternalIsSet = false;
         private bool IsExternalIsSet => _isExternalIsSet;
 
+        /// <summary>
+        /// Implies that also belongs in <see cref="Parents"/> (you do not have to specify both)
+        /// </summary>
         [ClassMember(
             Description = 
                 "Only relevant when -" + nameof(IsExternal) + "-." +
-                "Used to link together data from external sources")]
+                "(In order words, separate from -"+ nameof(CoreP.DBId) + "-. " +
+                "Used to link together data from external sources. "
+        )]
         public Type PrimaryKeyOf;
 
         /// <summary>

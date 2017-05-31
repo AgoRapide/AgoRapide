@@ -170,7 +170,9 @@ namespace AgoRapide.Database {
         public abstract List<long> GetRootPropertyIds(Type type);
 
         /// <summary>
-        /// Gets all entities of type <typeparamref name="T"/>
+        /// Gets all entities of type <typeparamref name="T"/>. 
+        /// TODO: Add overload which can be limited to source / workspace or similar. 
+        /// TODO: Or use <see cref="TryGetEntities"/> for that purpose. 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -187,7 +189,7 @@ namespace AgoRapide.Database {
         /// <param name="cid"></param>
         /// <param name="entityType"></param>
         /// <param name="properties">May be null or empty. Turn this into an Properties collection? Or just a BaseEntity template or similar?</param>
-        /// <param name="result"></param>
+        /// <param name="result">May be null</param>
         /// <returns></returns>
         public abstract long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result);
 
@@ -201,7 +203,7 @@ namespace AgoRapide.Database {
         /// customer sees in your application, without the customer having to give away his / her password.
         /// 
         /// This is typically used to "impersonate" customers through an admin-user. Used by 
-        /// <see cref="BaseController.TryGetCurrentUser> and BAPIController.GetCurrentUser 
+        /// <see cref="BaseController.TryGetCurrentUser>"/>.
         /// 
         /// See <see cref="CoreP.EntityToRepresent"/> and <see cref="CoreP.RepresentedByEntity"/>
         /// </summary>

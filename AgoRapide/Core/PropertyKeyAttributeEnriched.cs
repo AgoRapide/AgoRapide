@@ -147,6 +147,7 @@ namespace AgoRapide.Core {
             if (_coreP != null && A.InheritAndEnrichFromProperty == null && !A.EnumValue.GetType().Equals(typeof(CoreP))) {
                 A.SetEnumValueExplained(A.EnumValueExplained + " (" + nameof(CoreP) + ": " + _coreP.ToString() + ")");
             }
+            if (A.PrimaryKeyOf != null) AddParent(A.PrimaryKeyOf);
 
             /// Enrichment 1, explicit given
             /// -----------------------------------------
@@ -282,7 +283,7 @@ namespace AgoRapide.Core {
                 /// OK, was most probably set through Enrichment 4, from <see cref="ITypeDescriber"/>
             } else {
                 if (A.MustBeValidCSharpIdentifier) {
-                    if (!typeof(string).Equals(A.Type)) throw new BaseAttribute.AttributeException(nameof(A.MustBeValidCSharpIdentifier) + " can only be combined with " + nameof(A.Type) + " string, not " + A.Type  + ". Details: " + A.ToString());
+                    if (!typeof(string).Equals(A.Type)) throw new BaseAttribute.AttributeException(nameof(A.MustBeValidCSharpIdentifier) + " can only be combined with " + nameof(A.Type) + " string, not " + A.Type + ". Details: " + A.ToString());
                     ValidatorAndParser = value => InvalidIdentifierException.TryAssertValidIdentifier(value, out var errorResponse) ? ParseResult.Create(this, value) : ParseResult.Create(
                         "Invalid as C# identifier.\r\nDetails: " + errorResponse);
                 } else if (typeof(string).Equals(A.Type)) {
@@ -340,6 +341,53 @@ namespace AgoRapide.Core {
                 }
             }
         }
+
+        /// <summary>
+        /// Gets, in a determistic manner, the n'th sample value.
+        /// 
+        /// Used for mocking purposes. 
+        /// </summary>
+        /// <param name="n">
+        /// 1-based count for which sample values is requested.
+        /// </param> 
+        /// <param name="maxN">
+        /// Maximum number of <paramref name="n"/> that will be used in subsequent calls. 
+        /// Used for generation of foreign keys for <see cref="PropertyKeyAttribute.IsExternal"/>. 
+        /// </param>
+        /// <typeparam name="TParent">
+        /// The parent object for which this property is intended. 
+        /// Helps with deciding value when <see cref="PropertyKeyAttribute.PrimaryKeyOf"/>
+        /// </typeparam>
+        /// <returns></returns>
+        public Property GetSampleProperty<TParent>(int n, int maxN) {
+            var value = new Func<string>(() => {
+                if (A.PrimaryKeyOf != null) {
+                    InvalidTypeException.AssertEquals(A.Type, typeof(long), () => ToString());
+                    if (typeof(TParent).Equals(A.PrimaryKeyOf)) {
+                        /// This is the primary key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
+                        /// Just assign id's starting from 1
+                        return n.ToString();
+                    } else {
+                        /// This is the foreign key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
+                        /// Assign a deterministic pseudo-random value within maxN
+                        return new Random(n).Next(1, maxN + 1).ToString();
+                    }
+                }
+                if (A.SampleValues != null && A.SampleValues.Length > 0) {
+                    return A.SampleValues[new Random(n).Next(0, A.SampleValues.Length)];
+                }
+                throw new SampleGenerationException(this, "No " + nameof(PropertyKeyAttribute.SampleValues) + " available");
+            })();
+            if (!TryValidateAndParse(value, out var result)) throw new SampleGenerationException(this, result.ErrorResponse);
+            /// TODO: Add support for <see cref="PropertyKeyAttribute.IsMany"/>
+            result.Result.SetKey(CoreP.A().PropertyKeyWithIndex);
+            return result.Result;
+        }
+
+        public class SampleGenerationException : ApplicationException {
+            public SampleGenerationException(PropertyKeyAttributeEnriched key, string message) : base("Unable to generate a sample value for " + key.ToString() + ".\r\nDetails:\r\n" + message) { }
+        }
+
 
         public override string ToString() => A == null ? ("[" + GetType() + " NOT INITIALIZED CORRECTLY (" + nameof(A) + " == null)]") : A.ToString();
     }

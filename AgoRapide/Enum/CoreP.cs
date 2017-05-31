@@ -39,7 +39,7 @@ namespace AgoRapide {
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
     /// </summary>
     [Enum(
-        Description = 
+        Description =
             "The core -" + nameof(EnumType.PropertyKey) + "-. " +
             "All other -" + nameof(EnumType.PropertyKey) + "- are mapped to -" + nameof(CoreP) + "- " +
             "at application startup through -" + nameof(PropertyKeyMapper) + "-.",
@@ -114,7 +114,8 @@ namespace AgoRapide {
         /// Added to <see cref="BaseEntity.Properties"/> by <see cref="BaseDatabase.TryGetEntityById"/>
         /// </summary>
         [PropertyKey(
-            Description = "-" + nameof(DBField.id) + "- of entity as stored in database.",
+            Description = "-" + nameof(DBField.id) + "- of entity as stored in AgoRapide database.",
+            LongDescription = "See also -" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "- relevant to -" + nameof(PropertyKeyAttribute.IsExternal) + "-.",
             Type = typeof(long))]
         DBId,
 
@@ -222,7 +223,7 @@ namespace AgoRapide {
         /// Logout is equivalent to <see cref="PropertyOperation.SetInvalid"/> for <see cref="CoreP.EntityToRepresent"/>
 
         [PropertyKey(
-            Description = 
+            Description =
                 "Used to simulate 'logout'. " +
                 "TRUE means that the next 'login' (that is, the next authentication attempt) " +
                 "will be denied by -" + nameof(BaseDatabase.TryVerifyCredentials) + "- " +
