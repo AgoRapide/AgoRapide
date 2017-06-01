@@ -20,14 +20,14 @@ namespace AgoRapide.Core {
     public class Class : ApplicationPart {
 
         /// <summary>
-        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
+        /// Dummy constructor for use by <see cref="BaseDatabase.TryGetEntityById"/>. 
         /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.Get{T}"/>. 
         /// DO NOT USE!
         /// </summary>
         public Class() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
         public Class(ClassAttribute attribute) : base(attribute) { }
 
-        public static void RegisterAndIndexCoreClass(IDatabase db) =>typeof(Configuration).Assembly.GetTypes().Where(t => !t.IsEnum).ForEach(t => RegisterAndIndexClass(t, db)); /// Going through <see cref="Configuration"/> ensures we get a reference to the AgoRapide assembly
+        public static void RegisterAndIndexCoreClass(BaseDatabase db) =>typeof(Configuration).Assembly.GetTypes().Where(t => !t.IsEnum).ForEach(t => RegisterAndIndexClass(t, db)); /// Going through <see cref="Configuration"/> ensures we get a reference to the AgoRapide assembly
         
         /// <summary>
         /// Note how only public members are found by this method. 
@@ -35,7 +35,7 @@ namespace AgoRapide.Core {
         /// Note how default <see cref="ClassAttribute"/> and <see cref="ClassMemberAttribute"/> will be ignored. 
         /// </summary>
         /// <param name="db"></param>
-        public static void RegisterAndIndexClass(Type type, IDatabase db) {
+        public static void RegisterAndIndexClass(Type type, BaseDatabase db) {
             var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);
 
             {
@@ -59,6 +59,6 @@ namespace AgoRapide.Core {
             });
         }
 
-        public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

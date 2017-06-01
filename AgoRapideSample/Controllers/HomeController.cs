@@ -67,7 +67,7 @@ namespace AgoRapideSample {
                 if (!DB.TryGetEntities(                    
                     request.CurrentUser.RepresentedByEntity ?? request.CurrentUser, /// Note how search will always be done viewed from <see cref="BaseEntity.RepresentedByEntity"/>
                     queryId,
-                    AccessType.Read, useCache: true,
+                    AccessType.Read, 
                     entities: out List<Person> persons,
                     errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
                 // Note, you can search for other types of entities here also, and add the corresponding persons to the

@@ -20,7 +20,7 @@ namespace AgoRapide {
     /// Other examples of inheriting classes: <see cref="Parameters"/>, <see cref="Result"/>. 
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
-    /// <see cref="IDatabase.GetEntityById{T}(long)"/> 
+    /// <see cref="BaseDatabase.GetEntityById{T}(long)"/> 
     /// 
     /// Note how <see cref="BaseEntity"/> inherits <see cref="BaseCore"/> meaning you can listen to <see cref="BaseCore.LogEvent"/> and
     /// <see cref="BaseCore.HandledExceptionEvent"/> but these are not used internally in AgoRapide as of Januar 2017 
@@ -108,7 +108,7 @@ namespace AgoRapide {
         public virtual AccessLevel AccessLevelGiven => AccessLevel.None;
         /// <summary>
         /// The entity which represents this entity. 
-        /// See <see cref="IDatabase.SwitchIfHasEntityToRepresent"/>. 
+        /// See <see cref="BaseDatabase.SwitchIfHasEntityToRepresent"/>. 
         /// </summary>
         public BaseEntity RepresentedByEntity { get; set; }
 
@@ -124,7 +124,7 @@ namespace AgoRapide {
         /// <summary>
         /// Note that also <see cref="Property"/> inherits <see cref="BaseEntity"/> 
         /// and may therefore have <see cref="Properties"/> (although not set as default). 
-        /// (you may check for <see cref="Properties"/> == null and call <see cref="IDatabase.GetChildProperties"/> accordingly)
+        /// (you may check for <see cref="Properties"/> == null and call <see cref="BaseDatabase.GetChildProperties"/> accordingly)
         /// 
         /// Note how <see cref="PropertyKeyAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="PropertyKeyAttribute.IsMany"/>-parent and
         /// the different properties as properties under that again with dictionary index equal to <see cref="int.MaxValue"/> minus index
@@ -281,38 +281,49 @@ namespace AgoRapide {
         /// May be null. 
         /// See <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> for documentation
         /// </param>
-        /// <param name="detailer"></param>
+        /// <param name="detailer">May be null</param>
         public void AddProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute, Func<string> detailer) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (value == null) throw new ArgumentNullException(nameof(value));
             if (Properties == null) Properties = new Dictionary<CoreP, Property>(); // TODO: Maybe structure better how Properties is initialized
             if (detailer == null) detailer = () => ToString();
-            if (key.Key.A.IsMany) {
-                var temp = this as Property;
-                var isManyParent = temp != null && temp.IsIsManyParent ? temp : null;
-                if (isManyParent != null) { // We are an IsMany parent, add at next available id.
-                    if (key is PropertyKeyWithIndex) throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key) + " as " + nameof(PropertyKeyWithIndex) + " not allowed (" + nameof(PropertyKeyWithIndex.Index) + " not allowed)");
-                    isManyParent.Properties.Add(isManyParent.GetNextIsManyId().IndexAsCoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value)); /// Note how <see cref="PropertyT{T}.PropertyT"/> will fail if value is a List now (not corresponding to <see cref="PropertyKeyAttribute.IsMany"/>)
-                } else {
-                    var t = typeof(T);
-                    if (t.IsGenericType) {
-                        Properties.AddValue2(key.Key.CoreP, Util.ConvertListToIsManyParent(this, key, value, detailer));
-                    } else {
-                        isManyParent = Properties.GetOrAddIsManyParent(key);
-                        var id = isManyParent.GetNextIsManyId();
-                        // We can not do this:
-                        // isManyParent.Properties.Add(id.IndexAsCoreP, new PropertyT<T>(id, value));
-                        // but must do this:
-                        /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
-                        isManyParent.AddPropertyForIsManyParent(id.IndexAsCoreP, new PropertyT<T>(id, value, strValue, valueAttribute)); // Important in order for cached _value to be reset
-                    }
-                }
-            } else {
-                Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute) {
-                    ParentId = Id,
-                    Parent = this
-                }, detailer);
+
+            if (!key.Key.A.IsMany) {
+                AddProperty(new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute), detailer);
+                //Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute) {
+                //    ParentId = Id,
+                //    Parent = this
+                //}, detailer);
+                return;
             }
+
+            // IsMany
+            var temp = this as Property;
+            var isManyParent = temp != null && temp.IsIsManyParent ? temp : null;
+            if (isManyParent != null) { // We are an IsMany parent, add at next available id.
+                if (key is PropertyKeyWithIndex) throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key) + " as " + nameof(PropertyKeyWithIndex) + " not allowed (" + nameof(PropertyKeyWithIndex.Index) + " not allowed)");
+                isManyParent.Properties.Add(isManyParent.GetNextIsManyId().IndexAsCoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value)); /// Note how <see cref="PropertyT{T}.PropertyT"/> will fail if value is a List now (not corresponding to <see cref="PropertyKeyAttribute.IsMany"/>)
+            } else {
+                var t = typeof(T);
+                if (t.IsGenericType) {
+                    AddProperty(Util.ConvertListToIsManyParent(this, key, value, detailer), detailer);
+                    // Properties.AddValue2(key.Key.CoreP, Util.ConvertListToIsManyParent(this, key, value, detailer));
+                } else {
+                    isManyParent = Properties.GetOrAddIsManyParent(key);
+                    var id = isManyParent.GetNextIsManyId();
+                    // We can not do this:
+                    // isManyParent.Properties.Add(id.IndexAsCoreP, new PropertyT<T>(id, value));
+                    // but must do this:
+                    /// TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
+                    isManyParent.AddPropertyForIsManyParent(id.IndexAsCoreP, new PropertyT<T>(id, value, strValue, valueAttribute)); // Important in order for cached _value to be reset
+                }
+            }
+        }
+
+        public void AddProperty(Property p, Func<string> detailer) {
+            p.ParentId = Id;
+            p.Parent = this;
+            Properties.AddValue2(p.Key.Key.CoreP, p, detailer);
         }
 
         /// <summary>
@@ -510,6 +521,29 @@ namespace AgoRapide {
             }
             // TODO: ADD THIS SOMEHOW. That is, explain what kind of Properties may be added.
             // AddUserChangeablePropertiesToSimpleEntity(retval);
+            return retval;
+        }
+
+        /// <summary>
+        /// Returns a list with <paramref name="maxN"/> mock-entities based on <see cref="PropertyKeyAttributeEnriched.GetSampleProperty{TParent}"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="properties">
+        /// Could typically be 
+        /// 
+        /// </param>
+        /// <param name="maxN"></param>
+        /// <returns></returns>
+        public static List<T> GetMockEntities<T>(Func<PropertyKey,bool> propertyPredicate, int maxN) where T : BaseEntity, new() {
+            var retval = new List<T>();
+            var type = typeof(T);
+            var properties = type.GetChildProperties().Values.Where(propertyPredicate);
+            for (var n = 1; n <= maxN; n++) {
+                var e = new T();
+                properties.ForEach(p => {
+                    e.AddProperty(p.Key.GetSampleProperty<T>(n, maxN), null);
+                });
+            }
             return retval;
         }
     }

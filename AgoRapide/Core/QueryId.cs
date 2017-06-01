@@ -210,6 +210,8 @@ namespace AgoRapide.Core {
     /// </summary>
     public class InvalidCountException : ApplicationException {
         public InvalidCountException(string message) : base(message) { }
+        public InvalidCountException(long found, long expected) : base(nameof(expected) + ": " + expected + ", " + nameof(found) + ": " + found) { }
+        public InvalidCountException(long found, long expected, string details) : base(nameof(expected) + ": " + expected + ", " + nameof(found) + ": " + found + "\r\nDetails: " + details) { }
         public InvalidCountException(string message, Exception inner) : base(message, inner) { }
     }
 }

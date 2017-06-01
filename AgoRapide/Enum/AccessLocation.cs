@@ -15,7 +15,7 @@ namespace AgoRapide {
         Description = "Describes how access is granted within AgoRapide.",
         LongDescription =
             "Restricting access is the responsibility of " +
-            "-" + nameof(IDatabase.TryGetEntities) + "- and " +
+            "-" + nameof(BaseDatabase.TryGetEntities) + "- and " +
             "-" + nameof(Extensions.GetChildPropertiesForUser) + "-")]
     public enum AccessLocation {
 
@@ -24,7 +24,7 @@ namespace AgoRapide {
         [EnumValue(
             Description = "Access through relation (A relation gives right to an involved entity.  Not implemented as of March 2017)",
             LongDescription =
-                "Responsibility of -" + nameof(IDatabase.TryGetEntities) + "- (Not implemented as of March 2017)\r\n" +
+                "Responsibility of -" + nameof(BaseDatabase.TryGetEntities) + "- (Not implemented as of March 2017)\r\n" +
                 "(note how -" + nameof(Extensions.GetChildPropertiesForUser) + "- also partly implements -" + nameof(AccessLocation.Relation) + "-")]
         Relation,
 

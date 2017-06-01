@@ -20,14 +20,14 @@ namespace AgoRapide.Core {
     public class Enum : ApplicationPart {
 
         /// <summary>
-        /// Dummy constructor for use by <see cref="IDatabase.TryGetEntityById"/>. 
+        /// Dummy constructor for use by <see cref="BaseDatabase.TryGetEntityById"/>. 
         /// Object meant to be discarded immediately afterwards in <see cref="ApplicationPart.Get{T}"/>. 
         /// DO NOT USE!
         /// </summary>
         public Enum() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
         public Enum(EnumAttribute attribute) : base(attribute) { }
 
-        public static void RegisterAndIndexCoreEnum(IDatabase db) =>
+        public static void RegisterAndIndexCoreEnum(BaseDatabase db) =>
             typeof(CoreP).Assembly.GetTypes().Where(t => t.IsEnum).ForEach(t => RegisterAndIndexEnum(t, db)); /// Going through <see cref="CoreP"/> ensures we get a reference to the AgoRapide assembly
 
             //void Register<T>() where T : struct, IFormattable, IConvertible, IComparable
@@ -57,7 +57,7 @@ namespace AgoRapide.Core {
             //Register<ResultCode>();
         // }
 
-        public static void RegisterAndIndexEnum(Type type, IDatabase db) { // where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public static void RegisterAndIndexEnum(Type type, BaseDatabase db) { // where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);
 
             // Note how all Enums are registered, even those without any attributes.
@@ -72,6 +72,6 @@ namespace AgoRapide.Core {
             });
         }
 
-        public override void ConnectWithDatabase(IDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

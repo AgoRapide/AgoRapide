@@ -11,8 +11,10 @@ namespace AgoRapide.Core {
     /// <summary>
     /// Base core class giving logging and exception handling.
     /// 
-    /// You are recommended to use logging in all business logic 
-    /// (but not in your entity classes although entity classes also inherit BaseCore as of Dec 2016)
+    /// AgoRapide uses logging wherever it is considered helpful for debugging and system administration
+    /// Note that logging in entity classes is not practised although <see cref="BaseEntity"/> also inherit <see cref="BaseCore"/>. 
+    /// Instead exceptions generated from entity classes usually contains detailed entity information 
+    /// through the <see cref="BaseEntity.ToString"/> method. 
     /// </summary>
     public class BaseCore {
         public event Action<string> LogEvent;

@@ -131,8 +131,11 @@
     <Compile Include="Core\QueryIdString.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Extensions.cs" />
-    <Compile Include="Database\IDatabase.cs" />
+    <Compile Include="Database\BaseDatabase.cs" />
+    <Compile Include="Database\FileCache.cs" />
+    <Compile Include="Database\InMemoryCache.cs" />
     <Compile Include="Database\PostgreSQLDatabase.cs" />
+    <Compile Include="Database\BaseSynchronizer.cs" />
     <Compile Include="Entity\APIDataObject.cs" />
     <Compile Include="Entity\BaseEntity.cs" />
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />
@@ -142,6 +145,7 @@
     <Compile Include="Enum\AccessLocation.cs" />
     <Compile Include="Enum\AccessType.cs" />
     <Compile Include="Enum\APIMethodOrigin.cs" />
+    <Compile Include="Enum\CacheUse.cs" />
     <Compile Include="Enum\CoreAPIMethod.cs" />
     <Compile Include="Enum\CoreP.cs" />
     <Compile Include="Enum\DateTimeFormat.cs" />

@@ -44,13 +44,13 @@ namespace AgoRapide {
         AddEntity,
 
         [EnumValue(Description = 
-            "Calls -" + nameof(IDatabase.UpdateProperty) + "-. " +
+            "Calls -" + nameof(BaseDatabase.UpdateProperty) + "-. " +
             "Will create a new property if it did not exist already or if the old values was different.\r\n" +
             "If property existed with same value then its -" + nameof(DBField.valid) + "- and -" + nameof(DBField.vid) + "- will be updated")]        
         UpdateProperty,
 
         [EnumValue(Description = 
-            "Calls -" + nameof(IDatabase.GetEntityHistory) + "- for the given property. " +
+            "Calls -" + nameof(BaseDatabase.GetEntityHistory) + "- for the given property. " +
             "If the property is an entity root property (" + nameof(CoreP.RootProperty) + ") then all history information for that entity is returned.")]
         History,
 
