@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.API;
 
+/// <summary>
+/// TODO: Make into abstract base class inheriting <see cref="BaseCore"/>. Meaningless to have as an interface.
+/// </summary>
 namespace AgoRapide.Database {
     /// <summary>
     /// TODO: Add TryGetEntityIds and GetEntityIds with <see cref="QueryId"/> as parameter just like done with 
