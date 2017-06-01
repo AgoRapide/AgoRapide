@@ -20,22 +20,22 @@ namespace AgoRapide.Database {
             "Synchronizes data from external data storage " +
             "(for instance a CRM system from which the AgoRapide based application will analyze data).",
         LongDescription =
-            "The data found is stored within -" + nameof(FileCache) + "-, only identifiers are stored within -" + nameof(BaseDatabase) + "-"
+            "The data found is stored within -" + nameof(FileCache) + "-, only identifiers (-" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "- are stored within -" + nameof(BaseDatabase) + "-"
     )]
     public abstract class BaseSynchronizer : APIDataObject {
         /// <summary>
         /// 
         /// </summary>
         /// <typeparam name="T">
-        /// This is mostly a hint about what needs to be synchronized. 
-        /// It is up to the synchronizer to do a fuller synchronization if deemed necessary or practical. 
+        /// This is mostly a hint about what needs to be synchronized. {object} may be used. 
+        /// It is up to the synchronizer to do a fuller synchronization as deemed necessary or practical. 
         /// </typeparam>
         /// <param name="db"></param>
         /// <param name="fileCache"></param>
         [ClassMember(Description = "Synchronizes between local database / local file storage and external source")]
-        public abstract void Synchronize<T>(BaseDatabase db, FileCache fileCache, Result result) where T : BaseEntity, new();
+        public abstract void Synchronize<T>(BaseDatabase db, Result result) where T : BaseEntity, new();
 
-        protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, FileCache fileCache, Result result) where T : BaseEntity, new() {
+        protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
 
             var type = typeof(T);
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.PrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.PrimaryKeyOf) + " != null for " + type);
@@ -59,21 +59,8 @@ namespace AgoRapide.Database {
                 e.AddProperty(CoreP.DBId.A(), e.Id); // TODO:  Most probably unnecessary. Should be contained below. 
                 internalEntity.Properties.Values.ForEach(p => e.AddProperty(p, null));
             });
-            fileCache.StoreToDisk(externalEntities);
+            FileCache.instance.StoreToDisk(externalEntities);
+            // TODO: Store in InMemoryCache also!
         }
-
-        ///// <summary>
-        ///// TDOO: REPLACE WITH DETERMINISTIC (PSEUDO-RANDOM) GENERATION BASED ON ATTRIBUTES
-        ///// 
-        ///// TODO: TO BE DELETED!
-        ///// </summary>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="properties"></param>
-        ///// <returns></returns>
-        //protected static T EntityGenerator<T>(List<Property> properties) where T : BaseEntity, new() {
-        //    var retval = new T();
-        //    properties.ForEach(p => retval.AddProperty(p, null));
-        //    return retval;
-        //}
     }
 }

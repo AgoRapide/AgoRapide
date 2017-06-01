@@ -166,8 +166,11 @@ namespace AgoRapide.Core {
             _cache.TryGetValue(typeof(T), out var dict) ?
                 dict.TryGetValue((int)(object)_enum, out key) :
                 throw new InvalidMappingException<T>(_enum,
-                    "Most probably because no corresponding call was made to " + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
-                    "(Hint: this is usually done in Startup.cs.)");
+                    "Most probably because no corresponding call was made to " + nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
+                    "Possible resolution:\r\n" +
+                    "Add the statement\r\n" +
+                    nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + "<" + typeof(T) + ">()\r\n" +
+                    "to Startup.cs (as of Jun 2017 look for 'mapper1<...>').");
 
         public static PropertyKey GetA(string _enum) => _fromStringMaps.GetValue(_enum);
 

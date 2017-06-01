@@ -557,7 +557,7 @@ namespace AgoRapide.Core {
         public InvalidEnumException(object _enum) : base(GetMessage(_enum, null)) { }
         public InvalidEnumException(object _enum, string message) : base(GetMessage(_enum, message)) { }
         public InvalidEnumException(Type type, string _string) : base("Unable to parse '" + _string + "' as " + type) { }
-        public InvalidEnumException(Type type, string _string, string details) : base("Unable to parse '" + _string + "' as " + type + ".\r\nDetails: " + details) { }
+        public InvalidEnumException(Type type, string _string, string details) : base("Unable to parse '" + _string + "' as " + type + ".\r\nDetails:\r\n" + details) { }
     }
 
     public class InvalidEnumException<T> : ApplicationException {

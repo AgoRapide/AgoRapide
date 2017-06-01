@@ -354,7 +354,13 @@ namespace AgoRapide.Core {
             // TODO: Consider moving more of this code into AgoRapideAttribute-class
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type); // TODO: Necessary? Most possibly YES!
-            if (type.GetEnumAttribute().AgoRapideEnumType != EnumType.PropertyKey) throw new InvalidObjectTypeException(_enum, EnumType.PropertyKey + " required here, found " + type.GetEnumAttribute().AgoRapideEnumType);
+            if (type.GetEnumAttribute().AgoRapideEnumType != EnumType.PropertyKey) throw new InvalidEnumException(type.GetEnumAttribute().AgoRapideEnumType, 
+                nameof(EnumType) + "." + EnumType.PropertyKey + " required here,\r\n" +
+                "found " + type.GetEnumAttribute().AgoRapideEnumType + ".\r\n" +
+                "Possible resolution (assuming that " + _enum + " really is used to describe entity properties):\r\n" +
+                "Add\r\n" +
+                "[" + nameof(EnumAttribute) + "(" + nameof(EnumAttribute.AgoRapideEnumType) + " = " + nameof(EnumType) + "." + EnumType.PropertyKey + ")]\r\n" +
+                "to declaration of " + _enum.GetType());
             var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type + "." + _enum.ToString() + " is most probably not defined.");
             var retval = GetAttributeThroughFieldInfo<PropertyKeyAttribute>(field, () => type + "." + _enum);
             retval._enumValue = _enum;

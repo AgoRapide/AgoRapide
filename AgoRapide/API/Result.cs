@@ -10,8 +10,6 @@ using AgoRapide.Core;
 namespace AgoRapide.API {
 
     /// <summary>
-    /// TODO: MOVE INTO API-FOLDER!
-    /// 
     /// Never stored in database. 
     /// 
     /// Note how many of the methods in the AgoRapide-library will log 

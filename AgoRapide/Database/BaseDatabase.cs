@@ -33,6 +33,11 @@ namespace AgoRapide.Database {
         )]
         protected Type _applicationType { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tableName"><see cref="_tableName"/></param>
+        /// <param name="applicationType"><see cref="_applicationType"/></param>
         public BaseDatabase(string tableName, Type applicationType) {
             Log(nameof(tableName) + ": " + tableName + ", " + nameof(applicationType) + ": " + applicationType.ToString());
             _tableName = tableName;

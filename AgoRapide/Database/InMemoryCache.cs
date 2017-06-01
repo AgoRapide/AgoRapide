@@ -24,6 +24,9 @@ namespace AgoRapide.Database {
         )]
     public class InMemoryCache : BaseCore {
 
+        private InMemoryCache() { }
+        public static readonly InMemoryCache instance = new InMemoryCache(); /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. Apart from this need for logging the class could have just been made static instead.
+
         /// <summary>
         /// Cache as relevant for <see cref="CacheUse.Dynamic"/>. 
         /// 

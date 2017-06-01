@@ -37,21 +37,22 @@ namespace AgoRapide.Database {
         protected Npgsql.NpgsqlConnection _cn1;
         // protected Npgsql.NpgsqlConnection _cn2;
 
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <param name="connectionString">
-            /// May be null in which case this instance will be unable to execute any queries. 
-            /// Use null in cases where you want to generate <see cref="SQL_CREATE_TABLE"/>. 
-            /// </param>
-            /// <param name="tableName"></param>
-            /// <param name="applicationType"></param>
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connectionString">
+        /// May be null in which case this instance will be unable to execute any queries. 
+        /// Use null in cases where you want to generate <see cref="SQL_CREATE_TABLE"/>. 
+        /// </param>
+        /// <param name="fileCache"></param>
+        /// <param name="tableName"></param>
+        /// <param name="applicationType"></param>
         public PostgreSQLDatabase(string objectsOwner, string connectionString, string tableName, Type applicationType) : base(tableName, applicationType) {
             // Do not log connectionString (may contain password). 
             Log(nameof(objectsOwner) + ": " + objectsOwner);
 
             _objectsOwner = objectsOwner ?? throw new ArgumentNullException(nameof(objectsOwner));
-            if (string.IsNullOrEmpty(_connectionString)) {
+            if (string.IsNullOrEmpty(connectionString)) {
                 Log(nameof(connectionString) + " not given. This instance will be unable to execute any queries");
             } else {
                 if (!connectionString.EndsWith(";")) connectionString += ";";
@@ -112,7 +113,7 @@ namespace AgoRapide.Database {
                 /// TODO: In other words, make separate SQL for id.IsAll
                 /// 
                 /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all known sub-classes.
-                DBField.pid + " IN\r\n" + 
+                DBField.pid + " IN\r\n" +
                 "(SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
                 (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
                 DBField.invalid + " IS NULL "
@@ -234,7 +235,9 @@ namespace AgoRapide.Database {
                     useCacheDynamically = true; // Se code below
                     break;
                 case CacheUse.All:
-                    throw new InvalidEnumException(CacheUse.All, "Not implemented."); /// Call <see cref="InMemoryCache"/> now.
+                    break; 
+                    // TODO: ADD CODE HERE!!!!
+                    throw new InvalidEnumException(CacheUse.All, "Not implemented. " + nameof(requiredType) + ": " + requiredType); /// Call <see cref="InMemoryCache"/> now.
             }
 
             if (requiredType != null && typeof(Property).IsAssignableFrom(requiredType)) {
@@ -318,7 +321,7 @@ namespace AgoRapide.Database {
         public override bool TryGetPropertyById(long id, out Property property) {
             Log(nameof(id) + ": " + id);
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.id + " = " + id, _cn1);
-            lock (cmd.Connection) {
+            lock (GetLock(cmd)) { 
                 Npgsql.NpgsqlDataReader r;
                 try {
                     r = cmd.ExecuteReader();
@@ -398,7 +401,7 @@ namespace AgoRapide.Database {
                 DBField.invalid + " IS NULL " +
                 "ORDER BY " + DBField.id + " ASC", _cn1);
             var retval = new List<long>();
-            lock (cmd.Connection) {
+            lock (GetLock(cmd)) {
                 Npgsql.NpgsqlDataReader r;
                 try {
                     r = cmd.ExecuteReader();
@@ -910,8 +913,7 @@ namespace AgoRapide.Database {
 
         protected long ExecuteScalarLong(Npgsql.NpgsqlCommand cmd, Func<string> detailer) => TryExecuteScalarLong(cmd, out var retval) ? retval : throw new NoResultFromDatabaseException(nameof(cmd) + "." + nameof(cmd.CommandText) + ": " + cmd.CommandText + detailer.Result("\r\nDetails: "));
         protected bool TryExecuteScalarLong(Npgsql.NpgsqlCommand cmd, out long _long) {
-            if (cmd.Connection == null) throw new NullReferenceException(nameof(cmd) + "." + nameof(cmd.Connection));
-            lock (cmd.Connection) {
+            lock (GetLock(cmd)) {
                 object retval;
                 try {
                     retval = cmd.ExecuteScalar();
@@ -938,7 +940,7 @@ namespace AgoRapide.Database {
         /// <param name="doLogging"></param>
         /// <param name="affectedRows"></param>
         private bool TryExecuteNonQuery(Npgsql.NpgsqlCommand cmd, int expectedRows, bool doLogging, out int affectedRows) {
-            lock (cmd.Connection) {
+            lock (GetLock(cmd)) {
                 try {
                     affectedRows = cmd.ExecuteNonQuery();
                 } catch (Exception ex) {
@@ -961,7 +963,7 @@ namespace AgoRapide.Database {
             // TODO: Decide on logging here. What to log.
             Log("\r\n" + nameof(cmd.CommandText) + ":\r\n" + cmd.CommandText + "\r\n" + nameof(cmd.Parameters) + ".Count: " + cmd.Parameters.Count);
             var retval = new List<int>();
-            lock (cmd.Connection) {
+            lock (GetLock(cmd)) {
                 Npgsql.NpgsqlDataReader r;
                 try {
                     r = cmd.ExecuteReader();
@@ -978,7 +980,7 @@ namespace AgoRapide.Database {
 
         protected List<Property> ReadAllPropertyValues(Npgsql.NpgsqlCommand cmd) {
             var retval = new List<Property>();
-            lock (cmd.Connection) {
+            lock (GetLock(cmd)) {
                 Npgsql.NpgsqlDataReader r;
                 try {
                     r = cmd.ExecuteReader();
@@ -1002,7 +1004,7 @@ namespace AgoRapide.Database {
         )]
         protected Dictionary<CoreP, Property> ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates(Npgsql.NpgsqlCommand cmd) {
             var dict = new Dictionary<CoreP, Property>();
-            lock (cmd.Connection) {
+            lock (GetLock(cmd)) {
                 Npgsql.NpgsqlDataReader r;
                 try {
                     r = cmd.ExecuteReader();
@@ -1245,5 +1247,13 @@ OWNER TO " + _objectsOwner + @";
             public PostgreSQLDatabaseException(Npgsql.NpgsqlCommand command, Exception inner) : this(command, null, inner) { }
             public PostgreSQLDatabaseException(Npgsql.NpgsqlCommand command, string message, Exception inner) : base("Exception " + inner.GetType() + " occurred when executing " + typeof(Npgsql.NpgsqlCommand) + " '" + command.CommandText + "'" + (string.IsNullOrEmpty(message) ? "" : ("Details: " + message)), inner) { }
         }
+
+        private Npgsql.NpgsqlConnection GetLock(Npgsql.NpgsqlCommand cmd) => cmd.Connection ?? throw new NullReferenceException(
+            Util.BreakpointEnabler + "No connection specified for query\r\n" + 
+            cmd.CommandText + ".\r\n" +
+            ((_cn1 == null || string.IsNullOrEmpty(_connectionString)) ? 
+                ("Possible cause: " + nameof(_cn1) + " is null or " + nameof(_connectionString) + " not given") :
+                ("Possible resolution: Add " + nameof(_cn1) + " as last parameter to initialization of " + cmd.GetType())
+            ));
     }
 }

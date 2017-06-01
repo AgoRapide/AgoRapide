@@ -16,7 +16,7 @@ namespace AgoRapide.Database {
     /// </summary>
     [Class(
         Description =
-            "Caches information provided by -" + nameof(BaseSynchronizer) + "- in a local file storage (direct disk storage).",
+            "Caches (on disk) information provided by -" + nameof(BaseSynchronizer) + "- in a local file storage (direct disk storage).",
         LongDescription =
             "The rationale for -" + nameof(FileCache) + "- is that there is no point in " +
             "synchronizing towards -" + nameof(BaseDatabase) + "- if the receiving end " +
@@ -33,7 +33,10 @@ namespace AgoRapide.Database {
     )]
     public class FileCache : BaseCore {
 
-        private const string RECORD_SEPARATOR = "\r\n--\r\n";
+        private FileCache() { }
+        public static readonly FileCache instance = new FileCache(); /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. Apart from this need for logging the class could have just been made static instead.
+
+        private const string RECORD_SEPARATOR = "\r\n-!-\r\n";
         /// <summary>
         /// TODO: Improve in this. Enable storing of strings containing linefeeds for instead. 
         /// </summary>
@@ -62,7 +65,7 @@ namespace AgoRapide.Database {
         public static string GetFingerprint(Type type) => _fingerprintCache.GetOrAdd(type, t =>
             string.Join("\r\n", GetProperties(t).Select(p => p.Key.PToString)));
 
-        public void StoreToDisk<T>(List<T> entities) where T: BaseEntity, new() {
+        public void StoreToDisk<T>(List<T> entities) where T : BaseEntity, new() {
             var type = typeof(T);
             Log(nameof(T) + ": " + type);
             var filepath = GetFilePath(type);
@@ -71,11 +74,11 @@ namespace AgoRapide.Database {
             System.IO.File.WriteAllText(
                 filepath,
                 GetFingerprint(type) + RECORD_SEPARATOR +
-                string.Join(RECORD_SEPARATOR, entities.Select(e => 
+                string.Join(RECORD_SEPARATOR, entities.Select(e =>
                     string.Join(FIELD_SEPARATOR, propertiesOrder.Select(p =>
                         e.PV<string>(p, "")
                     ))
-                )), 
+                )),
                 Encoding.Default
             );
         }
@@ -98,7 +101,6 @@ namespace AgoRapide.Database {
             if (!System.IO.File.Exists(filepath)) {
                 Log("!System.IO.File.Exists");
                 return false;
-                // throw new NotImplementedException("Synchronizing for " + filepath + " (file not existing)");
             }
             var recordsFromDisk = System.IO.File.ReadAllText(filepath, Encoding.Default).Split(RECORD_SEPARATOR);
             var first = true;
@@ -116,7 +118,6 @@ namespace AgoRapide.Database {
                             "instead of\r\n\r\n" +
                             GetFingerprint(type));
                         return false;
-                        // throw new NotImplementedException("Synchronizing for " + filepath + " (changed fingerprint)");
                     }
                     first = false;
                     continue;
@@ -140,12 +141,6 @@ namespace AgoRapide.Database {
             }
             return true;
         }
-
-        //[ClassMember(Description = "Synchronizes file storage")]
-        //public void Synchronize<T>(BaseDatabase db, BaseSynchronizer synchronizer) where T : BaseEntity, new() {
-        //    var entities = db.GetAllEntities<T>();
-        //    // synchronizer.Sync
-        //}
 
         private static string _dataFolder;
         private static string DataFolder => _dataFolder ?? (_dataFolder = System.IO.Path.GetDirectoryName(Util.Configuration.C.LogPath) + System.IO.Path.DirectorySeparatorChar + "Data" + System.IO.Path.DirectorySeparatorChar);
