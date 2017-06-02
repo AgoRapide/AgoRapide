@@ -168,6 +168,12 @@ namespace AgoRapide.Core {
                 }
             }
 
+            if (!InvalidIdentifierException.TryAssertValidIdentifier(value, out errorResponse)) {
+                errorResponse = "Unable to parse as " + nameof(QueryIdString) + ". Details:\r\n*" + errorResponse;
+                id = null;
+                return false;
+            }
+
             id = new QueryIdString(value);
             errorResponse = null;
             return true;

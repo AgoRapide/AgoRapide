@@ -22,12 +22,11 @@ namespace AgoRapide.Core {
     /// <see cref="Configuration"/><br>
     /// </summary>
     [Class(
-        Description = 
-            "Represents some internal part of your application " +
-            "(in contrast to -" + nameof(APIDataObject) + "- which represents actual data entities that your API is supposed to provide)",
+        Description = "Represents some internal part of your application.",
+        LongDescription = "Compare to  to -" + nameof(APIDataObject) + "- which represents actual data entities that your API is supposed to provide.",
         /// TODO: Implement inheritance of <see cref="ClassAttribute"/>-members. 
         /// TODO: Fixed 26 May 2017 but check that works properly. 
-        CacheUse = CacheUse.All
+        CacheUse = CacheUse.All // Since there is a limited number of elements. 
     )]
     public abstract class ApplicationPart : BaseEntityWithLogAndCount {
 
@@ -161,7 +160,7 @@ namespace AgoRapide.Core {
                     /// This is not possible to do, since A is <see cref="BaseAttribute.GetStaticNotToBeUsedInstance"/>
                     /// if (cid.A.Identifier != thisA.Identifier) throw new ApplicationException("Mismatching identifiers:\r\n" + cid.A.Identifier + "\r\nand\r\n" + thisA.Identifier);                    
                 }
-                
+
                 attribute.Properties.Flatten().ForEach(p => { /// Note that <see cref="BaseDatabase.UpdateProperty{T}"/> is much more complicated to use because of the generics involved.
                     db.CreateProperty(
                         cid: cid.Id,

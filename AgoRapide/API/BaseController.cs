@@ -103,31 +103,13 @@ namespace AgoRapide.API {
                 Log(e.method.MA.CoreMethod + ": " + e.method.EntityType);
 
                 switch (e.method.MA.CoreMethod) {
-                    case CoreAPIMethod.APIDataObjectMethod:
-                        return HandleCoreMethodAPIDataObjectMethod(exactRequest);
-                    case CoreAPIMethod.Configuration:
-                        return HandleCoreMethodConfiguration(exactRequest);
-                    case CoreAPIMethod.AddEntity:
-                        return HandleCoreMethodAddEntity(exactRequest);
-
-                    /// TODO: CONTINUE BELOW WITH THE FOLLOWING:
-                    /// TODO: Pass only <see cref="ValidRequest"/> as parameter to all the HandleCoreMethod....-methods, not only <see cref="HandleCoreMethodAPIDataObjectMethod"/>
-                    /// TODO: This will simplify code in each handler.
-                    /// TODO: (You can remove parameters (which has to be named even), and correspondingly logging)
-                    /// TODO: Instead we can log here the actual parameters.
-                    /// TODO: See <see cref="HandleCoreMethodAPIDataObjectMethod"/> for example
-
-                    case CoreAPIMethod.EntityIndex: return HandleCoreMethodEntityIndex(e.method, e.parameters.GetValue(0, () => method.ToString()));
-                    // TODO: Add some automatic extraction of parameters based on knowledge about methods.
-                    // TODO: This one picks 1, 3 and 4 without any explicit information about WHY
-                    // TODO: With knowledge of routeTemplate
-                    // TODO:   Person/{QueryId}/AddProperty/{Key}/{Value}
-                    // TODO: it is possible to automatically find indexes for extraction
-                    case CoreAPIMethod.UpdateProperty: return HandleCoreMethodUpdateProperty(e.method, e.parameters.GetValue(0, () => method.ToString()), e.parameters.GetValue(1, () => method.ToString()), e.parameters.GetValue(2, () => method.ToString()));
-                    // TODO: Add some automatic extraction of parameters based on knowledge about methods.
-                    case CoreAPIMethod.PropertyOperation: return HandleCoreMethodPropertyOperation(e.method, e.parameters.GetValue(0, () => method.ToString()), e.parameters.GetValue(1, () => method.ToString()));
-                    // TODO: Add some automatic extraction of parameters based on knowledge about methods.
-                    case CoreAPIMethod.History: return HandleCoreMethodHistory(e.method, e.parameters.GetValue(0, () => method.ToString()));
+                    case CoreAPIMethod.BaseEntityMethod: return HandleCoreMethodBaseEntityMethod(exactRequest);
+                    case CoreAPIMethod.Configuration: return HandleCoreMethodConfiguration(exactRequest);
+                    case CoreAPIMethod.AddEntity: return HandleCoreMethodAddEntity(exactRequest);
+                    case CoreAPIMethod.EntityIndex: return HandleCoreMethodEntityIndex(exactRequest);
+                    case CoreAPIMethod.UpdateProperty: return HandleCoreMethodUpdateProperty(exactRequest);
+                    case CoreAPIMethod.PropertyOperation: return HandleCoreMethodPropertyOperation(exactRequest);
+                    case CoreAPIMethod.History: return HandleCoreMethodHistory(exactRequest);
                     default: throw new NotImplementedException(nameof(exactMatch) + " with " + nameof(e.method.MA.CoreMethod) + " " + e.method.MA.CoreMethod);
                 }
             } else if (candidateMatches != null) {
@@ -194,10 +176,24 @@ namespace AgoRapide.API {
             }
         }
 
-        public object HandleCoreMethodAPIDataObjectMethod(ValidRequest request) {
+        public object HandleCoreMethodBaseEntityMethod(ValidRequest request) {
+            request.Method.MA.AssertCoreMethod(CoreAPIMethod.BaseEntityMethod);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, requiredType: request.Method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
-            throw new NotImplementedException();
+            switch (entities.Count) {
+                case 0:
+                    return request.GetErrorResponse(new ErrorResponse(ResultCode.data_error, "No entities found"));
+                case 1:
+                    try {
+                        return request.Method.BaseEntityMethod.Invoke(entities[0], new object[] { DB, request });
+                    } catch (Exception ex) {
+                        throw new MissingMethodException("Unable to invoke " + entities[0].GetType() + "." + request.Method.BaseEntityMethod.Name + "(" + typeof(BaseDatabase) + ", " + typeof(ValidRequest) + ") for " + entities[0].ToString(), ex);
+                    }
+                default:
+                    /// There is noe mechanism for combining the results from multiple methods since they may be any kind of <see cref"object"/>
+                    /// Therefore we do not allow multiple entities here
+                    return request.GetErrorResponse(new ErrorResponse(ResultCode.data_error, "Multiple entities found (" + entities.Count + ")"));
+            }
         }
 
         /// <summary>
@@ -223,13 +219,11 @@ namespace AgoRapide.API {
             return request.GetOKResponseAsEntityId(request.Method.EntityType, DB.CreateEntity(request.CurrentUser.Id, request.Method.EntityType, request.Parameters, request.Result));
         }
 
-        /// <summary>
-        /// TODO: Pass only <see cref="ValidRequest"/> as parameter to this method!
-        /// </summary>
-        public object HandleCoreMethodEntityIndex(APIMethod method, string id) {
-            Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(id) + ": " + id);
-            method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
-            if (!TryGetRequest(id, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
+        public object HandleCoreMethodEntityIndex(ValidRequest request) {
+            request.Method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
+            //Log(nameof(method.EntityType) + ": " + method.EntityType.ToStringShort() + ", " + nameof(id) + ": " + id);
+            //method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
+            //if (!TryGetRequest(id, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
 
             /// TODO: Replace code below with automatic use of <see cref="InMemoryCache"/> from <see cref="BaseDatabase"/>
@@ -237,15 +231,15 @@ namespace AgoRapide.API {
             /// TODO: Mark all <see cref="ClassAttribute"/> with bool UseCache and 
             /// TODO: always read from cache for corresponding <see cref="APIMethod.EntityType"/>
             /// TODO: (use <see cref="InMemoryCache"/> for this)
-            if (typeof(ApplicationPart).IsAssignableFrom(method.EntityType)) { // Fetch from cache if possible
+            if (typeof(ApplicationPart).IsAssignableFrom(request.Method.EntityType)) { // Fetch from cache if possible
                 if (queryId.IsAll) {
                     return request.GetOKResponseAsMultipleEntities(ApplicationPart.AllApplicationParts.Values.Where(
-                        p => method.EntityType.IsAssignableFrom(p.GetType())).Select(a => (BaseEntity)a).ToList());
+                        p => request.Method.EntityType.IsAssignableFrom(p.GetType())).Select(a => (BaseEntity)a).ToList());
                 } else {
                     switch (queryId) {
                         case QueryIdString q:
                             /// Improve on use of <see cref="QueryId.ToString"/>
-                            if (ApplicationPart.AllApplicationParts.TryGetValue(q.ToString(), out var retval) && method.EntityType.IsAssignableFrom(retval.GetType())) {
+                            if (ApplicationPart.AllApplicationParts.TryGetValue(q.ToString(), out var retval) && request.Method.EntityType.IsAssignableFrom(retval.GetType())) {
                                 return request.GetOKResponseAsSingleEntity(retval);
                             }
                             break;
@@ -253,17 +247,15 @@ namespace AgoRapide.API {
                 }
             }
 
-            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, requiredType: request.Method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
         }
 
         /// <summary>
         /// TODO: Pass only <see cref="ValidRequest"/> as parameter to this method!
         /// </summary>
-        public object HandleCoreMethodUpdateProperty(APIMethod method, string id, string key, string value) {
-            Log(nameof(id) + ": " + id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value);
-            method.MA.AssertCoreMethod(CoreAPIMethod.UpdateProperty);
-            if (!TryGetRequest(id, key, value, method, out var request, out var completeErrorResponse)) return completeErrorResponse;
+        public object HandleCoreMethodUpdateProperty(ValidRequest request) {
+            request.Method.MA.AssertCoreMethod(CoreAPIMethod.UpdateProperty);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
             var propertyKeyNonStrict = request.Parameters.PVM<PropertyKey>();
             var strValue = request.Parameters.PV<string>(CoreP.Value.A());
@@ -278,11 +270,11 @@ namespace AgoRapide.API {
                 if (!DB.TryAssertUniqueness(propertyKeyNonStrict.PropertyKeyWithIndex, objValue, out var existing, out var strErrorResponse)) return request.GetErrorResponse(ResultCode.data_error, strErrorResponse);
                 /// Note that <see cref="BaseDatabase.CreateProperty"/> will also repeat the check above
             }
-            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, requiredType: method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
+            if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, requiredType: request.Method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
             entities.ForEach(e => DB.UpdateProperty(request.CurrentUser.Id, e, propertyKeyNonStrict, objValue, request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) {
-                case QueryIdInteger queryIdInteger: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(method.EntityType, queryIdInteger.Id)); break;
+                case QueryIdInteger queryIdInteger: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(request.Method.EntityType, queryIdInteger.Id)); break;
             }
             request.Result.AddProperty(CoreP.Message.A(), nameof(entities) + ".Count: " + entities.Count);
             return request.GetResponse();
@@ -291,16 +283,14 @@ namespace AgoRapide.API {
         /// <summary>
         /// TODO: Pass only <see cref="ValidRequest"/> as parameter to this method!
         /// </summary>
-        public object HandleCoreMethodPropertyOperation(APIMethod method, string id, string operation) {
-            Log(nameof(id) + ": " + id + ", " + nameof(operation) + ": " + operation);
-            method.MA.AssertCoreMethod(CoreAPIMethod.PropertyOperation);
-            if (!TryGetRequest(id, operation, method, out var request, out var objErrorResponse)) return objErrorResponse;
+        public object HandleCoreMethodPropertyOperation(ValidRequest request) {
+            request.Method.MA.AssertCoreMethod(CoreAPIMethod.PropertyOperation);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Write, entities: out List<Property> properties, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             properties.ForEach(e => DB.OperateOnProperty(request.CurrentUser.Id, e, request.Parameters.PVM<PropertyOperation>(), request.Result));
             request.Result.ResultCode = ResultCode.ok;
             switch (queryId) { // For single entity, suggest url for verification of operation
-                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(method.EntityType, integerQueryId.Id)); break;
+                case QueryIdInteger integerQueryId: request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(request.Method.EntityType, integerQueryId.Id)); break;
             }
             request.Result.AddProperty(CoreP.Message.A(), nameof(properties) + ".Count: " + properties.Count);
             return request.GetResponse();
@@ -309,10 +299,8 @@ namespace AgoRapide.API {
         /// <summary>
         /// TODO: Pass only <see cref="ValidRequest"/> as parameter to this method!
         /// </summary>
-        public object HandleCoreMethodHistory(APIMethod method, string id) {
-            Log(nameof(id) + ": " + id);
-            method.MA.AssertCoreMethod(CoreAPIMethod.History);
-            if (!TryGetRequest(id, method, out var request, out var objErrorResponse)) return objErrorResponse;
+        public object HandleCoreMethodHistory(ValidRequest request) {
+            request.Method.MA.AssertCoreMethod(CoreAPIMethod.History);
             if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, entity: out BaseEntity entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntity)p).ToList());
         }

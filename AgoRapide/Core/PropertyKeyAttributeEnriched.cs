@@ -74,7 +74,17 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public string ConvertObjectToString(object obj) {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+
+            if (A.Type.Equals(typeof(string))) { // Added 2 Jun 2017 (equivalent to code at end of method)
+                switch (obj) {
+                    case DateTime dtm: return dtm.ToString(DateTimeFormat.DateHourMin);
+                    case double dbl:return dbl.ToString2();
+                    default: return obj.ToString(); // int and enums for instance should work quite OK now.
+                }   
+            }
+
             if (!A.Type.IsAssignableFrom(obj.GetType())) {
+
                 if (typeof(ITypeDescriber).IsAssignableFrom(A.Type)) { /// Make exception if we succeed in parsing the value found.
                     switch (obj) {
                         case string objAsString:
@@ -83,6 +93,7 @@ namespace AgoRapide.Core {
                             break;
                     }
                 }
+
                 throw new InvalidObjectTypeException(obj, A.Type,
                     ((obj is CoreP && typeof(PropertyKey).IsAssignableFrom(A.Type)) ? "A common mistake is specifying " + typeof(CoreP) + " (like " + nameof(CoreP) + ".SomeValue) instead of " + typeof(PropertyKey) + " (like " + nameof(CoreP) + ".SomeValue." + nameof(Extensions.A) + "()).\r\n" : "") +
                     A.ToString());

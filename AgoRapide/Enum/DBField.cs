@@ -25,6 +25,8 @@ namespace AgoRapide {
         AgoRapideEnumType = EnumType.PropertyKey)] /// Note choice of <see cref="EnumType"/> (and correspondingly <see cref="PropertyKeyAttribute"/> below)
     public enum DBField {
 
+        None = -1,
+
         /// <summary>
         /// Note how does not contain None (<see cref="Util.EnumGetValues{T}"/> should therefore be used with caution)
         /// </summary>

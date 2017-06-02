@@ -136,6 +136,7 @@
     <Compile Include="Database\InMemoryCache.cs" />
     <Compile Include="Database\PostgreSQLDatabase.cs" />
     <Compile Include="Database\BaseSynchronizer.cs" />
+    <Compile Include="Entity\Agent.cs" />
     <Compile Include="Entity\APIDataObject.cs" />
     <Compile Include="Entity\BaseEntity.cs" />
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />

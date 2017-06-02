@@ -20,9 +20,10 @@ namespace AgoRapide.Database {
             "Synchronizes data from external data storage " +
             "(for instance a CRM system from which the AgoRapide based application will analyze data).",
         LongDescription =
-            "The data found is stored within -" + nameof(FileCache) + "-, only identifiers (-" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "- are stored within -" + nameof(BaseDatabase) + "-"
+            "The data found is stored within -" + nameof(FileCache) + "-, " +
+            "only identifiers (-" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "- are stored within -" + nameof(BaseDatabase) + "-"
     )]
-    public abstract class BaseSynchronizer : APIDataObject {
+    public abstract class BaseSynchronizer : Agent {
         /// <summary>
         /// 
         /// </summary>
@@ -52,10 +53,10 @@ namespace AgoRapide.Database {
                     internalEntity = db.GetEntityById<T>(db.CreateEntity<T>(Id,
                         new List<(PropertyKeyWithIndex key, object value)> {
                             (primaryKey.PropertyKeyWithIndex, e.PV<long>(primaryKey))
-                        }, result));                    
+                        }, result));
                 }
                 // Transfer from internal to external (assumed to the least amount to transfer)
-                e.Id = internalEntity.Id;                
+                e.Id = internalEntity.Id;
                 e.AddProperty(CoreP.DBId.A(), e.Id); // TODO:  Most probably unnecessary. Should be contained below. 
                 internalEntity.Properties.Values.ForEach(p => e.AddProperty(p, null));
             });

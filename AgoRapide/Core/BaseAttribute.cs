@@ -41,6 +41,7 @@ namespace AgoRapide.Core {
             if (IsDefault) throw new AttributeException(nameof(IsDefault) + ". Details: " + ToString());
         }
 
+        [ClassMember(Description = "See -" + nameof(GetStaticNotToBeUsedInstance) + "-.")]
         private bool IsNotToBeUsed;
         /// <summary>
         /// Used by dummy constructors of <see cref="ApplicationPart"/>

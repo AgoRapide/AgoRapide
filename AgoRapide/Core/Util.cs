@@ -499,6 +499,9 @@ namespace AgoRapide.Core {
     }
 
     public class NotNullReferenceException : ApplicationException {
+        public static void AssertNotNull(object obj) {
+            if (obj != null) throw new NotNullReferenceException(obj.GetType() + ". Details: " + obj.ToString());
+        }
         public NotNullReferenceException(string message) : base(message) { }
         public NotNullReferenceException(string message, Exception inner) : base(message, inner) { }
     }

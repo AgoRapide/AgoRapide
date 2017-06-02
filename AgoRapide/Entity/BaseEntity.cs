@@ -528,10 +528,9 @@ namespace AgoRapide {
         /// Returns a list with <paramref name="maxN"/> mock-entities based on <see cref="PropertyKeyAttributeEnriched.GetSampleProperty{TParent}"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="properties">
-        /// Could typically be 
-        /// 
-        /// </param>
+        /// <param name="propertyPredicate">
+        /// Select which properties returned from <see cref="Extensions.GetChildProperties(Type)"/> to include.  
+        /// Would typically be  "p => p.Key.A.IsExternal" when used by <see cref="Agent"/></param>
         /// <param name="maxN"></param>
         /// <returns></returns>
         public static List<T> GetMockEntities<T>(Func<PropertyKey,bool> propertyPredicate, int maxN) where T : BaseEntity, new() {

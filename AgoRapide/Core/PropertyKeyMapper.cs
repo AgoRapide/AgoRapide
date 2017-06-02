@@ -93,7 +93,13 @@ namespace AgoRapide.Core {
             }
             _allCoreP = null; // TODO: REMOVE USE OF THIS!
             overriddenAttributes[typeof(T)] = new List<string>();
-            Util.EnumGetValues<T>(typeof(T).Equals(typeof(DBField)) ? (T)(object)-1 :(T)(object)0).ForEach(e => { /// Note exception for <see cref="DBField"/>. TODO: Try to remove this! 
+            var excludedValue = typeof(T).Equals(typeof(DBField)) ? (T)(object)-1 : (T)(object)0;
+            if (!"None".Equals(excludedValue.ToString())) throw new InvalidEnumException(excludedValue, 
+                "The string representation corresponding to " + ((int)(object)excludedValue).ToString() + " for enum " + typeof(T) + " is expected to be 'None', not " + excludedValue.ToString() + ".\r\n" +
+                "(The rationale for this is to be able to catch values not being set propertly.)\r\n" +
+                "Possible resolution: Add 'None' as first element of enum " + typeof(T));
+
+            Util.EnumGetValues(excludedValue).ForEach(e => { /// Note exception for <see cref="DBField"/>. TODO: Try to remove this! 
                 // TODO: WHY DOES THIS WORK FOR IsMany???
                 var a = new PropertyKey(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
                 a.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); // HACK

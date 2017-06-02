@@ -58,6 +58,12 @@ namespace AgoRapide.API {
         /// </summary>
         public string String { get; private set; }
 
+        /// <summary>
+        /// Typical example would be Person or {QueryId}. 
+        /// For a collection of <see cref="RouteSegmentClass"/> use <see cref="String.Join"/> with "/" as separator in order to get the <see cref="APIMethod.RouteTemplates"/>
+        /// </summary>
+        public string Template { get; private set; }
+
         /// <summary> 
         /// TODO: REMOVE <paramref name="segmentName"/>. We are able to reconstruct it from <paramref name="segment"/>
         /// </summary>
@@ -68,7 +74,7 @@ namespace AgoRapide.API {
         /// <param name="segment">
         /// Must match one of 
         /// <see cref="Type"/> (<see cref="System.Type"/>), 
-        /// <see cref="Parameter"/> (<see cref="PropertyKeyWithIndex"/>) or 
+        /// <see cref="Parameter"/> (either <see cref="PropertyKey"/> or enum understood by <see cref="PropertyKeyMapper"/>) or 
         /// <see cref="String"/> (<see cref="System.String"/>). 
         /// See <see cref="InvalidRouteSegmentClassException"/> for details. 
         /// </param>
@@ -83,6 +89,7 @@ namespace AgoRapide.API {
             if (Type != null) {
                 SampleValues = new List<string> { Type.ToStringVeryShort() };
                 TypeToStringShortToLower = SampleValues[0].ToLower();
+                Template = Type.ToStringVeryShort();
                 return;
             }
 
@@ -102,6 +109,7 @@ namespace AgoRapide.API {
                     return a.SampleValues.ToList(); // Note that we do not react to empty sample values (like uses for passwords)
                 })();
                 PropertyToStringToLower = Parameter.Key.PToString.ToLower();
+                Template = "{" + Parameter.Key.PToString + "}";
                 return;
             }
 
@@ -109,6 +117,7 @@ namespace AgoRapide.API {
             if (String != null) {
                 SampleValues = new List<string> { String };
                 StringToLower = String.ToLower();
+                Template = String;
                 return;
             }
             throw new InvalidRouteSegmentClassException("The type of " + SegmentName + "'s value (" + segment.GetType() + ") is not recognized.\r\n\r\nDetails: " + detailer());
