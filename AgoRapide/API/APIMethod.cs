@@ -816,11 +816,16 @@ namespace AgoRapide.API {
 
             updater(CoreP.RequiresAuthorization, method.PV<bool>(CoreP.RequiresAuthorization.A()));
 
+            //if (method.RouteTemplates[0].Contains("DoSomething")) {
+            //    var aaa = 1;
+            //}
+
             /// Construct sample URLs based on <see cref="PropertyKeyAttribute.SampleValues"/> for each parameter. 
             /// Permutate between all combinations
             /// TODO: Add check for <see cref="CoreP.Key"/> and only suggest <see cref="CoreP.Value"/>, 
             /// TODO: that are valid for the given key.
             var suggestedUrls = new List<string>();
+            var suggestedBaseEntityMethodUrls = new List<string>();
             if (method.Parameters.Count == 0) {
                 suggestedUrls.Add(method.RouteTemplates[0]);
             } else if (method.Parameters.All(p => p.Key.A.SampleValues != null && p.Key.A.SampleValues.Length > 0)) {
@@ -834,22 +839,28 @@ namespace AgoRapide.API {
                     p.A.SampleValues.ForEach(v0 => {
                         /// TODO: Make better code than this!
                         var t0 = t.Replace("{" + p.PToString + "}", v0);
+                        var tBaseEntityMethod0 = p.CoreP != CoreP.QueryId ? null : t; // Keep {QueryId} in this URL
                         if (method.Parameters.Count <= 1) {
                             suggestedUrls.Add(t0);
+                            if (tBaseEntityMethod0 != null) suggestedBaseEntityMethodUrls.Add(tBaseEntityMethod0);
                         } else {
                             p = method.Parameters[1].Key;
                             p.A.SampleValues.ForEach(v1 => {
                                 /// TODO: Make better code than this!
                                 var t1 = t0.Replace("{" + p.PToString + "}", v1);
+                                var tBaseEntityMethod1 = tBaseEntityMethod0?.Replace("{" + p.PToString + "}", v1) ?? null;
                                 if (method.Parameters.Count <= 2) {
                                     suggestedUrls.Add(t1);
+                                    if (tBaseEntityMethod1 != null) suggestedBaseEntityMethodUrls.Add(tBaseEntityMethod1);
                                 } else {
                                     p = method.Parameters[2].Key;
                                     p.A.SampleValues.ForEach(v2 => {
                                         /// TODO: Make better code than this!
                                         var t2 = t1.Replace("{" + p.PToString + "}", v2);
+                                        var tBaseEntityMethod2 = tBaseEntityMethod1?.Replace("{" + p.PToString + "}", v2) ?? null;
                                         if (method.Parameters.Count <= 3) {
                                             suggestedUrls.Add(t2);
+                                            if (tBaseEntityMethod2 != null) suggestedBaseEntityMethodUrls.Add(tBaseEntityMethod2);
                                         } else {
                                             // Add more permutations. 
                                             // TODO: Make better code than this!
@@ -862,9 +873,9 @@ namespace AgoRapide.API {
                     });
                 }
             }
-
-            /// TODO: Add <see cref="PropertyOperation.SetInvalid"/> if already exists a <see cref="CoreP.SuggestedUrl"/>
-            if (suggestedUrls.Count > 0) updater(CoreP.SuggestedUrl, string.Join("\r\n", suggestedUrls.Select(s => Util.Configuration.C.BaseUrl + s)));
+            
+            updater(CoreP.SuggestedUrl, suggestedUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl + s)).ToList());
+            updater(CoreP.SuggestedBaseEntityMethodUrl, suggestedBaseEntityMethodUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl + s)).ToList());
 
             _allMethods.Add(method);
         }

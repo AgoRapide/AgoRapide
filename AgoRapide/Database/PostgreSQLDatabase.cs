@@ -107,22 +107,30 @@ namespace AgoRapide.Database {
                     return true;
             }
 
-            var cmd = new Npgsql.NpgsqlCommand(
-                "SELECT DISTINCT(pid) FROM " + _tableName + " WHERE\r\n" +
-                /// TODO: Note inefficient query for id.IsAll. In that case we do not need the "DBField.pid IN" sub-query.
-                /// TODO: In other words, make separate SQL for id.IsAll
-                /// 
-                /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all known sub-classes.
-                DBField.pid + " IN\r\n" +
-                "(SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
-                (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
-                DBField.invalid + " IS NULL "
-                // + "ORDER BY " + DBField.id
-                , _cn1
-            );
+            Npgsql.NpgsqlCommand cmd;
+            if (id.IsAll) {
+                cmd = new Npgsql.NpgsqlCommand(
+                    "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "' AND\r\n" +
+                    DBField.invalid + " IS NULL "
+                    // + "ORDER BY " + DBField.id
+                    , _cn1
+                );
+            } else {
+                cmd = new Npgsql.NpgsqlCommand(
+                    "SELECT DISTINCT(pid) FROM " + _tableName + " WHERE\r\n" +
+                    /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all known sub-classes.
+                    DBField.pid + " IN\r\n" +
+                    "(SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
+                    (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
+                    DBField.invalid + " IS NULL "
+                    // + "ORDER BY " + DBField.id
+                    , _cn1
+                );
+                AddIdParameters(id, cmd);
+            }
+
             if (requiredType.Equals(typeof(BaseEntity))) throw new InvalidTypeException(requiredType, "Meaningless value because the query\r\n\r\n" + cmd.CommandText + "\r\n\r\nwill never return anything");
 
-            AddIdParameters(id, cmd);
             // Log(cmd.CommandText);
 
             /// TODO: This has room for improvement. 
@@ -235,7 +243,7 @@ namespace AgoRapide.Database {
                     useCacheDynamically = true; // Se code below
                     break;
                 case CacheUse.All:
-                    break; 
+                    break;
                     // TODO: ADD CODE HERE!!!!
                     throw new InvalidEnumException(CacheUse.All, "Not implemented. " + nameof(requiredType) + ": " + requiredType); /// Call <see cref="InMemoryCache"/> now.
             }
@@ -321,7 +329,7 @@ namespace AgoRapide.Database {
         public override bool TryGetPropertyById(long id, out Property property) {
             Log(nameof(id) + ": " + id);
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.id + " = " + id, _cn1);
-            lock (GetLock(cmd)) { 
+            lock (GetLock(cmd)) {
                 Npgsql.NpgsqlDataReader r;
                 try {
                     r = cmd.ExecuteReader();
@@ -784,91 +792,6 @@ namespace AgoRapide.Database {
             return id;
         }
 
-        public override void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result) {
-            // Log(""); Note how we only log when property is actually created or updated
-            var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
-            if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
-
-            var creator = new Func<PropertyKeyWithIndex, Property>(finalKey => {
-                var retval = GetPropertyById(CreateProperty(cid, entity.Id, null, finalKey, value, result));
-                finalKey.AssertEquals(retval.Key, () => retval.ToString());
-                return retval;
-            });
-
-            var entityOrIsManyParentCreator = new Action<BaseEntity, CoreP>((entityOrIsManyParent, keyAsCoreP) => {
-
-                var keyToUse = key as PropertyKeyWithIndex; // Note use of "strict" variant here
-                if (keyToUse == null) keyToUse = key.PropertyKeyIsSet ? key.PropertyKeyWithIndex : throw new PropertyKeyWithIndex.InvalidPropertyKeyException("Unable to turn " + key + " (of type " + key.GetType() + ") into a " + typeof(PropertyKeyWithIndex) + " because !" + nameof(key.PropertyKeyIsSet) + detailer.Result("\r\nDetails: "));
-
-                if (entityOrIsManyParent.Properties.TryGetValue(keyAsCoreP, out var existingProperty)) {
-                    var existingValue = existingProperty.V<T>();
-                    if (existingValue.Equals(value)) {
-                        // Note how this is not logged
-                        if (existingProperty.Id <= 0) {
-                            // Skip this, property is in-memory only 
-                        } else {
-                            OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
-                        }
-                        result?.Count(CoreP.PUnchangedCount);
-                    } else { // Vanlig variant
-                             // TODO: Use of default value.ToString() here is not optimal
-                             // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
-                             // TODO: At least for presenting DateTime-objects and double in a preferred manner
-                        Log(detailer() + ". Property changed from '" + existingValue + "' to '" + value + "'", result);
-                        var changedProperty = creator(keyToUse);
-                        result?.Count(CoreP.PChangedCount);
-                        entityOrIsManyParent.Properties[keyAsCoreP] = changedProperty;
-                    }
-                } else {
-                    // TODO: Use of default value.ToString() here is not optimal
-                    // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
-                    // TODO: At least for presenting DateTime-objects and double in a preferred manner
-                    Log(detailer() + ". Property was not known. Initial value: '" + value + "'", result);
-                    var newProperty = creator(keyToUse);
-                    entityOrIsManyParent.Properties[keyAsCoreP] = newProperty;
-                    result?.Count(CoreP.PTotalCount);
-                }
-            });
-
-            if (key.Key.A.IsMany) {
-                var isManyParent = entity.Properties.GetOrAddIsManyParent(key);
-                var propertyKey = key as PropertyKeyWithIndex;
-                if (propertyKey == null || propertyKey.Index == 0) {
-                    // This is understood as create new property with next available id
-                    // Like Person/42/AddProperty/PhoneNumber/1234
-                    var keyWithIndex = isManyParent.GetNextIsManyId();
-                    var newProperty = creator(keyWithIndex);
-                    isManyParent.Properties[keyWithIndex.IndexAsCoreP] = newProperty;
-                } else {
-                    // This corresponds to client knowing exact which id to use 
-                    // Like Person/42/AddProperty/PhoneNumber#3/1234
-                    entityOrIsManyParentCreator(isManyParent, propertyKey.IndexAsCoreP);
-                }
-            } else {
-                entityOrIsManyParentCreator(entity, key.Key.CoreP);
-            }
-        }
-
-        /// <summary>
-        /// TODO: Move into <see cref="BaseDatabase"/>
-        /// 
-        /// TODO: Should we add checks for AccessRights here? 
-        /// See comments for <see cref="CoreP.EntityToRepresent"/>
-        /// </summary>
-        /// <param name="entity"></param>
-        public override void SwitchIfHasEntityToRepresent(ref BaseEntity entity) {
-            if (entity.TryGetPV(CoreP.EntityToRepresent.A(), out long representedEntityId)) {
-                Log("entityId: " + entity.Id + ", switching to " + representedEntityId);
-                var representedByEntity = entity;
-                var entityToRepresent = GetEntityById<BaseEntity>(representedEntityId);
-                // TODO: Should we add checks for AccessRights here? 
-                /// See comments for <see cref="CoreP.EntityToRepresent"/>
-                entityToRepresent.AddProperty(CoreP.RepresentedByEntity.A(), representedByEntity.Id);
-                entityToRepresent.RepresentedByEntity = representedByEntity;
-                entity = entityToRepresent;
-            }
-        }
-
         /// <summary>
         /// TODO: MOVE COMMENT TO INTERFACE DECLARATION INSTEAD!
         /// Note how this is used for both "ordinary" entities and properties that may have children
@@ -949,14 +872,6 @@ namespace AgoRapide.Database {
             }
             if (doLogging) Log(nameof(affectedRows) + ": " + affectedRows);
             return affectedRows == expectedRows;
-        }
-
-        /// <summary>
-        /// TOOD: Move into <see cref="BaseDatabase"/>
-        /// </summary>
-        public class NoResultFromDatabaseException : ApplicationException {
-            public NoResultFromDatabaseException(string message) : base(message) { }
-            public NoResultFromDatabaseException(string message, Exception inner) : base(message, inner) { }
         }
 
         public List<int> ReadAllIds(Npgsql.NpgsqlCommand cmd) {
@@ -1072,20 +987,14 @@ namespace AgoRapide.Database {
             }
         }
 
-        /// <summary>
-        /// TOOD: Move into <see cref="BaseDatabase"/>
-        /// </summary>
-        public class OpenDatabaseConnectionException : ApplicationException {
-            public OpenDatabaseConnectionException(string message) : base(message) { }
-            public OpenDatabaseConnectionException(string message, Exception inner) : base(message, inner) { }
-        }
-
         private string _SEQUENCE_NAME;
         public string SEQUENCE_NAME => _SEQUENCE_NAME ?? (_SEQUENCE_NAME = "sequence_" + _tableName + "_" + DBField.id);
 
         private string _SQL_CREATE_TABLE;
         /// <summary>
         /// TODO: Create as abstract property in <see cref="BaseDatabase"/>
+        /// 
+        /// TODO: (Or, even bette) Ensure that all SQL is standard, and just move into <see cref="BaseDatabase"/>
         /// 
         /// TODO: Split this into List{string} of SQL-statements (or maybe a Dictionary and some kind of auto-discovery for missing elements in the database). 
         /// TODO: In other words, check for existence of each and every element at startup and run the corresponding SQL code to initialize them.
@@ -1212,46 +1121,15 @@ OWNER TO " + _objectsOwner + @";
             IsDisposed = true;
         }
 
-        protected long GetId(MemberInfo memberInfo) => GetIdNonStrict(memberInfo) ?? throw new NullReferenceException(MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetIdNonStrict) + " instead");
-
-        /// <summary>
-        /// Returns <see cref="DBField.id"/> of <see cref="ClassMember"/> corresponding to <paramref name="memberInfo"/> 
-        /// for use as <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> 
-        /// (note that usually you should use the "currentUser".id for this purpose). 
-        /// 
-        /// Note how null is returned when <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
-        /// </summary>
-        /// <param name="caller"></param>
-        /// <returns></returns>
-        protected long? GetIdNonStrict(MemberInfo memberInfo) {
-            if (ApplicationPart.GetFromDatabaseInProgress) {
-                /// This typical happens when called from <see cref="ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates"/> because that one wants to
-                /// <see cref="PropertyOperation.SetInvalid"/> some <see cref="Property"/> for a <see cref="ClassMember"/>.
-                return null;
-            }
-            // THIS WILL MOST PROBABLY NOT WORK BECAUSE OVER OVERLOADS
-            return ApplicationPart.GetClassMember(memberInfo, this).Id;
-        }
-
-        /// <summary>
-        /// </summary>
-        /// <param name="text"></param>
-        /// <param name="result">May be null</param>
-        /// <param name="caller"></param>
-        protected void Log(string text, Result result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
-            Log(text, caller);
-            result?.LogInternal(text, GetType(), caller);
-        }
-
         public class PostgreSQLDatabaseException : ApplicationException {
             public PostgreSQLDatabaseException(Npgsql.NpgsqlCommand command, Exception inner) : this(command, null, inner) { }
             public PostgreSQLDatabaseException(Npgsql.NpgsqlCommand command, string message, Exception inner) : base("Exception " + inner.GetType() + " occurred when executing " + typeof(Npgsql.NpgsqlCommand) + " '" + command.CommandText + "'" + (string.IsNullOrEmpty(message) ? "" : ("Details: " + message)), inner) { }
         }
 
         private Npgsql.NpgsqlConnection GetLock(Npgsql.NpgsqlCommand cmd) => cmd.Connection ?? throw new NullReferenceException(
-            Util.BreakpointEnabler + "No connection specified for query\r\n" + 
+            Util.BreakpointEnabler + "No connection specified for query\r\n" +
             cmd.CommandText + ".\r\n" +
-            ((_cn1 == null || string.IsNullOrEmpty(_connectionString)) ? 
+            ((_cn1 == null || string.IsNullOrEmpty(_connectionString)) ?
                 ("Possible cause: " + nameof(_cn1) + " is null or " + nameof(_connectionString) + " not given") :
                 ("Possible resolution: Add " + nameof(_cn1) + " as last parameter to initialization of " + cmd.GetType())
             ));

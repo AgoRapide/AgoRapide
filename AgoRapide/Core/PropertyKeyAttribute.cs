@@ -75,8 +75,8 @@ namespace AgoRapide.Core {
         public bool IsPassword { get; set; }
         public void AssertIsPassword(Func<string> detailer) {
             if (!IsPassword) throw new IsPasswordException(
-                "Not marked as " + nameof(PropertyKeyAttribute) + "." + nameof(IsPassword) + "\r\n" + 
-                ToString() + "\r\n" + 
+                "Not marked as " + nameof(PropertyKeyAttribute) + "." + nameof(IsPassword) + "\r\n" +
+                ToString() + "\r\n" +
                 detailer.Result("\r\nDetails: ")
             );
         }
@@ -182,9 +182,9 @@ namespace AgoRapide.Core {
         /// Implies that also belongs in <see cref="Parents"/> (you do not have to specify both)
         /// </summary>
         [ClassMember(
-            Description = 
+            Description =
                 "Only relevant when -" + nameof(IsExternal) + "-." +
-                "(In order words, separate from -"+ nameof(CoreP.DBId) + "-. " +
+                "(In order words, separate from -" + nameof(CoreP.DBId) + "-. " +
                 "Used to link together data from external sources. "
         )]
         public Type PrimaryKeyOf;
@@ -223,7 +223,8 @@ namespace AgoRapide.Core {
 
         private Type _type;
         [ClassMember(
-            Description = "The type of this Property.",
+            Description =
+                "The type of this Property. Defaults to -" + nameof(String) + "-",
             LongDescription =
                 "Typical examples are\r\n" +
                 "1) typeof(string), typeof(long), typeof(DateTime),\r\n" +
@@ -231,10 +232,14 @@ namespace AgoRapide.Core {
                 "3) Can also be a type assignable to -" + nameof(ITypeDescriber) + ",\r\n" +
                 "4) or any type understood by " + nameof(PropertyKeyAttributeEnriched) + "\r\n" +
                 "\r\n" +
-                "Will be set to string by " + nameof(PropertyKeyAttributeEnriched) + " if not given."
+                "Will be set to -" + nameof(String) + "- by " + nameof(PropertyKeyAttributeEnriched) + " if not given."
             )]
         public Type Type { get => _type ?? throw new NullReferenceException(nameof(Type) + ". Supposed to always be set from " + nameof(PropertyKeyAttributeEnriched) + ".\r\nDetails: " + ToString()); set => _type = value; }
         public bool TypeIsSet => _type != null;
+
+        private Type _genericListType;
+        [ClassMember(Description = "Returns the corresponding generic List<> type. Only allowed to call when -" + nameof(IsMany) + "-")]
+        public Type GenericListType => IsMany ? (_genericListType ?? (_genericListType = typeof(List<>).MakeGenericType(Type))) : throw new IsManyException("!" + nameof(IsMany) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// Only relevant when <see cref="Type"/> is <see cref="DateTime"/>
@@ -354,7 +359,7 @@ namespace AgoRapide.Core {
             // TODO: Consider moving more of this code into AgoRapideAttribute-class
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type); // TODO: Necessary? Most possibly YES!
-            if (type.GetEnumAttribute().AgoRapideEnumType != EnumType.PropertyKey) throw new InvalidEnumException(type.GetEnumAttribute().AgoRapideEnumType, 
+            if (type.GetEnumAttribute().AgoRapideEnumType != EnumType.PropertyKey) throw new InvalidEnumException(type.GetEnumAttribute().AgoRapideEnumType,
                 nameof(EnumType) + "." + EnumType.PropertyKey + " required here,\r\n" +
                 "found " + type.GetEnumAttribute().AgoRapideEnumType + ".\r\n" +
                 "Possible resolution (assuming that " + _enum + " really is used to describe entity properties):\r\n" +
@@ -450,8 +455,8 @@ namespace AgoRapide.Core {
             // if (other.IsDefault) SetAsDefault(); // Removed 8 Mar 2017
 
             // Not allowed since no rationale seen, and it only seems to add complexity
-            if (other.IsExternalIsSet) throw new IsExternalException(nameof(IsExternalIsSet) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":" +  other.ToString());
-            if (other.PrimaryKeyOf!=null) throw new IsExternalException(nameof(PrimaryKeyOf) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":"  + other.ToString());
+            if (other.IsExternalIsSet) throw new IsExternalException(nameof(IsExternalIsSet) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":" + other.ToString());
+            if (other.PrimaryKeyOf != null) throw new IsExternalException(nameof(PrimaryKeyOf) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":" + other.ToString());
 
             /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsManyIsSet) IsMany = other.IsMany;

@@ -396,7 +396,7 @@ namespace AgoRapide {
                     return true;
                 }
                 if (t.IsGenericType) {
-                    AssertList(t, Key, () => ToString());
+                    InvalidTypeException.AssertList(t, Key, () => ToString());
                     var iList = (System.Collections.IList)System.Activator.CreateInstance(t);
                     Properties.ForEach(p => {
                         // InvalidTypeException.AssertAssignable(p.Value.Value.GetType(), Key.Key.A.Type, () => p.ToString());
@@ -418,18 +418,6 @@ namespace AgoRapide {
             return false;
             // throw new NotImplementedException("T: " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Details:" + ToString());
             // TODO: Decide how to implement different types. Exception or not?
-        }
-
-        /// <summary>
-        /// Asserts that <paramref name="type"/> is a generic List 
-        /// compatible with <see cref="Key"/> (compatible with <see cref="PropertyKeyAttribute.Type"/>)
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="key"></param>
-        public static void AssertList(Type type, PropertyKey key, Func<string> detailer) {
-            if (!type.GetGenericTypeDefinition().Equals(typeof(List<>))) throw new InvalidTypeException(type, "Only GetGenericTypeDefinition List is allowed for IsGenericType" + detailer.Result("\r\nDetails: "));
-            if (type.GenericTypeArguments.Length != 1) throw new InvalidTypeException(type, "Only 1 GenericTypeArguments allowed, not " + type.GenericTypeArguments.Length + detailer.Result("\r\nDetails: "));
-            InvalidTypeException.AssertAssignable(type.GenericTypeArguments[0], key.Key.A.Type, () => "Generic type requested was " + type + detailer.Result("\r\nDetails: "));
         }
 
         private BaseAttribute _valueA;

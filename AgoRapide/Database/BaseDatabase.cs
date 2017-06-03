@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
 using AgoRapide.Core;
 using AgoRapide.API;
 
@@ -201,23 +202,7 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result);
 
-        /// <summary>
-        /// Changes to entity given in <see cref="CoreP.EntityToRepresent"/> if that property exists for the entity given
-        /// If not returns entity given
-        /// 
-        /// Through this concept the API can give the view of one API client (user) 
-        /// based on the credentials of another API-client (administrative user). 
-        /// In practise this means that your support department may see exactly the same data as your 
-        /// customer sees in your application, without the customer having to give away his / her password.
-        /// 
-        /// This is typically used to "impersonate" customers through an admin-user. Used by 
-        /// <see cref="BaseController.TryGetCurrentUser>"/>.
-        /// 
-        /// See <see cref="CoreP.EntityToRepresent"/> and <see cref="CoreP.RepresentedByEntity"/>
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        public abstract void SwitchIfHasEntityToRepresent(ref BaseEntity entity);
+        // public abstract void SwitchIfHasEntityToRepresent(ref BaseEntity entity);
 
         public abstract void AssertUniqueness(PropertyKeyWithIndex key, object value);
         /// <summary>
@@ -253,6 +238,23 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract long CreateProperty(long? cid, long? pid, long? fid, PropertyKeyWithIndex key, object value, Result result);
 
+        // public abstract void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="operatorId">
+        /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
+        /// Use <see cref="ApplicationPart.GetClassMember"/> in order to get a <paramref name="cid"/>. 
+        /// <paramref name="operatorId"/> will be used as either <see cref="DBField.vid"/> or <see cref="DBField.iid"/>. 
+        /// </param>
+        /// <param name="property"></param>
+        /// <param name="operation"></param>
+        /// <param name="result"></param>
+        public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
+
+        public abstract void Dispose();
+
         /// <summary>
         /// See <see cref="CoreAPIMethod.UpdateProperty"/>
         /// 
@@ -269,22 +271,190 @@ namespace AgoRapide.Database {
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        public abstract void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result);
+        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result) {
+            // Log(""); Note how we only log when property is actually created or updated
+            var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
+            if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
+
+            var creator = new Func<PropertyKeyWithIndex, object, Property>((finalKey, valueToCreate) => {
+                var retval = GetPropertyById(CreateProperty(cid, entity.Id, null, finalKey, valueToCreate, result));
+                finalKey.AssertEquals(retval.Key, () => retval.ToString());
+                return retval;
+            });
+
+            var entityOrIsManyParentUpdater = new Action<BaseEntity, CoreP, object>((entityOrIsManyParent, keyAsCoreP, valueToUpdate) => {
+
+                var keyToUse = key as PropertyKeyWithIndex; // Note use of "strict" variant here
+                if (keyToUse == null) keyToUse = key.PropertyKeyIsSet ? key.PropertyKeyWithIndex : throw new PropertyKeyWithIndex.InvalidPropertyKeyException("Unable to turn " + key + " (of type " + key.GetType() + ") into a " + typeof(PropertyKeyWithIndex) + " because !" + nameof(key.PropertyKeyIsSet) + detailer.Result("\r\nDetails: "));
+
+                if (entityOrIsManyParent.Properties.TryGetValue(keyAsCoreP, out var existingProperty)) {
+                    var existingValue = existingProperty.V<T>();
+                    if (existingValue.Equals(valueToUpdate)) {
+                        // Note how this is not logged
+                        if (existingProperty.Id <= 0) {
+                            // Skip this, property is in-memory only 
+                        } else {
+                            OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
+                        }
+                        result?.Count(CoreP.PUnchangedCount);
+                    } else { // Vanlig variant
+                             // TODO: Use of default value.ToString() here is not optimal
+                             // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+                             // TODO: At least for presenting DateTime-objects and double in a preferred manner
+                        Log(detailer() + ". Property changed from '" + existingValue + "' to '" + valueToUpdate + "'", result);
+                        var changedProperty = creator(keyToUse, valueToUpdate);
+                        result?.Count(CoreP.PChangedCount);
+                        entityOrIsManyParent.Properties[keyAsCoreP] = changedProperty; // TOOD: result-Property from creator has not been initialized properly now (with Parent for instance)
+                    }
+                } else {
+                    // TODO: Use of default value.ToString() here is not optimal
+                    // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
+                    // TODO: At least for presenting DateTime-objects and double in a preferred manner
+                    Log(detailer() + ". Property was not known. Initial value: '" + valueToUpdate + "'", result);
+                    var newProperty = creator(keyToUse, valueToUpdate);
+                    entityOrIsManyParent.Properties[keyAsCoreP] = newProperty; // TOOD: result-Property from creator has not been initialized properly now (with Parent for instance)
+                    result?.Count(CoreP.PTotalCount);
+                }
+            });
+
+            if (key.Key.A.IsMany) {
+                var isManyParent = entity.Properties.GetOrAddIsManyParent(key);
+                var propertyKey = key as PropertyKeyWithIndex;
+                if (propertyKey == null || propertyKey.Index == 0) {
+
+                    switch (value) {
+                        case System.Collections.IList list: { // TODO: This code is not optimal
+                                InvalidTypeException.AssertList(typeof(T), key, null);
+                                /// This is an "all-in-one-go" update. Compare each old element with each new element. 
+
+                                /// Do <see cref="PropertyOperation.SetInvalid"/> and <see cref="PropertyOperation.SetValid"/> as appropriate for existing
+                                /// properties and add new ones                            
+
+
+                                /// TODO: Implement for all types, not only reference types. As code below stands it has to be written repeatedly for each value type. 
+                                /// TOOD: Add support for other types, at least long, double, boolean, DateTime. Others can just be converted to string
+                                if (key.Key.A.Type.IsValueType) throw new NotImplementedException(key.Key.A.Type + " " + nameof(Type.IsValueType) + detailer.Result("\r\nDetails: "));
+                                // InvalidTypeException.AssertEquals(key.Key.A.Type, typeof(string), () => "Update for List<> only supported for List<string>");
+
+                                var remainingToAdd = list.ToList<string>();
+                                var toInvalidate = new List<Property>();
+                                var toBeDeleted = new List<CoreP>();
+                                isManyParent.Properties.ForEach(existingProperty => { /// Note that entityOrIsManyParentUpdater can not be used because it relies on <typeparam name="T"/>
+                                    var s = existingProperty.Value.V<string>();
+                                    if (remainingToAdd.Contains(s)) { /// Note how we compare with string while entityOrIsManyParentUpdater compares directly against <typeparam name="T"/>
+                                        if (existingProperty.Value.Id <= 0) {
+                                            // Skip this, property is in-memory only 
+                                        } else {
+                                            OperateOnProperty(cid, existingProperty.Value, PropertyOperation.SetValid, result);
+                                        }
+                                        remainingToAdd.Remove(s);
+                                    } else {
+                                        if (existingProperty.Value.Id <= 0) {
+                                            // Skip this, property is in-memory only 
+                                        } else {
+                                            OperateOnProperty(cid, existingProperty.Value, PropertyOperation.SetInvalid, result);
+                                        }
+                                        // result?.Count(CoreP.PSetInvalidCount); // TODO: Correct statistics here
+                                        toBeDeleted.Add(existingProperty.Key);
+                                    }
+                                });
+                                toBeDeleted.ForEach(c => isManyParent.Properties.Remove(c));
+                                remainingToAdd.ForEach(s => {
+                                    var keyWithIndex = isManyParent.GetNextIsManyId();
+                                    isManyParent.Properties[keyWithIndex.IndexAsCoreP] = creator(keyWithIndex, s);
+                                });
+                                break;
+                            }
+                        default: {
+                                // This is understood as create new property with next available id
+                                // Like Person/42/AddProperty/PhoneNumber/1234
+                                var keyWithIndex = isManyParent.GetNextIsManyId();
+                                isManyParent.Properties[keyWithIndex.IndexAsCoreP] = creator(keyWithIndex, value);
+                                break;
+                            }
+                    }
+                } else {
+                    // This corresponds to client knowing exact which id to use 
+                    // Like Person/42/AddProperty/PhoneNumber#3/1234
+                    entityOrIsManyParentUpdater(isManyParent, propertyKey.IndexAsCoreP, value);
+                }
+            } else {
+                entityOrIsManyParentUpdater(entity, key.Key.CoreP, value);
+            }
+        }
+
+        protected long GetId(MemberInfo memberInfo) => GetIdNonStrict(memberInfo) ?? throw new NullReferenceException(MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetIdNonStrict) + " instead");
 
         /// <summary>
+        /// Returns <see cref="DBField.id"/> of <see cref="ClassMember"/> corresponding to <paramref name="memberInfo"/> 
+        /// for use as <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> 
+        /// (note that usually you should use the "currentUser".id for this purpose). 
         /// 
+        /// Note how null is returned when <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
         /// </summary>
-        /// <param name="operatorId">
-        /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
-        /// Use <see cref="ApplicationPart.GetClassMember"/> in order to get a <paramref name="cid"/>. 
-        /// <paramref name="operatorId"/> will be used as either <see cref="DBField.vid"/> or <see cref="DBField.iid"/>. 
-        /// </param>
-        /// <param name="property"></param>
-        /// <param name="operation"></param>
-        /// <param name="result"></param>
-        public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
+        /// <param name="caller"></param>
+        /// <returns></returns>
+        protected long? GetIdNonStrict(MemberInfo memberInfo) {
+            if (ApplicationPart.GetFromDatabaseInProgress) {
+                /// This typical happens when called from <see cref="ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates"/> because that one wants to
+                /// <see cref="PropertyOperation.SetInvalid"/> some <see cref="Property"/> for a <see cref="ClassMember"/>.
+                return null;
+            }
+            // THIS WILL MOST PROBABLY NOT WORK BECAUSE OVER OVERLOADS
+            return ApplicationPart.GetClassMember(memberInfo, this).Id;
+        }
 
-        public abstract void Dispose();
+        /// <summary>
+        /// TODO: Should we add checks for AccessRights here? 
+        /// TOIDO: See comments for <see cref="CoreP.EntityToRepresent"/>
+        /// 
+        /// Changes to entity given in <see cref="CoreP.EntityToRepresent"/> if that property exists for the entity given
+        /// If not returns entity given
+        /// 
+        /// Through this concept the API can give the view of one API client (user) 
+        /// based on the credentials of another API-client (administrative user). 
+        /// In practise this means that your support department may see exactly the same data as your 
+        /// customer sees in your application, without the customer having to give away his / her password.
+        /// 
+        /// This is typically used to "impersonate" customers through an admin-user. Used by 
+        /// <see cref="BaseController.TryGetCurrentUser>"/>.
+        /// 
+        /// See <see cref="CoreP.EntityToRepresent"/> and <see cref="CoreP.RepresentedByEntity"/>
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public void SwitchIfHasEntityToRepresent(ref BaseEntity entity) {
+            if (entity.TryGetPV(CoreP.EntityToRepresent.A(), out long representedEntityId)) {
+                Log("entityId: " + entity.Id + ", switching to " + representedEntityId);
+                var representedByEntity = entity;
+                var entityToRepresent = GetEntityById<BaseEntity>(representedEntityId);
+                // TODO: Should we add checks for AccessRights here? 
+                /// See comments for <see cref="CoreP.EntityToRepresent"/>
+                entityToRepresent.AddProperty(CoreP.RepresentedByEntity.A(), representedByEntity.Id);
+                entityToRepresent.RepresentedByEntity = representedByEntity;
+                entity = entityToRepresent;
+            }
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="result">May be null</param>
+        /// <param name="caller"></param>
+        protected void Log(string text, Result result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
+            Log(text, caller);
+            result?.LogInternal(text, GetType(), caller);
+        }
+
+        public class OpenDatabaseConnectionException : ApplicationException {
+            public OpenDatabaseConnectionException(string message) : base(message) { }
+            public OpenDatabaseConnectionException(string message, Exception inner) : base(message, inner) { }
+        }
+
+        public class NoResultFromDatabaseException : ApplicationException {
+            public NoResultFromDatabaseException(string message) : base(message) { }
+            public NoResultFromDatabaseException(string message, Exception inner) : base(message, inner) { }
+        }
 
         /// <summary>
         /// TODO: Move into <see cref="BaseDatabase"/>

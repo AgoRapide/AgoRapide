@@ -51,7 +51,12 @@ namespace AgoRapide.API {
         public string CreateAPIUrl(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
         public string CreateAPIUrl(string apiCommand) => CreateAPIUrl(apiCommand, ResponseFormat);
-        public static string CreateAPIUrl(string apiCommand, ResponseFormat responseFormat) => Util.Configuration.C.BaseUrl + apiCommand + (responseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : "");
+        /// <summary>
+        /// </summary>
+        /// <param name="apiCommand">If not starts with http:// or https:// then <see cref="ConfigurationAttribute.BaseUrl"/> will be prepended</param>
+        /// <param name="responseFormat"></param>
+        /// <returns></returns>
+        public static string CreateAPIUrl(string apiCommand, ResponseFormat responseFormat) => (apiCommand.StartsWith("http://") || apiCommand.StartsWith("https://") ? "" : Util.Configuration.C.BaseUrl) + apiCommand + (responseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : "");
 
         /// <summary>
         /// Creates API link for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}

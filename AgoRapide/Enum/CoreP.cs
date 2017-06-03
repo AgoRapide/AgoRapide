@@ -12,6 +12,11 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
+    /// TODO: Split this enum into multiple independent enums.
+    /// TODO: This enum is too complex and contains too many properties.
+    /// TODO: It is also a problem with properties being used in different circumstances and for different entities having to share a single definition
+    /// TODO: THEREFORE Create more independent properties, for instance an APIMethodP
+    /// 
     /// <see cref="CoreP"/> represents core AgoRapide properties that must always be available in the client application. 
     /// You may change their names and meaning by using <see cref="PropertyKeyAttribute.InheritAndEnrichFromProperty"/> for your own <see cref="EnumType.PropertyKey"/> enums like this:
     /// 
@@ -312,8 +317,17 @@ namespace AgoRapide {
                 "Will often accompany a -" + nameof(AgoRapide.ResultCode.missing_parameter_error) + "- or -" + nameof(AgoRapide.ResultCode.invalid_parameter_error) + "-. " +
                 "Used in " + nameof(APIMethod) + " for giving samples. " +
                 "Also useful for suggesting follow-up API-calls. ",
+            IsMany = true,
             Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
         SuggestedUrl,
+
+        [PropertyKey(
+            Description =
+                "Equivalent to -" + nameof(SuggestedUrl) + "- with a -" + nameof(QueryId) + "- parameter " +
+                "except that the parameter {queryId} is left as a literal string within the string",
+            IsMany = true,
+            Type = typeof(Uri), Parents = new Type[] { typeof(APIMethod) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
+        SuggestedBaseEntityMethodUrl,
 
         /// <summary>
         /// Added by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when not <see cref="ResultCode.ok"/>

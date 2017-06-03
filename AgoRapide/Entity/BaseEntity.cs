@@ -389,6 +389,8 @@ namespace AgoRapide {
             if (a.ChildrenType != null) { // Link from parent to children
                 retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Children " + a.ChildrenType.ToStringVeryShort(), a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString())) + "</p>");
             }
+            // Suggested URLs for this specific entity
+            retval.Append("<p>" + string.Join("<br>", GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(CoreP.SuggestedBaseEntityMethodUrl.A()).Select(uri => uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString()))).OrderBy(url => url).Select(url => request.API.CreateAPILink(url))) + "</p>");
 
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
@@ -533,7 +535,7 @@ namespace AgoRapide {
         /// Would typically be  "p => p.Key.A.IsExternal" when used by <see cref="Agent"/></param>
         /// <param name="maxN"></param>
         /// <returns></returns>
-        public static List<T> GetMockEntities<T>(Func<PropertyKey,bool> propertyPredicate, int maxN) where T : BaseEntity, new() {
+        public static List<T> GetMockEntities<T>(Func<PropertyKey, bool> propertyPredicate, int maxN) where T : BaseEntity, new() {
             var retval = new List<T>();
             var type = typeof(T);
             var properties = type.GetChildProperties().Values.Where(propertyPredicate);

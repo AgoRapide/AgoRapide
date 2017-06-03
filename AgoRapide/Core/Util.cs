@@ -462,7 +462,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static Property ConvertListToIsManyParent(BaseEntity parent, PropertyKey key, object list, Func<string> detailer) {
             var t = list?.GetType() ?? throw new NullReferenceException(nameof(list));
-            Property.AssertList(t, key, () => detailer());
+            InvalidTypeException.AssertList(t, key, () => detailer());
             // Replace all existing values with values in list.
             var retval = Property.CreateIsManyParent(key);
             foreach (var v in (System.Collections.IList)list) {
@@ -568,11 +568,11 @@ namespace AgoRapide.Core {
     }
 
     public class InvalidObjectTypeException : ApplicationException {
-        private static string GetMessage(object _object, string message) => "Invalid / unknown type of object (" + _object.GetType().ToString() + "). Object: '" + _object.ToString() + "'." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
+        private static string GetMessage(object _object, string message) => Util.BreakpointEnabler + "Invalid / unknown type of object (" + _object.GetType().ToString() + "). Object: '" + _object.ToString() + "'." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
         public InvalidObjectTypeException(object _object) : base(GetMessage(_object, null)) { }
         public InvalidObjectTypeException(object _object, Type typeExpected) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead")) { }
         public InvalidObjectTypeException(object _object, Type typeExpected, string message) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead.\r\nDetails: " + message)) { }
-        public InvalidObjectTypeException(object _object, string message) : base(GetMessage(_object, message)) { }
+        public InvalidObjectTypeException(object _object, string message) : base(GetMessage(_object, message)) { }    
     }
 
     public class InvalidIdentifierException : ApplicationException {
@@ -629,6 +629,20 @@ namespace AgoRapide.Core {
         public static void AssertEquals(Type foundType, Type expectedType, Func<string> detailer) {
             if (foundType == null) throw new NullReferenceException(nameof(foundType) + ". (" + nameof(expectedType) + ": " + expectedType + ")" + detailer.Result("\r\nDetails: "));
             if (!expectedType.Equals(foundType)) throw new InvalidTypeException(foundType, expectedType, detailer.Result(""));
+        }
+
+        /// <summary>
+        /// Asserts that <paramref name="type"/> is a generic List 
+        /// compatible with <see cref="Key"/> (compatible with <see cref="PropertyKeyAttribute.Type"/>)
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="key"></param>
+        public static void AssertList(Type type, PropertyKey key, Func<string> detailer) {
+            if (type == null) throw new NullReferenceException(nameof(type));
+            if (key == null) throw new NullReferenceException(nameof(key));
+            if (!type.GetGenericTypeDefinition().Equals(typeof(List<>))) throw new InvalidTypeException(type, "Only GetGenericTypeDefinition List is allowed for IsGenericType" + detailer.Result("\r\nDetails: "));
+            if (type.GenericTypeArguments.Length != 1) throw new InvalidTypeException(type, "Only 1 GenericTypeArguments allowed, not " + type.GenericTypeArguments.Length + detailer.Result("\r\nDetails: "));
+            InvalidTypeException.AssertAssignable(type.GenericTypeArguments[0], key.Key.A.Type, () => "Generic type requested was " + type + detailer.Result("\r\nDetails: "));
         }
 
         public InvalidTypeException(string typeFound) : this(typeFound, null) { }

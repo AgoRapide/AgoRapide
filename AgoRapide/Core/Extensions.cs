@@ -27,7 +27,7 @@ namespace AgoRapide.Core {
             return retval;
         }
 
-        [ClassMember(Description = 
+        [ClassMember(Description =
             "Flattens (for one level only) any -" + nameof(PropertyKeyAttribute.IsMany) + "- found.\r\n" +
             "Useful before calling -" + nameof(BaseDatabase.CreateProperty) + "- / -" + nameof(BaseDatabase.UpdateProperty) + "-.")]
         public static List<Property> Flatten(this Dictionary<CoreP, Property> dict) {
@@ -310,6 +310,29 @@ namespace AgoRapide.Core {
             foreach (var t in collection) action(t);
         }
 
+        /// <summary>
+        /// TODO: Purist will most probably object to this method.
+        /// TODO: Analyze any consequences more throughly
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public static List<T> ToList<T>(this System.Collections.IList list) {
+            var retval = new List<T>();
+            if (typeof(T).Equals(typeof(string))) {
+                foreach (var element in list) {
+                    // TODO: Make better. See exceptions elsewhere in code for double and DateTime.
+                    retval.Add((T)(object)element.ToString());
+                }
+            } else {
+                foreach (var element in list) {
+                    InvalidTypeException.AssertAssignable(element.GetType(), typeof(T), null);
+                    retval.Add((T)element);
+                }
+            }
+            return retval;
+        }
+
         private static ConcurrentDictionary<Type, string> _toStringShortCache = new ConcurrentDictionary<Type, string>();
         /// <summary>
         /// Gives a short representation of type as string. 
@@ -334,7 +357,7 @@ namespace AgoRapide.Core {
                 Replace("`3[", "<").
                 Replace("`1+", "+").  // Necessary for 
                 Replace("`2+", "+").  // inner classes 
-                Replace("`3+", "+").  
+                Replace("`3+", "+").
                 Replace("[", "<").
                 Replace("]", ">").ForEach(c => {
                     switch (c) {
@@ -468,13 +491,20 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Returns empty string if function is null
         /// </summary>
-        /// <param name="function"></param>
+        /// <param name="function">May be null</param>
         /// <param name="header"></param>
         /// <returns></returns>
         public static string Result(this Func<string> function, string header) {
             if (function == null) return "";
             return header + function();
         }
+
+        private static ConcurrentDictionary<Type, List<APIMethod>> _baseEntityMethodsCache = new ConcurrentDictionary<Type, List<APIMethod>>();
+        public static List<APIMethod> GetBaseEntityMethods(this Type type) => _baseEntityMethodsCache.GetOrAdd(type, t => APIMethod.AllMethods.Where(m =>
+            m.EntityType != null &&
+            m.EntityType.IsAssignableFrom(t) &&
+            m.PV<List<Uri>>(CoreP.SuggestedBaseEntityMethodUrl.A()).Count > 0
+        ).ToList());
 
         /// <summary>
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="PropertyKeyAttribute.Parents"/> 
