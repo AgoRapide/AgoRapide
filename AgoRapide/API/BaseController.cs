@@ -187,7 +187,15 @@ namespace AgoRapide.API {
                     try {
                         return request.Method.BaseEntityMethod.Invoke(entities[0], new object[] { DB, request });
                     } catch (Exception ex) {
-                        throw new MissingMethodException("Unable to invoke " + entities[0].GetType() + "." + request.Method.BaseEntityMethod.Name + "(" + typeof(BaseDatabase) + ", " + typeof(ValidRequest) + ") for " + entities[0].ToString(), ex);
+                        var msg = "Unable to invoke " + entities[0].GetType() + "." + request.Method.BaseEntityMethod.Name + "(" + typeof(BaseDatabase) + ", " + typeof(ValidRequest) + ") for " + entities[0].ToString();
+                        if (ex is TargetInvocationException && ex.InnerException != null) {
+                            throw new TargetInvocationException(
+                                msg + "\r\n" +
+                                "Possible cause: Look for InnerException " + ex.InnerException.GetType() + " with message\r\n" +
+                                ex.InnerException.Message, ex);
+                        } else {
+                            throw new MissingMethodException(msg, ex);
+                        }
                     }
                 default:
                     /// There is noe mechanism for combining the results from multiple methods since they may be any kind of <see cref"object"/>

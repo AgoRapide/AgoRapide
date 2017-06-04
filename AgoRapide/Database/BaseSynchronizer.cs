@@ -24,11 +24,27 @@ namespace AgoRapide.Database {
             "only identifiers (-" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "- are stored within -" + nameof(BaseDatabase) + "-"
     )]
     public abstract class BaseSynchronizer : Agent {
+
         /// <summary>
-        /// 
+        /// <see cref="CoreAPIMethod.BaseEntityMethod"/>. 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="request"></param>
+        [APIMethod(
+            Description = "Synchronizes from source",
+            S1 = nameof(Synchronize), S2="DUMMY", ShowDetailedResult = true)]
+        public object Synchronize(BaseDatabase db, ValidRequest request) {
+            var result = new Result();
+            Synchronize<BaseEntity>(db, result);
+            return result;
+        }
+
+        /// <summary>
+        /// Synchronize as d
         /// </summary>
         /// <typeparam name="T">
-        /// This is mostly a hint about what needs to be synchronized. {object} may be used. 
+        /// This is mostly a hint about what needs to be synchronized. 
+        /// {BaseEntity} may be used, meaning implementator should synchronize all data. 
         /// It is up to the synchronizer to do a fuller synchronization as deemed necessary or practical. 
         /// </typeparam>
         /// <param name="db"></param>
@@ -36,6 +52,13 @@ namespace AgoRapide.Database {
         [ClassMember(Description = "Synchronizes between local database / local file storage and external source")]
         public abstract void Synchronize<T>(BaseDatabase db, Result result) where T : BaseEntity, new();
 
+        /// <summary>
+        /// "Callback" from the implementation of <see cref="Synchronize{T}"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="externalEntities"></param>
+        /// <param name="db"></param>
+        /// <param name="result"></param>
         protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
 
             var type = typeof(T);

@@ -383,7 +383,7 @@ namespace AgoRapide {
             IsDocumentation = true
         )]
         Description,
-
+            
         /// <summary>
         /// See <see cref="APIMethodAttribute.LongDescription"/>
         /// </summary>
