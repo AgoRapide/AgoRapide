@@ -241,13 +241,13 @@ namespace AgoRapide {
         /// <summary>
         /// Safe to call method that returns a human readable explanation of what is found for the given property. 
         /// Useful for logging and exception messages
-        /// Returns either "[NOT_FOUND]" or the result of <see cref="Property.ToString"/>
+        /// Returns either detailed explanation (like "[NOT_FOUND]") or the result of <see cref="Property.ToString"/>
         /// 
         /// TODO: Solve for <see cref="PropertyKeyAttribute.IsMany"/> properties
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public string PExplained(PropertyKey key) => Properties.TryGetValue(key.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]";
+        public string PExplained(PropertyKey key) => Properties==null ? ("[" + nameof(Properties) + " == null],\r\n" + key.Key.ToString()) : (Properties.TryGetValue(key.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]");
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -332,8 +332,8 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         public class InvalidPropertyException<T> : ApplicationException {
             public InvalidPropertyException(CoreP p, string value, string details) : base(
-                    "The value found for " + typeof(CoreP) + "." + p + " " +
-                    "(" + value + ") " +
+                    "The value found for " + typeof(CoreP) + "." + p + "\r\n" +
+                    "(" + value + ")\r\n" +
                     "is not valid for " + typeof(T) + ".\r\n" +
                     "Details: " + details) { }
         }
@@ -390,7 +390,7 @@ namespace AgoRapide {
                 retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Children " + a.ChildrenType.ToStringVeryShort(), a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString())) + "</p>");
             }
             // Suggested URLs for this specific entity
-            retval.Append("<p>" + string.Join("<br>", GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(CoreP.SuggestedBaseEntityMethodUrl.A()).Select(uri => uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString()))).OrderBy(url => url).Select(url => request.API.CreateAPILink(url))) + "</p>");
+            if (Id>0) retval.Append("<p>" + string.Join("<br>", GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(CoreP.SuggestedBaseEntityMethodUrl.A()).Select(uri => uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString()))).OrderBy(url => url).Select(url => request.API.CreateAPILink(url))) + "</p>");
 
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
@@ -541,9 +541,11 @@ namespace AgoRapide {
             var properties = type.GetChildProperties().Values.Where(propertyPredicate);
             for (var n = 1; n <= maxN; n++) {
                 var e = new T();
+                e.Properties = new Dictionary<CoreP, Property>();
                 properties.ForEach(p => {
                     e.AddProperty(p.Key.GetSampleProperty<T>(n, maxN), null);
                 });
+                retval.Add(e);
             }
             return retval;
         }

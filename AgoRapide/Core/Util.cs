@@ -568,7 +568,7 @@ namespace AgoRapide.Core {
     }
 
     public class InvalidObjectTypeException : ApplicationException {
-        private static string GetMessage(object _object, string message) => Util.BreakpointEnabler + "Invalid / unknown type of object (" + _object.GetType().ToString() + "). Object: '" + _object.ToString() + "'." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
+        private static string GetMessage(object _object, string message) => "Invalid / unknown type of object (" + _object.GetType().ToString() + "). Object: '" + _object.ToString() + "'." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
         public InvalidObjectTypeException(object _object) : base(GetMessage(_object, null)) { }
         public InvalidObjectTypeException(object _object, Type typeExpected) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead")) { }
         public InvalidObjectTypeException(object _object, Type typeExpected, string message) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead.\r\nDetails: " + message)) { }

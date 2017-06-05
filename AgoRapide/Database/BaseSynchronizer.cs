@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.API;
+using System.Reflection;
 
 namespace AgoRapide.Database {
 
@@ -32,11 +33,12 @@ namespace AgoRapide.Database {
         /// <param name="request"></param>
         [APIMethod(
             Description = "Synchronizes from source",
-            S1 = nameof(Synchronize), S2="DUMMY", ShowDetailedResult = true)]
+            S1 = nameof(Synchronize), S2 = "DUMMY" )]
         public object Synchronize(BaseDatabase db, ValidRequest request) {
-            var result = new Result();
-            Synchronize<BaseEntity>(db, result);
-            return result;
+            Synchronize<BaseEntity>(db, request.Result);
+            request.Result.ResultCode = ResultCode.ok; /// It is difficult for sub class to set  <see cref="Result.ResultCode"/> because it does not know if it generated a complete result or was just called as part of something
+            request.Result.AddProperty(CoreP.SuggestedUrl.A(), new Uri(request.API.CreateAPIUrl(this)));
+            return request.GetResponse();
         }
 
         /// <summary>
@@ -58,10 +60,14 @@ namespace AgoRapide.Database {
         /// <typeparam name="T"></typeparam>
         /// <param name="externalEntities"></param>
         /// <param name="db"></param>
-        /// <param name="result"></param>
+        /// <param name="result">
+        /// TODO: Change this parameter to <see cref="Request"/>. 
+        /// </param>
         protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
-
             var type = typeof(T);
+            /// TODO: Add more advanced statistics counting here... 
+            /// TODO: AND STORE ALSO AS PROPERTIES WITHIN Synchronizer permanently (not only as result)            
+            Log(type.ToString() + ", Count: " + externalEntities.Count, result);
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.PrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.PrimaryKeyOf) + " != null for " + type);
 
             /// TODO: Add some identificator here for "workspace" or similar.
@@ -80,10 +86,14 @@ namespace AgoRapide.Database {
                 }
                 // Transfer from internal to external (assumed to the least amount to transfer)
                 e.Id = internalEntity.Id;
-                e.AddProperty(CoreP.DBId.A(), e.Id); // TODO:  Most probably unnecessary. Should be contained below. 
-                internalEntity.Properties.Values.ForEach(p => e.AddProperty(p, null));
+                // e.AddProperty(CoreP.DBId.A(), e.Id); // TODO:  Most probably unnecessary. Should be contained below. 
+                internalEntity.Properties.Values.ForEach(p => {
+                    if (p.Key.Key.A.IsExternal) return; /// Already contained in e. Would typically be <see cref="PropertyKeyAttribute.PrimaryKeyOf"/> with has to be stored in database anyway. 
+                    e.AddProperty(p, null);
+                });
             });
             FileCache.instance.StoreToDisk(externalEntities);
+
             // TODO: Store in InMemoryCache also!
         }
     }

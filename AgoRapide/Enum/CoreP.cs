@@ -311,6 +311,9 @@ namespace AgoRapide {
         [PropertyKey(Type = typeof(string), Parents = new Type[] { typeof(Result) })]
         ResultCodeDescription,
 
+        /// <summary>
+        /// TODO: Create APICommandP-enum and move this enum there. 
+        /// </summary>
         [PropertyKey(
             Description =
                 "URL suggested to client. " +

@@ -23,7 +23,7 @@ namespace AgoRapide.Core {
         )]
         public object EnumValue => _enumValue ?? throw new NullReferenceException(nameof(EnumValue) + ". Should have been set by -" + nameof(GetAttribute) + "- or similar.\r\nDetails: " + ToString());
 
-        protected string _EnumValueExplained;
+        protected string _enumValueExplained;
         /// <summary>
         /// Recommended value to use in debugging / exception messages.
         /// 
@@ -38,8 +38,8 @@ namespace AgoRapide.Core {
         /// 
         /// TODO: If very high value (like almost MaxInt), then explain this as a IsMany-property where P is the index
         /// </summary>
-        public string EnumValueExplained => _EnumValueExplained ?? throw new NullReferenceException(nameof(_EnumValueExplained) + ". Should have been set by -" + nameof(GetAttribute) + "-.\r\nDetails: " + ToString());
-        public void SetEnumValueExplained(string enumValueExplained) => _EnumValueExplained = enumValueExplained;
+        public string EnumValueExplained => _enumValueExplained ?? throw new NullReferenceException(Util.BreakpointEnabler + nameof(_enumValueExplained) + ". Should have been set by -" + nameof(GetAttribute) + "-.\r\nDetails: " + ToString());
+        public void SetEnumValueExplained(string enumValueExplained) => _enumValueExplained = enumValueExplained;
 
         public static EnumValueAttribute GetAttribute(object _enum) {
             var type = _enum.GetType();
@@ -51,7 +51,7 @@ namespace AgoRapide.Core {
             var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type + "." + _enum + " is most probably not defined.");
             var retval = GetAttributeThroughFieldInfo<EnumValueAttribute>(field, () => type + "." + _enum);
             retval._enumValue = _enum;
-            retval._EnumValueExplained = retval.EnumValue.GetType() + "." + _enum.ToString();
+            retval._enumValueExplained = retval.EnumValue.GetType() + "." + _enum.ToString();
             return retval;
         }
 

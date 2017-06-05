@@ -366,10 +366,16 @@ namespace AgoRapide.Core {
                 "Add\r\n" +
                 "[" + nameof(EnumAttribute) + "(" + nameof(EnumAttribute.AgoRapideEnumType) + " = " + nameof(EnumType) + "." + EnumType.PropertyKey + ")]\r\n" +
                 "to declaration of " + _enum.GetType());
-            var field = type.GetField(_enum.ToString()) ?? throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type + "." + _enum.ToString() + " is most probably not defined.");
-            var retval = GetAttributeThroughFieldInfo<PropertyKeyAttribute>(field, () => type + "." + _enum);
-            retval._enumValue = _enum;
-            return retval;
+            var field = type.GetField(_enum.ToString());
+            if (field == null) { /// Added 5 Jun 2017. Needed for instance when called from <see cref="Extensions.GetValue2{TKey, TValue}"/>
+                if (type.Equals(typeof(CoreP)) && PropertyKeyMapper.TryGetA((CoreP)_enum, out var retval)) return retval.Key.A;
+                throw new NullReferenceException(nameof(type.GetField) + "(): Cause: " + type + "." + _enum.ToString() + " is most probably not defined.");
+            } else {
+                var retval = GetAttributeThroughFieldInfo<PropertyKeyAttribute>(field, () => type + "." + _enum);
+                retval._enumValue = _enum;
+                retval._enumValueExplained = retval.EnumValue.GetType() + "." + _enum.ToString();
+                return retval;
+            }
         }
 
         /// <summary>

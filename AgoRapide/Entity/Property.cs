@@ -331,7 +331,7 @@ namespace AgoRapide {
         /// <summary>
         /// The generic value for this property. Corresponds to <see cref="PropertyT{T}._genericValue"/>
         /// </summary>
-        public object Value => _value ?? throw new NullReferenceException(Util.BreakpointEnabler + nameof(_value) + ".\r\nDetails: " + ToString());
+        public object Value => _value ?? throw new NullReferenceException(nameof(_value) + ".\r\nDetails: " + ToString());
 
         private string _valueHTML;
         /// <summary>

@@ -56,7 +56,7 @@ namespace AgoRapide.API {
         /// understand what is going on internally in the API.
         /// </summary>
         public bool ShowDetailedResult { get; set; } = false;
-
+    
         /// <summary>
         /// The current <see cref="Util.Configuration"/>.<see cref="ConfigurationAttribute.Environment"/> has to be equivalent or lower in order for the method to be included in the API routing
         /// </summary>

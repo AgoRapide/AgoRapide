@@ -1127,7 +1127,7 @@ OWNER TO " + _objectsOwner + @";
         }
 
         private Npgsql.NpgsqlConnection GetLock(Npgsql.NpgsqlCommand cmd) => cmd.Connection ?? throw new NullReferenceException(
-            Util.BreakpointEnabler + "No connection specified for query\r\n" +
+            "No connection specified for query\r\n" +
             cmd.CommandText + ".\r\n" +
             ((_cn1 == null || string.IsNullOrEmpty(_connectionString)) ?
                 ("Possible cause: " + nameof(_cn1) + " is null or " + nameof(_connectionString) + " not given") :

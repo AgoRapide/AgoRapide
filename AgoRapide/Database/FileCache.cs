@@ -71,6 +71,11 @@ namespace AgoRapide.Database {
             var filepath = GetFilePath(type);
             Log(nameof(filepath) + ": " + filepath);
             var propertiesOrder = GetProperties(type);
+            var dir = System.IO.Path.GetDirectoryName(filepath);
+            if (!System.IO.Directory.Exists(dir)) {
+                Log("Creating " + dir);
+                System.IO.Directory.CreateDirectory(dir);
+            }
             System.IO.File.WriteAllText(
                 filepath,
                 GetFingerprint(type) + RECORD_SEPARATOR +

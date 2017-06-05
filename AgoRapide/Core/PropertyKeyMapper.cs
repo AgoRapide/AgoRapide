@@ -115,6 +115,7 @@ namespace AgoRapide.Core {
                     }
                     _fromStringMaps[a.Key.A.InheritAndEnrichFromProperty.ToString()] = a;
                 }
+                var test = a.Key.A.EnumValueExplained;
             });
             mapOrders.Add(typeof(T));
         }

@@ -59,6 +59,7 @@ namespace AgoRapide.Core {
         /// <param name="value"></param>
         /// <param name="detailer"></param>
         public static void AddValue<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> detailer) {
+            if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + ", Key '" + key.ToString() + detailer.Result("\r\nDetails: "));
             if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key '" + key.ToString() + "' does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\nDetails: "));
             dictionary.Add(key, value);
         }
@@ -76,6 +77,7 @@ namespace AgoRapide.Core {
         /// <param name="value"></param>
         /// <param name="detailer"></param>
         public static void AddValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> detailer) {
+            if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + ", Key '" + key.ToString() + detailer.Result("\r\nDetails: "));
             if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key '" + key.ToString() + "' does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\nDetails: "));
             dictionary[key] = value;
         }
@@ -93,6 +95,7 @@ namespace AgoRapide.Core {
         /// <param name="value"></param>
         /// <param name="detailer"></param>
         public static void AddValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + ", Key '" + key.GetEnumValueAttribute().EnumValueExplained.ToString() + detailer.Result("\r\nDetails: "));
             if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result(", Details: "));
             dictionary.Add(key, value);
         }

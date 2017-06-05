@@ -901,7 +901,7 @@ namespace AgoRapide.API {
         }
 
         public class MethodNotFoundException : ApplicationException {
-            public MethodNotFoundException(CoreAPIMethod coreMethod, Type entityType) : this(Util.BreakpointEnabler + nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + entityType.ToStringShort()) { }
+            public MethodNotFoundException(CoreAPIMethod coreMethod, Type entityType) : this(nameof(coreMethod) + ": " + coreMethod + ", " + nameof(entityType) + ": " + entityType.ToStringShort()) { }
             public MethodNotFoundException(string message) : base(message) { }
         }
 
