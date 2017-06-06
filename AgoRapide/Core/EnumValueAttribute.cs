@@ -59,7 +59,7 @@ namespace AgoRapide.Core {
         protected override Id GetId() => new Id(
             idString: new QueryIdString(
                 GetType().ToStringShort().Replace("Attribute", "") + "_" +
-                EnumValue.GetType().ToStringShort().Replace("+", "") + "_" +/// + is for local classes like <see cref="ConfigurationAttribute.ConfigurationKey"/> 
+                EnumValue.GetType().ToStringShort().Replace("+", "") + "_" +/// + is for local classes like <see cref="ConfigurationAttribute.ConfigurationP"/> 
                 EnumValue.ToString()
             ),
             idFriendly: EnumValue.GetType().ToStringShort() + "." + EnumValue.ToString(),

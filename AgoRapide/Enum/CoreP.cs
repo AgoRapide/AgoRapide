@@ -12,13 +12,13 @@ using AgoRapide.API;
 namespace AgoRapide {
 
     /// <summary>
-    /// TODO: Split this enum into multiple independent enums.
-    /// TODO: This enum is too complex and contains too many properties.
-    /// TODO: It is also a problem with properties being used in different circumstances and for different entities having to share a single definition
-    /// TODO: THEREFORE Create more independent properties, for instance an APIMethodP
+    /// <see cref="CoreP"/> represents core AgoRapide properties. 
     /// 
-    /// <see cref="CoreP"/> represents core AgoRapide properties that must always be available in the client application. 
-    /// You may change their names and meaning by using <see cref="PropertyKeyAttribute.InheritAndEnrichFromProperty"/> for your own <see cref="EnumType.PropertyKey"/> enums like this:
+    /// Note pragmatic approach to sharing values here between different type of entities through <see cref="PropertyKeyAttribute.Parents"/>. 
+    /// For values clearly belonging to only a specific entity separate enums are created that map towards <see cref="CoreP"/>, like 
+    /// <see cref="ConfigurationAttribute.ConfigurationP"/>, <see cref="APIMethodP"/>, <see cref="ResultP"/>. 
+    /// 
+    /// You may change names and meaning by using <see cref="PropertyKeyAttribute.InheritAndEnrichFromProperty"/> for your own <see cref="EnumType.PropertyKey"/> enums like this:
     /// 
     /// [Enum(EnumType = EnumType.PropertyKey)]
     /// public enum P {
@@ -71,7 +71,6 @@ namespace AgoRapide {
         [PropertyKey(
             Description = "Corresponds to C# / .NET Type-object.",
             Type = typeof(Type))]
-        // Type = typeof(Type), Parents = new Type[] { typeof(GeneralQueryResult) })]
         EntityType,
 
         [PropertyKey(
@@ -184,18 +183,6 @@ namespace AgoRapide {
             ValidValues = new string[] { "42" })]
         QueryIdInteger,
 
-        //[PropertyKey(
-        //    Type = typeof(QueryIdKeyOperatorValue))]
-        //QueryIdKeyOperatorValue,
-
-        //[PropertyKey(
-        //    Type = typeof(QueryIdMultiple))]
-        //QueryIdMultiple,
-
-        //[PropertyKey(
-        //    Type = typeof(QueryIdString))]
-        //QueryIdString,
-
         /// <summary>
         /// Note how this is deliberately <see cref="PropertyKey"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to
         /// allow <see cref="PropertyKeyAttribute.IsMany"/> without <see cref="PropertyKeyWithIndex.Index"/> (<see cref="CoreAPIMethod.UpdateProperty"/> for instance). 
@@ -298,22 +285,6 @@ namespace AgoRapide {
             Type = typeof(long))]
         PTotalCount,
 
-        [PropertyKey(Type = typeof(APIMethodOrigin))]
-        APIMethodOrigin,
-
-        [PropertyKey(Type = typeof(ResultCode), Parents = new Type[] { typeof(Result) })]
-        ResultCode,
-
-        /// <summary>
-        /// The <see cref="PropertyKeyAttribute.Description"/>-attribute of <see cref="ResultCode"/>
-        /// Set by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when not <see cref="ResultCode.ok"/>
-        /// </summary>
-        [PropertyKey(Type = typeof(string), Parents = new Type[] { typeof(Result) })]
-        ResultCodeDescription,
-
-        /// <summary>
-        /// TODO: Create APICommandP-enum and move this enum there. 
-        /// </summary>
         [PropertyKey(
             Description =
                 "URL suggested to client. " +
@@ -321,16 +292,8 @@ namespace AgoRapide {
                 "Used in " + nameof(APIMethod) + " for giving samples. " +
                 "Also useful for suggesting follow-up API-calls. ",
             IsMany = true,
-            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
+            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult), typeof(APIMethod) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
         SuggestedUrl,
-
-        [PropertyKey(
-            Description =
-                "Equivalent to -" + nameof(SuggestedUrl) + "- with a -" + nameof(QueryId) + "- parameter " +
-                "except that the parameter {queryId} is left as a literal string within the string",
-            IsMany = true,
-            Type = typeof(Uri), Parents = new Type[] { typeof(APIMethod) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
-        SuggestedBaseEntityMethodUrl,
 
         /// <summary>
         /// Added by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when not <see cref="ResultCode.ok"/>
@@ -349,27 +312,6 @@ namespace AgoRapide {
         ExceptionDetailsUrl,
 
         /// <summary>
-        /// See <see cref="APIMethodAttribute.CoreMethod"/>. 
-        /// 
-        /// Note how we DO NOT set any <see cref="PropertyKeyAttribute.Description"/> description here, but instead rely
-        /// on the <see cref="PropertyKeyAttribute.Description"/> set for <see cref="AgoRapide.CoreAPIMethod"/>. 
-        /// This comment describes the recommended approach to setting attributes when the type given (<see cref="PropertyKeyAttribute.Type"/>) 
-        /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
-        /// </summary>
-        [PropertyKey(Type = typeof(CoreAPIMethod))]
-        CoreAPIMethod,
-
-        /// <summary>
-        /// Corresponds to presence of <see cref="System.Web.Http.AuthorizeAttribute"/> or similar 
-        /// (like AgoRapideSample.BasicAuthenticationAttribute)
-        /// on the <see cref="BaseController"/>-method.
-        /// </summary>
-        [PropertyKey(
-            Description = "Value TRUE signifies that API client needs to supply credentials in order to query API method.",
-            Parents = new Type[] { typeof(APIMethod) }, Type = typeof(bool))]
-        RequiresAuthorization,
-
-        /// <summary>
         /// See <see cref="APIMethodAttribute.Environment"/>. 
         /// </summary>
         [PropertyKey(Type = typeof(Environment))]
@@ -386,7 +328,7 @@ namespace AgoRapide {
             IsDocumentation = true
         )]
         Description,
-            
+
         /// <summary>
         /// See <see cref="APIMethodAttribute.LongDescription"/>
         /// </summary>
@@ -397,27 +339,6 @@ namespace AgoRapide {
             IsDocumentation = true
         )]
         LongDescription,
-
-        /// <summary>
-        /// Does not originate from <see cref="APIMethodAttribute.RouteTemplate"/> but from
-        /// <see cref="APIMethod.RouteTemplates"/>[0]
-        /// TODO: Document better!
-        /// </summary>
-        [PropertyKey(Parents = new Type[] { typeof(APIMethod) }, Type = typeof(string))]
-        RouteTemplate,
-
-        [PropertyKey(
-            Description = "The Controller class + the method within that class which implements a given method.",
-            Parents = new Type[] { typeof(APIMethod) },
-            AccessLevelRead = AccessLevel.Anonymous,
-            Type = typeof(string))]
-        Implementator,
-
-        /// <summary>
-        /// See <see cref="APIMethodAttribute.ShowDetailedResult"/>
-        /// </summary>
-        [PropertyKey(Parents = new Type[] { typeof(APIMethod) }, Type = typeof(bool))]
-        ShowDetailedResult,
 
         [PropertyKey(
             Description = "Describes an entity that functions as the anonymous user. One such entity should always exist in the database.",

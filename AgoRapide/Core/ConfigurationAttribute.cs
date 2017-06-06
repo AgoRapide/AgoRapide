@@ -277,7 +277,7 @@ namespace AgoRapide.Core {
         public string GenericMethodRouteTemplate = "{*url}";
 
         [Enum(AgoRapideEnumType = EnumType.PropertyKey)]
-        public enum ConfigurationKey {
+        public enum ConfigurationP {
             None,
             [PropertyKey(AccessLevelRead = AccessLevel.Admin)]
             ConfigurationLogPath,
@@ -301,13 +301,13 @@ namespace AgoRapide.Core {
             if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment);
 
             /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)), d);
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)), d);
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)), d);
-            PropertiesParent.AddProperty(ConfigurationKey.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)), d);
+            PropertiesParent.AddProperty(ConfigurationP.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)), d);
+            PropertiesParent.AddProperty(ConfigurationP.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)), d);
+            PropertiesParent.AddProperty(ConfigurationP.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)), d);
+            PropertiesParent.AddProperty(ConfigurationP.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)), d);
 
             PropertiesParent.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
-            /// TODO: Add more values to this list. Expand <see cref="ConfigurationKey"/> as needed.
+            /// TODO: Add more values to this list. Expand <see cref="ConfigurationP"/> as needed.
 
             return PropertiesParent.Properties;
         }

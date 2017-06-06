@@ -39,7 +39,7 @@ namespace AgoRapide.API {
                 if (Properties != null && Properties.ContainsKey(CoreP.Log)) Properties.Remove(CoreP.Log);
             }
             if (ResultCode != ResultCode.ok) {
-                AddProperty(CoreP.ResultCodeDescription.A(), ResultCode.GetEnumValueAttribute().Description);
+                AddProperty(ResultP.ResultCodeDescription.A(), ResultCode.GetEnumValueAttribute().Description);
                 if (!Properties.ContainsKey(CoreP.APIDocumentationUrl)) AddProperty(CoreP.APIDocumentationUrl.A(), request.API.CreateAPIUrl(request.Method)); // Note how APIDocumentationUrl in some cases may have already been added (typical by AgoRapideGenericMethod when no method found)
             }
             if (ResultCode == ResultCode.exception_error) {
@@ -179,5 +179,24 @@ namespace AgoRapide.API {
             other.Counts.ForEach(otherCount => SetCount(otherCount.Key, Counts.TryGetValue(otherCount.Key, out var myValue) ? myValue + otherCount.Value : otherCount.Value));
             if (other.LogData.Length > 0) LogData.Append(other.LogData);
         }
+    }
+
+    [EnumAttribute(AgoRapideEnumType = EnumType.PropertyKey)]
+    public enum ResultP {
+        None,
+
+        [PropertyKey(Type = typeof(ResultCode), Parents = new Type[] { typeof(Result) })]
+        ResultCode,
+
+        /// <summary>
+        /// The <see cref="PropertyKeyAttribute.Description"/>-attribute of <see cref="ResultCode"/>
+        /// Set by <see cref="Result.AdjustAccordingToResultCodeAndMethod"/> when not <see cref="ResultCode.ok"/>
+        /// </summary>
+        [PropertyKey(Type = typeof(string), Parents = new Type[] { typeof(Result) })]
+        ResultCodeDescription,
+    }
+
+    public static class ResultPExtensions {
+        public static PropertyKey A(this ResultP p) => PropertyKeyMapper.GetA(p);
     }
 }

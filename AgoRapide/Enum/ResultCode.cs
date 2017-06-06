@@ -9,7 +9,7 @@ namespace AgoRapide {
 
     [Enum(
         Description = "Describes in detail how an API operation failed.",
-        LongDescription = "Usually contained as -" + nameof(CoreP.ResultCode) + "- within -" + nameof(Result) + "-. Ordering should be in increasing order of \"seriousness\".",
+        LongDescription = "Usually contained as -" + nameof(ResultP.ResultCode) + "- within -" + nameof(Result) + "-. Ordering should be in increasing order of \"seriousness\".",
         AgoRapideEnumType = EnumType.EnumValue)]
     public enum ResultCode {
         None,

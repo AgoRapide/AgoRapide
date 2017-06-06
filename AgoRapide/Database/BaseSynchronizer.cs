@@ -33,7 +33,7 @@ namespace AgoRapide.Database {
         /// <param name="request"></param>
         [APIMethod(
             Description = "Synchronizes from source",
-            S1 = nameof(Synchronize), S2 = "DUMMY" )]
+            S1 = nameof(Synchronize), S2 = "DUMMY")]
         public object Synchronize(BaseDatabase db, ValidRequest request) {
             Synchronize<BaseEntity>(db, request.Result);
             request.Result.ResultCode = ResultCode.ok; /// It is difficult for sub class to set  <see cref="Result.ResultCode"/> because it does not know if it generated a complete result or was just called as part of something
@@ -42,7 +42,7 @@ namespace AgoRapide.Database {
         }
 
         /// <summary>
-        /// Synchronize as d
+        /// Synchronizes with source. 
         /// </summary>
         /// <typeparam name="T">
         /// This is mostly a hint about what needs to be synchronized. 
@@ -97,4 +97,34 @@ namespace AgoRapide.Database {
             // TODO: Store in InMemoryCache also!
         }
     }
+
+    [EnumAttribute(AgoRapideEnumType = EnumType.PropertyKey)]
+    public enum SynchronizerP {
+        None,
+
+        [PropertyKey(
+            Description = "Indicates that -" + nameof(BaseEntity.GetMockEntities) + "- shall be used by -" + nameof(BaseSynchronizer.Synchronize) + "-.",
+            Type = typeof(bool),
+            Parents = new Type[] { typeof(BaseSynchronizer) },
+            AccessLevelRead = AccessLevel.Relation,
+            AccessLevelWrite = AccessLevel.Relation
+        )]
+        UseMockData,
+
+        [PropertyKey(
+            Description =
+                "Size of data set to be used for -" + nameof(UseMockData) + "-. " +
+                "It is up to the implementation to interpret the value, typically as a -" + nameof(Percentile.Tertile) + "-",
+            Type = typeof(Percentile),
+            Parents = new Type[] { typeof(BaseSynchronizer) },
+            AccessLevelRead = AccessLevel.Relation,
+            AccessLevelWrite = AccessLevel.Relation
+        )]
+        MockSize,
+    }
+
+    public static class SynchronizerPExtensions {
+        public static PropertyKey A(this SynchronizerP p) => PropertyKeyMapper.GetA(p);
+    }
+
 }

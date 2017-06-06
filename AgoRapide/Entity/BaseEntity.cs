@@ -247,7 +247,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public string PExplained(PropertyKey key) => Properties==null ? ("[" + nameof(Properties) + " == null],\r\n" + key.Key.ToString()) : (Properties.TryGetValue(key.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]");
+        public string PExplained(PropertyKey key) => Properties == null ? ("[" + nameof(Properties) + " == null],\r\n" + key.Key.ToString()) : (Properties.TryGetValue(key.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]");
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -390,7 +390,7 @@ namespace AgoRapide {
                 retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Children " + a.ChildrenType.ToStringVeryShort(), a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString())) + "</p>");
             }
             // Suggested URLs for this specific entity
-            if (Id>0) retval.Append("<p>" + string.Join("<br>", GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(CoreP.SuggestedBaseEntityMethodUrl.A()).Select(uri => uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString()))).OrderBy(url => url).Select(url => request.API.CreateAPILink(url))) + "</p>");
+            if (Id > 0) retval.Append("<p>" + string.Join("<br>", GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(APIMethodP.BaseEntityMethodUrl.A()).Select(uri => uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString()))).OrderBy(url => url).Select(url => request.API.CreateAPILink(url))) + "</p>");
 
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
@@ -533,15 +533,21 @@ namespace AgoRapide {
         /// <param name="propertyPredicate">
         /// Select which properties returned from <see cref="Extensions.GetChildProperties(Type)"/> to include.  
         /// Would typically be  "p => p.Key.A.IsExternal" when used by <see cref="Agent"/></param>
-        /// <param name="maxN"></param>
+        /// <param name="maxN">
+        /// Gives the maximum number of elements that will be generated for all types, not only <typeparamref name="T"/>. 
+        /// Number for all types is needed by <see cref="PropertyKeyAttributeEnriched.GetSampleProperty{TParent}"/> in order to
+        /// determine range of foreign keys. 
+        /// </param>
         /// <returns></returns>
-        public static List<T> GetMockEntities<T>(Func<PropertyKey, bool> propertyPredicate, int maxN) where T : BaseEntity, new() {
+        public static List<T> GetMockEntities<T>(Func<PropertyKey, bool> propertyPredicate, Dictionary<Type, int> maxN) where T : BaseEntity, new() {
             var retval = new List<T>();
             var type = typeof(T);
             var properties = type.GetChildProperties().Values.Where(propertyPredicate);
-            for (var n = 1; n <= maxN; n++) {
-                var e = new T();
-                e.Properties = new Dictionary<CoreP, Property>();
+            var maxT = maxN.GetValue(type);
+            for (var n = 1; n <= maxT; n++) {
+                var e = new T() {
+                    Properties = new Dictionary<CoreP, Property>()
+                };
                 properties.ForEach(p => {
                     e.AddProperty(p.Key.GetSampleProperty<T>(n, maxN), null);
                 });

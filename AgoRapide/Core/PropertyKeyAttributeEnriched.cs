@@ -78,9 +78,9 @@ namespace AgoRapide.Core {
             if (A.Type.Equals(typeof(string))) { // Added 2 Jun 2017 (equivalent to code at end of method)
                 switch (obj) {
                     case DateTime dtm: return dtm.ToString(DateTimeFormat.DateHourMin);
-                    case double dbl:return dbl.ToString2();
+                    case double dbl: return dbl.ToString2();
                     default: return obj.ToString(); // int and enums for instance should work quite OK now.
-                }   
+                }
             }
 
             if (!A.Type.IsAssignableFrom(obj.GetType())) {
@@ -370,18 +370,32 @@ namespace AgoRapide.Core {
         /// Helps with deciding value when <see cref="PropertyKeyAttribute.PrimaryKeyOf"/>
         /// </typeparam>
         /// <returns></returns>
-        public Property GetSampleProperty<TParent>(int n, int maxN) {
+        public Property GetSampleProperty<TParent>(int n, Dictionary<Type, int> maxN) {
             var value = new Func<string>(() => {
                 if (A.PrimaryKeyOf != null) {
-                    InvalidTypeException.AssertEquals(A.Type, typeof(long), () => ToString());
+
+                    var keyGenerator = new Func<int, string>(v => {
+                        if (typeof(long).Equals(A.Type)) {
+                            return v.ToString();
+                        } else {
+                            throw new NotImplementedException(
+                                "Foreign key generator for " + A.Type + " not implemented.\r\n" +
+                                "For instance, for sources like Salesforce the keys are strings, not integer. " +
+                                "Solution: We will have to implement a string generator based on " + nameof(v) + ". This should not be too difficult. " +
+                                "We could create a MD5 hash based on the long-value for instance, and use that. " +
+                                "(of course we could quite possible just return " + nameof(v) + " itself). "
+                            );
+                        }
+                    });
+
                     if (typeof(TParent).Equals(A.PrimaryKeyOf)) {
                         /// This is the primary key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
                         /// Just assign id's starting from 1
-                        return n.ToString();
+                        return keyGenerator(n);
                     } else {
                         /// This is the foreign key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
-                        /// Assign a deterministic pseudo-random value within maxN
-                        return new Random(n).Next(1, maxN + 1).ToString();
+                        /// Assign a deterministic pseudo-random value within maxN for this type. 
+                        return keyGenerator(new Random(n).Next(1, maxN.GetValue(A.PrimaryKeyOf) + 1));
                     }
                 }
                 if (A.SampleValues != null && A.SampleValues.Length > 0) {

@@ -506,7 +506,7 @@ namespace AgoRapide.Core {
         public static List<APIMethod> GetBaseEntityMethods(this Type type) => _baseEntityMethodsCache.GetOrAdd(type, t => APIMethod.AllMethods.Where(m =>
             m.EntityType != null &&
             m.EntityType.IsAssignableFrom(t) &&
-            m.PV<List<Uri>>(CoreP.SuggestedBaseEntityMethodUrl.A()).Count > 0
+            m.PV<List<Uri>>(APIMethodP.BaseEntityMethodUrl.A()).Count > 0
         ).ToList());
 
         /// <summary>
@@ -746,7 +746,7 @@ namespace AgoRapide.Core {
 
         public static PropertyKey A(this CoreP coreP) => PropertyKeyMapper.GetA(coreP);
         public static PropertyKey A(this DBField dbField) => PropertyKeyMapper.GetA(dbField);
-        public static PropertyKey A(this ConfigurationAttribute.ConfigurationKey configurationKey) => PropertyKeyMapper.GetA(configurationKey);
+        public static PropertyKey A(this ConfigurationAttribute.ConfigurationP configurationKey) => PropertyKeyMapper.GetA(configurationKey);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {

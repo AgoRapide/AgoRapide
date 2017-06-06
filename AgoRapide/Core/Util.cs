@@ -153,7 +153,14 @@ namespace AgoRapide.Core {
                     /// NOTE: as long as all enums are registered with <see cref="PropertyKeyMapper.MapEnum{T}"/> at application startup
                     var candidates = PropertyKeyMapper.AllCoreP.Where(key => key.Key.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
-                        case 0: return ("No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort(), null);
+                        case 0: return (
+                            "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + "\r\n" +
+                            "Possible cause (probably): No -" + nameof(EnumType) + "." + nameof(EnumType.PropertyKey) + "- has defined " + nameof(PropertyKeyAttribute.Type) + " = " + typeof(T).ToStringShort() + ".\r\n" +
+                            "Possible cause (less probable): There is missing a call to " + nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + " in Startup.cs.\r\n" +
+                            "Possible resolution (less probable): Look for missing calls to \r\n" + 
+                            nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + "<" + typeof(T) + ">()\r\n" +
+                            "in Startup.cs (as of Jun 2017 look for 'mapper1<...>').",
+                            null);
                         case 1:
                             var key = candidates[0];
                             return (null, (key.PropertyKeyIsSet ? key.PropertyKeyWithIndex : key.PropertyKeyAsIsManyParentOrTemplate)); // Note how that last on may fail

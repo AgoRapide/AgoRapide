@@ -105,10 +105,10 @@ namespace AgoRapide.Core {
         }
 
         public static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
-        agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
-            return TryParse(value, out var retval, out string errorResponse) ?
-            ParseResult.Create(agoRapideAttribute, retval) :
-            ParseResult.Create(errorResponse);
+            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
+                return TryParse(value, out var retval, out string errorResponse) ?
+                ParseResult.Create(agoRapideAttribute, retval) :
+                ParseResult.Create(errorResponse);
         });
 
         /// <summary>

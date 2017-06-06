@@ -9,6 +9,8 @@ using AgoRapide.Database;
 
 namespace AgoRapide.Core {
     /// <summary>
+    /// TODO: Move to Type-folder. 
+    /// 
     /// Dummy interface indicating that implementing class has a static method called
     ///   EnrichAttribute 
     /// with the same signature as <see cref="IGroupDescriber.EnrichAttribute"/>

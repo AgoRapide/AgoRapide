@@ -160,6 +160,7 @@
     <Compile Include="Enum\ResponseFormat.cs" />
     <Compile Include="Enum\ResultCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Type\Percentile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
