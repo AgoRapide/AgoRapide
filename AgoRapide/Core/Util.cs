@@ -158,7 +158,7 @@ namespace AgoRapide.Core {
                             "Possible cause (probably): No -" + nameof(EnumType) + "." + nameof(EnumType.PropertyKey) + "- has defined " + nameof(PropertyKeyAttribute.Type) + " = " + typeof(T).ToStringShort() + ".\r\n" +
                             "Possible cause (less probable): There is missing a call to " + nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + " in Startup.cs.\r\n" +
                             "Possible resolution (less probable): Look for missing calls to \r\n" + 
-                            nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + "<" + typeof(T) + ">()\r\n" +
+                            nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + "<...>()\r\n" + 
                             "in Startup.cs (as of Jun 2017 look for 'mapper1<...>').",
                             null);
                         case 1:

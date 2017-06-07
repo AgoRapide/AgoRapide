@@ -931,6 +931,10 @@ namespace AgoRapide.API {
         [PropertyKey(Type = typeof(CoreAPIMethod))]
         CoreAPIMethod,
 
+        /// <summary>
+        /// Note that included values are not limited to <see cref="CoreAPIMethod.BaseEntityMethod"/>.
+        /// TODO: Maybe therefore change name of this property?
+        /// </summary>
         [PropertyKey(
             Description =
                 "Equivalent to -" + nameof(CoreP.SuggestedUrl) + "- with a -" + nameof(QueryId) + "- parameter " +

@@ -24,12 +24,15 @@ namespace AgoRapide.API {
         /// <param name="id"></param>
         /// <returns></returns>
         public string CreateAPICommand(Type entityType, long id) => CreateAPICommand(CoreAPIMethod.EntityIndex, entityType, new QueryIdInteger(id));
+
+        
         /// <summary>
         /// Note that could in principle be made static
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
         public string CreateAPICommand(BaseEntity entity) => CreateAPICommand(entity.GetType(), entity.Id);
+
         /// <summary>
         /// Note that could in principle be made static
         /// </summary>
@@ -38,6 +41,9 @@ namespace AgoRapide.API {
         /// <param name="parameters"></param>
         /// <returns></returns>
         public string CreateAPICommand(CoreAPIMethod coreMethod, Type type, params object[] parameters) => APIMethod.GetByCoreMethodAndEntityType(coreMethod, type).GetAPICommand(parameters);
+
+        /// This has limited value, do not use (call <see cref="CreateAPICommand(CoreAPIMethod, Type, object[])"/> instead
+        // public string CreateAPICommand(Type entityType, QueryId queryId) => APIMethod.GetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, entityType).GetAPICommand(queryId);
 
         /// <summary>
         /// Creates API URL for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entityType"/> and <paramref name="id"/>  like "https://AgoRapide.com/api/Person/42/HTML"

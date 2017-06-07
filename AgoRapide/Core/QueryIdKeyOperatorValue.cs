@@ -10,7 +10,7 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: To be extended. Parsing for instance does not work for the moment.
     /// </summary>
-    [Class(Description = 
+    [Class(Description =
         "The general form of -" + nameof(QueryId) + "-. " +
         "Typical example would be : WHERE LastName LIKE 'John%'")]
     public class QueryIdKeyOperatorValue : QueryId {
@@ -19,6 +19,11 @@ namespace AgoRapide.Core {
         /// TODO: Check initialization of this
         /// </summary>
         public PropertyKeyAttributeEnriched Key { get; private set; }
+        /// <summary>
+        /// TODO: Document better reason for both <see cref="Key"/> and <see cref="Properties"/>. 
+        /// </summary>
+        public List<PropertyKeyAttributeEnriched> Properties { get; private set; }
+
         public Operator Operator { get; private set; }
         public object Value { get; private set; }
 
@@ -28,8 +33,6 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <returns></returns>
         public override string ToString() => _toString ?? throw new NullReferenceException(nameof(_toString));
-
-        public List<PropertyKeyAttributeEnriched> Properties { get; private set; }
 
         ///// <summary>
         ///// Constructor for generic parsing of any kind of SQL expression. 
@@ -61,10 +64,10 @@ namespace AgoRapide.Core {
         /// <summary>
         /// TODO: Add a LIMIT parameter to <see cref="QueryIdKeyOperatorValue"/>.
         /// </summary>
-        /// <param name="property"></param>
+        /// <param name="key"></param>
         /// <param name="_operator"></param>
         /// <param name="value"></param>
-        public QueryIdKeyOperatorValue(PropertyKeyAttributeEnriched property, Operator _operator, object value) : this(new List<PropertyKeyAttributeEnriched> { property }, _operator, value) { }
+        public QueryIdKeyOperatorValue(PropertyKeyAttributeEnriched key, Operator _operator, object value) : this(new List<PropertyKeyAttributeEnriched> { key }, _operator, value) { }
         /// <summary>
         /// Strongly typed constructor. 
         /// (usually used when query originates from "outside" of API)
@@ -80,7 +83,10 @@ namespace AgoRapide.Core {
             Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
             Value = value ?? throw new ArgumentNullException(nameof(value));
             switch (properties.Count) {
-                case 1: _toString = "WHERE " + properties[0].PToString + " = '" + value + "'"; break; /// TODO: Improve on use of <see cref="QueryId.ToString"/>
+                case 1:
+                    _toString = "WHERE " + properties[0].PToString + " = '" + value + "'";
+                    Key = properties[0];
+                    break; /// TODO: Improve on use of <see cref="QueryId.ToString"/>
                 default: throw new NotImplementedException(nameof(properties.Count) + ": " + properties.Count);
             }
             Initialize();
@@ -184,6 +190,12 @@ namespace AgoRapide.Core {
                                 parameterNo++;
                                 sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
                                 SQLWhereStatementParameters.Add((DBField.strv + (parameterNo).ToString(), _string));
+                                return; 
+                            case Type type: // Added 7 Jun 2017
+                                Operator.AssertValidForType(typeof(string), detailer);
+                                parameterNo++;
+                                sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
+                                SQLWhereStatementParameters.Add((DBField.strv + (parameterNo).ToString(), type.ToStringDB())); /// TODO: Storing of types in database may vary (???). What about <see cref="CoreP.EntityType"/>?
                                 return;
                         }
                     }
@@ -204,6 +216,7 @@ namespace AgoRapide.Core {
                     if (valueAsList<bool>(DBField.blnv) != null) return;
                     if (valueAsList<DateTime>(DBField.dtmv) != null) return;
                     if (valueAsList<string>(DBField.strv) != null) return;
+                    if (valueAsList<Type>(DBField.strv) != null) return; // Added 7 Jun 2017
 
                     // TODO: Support for List<SomeEnum> is not yet implemented. 
                     // 
@@ -240,6 +253,24 @@ namespace AgoRapide.Core {
                 // TODO:   ...
                 // TODO: Which clearly does not look optimal...
                 _SQLWhereStatement = "(\r\n   " + string.Join(" OR\r\n   ", Properties.Select(p => "(" + singlePropertySQLConstructor(p) + ")")) + "\r\n)";
+            }
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="entity"/> satisfies this query. 
+        /// 
+        /// TODO: Implement for more than <see cref="Operator.EQ"/>
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public bool ToPredicate(BaseEntity entity) {
+            if (Key == null) throw new NullReferenceException(nameof(Key) + ". Details: " + ToString());
+            if (entity.Properties == null) return false;
+            if (!entity.Properties.TryGetValue(Key.CoreP, out var p)) return false;
+            switch (Operator) {
+                case Operator.EQ:
+                    return p.Value.Equals(Value);
+                default: throw new NotImplementedException(nameof(Operator) + ": " + Operator);
             }
         }
 

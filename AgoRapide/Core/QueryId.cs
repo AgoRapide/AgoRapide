@@ -90,7 +90,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public List<(string key, object value)> SQLWhereStatementParameters { get; protected set; } = new List<(string key, object value)>();
         public string SQLOrderByStatement => ""; // Not yet implemented
-
+        
         /// <summary>
         /// This should correspond to a value accepted by the corresponding parser (<see cref="TryParse"/>
         /// 
@@ -99,6 +99,8 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public abstract override string ToString();
         public string ToStringDebug() => SQLWhereStatement + (SQLWhereStatementParameters.Count == 0 ? "" : "\r\nParameter: ") + string.Join("\r\nParameter: ", SQLWhereStatementParameters.Select(p => p.ToString()));
+
+        // public abstract string ToAPIQuery(); /// Unnecessary, equivalent to ToString()
 
         public static QueryId Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidQueryIdException(nameof(value) + ": " + value + ", " + nameof(errorResponse) + ": " + errorResponse);
         public static bool TryParse(string value, out QueryId id) => TryParse(value, out id, out var dummy);

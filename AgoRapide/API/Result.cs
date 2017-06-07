@@ -74,6 +74,15 @@ namespace AgoRapide.API {
                         retval.AppendLine(thisTypeSorted[0].ToHTMLTableRowHeading(request));
                         retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</table>");
+
+                        CreateDrillDownUrls(thisTypeSorted).ForEach(key => {
+                            retval.Append("<p>Drilldown for " + key.Key + ":</p>");
+                            key.Value.ForEach(_operator => {
+                                _operator.Value.ForEach(suggestion => {
+                                    retval.Append("<p><a href=\"" + suggestion.Value.url + "\">" + suggestion.Value.text.HTMLEncode() + "<a></p>");
+                                });
+                            });
+                        });
                     });
                 }
             } else if (ResultCode == ResultCode.ok) {
@@ -89,7 +98,7 @@ namespace AgoRapide.API {
         }
 
         /// <summary>
-        /// Note how <see cref="Result"/> is the only <see cref="BaseEntity"/>-class having a method called <see cref="ToJSONDetailed"/>. 
+        /// Note how <see cref="Result"/> is the only <see cref="BaseEntity"/>-class (as of June 2017) having a method called <see cref="ToJSONDetailed"/>. 
         /// (while all <see cref="BaseEntity"/>-classes implement <see cref="BaseEntity.ToJSONEntity"/>)
         /// </summary>
         /// <param name="request"></param>
@@ -175,10 +184,91 @@ namespace AgoRapide.API {
         }
 
         public void Include(Result other) {
+            if (other.SingleEntityResult != null) throw new NotNullReferenceException(nameof(other.SingleEntityResult) + ". (" + other.SingleEntityResult.ToString() + ")");
+            if (other.MultipleEntitiesResult != null) throw new NotNullReferenceException(nameof(other.MultipleEntitiesResult) + ". Count: " + other.MultipleEntitiesResult.Count);
             if (other.ResultCode > ResultCode) ResultCode = other.ResultCode;
             other.Counts.ForEach(otherCount => SetCount(otherCount.Key, Counts.TryGetValue(otherCount.Key, out var myValue) ? myValue + otherCount.Value : otherCount.Value));
             if (other.LogData.Length > 0) LogData.Append(other.LogData);
         }
+
+
+        /// <summary>
+        /// Extracts all distinct values 
+        /// </summary>
+        /// <param name="entities">Alle objects are required to be of an identical type</param>
+        /// <returns></returns>
+        public Dictionary<
+                CoreP,
+                Dictionary<
+                    Operator,
+                    Dictionary<
+                        string, // The actual values found. 
+                        DrillDownSuggestions
+                    >
+                >
+             > CreateDrillDownUrls(List<BaseEntity> entities) {
+
+            var retval = new Dictionary<
+                CoreP,
+                Dictionary<
+                    Operator,
+                    Dictionary<
+                        string, // The actual values found. 
+                        DrillDownSuggestions
+                    >
+                >
+             >();
+
+            if (entities.Count == 0) return retval;
+
+            var type = entities.First().GetType();
+            type.GetChildProperties().Values.ForEach(key => { // Note how only properties explicitly defined for this type of entity are considered. 
+                var values = entities.Select(e => {
+                    if (!e.Properties.TryGetValue(key.Key.CoreP, out var p)) return null;
+                    return p.Value;
+                }).Distinct(); // All distinct values for this key
+
+                var r1 = new Dictionary<
+                    Operator,
+                    Dictionary<
+                        string, // The actual values found. 
+                        DrillDownSuggestions
+                    >
+                >();
+
+                Util.EnumGetValues<Operator>().ForEach(o => {
+                    if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.ToPredicate(BaseEntity)"/>
+                    var r2 = new Dictionary<
+                        string, // The actual values found. 
+                        DrillDownSuggestions
+                    >();
+                    values.ForEach(v => {
+                        var query = new QueryIdKeyOperatorValue(key.Key, o, v);
+                        var count = entities.Where(query.ToPredicate).Count();
+                        if (count > 0) {
+                            r2.AddValue(v.ToString(), new DrillDownSuggestions {
+                                url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
+                                text = query.ToString() + " (" + count + ")",
+                                queryId = query
+                            });
+                        }
+                    });
+                    r1.AddValue(o, r2);
+                });
+                retval.Add(key.Key.CoreP, r1);
+            });
+            return retval;
+        }
+
+        /// <summary>
+        /// TODO: Make immutable
+        /// </summary>
+        public class DrillDownSuggestions {
+            public string url;
+            public string text;
+            public QueryIdKeyOperatorValue queryId;
+        }
+
     }
 
     [EnumAttribute(AgoRapideEnumType = EnumType.PropertyKey)]

@@ -648,18 +648,21 @@ namespace AgoRapide {
             adder(DBField.invalid, Invalid?.ToString(DateTimeFormat.DateHourMinSec));
             adderWithLink(DBField.iid, InvalidatorId);
             retval.AppendLine("</table>");
-            var cmds = new List<string>();
-            request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
-                retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
-                cmds.Add(cmd);
-            });
-            Util.EnumGetValues<PropertyOperation>().ForEach(o => {
-                request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
-                    retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, o.ToString()) + "</p>");
-                    cmds.Add(cmd);
-                });
-            });
-            request.Result.AddProperty(CoreP.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.API.CreateAPIUrl(cmd))));
+
+            /// This is no longer needed after introduction of <see cref="Extensions.GetBaseEntityMethods(Type)"/>
+            //var cmds = new List<string>();
+            //request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
+            //    retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
+            //    cmds.Add(cmd);
+            //});
+            //Util.EnumGetValues<PropertyOperation>().ForEach(o => {
+            //    request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
+            //        retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, o.ToString()) + "</p>");
+            //        cmds.Add(cmd);
+            //    });
+            //});
+            // request.Result.AddProperty(CoreP.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.API.CreateAPIUrl(cmd))));
+
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>

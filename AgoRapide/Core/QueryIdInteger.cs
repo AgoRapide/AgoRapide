@@ -18,6 +18,7 @@ namespace AgoRapide.Core {
     public class QueryIdInteger : QueryId {
         public long Id { get; private set; }
         public override string ToString() => Id.ToString();
+        // public override string ToAPIQuery() => ToString();
 
         public QueryIdInteger(long id) {
             Id = id != 0 ? id : throw new ArgumentException(nameof(id) + ": " + id);

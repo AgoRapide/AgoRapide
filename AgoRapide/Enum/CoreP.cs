@@ -168,7 +168,8 @@ namespace AgoRapide {
 
         [PropertyKey(
             Description =
-                "Will often be a -" + nameof(QueryIdString) + "- instance.",
+                "Will often be a -" + nameof(QueryIdString) + "- instance. " +
+                "Preferable to use in queries instead -" + nameof(Id) + "- because string value will not change between different database instances.",
             LongDescription =
                 "See accompanying -" + nameof(IdFriendly) + "- which is the more readable form.\r\n",
             Type = typeof(QueryId),
