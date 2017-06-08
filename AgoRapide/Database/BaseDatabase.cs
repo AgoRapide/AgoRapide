@@ -287,7 +287,10 @@ namespace AgoRapide.Database {
                 var keyToUse = key as PropertyKeyWithIndex; // Note use of "strict" variant here
                 if (keyToUse == null) keyToUse = key.PropertyKeyIsSet ? key.PropertyKeyWithIndex : throw new PropertyKeyWithIndex.InvalidPropertyKeyException("Unable to turn " + key + " (of type " + key.GetType() + ") into a " + typeof(PropertyKeyWithIndex) + " because !" + nameof(key.PropertyKeyIsSet) + detailer.Result("\r\nDetails: "));
 
-                if (entityOrIsManyParent.Properties.TryGetValue(keyAsCoreP, out var existingProperty)) {
+                if (
+                    entityOrIsManyParent.Properties.TryGetValue(keyAsCoreP, out var existingProperty) &&
+                    existingProperty.Id > 0 /// This last check is very important, it might be that the property was only added in-memory
+                    ) {
                     var existingValue = existingProperty.V<T>();
                     if (existingValue.Equals(valueToUpdate)) {
                         // Note how this is not logged

@@ -70,7 +70,7 @@ namespace AgoRapide {
         /// </summary>
         [PropertyKey(
             Description = "Corresponds to C# / .NET Type-object.",
-            Type = typeof(Type))]
+            Type = typeof(Type), Parents = new Type[] { typeof(APIMethod) })]
         EntityType,
 
         [PropertyKey(
@@ -101,7 +101,7 @@ namespace AgoRapide {
 
         [PropertyKey(
             Description = "Access level necessary for -" + nameof(AccessType.Read) + "--access to an object in the sense of using that objects functionality (typical access level necessary in order to call an -" + nameof(APIMethod) + "-).",
-            Type = typeof(AccessLevel))]
+            Type = typeof(AccessLevel), Parents = new Type[] { typeof(APIMethod) })]
         AccessLevelUse,
 
         [PropertyKey(

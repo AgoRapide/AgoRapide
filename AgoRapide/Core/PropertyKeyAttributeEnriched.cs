@@ -247,7 +247,38 @@ namespace AgoRapide.Core {
                 }
             }
 
-            if (Cleaner == null && A.TypeIsSet) {
+            if (!A.TypeIsSet) {
+                A.Type = typeof(string);
+            }
+
+            if (!A.HasLimitedRangeIsSet) {
+                if (
+                    typeof(bool).Equals(A.Type) ||
+                    typeof(Type).Equals(A.Type) ||
+                    A.Type.IsEnum
+                    ) {
+                    A.HasLimitedRange = true;
+                }
+            }
+
+            if (A.Operators == null) {
+                if (
+                    typeof(bool).Equals(A.Type) ||
+                    typeof(Type).Equals(A.Type) ||
+                    A.HasLimitedRange  // TODO: Maybe add anyway for string also?
+                    ) {
+                    A.Operators = new Operator[] { Operator.EQ };
+                } else if (
+                    typeof(double).Equals(A.Type) ||
+                    typeof(long).Equals(A.Type) ||
+                    typeof(DateTime).Equals(A.Type) ||
+                    A.Type.IsEnum
+                    ) {
+                    A.Operators = new Operator[] { Operator.LT, Operator.LEQ, Operator.EQ, Operator.GEQ, Operator.GT };
+                }
+            }
+
+            if (Cleaner == null) {
                 if (
                     A.Type.Equals(typeof(int)) ||
                     A.Type.Equals(typeof(long)) ||
@@ -283,10 +314,6 @@ namespace AgoRapide.Core {
             if (!string.IsNullOrEmpty(A.RegExpValidator)) throw new NotImplementedException(
                 typeof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.RegExpValidator) + "\r\n" +
                 "Details: " + A.ToString());
-
-            if (!A.TypeIsSet) {
-                A.Type = typeof(string);
-            }
 
             /// Note how ValidatorAndParser-objects are duplicated for each and every <see cref="CoreP"/>, P and so on. 
             // This is assumed to be of little significance however as the number of such enum values is quite limited. 

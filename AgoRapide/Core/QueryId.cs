@@ -21,7 +21,7 @@ namespace AgoRapide.Core {
     [Class(
         Description =
             "Represents a search term in the API.\r\n" +
-            "Also used as a general identifier usable in URLs and similar.\r\n"  +
+            "Also used as a general identifier usable in URLs and similar.\r\n" +
             "(-" + nameof(QueryIdString) + "- is a human friendly alternative to -" + nameof(BaseEntity.Id) + "-.)r\n" +
             "In its simplest form it is just a long integer that corresponds directly to " + nameof(DBField.id) + " " +
             "(see -" + nameof(QueryIdInteger) + "-).\r\n" +
@@ -90,7 +90,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public List<(string key, object value)> SQLWhereStatementParameters { get; protected set; } = new List<(string key, object value)>();
         public string SQLOrderByStatement => ""; // Not yet implemented
-        
+
         /// <summary>
         /// This should correspond to a value accepted by the corresponding parser (<see cref="TryParse"/>
         /// 
@@ -127,18 +127,76 @@ namespace AgoRapide.Core {
                 return true;
             }
 
-            if (valueToLower.StartsWith("where")) {  // TODO: Implement parsing of WHERE ... format.
+            if (valueToLower.StartsWith("where")) {  // TODO: Improve on this parsing
                 value = value.Replace("%3D", "="); // HACK: FIX THIS!
-                var s = "WHERE " + CoreP.QueryIdParent + " = '";
-                if (value.StartsWith(s)) {
-                    // TODO: IMPLEMENT MORE COMPLETE PARSER HERE!
-                    id = new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, value.Substring(s.Length, value.Length - s.Length - 1));
-                    errorResponse = null;
-                    return true;
+
+                var pos = 0;
+                value += " "; // Simplifies parsing
+                var nextWord = new Func<string>(() => {
+                    var nextPos = value.IndexOf(' ', pos);
+                    if (nextPos == -1)
+                        return null;
+                    var word = value.Substring(pos, nextPos - pos);
+                    pos = nextPos + 1;
+                    return word;
+                });
+
+                nextWord(); var 
+                    
+                strKey = nextWord();
+                if (strKey == null) {
+                    id = null;
+                    errorResponse = "No key given";
+                    return false;
                 }
-                errorResponse = "Invalid long integer, not recognized as " + nameof(QueryIdString) + " and parsing as " + nameof(QueryIdKeyOperatorValue) + " not yet implemented fully.";
-                id = null;
-                return false;
+                if (!PropertyKeyMapper.TryGetA(strKey, out var key)) {
+                    id = null;
+                    errorResponse = "Invalid key (" + strKey + ")";
+                    return false;
+                }
+
+                var strOperator = nextWord(); Operator _operator;
+                if (strOperator == null) {
+                    id = null;
+                    errorResponse = "No operator given";
+                    return false;
+                }
+                switch (strOperator) {
+                    case "=": _operator = Operator.EQ; break;
+                    default:
+                        id = null;
+                        errorResponse = "Invalid operator (" + strOperator + ")";
+                        return false;
+                }
+
+                var strValue = nextWord();
+                if (strValue == null) {
+                    id = null;
+                    errorResponse = "No value given";
+                    return false;
+                }
+                if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
+
+                if (!key.Key.TryValidateAndParse(strValue, out var valueResult)) {
+                    id = null;
+                    errorResponse = "Invalid value given for " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
+                    return false;
+                }
+
+                id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
+                errorResponse = null;
+                return true;
+
+                //var s = "WHERE " + CoreP.QueryIdParent + " = '";
+                //if (value.StartsWith(s)) {
+                //    // TODO: IMPLEMENT MORE COMPLETE PARSER HERE!
+                //    id = new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, value.Substring(s.Length, value.Length - s.Length - 1));
+                //    errorResponse = null;
+                //    return true;
+                //}
+                //errorResponse = "Invalid long integer, not recognized as " + nameof(QueryIdString) + " and parsing as " + nameof(QueryIdKeyOperatorValue) + " not yet implemented fully.";
+                //id = null;
+                //return false;
             }
 
             var t = value.ToLower().Split(",");

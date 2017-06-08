@@ -917,7 +917,7 @@ namespace AgoRapide.API {
     public enum APIMethodP {
         None,
 
-        [PropertyKey(Type = typeof(APIMethodOrigin))]
+        [PropertyKey(Type = typeof(APIMethodOrigin), Parents = new Type[] { typeof(APIMethod) })]
         APIMethodOrigin,
 
         /// <summary>
@@ -928,7 +928,7 @@ namespace AgoRapide.API {
         /// This comment describes the recommended approach to setting attributes when the type given (<see cref="PropertyKeyAttribute.Type"/>) 
         /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
         /// </summary>
-        [PropertyKey(Type = typeof(CoreAPIMethod))]
+        [PropertyKey(Type = typeof(CoreAPIMethod), Parents = new Type[] { typeof(APIMethod) })]
         CoreAPIMethod,
 
         /// <summary>
@@ -963,6 +963,7 @@ namespace AgoRapide.API {
 
         [PropertyKey(
             Description = "The Controller class + the method within that class which implements a given method.",            
+            HasLimitedRange = true, /// Most probably meaningless to add since either methods are handled through <see cref="BaseController.AgoRapideGenericMethod"/> or through an individiual handler. Remove if does not give any value. 
             AccessLevelRead = AccessLevel.Anonymous,
             Type = typeof(string),
             Parents = new Type[] { typeof(APIMethod) })]

@@ -76,7 +76,7 @@ namespace AgoRapide.API {
                         retval.AppendLine("</table>");
 
                         CreateDrillDownUrls(thisTypeSorted).ForEach(key => {
-                            retval.Append("<p>Drilldown for " + key.Key + ":</p>");
+                            retval.Append("<p>Drilldown for " + key.Key.A().Key.PToString + ":</p>");
                             key.Value.ForEach(_operator => {
                                 _operator.Value.ForEach(suggestion => {
                                     retval.Append("<p><a href=\"" + suggestion.Value.url + "\">" + suggestion.Value.text.HTMLEncode() + "<a></p>");
@@ -222,7 +222,19 @@ namespace AgoRapide.API {
             if (entities.Count == 0) return retval;
 
             var type = entities.First().GetType();
+            /// Note how this code (in <see cref="Result.CreateDrillDownUrls"/>) only gives suggestions for existing values.
+            /// If we want to implement some kind of surveillance (for what-if scenarios) we would also need to know all possible values in advance. 
             type.GetChildProperties().Values.ForEach(key => { // Note how only properties explicitly defined for this type of entity are considered. 
+                if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
+
+                if (key.Key.A.Operators == null) return;
+                if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) return;
+
+                ///// TOOD: Create som <see cref="PropertyKeyAttribute"/>-property like IsSuitableForDrilldown or similar as replacement for this code
+                //if (key.Key.A.IsDocumentation) return; // 
+                //if (typeof(QueryId).IsAssignableFrom(key.Key.A.Type)) return;
+                ///// TOOD: Create som <see cref="PropertyKeyAttribute"/>-property like IsSuitableForDrilldown or similar as replacement for this code
+
                 var values = entities.Select(e => {
                     if (!e.Properties.TryGetValue(key.Key.CoreP, out var p)) return null;
                     return p.Value;
@@ -238,14 +250,18 @@ namespace AgoRapide.API {
 
                 Util.EnumGetValues<Operator>().ForEach(o => {
                     if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.ToPredicate(BaseEntity)"/>
+                    if (!key.Key.A.OperatorsAsHashSet.Contains(o)) return;
+                    if (o == Operator.EQ && !key.Key.A.HasLimitedRange) return;
+
                     var r2 = new Dictionary<
                         string, // The actual values found. 
                         DrillDownSuggestions
                     >();
                     values.ForEach(v => {
+                        if (v == null) return; /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
                         var query = new QueryIdKeyOperatorValue(key.Key, o, v);
                         var count = entities.Where(query.ToPredicate).Count();
-                        if (count > 0) {
+                        if (count > 0 && count != entities.Count) { // Note how we do not offer drill down if all entities match
                             r2.AddValue(v.ToString(), new DrillDownSuggestions {
                                 url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
                                 text = query.ToString() + " (" + count + ")",
@@ -253,9 +269,9 @@ namespace AgoRapide.API {
                             });
                         }
                     });
-                    r1.AddValue(o, r2);
+                    if (r2.Count > 0) r1.AddValue(o, r2);
                 });
-                retval.Add(key.Key.CoreP, r1);
+                if (r1.Count > 0) retval.Add(key.Key.CoreP, r1);
             });
             return retval;
         }

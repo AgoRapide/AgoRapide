@@ -81,7 +81,7 @@ namespace AgoRapide.Core {
             Properties = properties ?? throw new NullReferenceException(nameof(properties));
             if (Properties.Count == 0) throw new InvalidCountException(nameof(Properties) + ": " + Properties.Count);
             Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
-            Value = value ?? throw new ArgumentNullException(nameof(value));
+            Value = value ?? throw new ArgumentNullException(Util.BreakpointEnabler + nameof(value)); /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
             switch (properties.Count) {
                 case 1:
                     _toString = "WHERE " + properties[0].PToString + " = '" + value + "'";
@@ -204,12 +204,14 @@ namespace AgoRapide.Core {
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " '" +
                             (PropertyKeyMapper.TryGetA(Value.ToString(), out var key) ? key.Key.PToString : Value.ToString()) +
                             "'");
+                        return;
                     }
                     if (Value is ITypeDescriber) {
                         Operator.AssertValidForType(typeof(string), detailer);
                         parameterNo++;
                         sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo.ToString()));
                         SQLWhereStatementParameters.Add((DBField.strv + (parameterNo.ToString()), Value.ToString()));
+                        return;
                     }
                     if (valueAsList<long>(DBField.lngv) != null) return;
                     if (valueAsList<double>(DBField.dblv) != null) return;

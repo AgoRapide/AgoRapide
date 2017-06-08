@@ -21,18 +21,6 @@ namespace AgoRapide.Core {
         public Property Result { get; private set; }
 
         /// <summary>
-        /// Corresponds to <see cref="Result"/>.<see cref="Property.ADotTypeValue"/>
-        /// TODO: Ideally we would like to do without this parameter but that would lead to <see cref="Property.ADotTypeValue"/> 
-        /// calling itself 
-        /// (see code line
-        ///    aDotTypeValue = KeyA.TryValidateAndParse(V<string>(), out var temp) ? temp.ObjResult : null;
-        /// )
-        /// 
-        /// TODO: AFTER INTRODUCTION OF GENERIC <see cref="PropertyT{T}"/> there is a great chance that this member may be omitted. 
-        /// </summary>
-        public object ObjResult { get; private set; }
-
-        /// <summary>
         /// Will be null if Result is set
         /// </summary>
         public string ErrorResponse { get; private set; }
@@ -63,13 +51,11 @@ namespace AgoRapide.Core {
                     //    key : 
                     //    throw new PropertyKey.InvalidPropertyKeyException(Util.BreakpointEnabler + "Unable to create for " + nameof(AgoRapideAttribute.IsMany) + ".\r\nDetails: " + nameof(objResult) + ": " + objResult.GetType() + " = " + objResult + "\r\n" + key.ToString())), 
                     objResult
-                ),
-                (object)objResult /// TODO: AFTER INTRODUCTION OF GENERIC <see cref="PropertyT{T}"/> there is a great chance that this member may be omitted. 
+                )
             );
 
-        private ParseResult(Property result, object objResult) {
+        private ParseResult(Property result) {
             Result = result ?? throw new NullReferenceException(nameof(result));
-            ObjResult = objResult ?? throw new NullReferenceException(nameof(objResult));
             ErrorResponse = null;
         }
 

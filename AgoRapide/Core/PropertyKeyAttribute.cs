@@ -134,6 +134,8 @@ namespace AgoRapide.Core {
 
         private bool _isMany;
         /// <summary>
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// 
         /// Stored in memory in the <see cref="BaseEntity.Properties"/>-collection under
         /// one parent whose own <see cref="BaseEntity.Properties"/>-collection again 
         /// contains each instance with collection index corresponding to <see cref="int.MaxValue"/> minus index.
@@ -155,7 +157,7 @@ namespace AgoRapide.Core {
         /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
         /// </summary>
         private bool _isManyIsSet = false;
-        private bool IsManyIsSet => _isManyIsSet;
+        public bool IsManyIsSet => _isManyIsSet;
 
         /// <summary>
         /// </summary>
@@ -170,24 +172,16 @@ namespace AgoRapide.Core {
         }
 
         private bool _isExternal;
+        /// <summary>
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// </summary>
         [ClassMember(
             Description =
                 "Denotes properties that originates from external systems through -" + nameof(BaseSynchronizer) + "-"
         )]
         public bool IsExternal { get => _isExternal; set { _isExternal = value; _isExternalIsSet = true; } }
         private bool _isExternalIsSet = false;
-        private bool IsExternalIsSet => _isExternalIsSet;
-
-        /// <summary>
-        /// Implies that also belongs in <see cref="Parents"/> (you do not have to specify both)
-        /// </summary>
-        [ClassMember(
-            Description =
-                "Only relevant when -" + nameof(IsExternal) + "-." +
-                "(In order words, separate from -" + nameof(CoreP.DBId) + "-. " +
-                "Used to link together data from external sources. "
-        )]
-        public Type PrimaryKeyOf;
+        public bool IsExternalIsSet => _isExternalIsSet;
 
         /// <summary>
         /// </summary>
@@ -201,7 +195,66 @@ namespace AgoRapide.Core {
             public IsExternalException(string message, Exception inner) : base(message, inner) { }
         }
 
+        private bool _hasLimitedRange;
+        /// <summary>
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// 
+        /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically for boolean and enum. 
+        /// </summary>
+        [ClassMember(
+            Description =
+                "Denotes that there is a limited range (limited in the practical sense) for values of this property, " +
+                "making this property useful for drill down suggestions"
+        )]
+        public bool HasLimitedRange { get => _hasLimitedRange; set { _hasLimitedRange = value; _hasLimitedRangeIsSet = true; } }
+        private bool _hasLimitedRangeIsSet = false;
+        public bool HasLimitedRangeIsSet => _hasLimitedRangeIsSet;
+
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertHasLimitedRange(Func<string> detailer) {
+            if (!true.Equals(HasLimitedRange)) throw new HasLimitedRangeException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        /// <summary>
+        /// TODO: Implement as <see cref="CoreP"/> (maybe as <see cref="PropertyKeyAttribute.IsMany"/>?) and move documentation there.
+        /// 
+        /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically (if not already set) 
+        /// for known types like long, double, boolean, enum and DateTime,
+        /// (and also set it to <see cref="Operator.EQ"/> for <see cref="HasLimitedRange"/>)
+        /// </summary>
+        [ClassMember(Description = "Operators suitable for use against this property")]
+        public Operator[] Operators;
+
+        private HashSet<Operator> _operatorsAsHashSet;
+        public HashSet<Operator> OperatorsAsHashSet => _operatorsAsHashSet ?? (_operatorsAsHashSet = new Func<HashSet<Operator>>(() => {
+            var retval = new HashSet<Operator>();
+            if (Operators == null) return retval;
+            Operators.ForEach(o => retval.Add(o));
+            return retval;
+        })());
+
+        public class HasLimitedRangeException : ApplicationException {
+            public HasLimitedRangeException(string message) : base(message) { }
+            public HasLimitedRangeException(string message, Exception inner) : base(message, inner) { }
+        }
+
+        /// <summary>
+        /// Implies that also belongs in <see cref="Parents"/> (you do not have to specify both)
+        /// </summary>
+        [ClassMember(
+            Description =
+                "Only relevant when -" + nameof(IsExternal) + "-." +
+                "(In order words, separate from -" + nameof(CoreP.DBId) + "-. " +
+                "Used to link together data from external sources. "
+        )]
+        public Type PrimaryKeyOf;
+
         private bool _isDocumentation;
+        /// <summary>
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// </summary>
         [ClassMember(
             Description =
                 "Signifies that value may contain keys on the form -xxx- " +
@@ -232,9 +285,12 @@ namespace AgoRapide.Core {
                 "3) Can also be a type assignable to -" + nameof(ITypeDescriber) + ",\r\n" +
                 "4) or any type understood by " + nameof(PropertyKeyAttributeEnriched) + "\r\n" +
                 "\r\n" +
-                "Will be set to -" + nameof(String) + "- by " + nameof(PropertyKeyAttributeEnriched) + " if not given."
+                "Will be set to -" + nameof(String) + "- by " + nameof(PropertyKeyAttributeEnriched.Initialize) + " if not given."
             )]
         public Type Type { get => _type ?? throw new NullReferenceException(nameof(Type) + ". Supposed to always be set from " + nameof(PropertyKeyAttributeEnriched) + ".\r\nDetails: " + ToString()); set => _type = value; }
+        /// <summary>
+        /// Has little purpose since <see cref="Type"/> will be set anyway by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given."
+        /// </summary>
         public bool TypeIsSet => _type != null;
 
         private Type _genericListType;
@@ -412,6 +468,7 @@ namespace AgoRapide.Core {
             if (ValidValues == null) ValidValues = other.ValidValues;
             if (InvalidValues == null) InvalidValues = other.InvalidValues;
             if (SampleValues == null) SampleValues = other.SampleValues;
+            if (Operators == null) Operators = other.Operators;
 
             if (string.IsNullOrEmpty(Description)) {
                 Description = other.Description;
@@ -467,6 +524,7 @@ namespace AgoRapide.Core {
             /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsManyIsSet) IsMany = other.IsMany;
             if (other.IsDocumentationIsSet) IsDocumentation = other.IsDocumentation;
+            if (other.HasLimitedRange) HasLimitedRange = other.HasLimitedRange;
 
             /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsObligatory) IsObligatory = other.IsObligatory;

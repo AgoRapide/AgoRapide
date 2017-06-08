@@ -330,8 +330,10 @@ namespace AgoRapide {
         public object _value { get; protected set; }
         /// <summary>
         /// The generic value for this property. Corresponds to <see cref="PropertyT{T}._genericValue"/>
+        /// 
+        /// TODO: Add support of value as List[] for <see cref="IsIsManyParent"/>. Could for instance be created here if _value is null.
         /// </summary>
-        public object Value => _value ?? throw new NullReferenceException(nameof(_value) + ".\r\nDetails: " + ToString());
+        public object Value => _value ?? throw new NullReferenceException(nameof(_value) + ".\r\n" + (IsIsManyParent ? ("Possible cause: " + nameof(IsIsManyParent) + ", as of June 2017 these are not initialized with " + nameof(_value) + "\r\n") : "") + "Details: " + ToString());
 
         private string _valueHTML;
         /// <summary>
@@ -428,11 +430,11 @@ namespace AgoRapide {
         public BaseAttribute ValueA => _valueA ?? (_valueA = new Func<BaseAttribute>(() => {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
             switch (_value) {
-                case ApplicationPart applicationPart: return applicationPart.A;                    
+                case ApplicationPart applicationPart: return applicationPart.A;
             }
             var type = _value.GetType();
             if (type.IsEnum) return _value.GetEnumValueAttribute();
-            
+
             // NOT RELEVANT
             // if (type.IsClass) return type.GetClassAttribute(); // TODO: Check validity of this
 
@@ -467,8 +469,8 @@ namespace AgoRapide {
         /// <returns></returns>
         public override string ToString() =>
             base.ToString() + "\r\n" +
-            (IsIsManyParent ? nameof(IsIsManyParent) : "") +
-            (IsTemplateOnly ? nameof(IsTemplateOnly) : "") +
+            (IsIsManyParent ? (nameof(IsIsManyParent) + ", ") : "") +
+            (IsTemplateOnly ? (nameof(IsTemplateOnly) + ", ") : "") +
             nameof(ParentId) + ": " + ParentId + ", " +
             nameof(KeyDB) + ": " + (_keyDB ?? "[NULL]") + ", " +
             nameof(Key.Key.CoreP) + ": " + (_key?.Key.A.EnumValueExplained ?? "[NULL]") + ", " +
