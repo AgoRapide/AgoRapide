@@ -458,7 +458,7 @@ namespace AgoRapide {
         /// <summary>
         /// Note existence of both <see cref="Property.InvalidPropertyException"/> and <see cref="BaseEntity.InvalidPropertyException{T}"/>
         /// </summary>
-        private class InvalidPropertyException : ApplicationException {
+        public class InvalidPropertyException : ApplicationException {
             public InvalidPropertyException(string message) : base(message) { }
         }
 

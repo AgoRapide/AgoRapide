@@ -78,16 +78,21 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Synchronizes 
         /// 1) The database, 
-        /// 2) This object and 
+        /// 2) This object (which must be a "clean" object, not containing anything in <see cref="BaseEntity.Properties"/>) and 
         /// 3) The cached value in <see cref="AllApplicationParts"/> 
         /// against <see cref="A"/>
         /// by calling <see cref="Get{T}"/>
         /// 
-        /// Note that becausae of the generics involved in calling <see cref="Get{T}"/> we can not have the implementator here 
+        /// Note that since this object must be a "clean" object, the preferred approach is to have <see cref="BaseDatabase"/> as a parameter to the constructor, and
+        /// call <see cref="ConnectWithDatabase"/> from the constructor. An exception has been made for <see cref="Configuration"/>
+        /// 
+        /// Note that because of the generics involved in calling <see cref="Get{T}"/> we can not have the implementator here 
         /// but must leave the implementation to each individual sub class. 
+        /// 
+        /// The rationale is to be able to store any kind of values in the database, not only those identified by <see cref="A"/>
         /// </summary>
         /// <param name="db"></param>
-        public abstract void ConnectWithDatabase(BaseDatabase db);
+        protected abstract void ConnectWithDatabase(BaseDatabase db);
 
         /// <summary>
         /// Usually used for getting an <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> in 
@@ -130,7 +135,7 @@ namespace AgoRapide.Core {
                 "except from -" + nameof(PropertyKeyMapper.TryAddA) + "- for API originated enums"
         )]
         protected static T Get<T>(BaseAttribute attribute, BaseDatabase db, T enrichAndReturnThisObject) where T : ApplicationPart, new() {
-            ClassMember cid = null; /// This method as <see cref="DBField.cid"/>
+            // ClassMember cid = null; /// This method as <see cref="DBField.cid"/>
             var retvalTemp = AllApplicationParts.GetOrAdd(attribute.Id.IdString.ToString(), i => {
                 InvalidIdentifierException.AssertValidIdentifier(i); // TODO: As of Apr 2017 this will fail for abstract types.
 
@@ -139,9 +144,9 @@ namespace AgoRapide.Core {
                 // Alternative 2) Instead ask for the "parent" method lower down in the stack
                 var thisA = MethodBase.GetCurrentMethod().GetClassMemberAttribute(nameof(Get)); /// Do not rename method <see cref="Get{T}"/> into GetOrAdd as it would collide with <see cref="ConcurrentDictionary{TKey, TValue}.GetOrAdd"/>
 
-                cid = thisA.Id.IdString.ToString().Equals(i) ?
-                    null : // Avoid recursive call
-                    Get<ClassMember>(thisA, db, null); /// Get this method as <see cref="ApplicationPart"/>
+                var cid = thisA.Id.IdString.ToString().Equals(i) ?
+                     null : // Avoid recursive call
+                     Get<ClassMember>(thisA, db, null); /// Get this method as <see cref="ApplicationPart"/>
 
                 /// Note that this operation is not thread-safe in the manner that the operation against the database
                 /// may be executed multiple times (the superfluous result of this lambda will then just end up being ignored)
@@ -171,15 +176,7 @@ namespace AgoRapide.Core {
                         result: null
                     );
                 });
-                // Unnecessary, included in attribute.Properties
-                //db.CreateProperty(
-                //    cid: cid.Id,
-                //    pid: r.Id,
-                //    fid: null,
-                //    key: CoreP.QueryId.A().PropertyKeyWithIndex,
-                //    value: attribute.Id.IdString,
-                //    result: null
-                //);
+
                 /// Read r once more since properties are not reflected yet 
                 /// (since we called <see cref="BaseDatabase.CreateProperty"/> and not <see cref="BaseDatabase.UpdateProperty{T}"/>
                 r = db.GetEntityById<T>(r.Id);
@@ -209,10 +206,23 @@ namespace AgoRapide.Core {
                 e.Id = retval.Id;
                 e.Created = retval.Created;
                 e.RootProperty = retval.RootProperty;
-                if (e.Properties == null) e.Properties = new Dictionary<CoreP, Property>();
+                if (e.Properties == null) {
+                    e.Properties = new Dictionary<CoreP, Property>();
+                } else if (e.Properties.Count > 0) {
+                    // This creates all kind of problems with synchronization and must therefore be avoided.
+                } else {
+                    /// OK, <param name="enrichAndReturnThisObject"/> is a "clean" object
+                }
                 retval.Properties.ForEach(p => {
-                    // if (e.Properties.ContainsKey(p.Key)) throw new KeyAlreadyExistsException<CoreP>(p.Key, nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
-                    e.Properties.AddValue2(p.Key, p.Value,() => nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
+                    // DELETE THIS COMMENTED-OUT CODE:
+                    //if (e.Properties.TryGetValue(p.Key, out var existing)) { // Difficult problem.
+                    //    if (existing.Id > 0) throw new Property.InvalidPropertyException(
+                    //        "property " + p.Value.Key.Key.PToString + " already exists but with " + nameof(existing.Id) + " > 0 (" + existing.Id + ") " +
+                    //        "We assume that " + nameof(enrichAndReturnThisObject) + " has the \"correct\" value, and that the caller will later update with the correct value. " +
+                    //        "This is a problem because the call to " + nameof(db.UpdateProperty) + " afterwards will then have no effect, even if value has changed.");
+                    //} else {
+                        e.Properties.AddValue2(p.Key, p.Value, () => Util.BreakpointEnabler + nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
+                    //}
                 });
             });
 

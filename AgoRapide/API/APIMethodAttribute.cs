@@ -110,6 +110,6 @@ namespace AgoRapide.API {
             if (_id != null) throw new NotNullReferenceException(nameof(_id) + ". Details: " + ToString());
             _id = id;
         }
-        protected override Id GetId() => _id ?? throw new NullReferenceException(nameof(_id) + ". Must be set by call to -" + nameof(SetId) + "-. Details: " + ToString());
+        protected override Id GetId() => _id ?? throw new NullReferenceException(Util.BreakpointEnabler + nameof(_id) + ". Must be set by call to -" + nameof(SetId) + "-. Details: " + ToString());
     }
 }

@@ -11,11 +11,14 @@ namespace AgoRapide {
 
     [Enum(
         Description =
+            "HTTP methods like GET or POST. " +
             "The AgoRapide principle is to use -" + nameof(GET) + "- for \"everything\" including create, read, update and delete " +
             "except when the data is incompatible for fitting within an URL in which case -" + nameof(POST) + "- may be used.",
         AgoRapideEnumType = EnumType.EnumValue
     )]
     public enum HTTPMethod {
+
+        None, 
 
         GET,
 

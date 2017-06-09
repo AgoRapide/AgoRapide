@@ -28,7 +28,11 @@ namespace AgoRapide.Core {
         /// DO NOT USE!
         /// </summary>
         public EnumValue() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
-        public EnumValue(EnumValueAttribute attribute) : base(attribute) => EVA = attribute;
+        public EnumValue(EnumValueAttribute attribute, BaseDatabase db) : base(attribute) {
+            EVA = attribute;
+            ConnectWithDatabase(db);
+        }
+
 
         ///// <summary>
         ///// TODO: This overload may be removed by a general relation mechanism for parent-child
@@ -43,6 +47,6 @@ namespace AgoRapide.Core {
         //    return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         //}
 
-        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

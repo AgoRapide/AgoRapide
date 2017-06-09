@@ -41,21 +41,11 @@ namespace AgoRapide.Core {
         /// in order to set <see cref="ApplicationPart.A"/> correctly.
         /// </summary>
         public ClassMember() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
-        public ClassMember(ClassMemberAttribute attribute) : base(attribute) => CMA = attribute;
+        public ClassMember(ClassMemberAttribute attribute, BaseDatabase db) : base(attribute) {
+            CMA = attribute;
+            ConnectWithDatabase(db);
+        }
 
-        ///// <summary>
-        ///// TODO: This overload may be removed by a general relation mechanism for parent-child
-        ///// TODO: (marking with attributes what the parent is)
-        ///// </summary>
-        ///// <param name="request"></param>
-        ///// <returns></returns>
-        //public override string ToHTMLDetailed(Request request) {
-        //    var retval = new StringBuilder();
-        //    var ca = CMA.MemberInfo.DeclaringType.GetClassAttribute();
-        //    retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Class " + ca.ClassType.ToStringVeryShort(), typeof(Class), ca.Id.IdString) + "</p>");
-        //    return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
-        //}
-
-        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

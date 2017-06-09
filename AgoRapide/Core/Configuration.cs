@@ -25,7 +25,16 @@ namespace AgoRapide.Core {
         /// DO NOT USE!
         /// </summary>
         public Configuration() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
-        public Configuration(ConfigurationAttribute configurationAttribute) :base(configurationAttribute) => C = configurationAttribute;        
-        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);        
+        /// <summary>
+        /// Note special approach for <see cref="Configuration"/>, <see cref="BaseDatabase"/> is not a constructor parameter as with other <see cref="ApplicationPart"/>
+        /// </summary>
+        /// <param name="configurationAttribute"></param>
+        public Configuration(ConfigurationAttribute configurationAttribute) :base(configurationAttribute) => C = configurationAttribute;
+        protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        /// <summary>
+        /// Note special approach for <see cref="Configuration"/>, <see cref="BaseDatabase"/> is not a constructor parameter as with other <see cref="ApplicationPart"/>
+        /// </summary>
+        /// <param name="db"></param>
+        public void ConnectWithDatabasePublicAccess(BaseDatabase db) => ConnectWithDatabase(db);
     }
 }

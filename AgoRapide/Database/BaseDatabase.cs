@@ -250,7 +250,7 @@ namespace AgoRapide.Database {
         /// </param>
         /// <param name="property"></param>
         /// <param name="operation"></param>
-        /// <param name="result"></param>
+        /// <param name="result">May be null</param>
         public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
 
         public abstract void Dispose();
@@ -334,9 +334,15 @@ namespace AgoRapide.Database {
                                 /// properties and add new ones                            
 
 
-                                /// TODO: Implement for all types, not only reference types. As code below stands it has to be written repeatedly for each value type. 
-                                /// TOOD: Add support for other types, at least long, double, boolean, DateTime. Others can just be converted to string
-                                if (key.Key.A.Type.IsValueType) throw new NotImplementedException(key.Key.A.Type + " " + nameof(Type.IsValueType) + detailer.Result("\r\nDetails: "));
+                                if (key.Key.A.Type.IsValueType) {
+                                    if (key.Key.A.Type.IsEnum) {
+                                        /// OK because stored as string in database anyway <see cref="DBField.strv"/>
+                                    } else {
+                                        /// TODO: Implement for all types, not only reference types. As code below stands it has to be written repeatedly for each value type. 
+                                        /// TOOD: Add support for other types, at least long, double, boolean, DateTime. Others can just be converted to string
+                                        throw new NotImplementedException(key.Key.A.Type + " " + nameof(Type.IsValueType) + detailer.Result("\r\nDetails: "));
+                                    }
+                                }
                                 // InvalidTypeException.AssertEquals(key.Key.A.Type, typeof(string), () => "Update for List<> only supported for List<string>");
 
                                 var remainingToAdd = list.ToList<string>();

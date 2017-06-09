@@ -25,8 +25,8 @@ namespace AgoRapide.Core {
         /// DO NOT USE!
         /// </summary>
         public Class() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
-        public Class(ClassAttribute attribute) : base(attribute) { }
-
+        public Class(ClassAttribute attribute, BaseDatabase db) : base(attribute) => ConnectWithDatabase(db);
+        
         public static void RegisterAndIndexCoreClass(BaseDatabase db) =>typeof(Configuration).Assembly.GetTypes().Where(t => !t.IsEnum).ForEach(t => RegisterAndIndexClass(t, db)); /// Going through <see cref="Configuration"/> ensures we get a reference to the AgoRapide assembly
         
         /// <summary>
@@ -43,8 +43,8 @@ namespace AgoRapide.Core {
                 if (a.IsDefault) {
                     // We have no interest in documenting classes without attributes. Will only generate noise.
                 } else {
-                    var _class = new Class(a);
-                    _class.ConnectWithDatabase(db);
+                    var _class = new Class(a, db);
+                    // _class.ConnectWithDatabase(db);
                     Documentator.IndexEntity(_class);
                 }
             }
@@ -53,12 +53,12 @@ namespace AgoRapide.Core {
                 if ((e.MemberType & System.Reflection.MemberTypes.NestedType) == System.Reflection.MemberTypes.NestedType) return; /// Would most probably result in a <see cref="BaseAttribute.IncorrectAttributeTypeUsedException"/>
                 var a = e.GetClassMemberAttribute();
                 if (a.IsDefault) return; // We have no interest in documenting members without attributes. Will only generate noise.
-                var classMember = new ClassMember(a);
-                classMember.ConnectWithDatabase(db);
+                var classMember = new ClassMember(a, db);
+                // classMember.ConnectWithDatabase(db);
                 Documentator.IndexEntity(classMember);
             });
         }
 
-        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

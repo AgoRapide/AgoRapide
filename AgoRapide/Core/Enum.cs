@@ -25,7 +25,7 @@ namespace AgoRapide.Core {
         /// DO NOT USE!
         /// </summary>
         public Enum() : base(BaseAttribute.GetStaticNotToBeUsedInstance) { }
-        public Enum(EnumAttribute attribute) : base(attribute) { }
+        public Enum(EnumAttribute attribute, BaseDatabase db) : base(attribute) => ConnectWithDatabase(db);
 
         public static void RegisterAndIndexCoreEnum(BaseDatabase db) =>
             typeof(CoreP).Assembly.GetTypes().Where(t => t.IsEnum).ForEach(t => RegisterAndIndexEnum(t, db)); /// Going through <see cref="CoreP"/> ensures we get a reference to the AgoRapide assembly
@@ -61,17 +61,17 @@ namespace AgoRapide.Core {
             var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);
 
             // Note how all Enums are registered, even those without any attributes.
-            var _enum = new Enum(type.GetEnumAttribute());
-            _enum.ConnectWithDatabase(db);
+            var _enum = new Enum(type.GetEnumAttribute(), db);
+            // _enum.ConnectWithDatabase(db);
             Documentator.IndexEntity(_enum);
 
             Util.EnumGetValues(type).ForEach(e => {
-                var enumValue = new EnumValue(e.GetEnumValueAttribute());
-                enumValue.ConnectWithDatabase(db);
+                var enumValue = new EnumValue(e.GetEnumValueAttribute(), db);
+                // enumValue.ConnectWithDatabase(db);
                 Documentator.IndexEntity(enumValue);
             });
         }
 
-        public override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
+        protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }
