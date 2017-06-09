@@ -211,8 +211,8 @@ namespace AgoRapide.Core {
                 e.RootProperty = retval.RootProperty;
                 if (e.Properties == null) e.Properties = new Dictionary<CoreP, Property>();
                 retval.Properties.ForEach(p => {
-                    if (e.Properties.ContainsKey(p.Key)) throw new KeyAlreadyExistsException<CoreP>(p.Key, nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
-                    e.Properties.AddValue2(p.Key, p.Value);
+                    // if (e.Properties.ContainsKey(p.Key)) throw new KeyAlreadyExistsException<CoreP>(p.Key, nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
+                    e.Properties.AddValue2(p.Key, p.Value,() => nameof(enrichAndReturnThisObject) + " should not contain any properties at this stage");
                 });
             });
 

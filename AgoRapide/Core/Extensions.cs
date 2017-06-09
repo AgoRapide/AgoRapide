@@ -78,7 +78,7 @@ namespace AgoRapide.Core {
         /// <param name="detailer"></param>
         public static void AddValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> detailer) {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + ", Key '" + key.ToString() + detailer.Result("\r\nDetails: "));
-            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key '" + key.ToString() + "' does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\nDetails: "));
+            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key '" + key.ToString() + "' does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
             dictionary[key] = value;
         }
 
@@ -96,7 +96,7 @@ namespace AgoRapide.Core {
         /// <param name="detailer"></param>
         public static void AddValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + ", Key '" + key.GetEnumValueAttribute().EnumValueExplained.ToString() + detailer.Result("\r\nDetails: "));
-            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result(", Details: "));
+            if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
             dictionary.Add(key, value);
         }
 
@@ -143,7 +143,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static T GetValue<T>(this List<T> list, int index, Func<string> detailer) {
             if (list == null) throw new NullReferenceException(nameof(list) + detailer.Result("\r\nDetails: "));
-            if (index >= list.Count) throw new IndexOutOfRangeException(nameof(index) + ": " + index + ", " + list.ListAsString() + detailer.Result("\r\nDetails: "));
+            if (index >= list.Count) throw new IndexOutOfRangeException(nameof(index) + ": " + index + ", " + list.ListAsString() + detailer.Result("\r\n-- -\r\nDetails: "));
             return list[index];
         }
 
@@ -164,7 +164,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
         public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) => GetValue(dictionary, key, null);
@@ -184,7 +184,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
         public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null); // What we really would want is "where T : Enum"
@@ -204,7 +204,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
         public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null);  // What we really would want is "where T : Enum"
@@ -224,7 +224,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
 

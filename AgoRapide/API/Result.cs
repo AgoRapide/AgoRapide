@@ -76,12 +76,13 @@ namespace AgoRapide.API {
                         retval.AppendLine("</table>");
 
                         CreateDrillDownUrls(thisTypeSorted).ForEach(key => {
-                            retval.Append("<p>Drilldown for " + key.Key.A().Key.PToString + ":</p>");
+                            retval.Append("<p>Drilldown for " + key.Key.A().Key.PToString + ": ");
                             key.Value.ForEach(_operator => {
                                 _operator.Value.ForEach(suggestion => {
-                                    retval.Append("<p><a href=\"" + suggestion.Value.url + "\">" + suggestion.Value.text.HTMLEncode() + "<a></p>");
+                                    retval.Append("<a href=\"" + suggestion.Value.Url + "\">" + suggestion.Value.Text.HTMLEncode() + "<a>&nbsp;");
                                 });
                             });
+                            retval.Append("</p>");
                         });
                     });
                 }
@@ -263,9 +264,9 @@ namespace AgoRapide.API {
                         var count = entities.Where(query.ToPredicate).Count();
                         if (count > 0 && count != entities.Count) { // Note how we do not offer drill down if all entities match
                             r2.AddValue(v.ToString(), new DrillDownSuggestions {
-                                url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
-                                text = query.ToString() + " (" + count + ")",
-                                queryId = query
+                                Url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
+                                Text = key.Key.ConvertObjectToString(v) + " (" + count + ")", 
+                                QueryId = query
                             });
                         }
                     });
@@ -280,9 +281,9 @@ namespace AgoRapide.API {
         /// TODO: Make immutable
         /// </summary>
         public class DrillDownSuggestions {
-            public string url;
-            public string text;
-            public QueryIdKeyOperatorValue queryId;
+            public string Url;
+            public string Text;
+            public QueryIdKeyOperatorValue QueryId;
         }
 
     }
