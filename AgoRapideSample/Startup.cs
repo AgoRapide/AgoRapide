@@ -110,7 +110,9 @@ namespace AgoRapideSample {
                 }); // What we really would want is "where T : Enum"
                 mapper1<AgoRapide.DBField>(); /// This is a quasi <see cref="AgoRapide.Core.PropertyKeyAttribute"/>
                 mapper1<AgoRapide.CoreP>();
-                mapper1<AgoRapide.Core.ConfigurationAttribute.ConfigurationKey>();
+                mapper1<AgoRapide.Core.ConfigurationAttribute.ConfigurationP>();
+                mapper1<AgoRapide.API.APIMethodP>();
+                mapper1<AgoRapide.API.ResultP>();
                 mapper1<P>();
                 /// Add all your <see cref="AgoRapide.EnumType.PropertyKey"/> at bottom of list, 
                 /// that is in order of going outwards from inner AgoRapide library towards your final application
@@ -122,14 +124,16 @@ namespace AgoRapideSample {
                 systemUser.AddProperty(AgoRapide.Core.Extensions.A(AgoRapide.CoreP.AccessLevelGiven), AgoRapide.AccessLevel.System);
                 AgoRapide.Core.Util.Configuration.C.SystemUser = systemUser;
 
+                Log("\r\n\r\n" +
+                    "Asserting mapping towards " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
+                    "(note mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards)");
                 void mapper2<T>() where T : struct, IFormattable, IConvertible, IComparable // What we really would want is "where T : Enum"
                 {
-                    Log("\r\n\r\n" +
-                        "Mapping all " + typeof(T) + " to " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
-                        "(note silently mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards for all " + typeof(T) + " not explicitly mapped to a " + typeof(AgoRapide.CoreP) + ")\r\n\r\n" +
+                    Log(
+                        typeof(T) + " to " + typeof(AgoRapide.CoreP) + ":\r\n" +
                         string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<T>().Select(p => nameof(T) + "." + p + " => " + AgoRapide.Core.PropertyKeyMapper.GetA(p).Key.CoreP)) + "\r\n");
                 }
-                mapper2<AgoRapide.Core.ConfigurationAttribute.ConfigurationKey>();
+                mapper2<AgoRapide.Core.ConfigurationAttribute.ConfigurationP>();
                 mapper2<P>();
 
                 string mapper3<T>() => typeof(T) + " => " + AgoRapide.Core.Util.MapTToCoreP<T>().Key.A.EnumValueExplained + "\r\n";
@@ -190,7 +194,7 @@ namespace AgoRapideSample {
                 AgoRapide.Core.ApplicationPart.GetFromDatabase<AgoRapide.Core.Configuration>(db, text => Log("(by " + typeof(AgoRapide.Core.Configuration) + "." + nameof(AgoRapide.Core.ApplicationPart.GetFromDatabase) + ") " + text)); // TODO: Fix better logging mechanism here
 
                 Log("Writing configuration to database");
-                AgoRapide.Core.Util.Configuration.ConnectWithDatabase(db);
+                AgoRapide.Core.Util.Configuration.ConnectWithDatabasePublicAccess(db);
 
                 /// --------------------- <see cref="AgoRapide.API.APIMethod"/>
 

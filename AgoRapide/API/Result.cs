@@ -75,10 +75,12 @@ namespace AgoRapide.API {
                         retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</table>");
 
-                        CreateDrillDownUrls(thisTypeSorted).ForEach(key => {
-                            retval.Append("<p>Drilldown for " + key.Key.A().Key.PToString + ": ");
+                        CreateDrillDownUrls(thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(key => { // k => k.Key.A().Key.PToString is somewhat inefficient
+                            retval.Append("<p><b>" + key.Key.A().Key.PToString + "</b>: ");
                             key.Value.ForEach(_operator => {
-                                _operator.Value.ForEach(suggestion => {
+                                // Note how ordering by negative value should be more efficient then ordering and then reversing
+                                // _operator.Value.OrderBy(s => s.Value.Count).Reverse().ForEach(suggestion => {
+                                _operator.Value.OrderBy(s => -s.Value.Count).ForEach(suggestion => {
                                     retval.Append("<a href=\"" + suggestion.Value.Url + "\">" + suggestion.Value.Text.HTMLEncode() + "<a>&nbsp;");
                                 });
                             });
@@ -264,8 +266,9 @@ namespace AgoRapide.API {
                         var count = entities.Where(query.ToPredicate).Count();
                         if (count > 0 && count != entities.Count) { // Note how we do not offer drill down if all entities match
                             r2.AddValue(v.ToString(), new DrillDownSuggestions {
+                                Count = count,
                                 Url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
-                                Text = key.Key.ConvertObjectToString(v) + " (" + count + ")", 
+                                Text = key.Key.ConvertObjectToString(v) + " (" + count + ")",
                                 QueryId = query
                             });
                         }
@@ -281,6 +284,10 @@ namespace AgoRapide.API {
         /// TODO: Make immutable
         /// </summary>
         public class DrillDownSuggestions {
+            /// <summary>
+            /// Number of entities resulting if querying according to this suggestion
+            /// </summary>
+            public long Count;
             public string Url;
             public string Text;
             public QueryIdKeyOperatorValue QueryId;

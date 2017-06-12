@@ -22,7 +22,7 @@ namespace AgoRapide.Core {
     /// <see cref="Configuration"/><br>
     /// </summary>
     [Class(
-        Description = "Represents some internal part of your application.",
+        Description = "See -" + nameof(EntityTypeCategory.ApplicationPart) + "-.",
         LongDescription = "Compare to  to -" + nameof(APIDataObject) + "- which represents actual data entities that your API is supposed to provide.",
         /// TODO: Implement inheritance of <see cref="ClassAttribute"/>-members. 
         /// TODO: Fixed 26 May 2017 but check that works properly. 

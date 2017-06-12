@@ -30,46 +30,10 @@ namespace AgoRapide.Core {
         public static void RegisterAndIndexCoreEnum(BaseDatabase db) =>
             typeof(CoreP).Assembly.GetTypes().Where(t => t.IsEnum).ForEach(t => RegisterAndIndexEnum(t, db)); /// Going through <see cref="CoreP"/> ensures we get a reference to the AgoRapide assembly
 
-            //void Register<T>() where T : struct, IFormattable, IConvertible, IComparable
-            //{ // What we really would want is "where T : Enum"
-            //    RegisterAndIndexEnum<T>(db);
-            //}
-
-            //// TODO: Completeness verified April 2017
-            //Register<AccessLevel>();
-            //Register<AccessLocation>();
-            //Register<AccessType>();
-            //Register<APIMethodOrigin>();
-            //Register<CoreAPIMethod>();
-
-            //Register<CoreP>(); /// Note that based on <see cref="PropertyKeyAttribute"/>
-            //Register<ConfigurationAttribute.ConfigurationKey>(); /// Note that based on <see cref="PropertyKeyAttribute"/>
-
-            //Register<DateTimeFormat>();
-            //Register<DBField>();
-            //Register<EnumType>();
-            //Register<Environment>();
-            //Register<HTTPMethod>();
-            //Register<Operator>();
-            //Register<PriorityOrder>();
-            //Register<PropertyOperation>();
-            //Register<ResponseFormat>();
-            //Register<ResultCode>();
-        // }
-
         public static void RegisterAndIndexEnum(Type type, BaseDatabase db) { // where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
-            var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);
-
-            // Note how all Enums are registered, even those without any attributes.
-            var _enum = new Enum(type.GetEnumAttribute(), db);
-            // _enum.ConnectWithDatabase(db);
-            Documentator.IndexEntity(_enum);
-
-            Util.EnumGetValues(type).ForEach(e => {
-                var enumValue = new EnumValue(e.GetEnumValueAttribute(), db);
-                // enumValue.ConnectWithDatabase(db);
-                Documentator.IndexEntity(enumValue);
-            });
+            var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db);            
+            Documentator.IndexEntity(new Enum(type.GetEnumAttribute(), db)); // Note how all Enums are registered, even those without any attributes.
+            Util.EnumGetValues(type).ForEach(e => Documentator.IndexEntity(new EnumValue(e.GetEnumValueAttribute(), db)));            
         }
 
         protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);

@@ -36,7 +36,10 @@ namespace AgoRapide.Core {
             "-" + nameof(QueryIdKeyOperatorValue) + "-\r\n" +
             "-" + nameof(QueryIdString) + "-\r\n" +
             "-" + nameof(QueryIdMultiple) + "-",
-        SampleValues = new string[] { "All" },
+        SampleValues = new string[] {
+            "All",
+            "WHERE " + nameof(EntityTypeCategory) + " = " + nameof(EntityTypeCategory.APIDataObject) /// = corresponds to <see cref="Operator.EQ"/>
+        },
         InvalidValues = new string[] {
             "WHERE value IN ('A', 'B'" /// TODO: Add more common syntax errors and check that <see cref="TryParse"/> returns good error messages for each kind if syntax error
         }

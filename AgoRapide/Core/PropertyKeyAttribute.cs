@@ -217,6 +217,11 @@ namespace AgoRapide.Core {
             if (!true.Equals(HasLimitedRange)) throw new HasLimitedRangeException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
+        public class HasLimitedRangeException : ApplicationException {
+            public HasLimitedRangeException(string message) : base(message) { }
+            public HasLimitedRangeException(string message, Exception inner) : base(message, inner) { }
+        }
+
         /// <summary>
         /// TODO: Implement as <see cref="CoreP"/> (maybe as <see cref="PropertyKeyAttribute.IsMany"/>?) and move documentation there.
         /// 
@@ -235,18 +240,13 @@ namespace AgoRapide.Core {
             return retval;
         })());
 
-        public class HasLimitedRangeException : ApplicationException {
-            public HasLimitedRangeException(string message) : base(message) { }
-            public HasLimitedRangeException(string message, Exception inner) : base(message, inner) { }
-        }
-
         /// <summary>
-        /// Implies that also belongs in <see cref="Parents"/> (you do not have to specify both)
+        /// Implies that the type given also belongs in <see cref="Parents"/> (in other words, you do not have to specify in <see cref="Parents"/> also)
         /// </summary>
         [ClassMember(
             Description =
                 "Only relevant when -" + nameof(IsExternal) + "-." +
-                "(In order words, separate from -" + nameof(CoreP.DBId) + "-. " +
+                "(In other words, separate from -" + nameof(CoreP.DBId) + "-). " +
                 "Used to link together data from external sources. "
         )]
         public Type PrimaryKeyOf;
@@ -567,7 +567,7 @@ namespace AgoRapide.Core {
             }
         }
 
-        /// Implementations from <see cref="EnumValueAttribute"/> are sufficient, no need to override here
+        /// Inherited implementations from <see cref="EnumValueAttribute"/> are sufficient, no need to override here:
         //public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
         //protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumValue.GetType().ToStringShort() + "_" + EnumValue.ToString();
 

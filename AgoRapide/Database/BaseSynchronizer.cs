@@ -22,7 +22,7 @@ namespace AgoRapide.Database {
             "(for instance a CRM system from which the AgoRapide based application will analyze data).",
         LongDescription =
             "The data found is stored within -" + nameof(FileCache) + "-, " +
-            "only identifiers (-" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "- are stored within -" + nameof(BaseDatabase) + "-"
+            "only identifiers (-" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "-) are stored within -" + nameof(BaseDatabase) + "-"
     )]
     public abstract class BaseSynchronizer : Agent {
 

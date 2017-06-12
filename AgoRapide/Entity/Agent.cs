@@ -7,11 +7,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
     [Class(
-        Description =
-            "Practical term used to designate a more complex -" + nameof(APIDataObject) + "- " +
-            "with independent business logic (like for instance logic for communication with outside systems).",
-        LongDescription = 
-            "Note the pragmatic approach, combining business logic and data objects",
+        Description = "See -" + nameof(EntityTypeCategory.Agent) + "-.",
         DefinedForClass = nameof(Agent),
         CacheUse = CacheUse.All // Since there is assumed to be a limited number of elements. 
     )]

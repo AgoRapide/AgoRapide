@@ -41,11 +41,9 @@ namespace AgoRapide.Core {
             {
                 var a = type.GetClassAttribute();
                 if (a.IsDefault) {
-                    // We have no interest in documenting classes without attributes. Will only generate noise.
+                    // We have no interest in documenting classes without attributes. It would only generate noise. 
                 } else {
-                    var _class = new Class(a, db);
-                    // _class.ConnectWithDatabase(db);
-                    Documentator.IndexEntity(_class);
+                    Documentator.IndexEntity(new Class(a, db));
                 }
             }
 
@@ -53,9 +51,7 @@ namespace AgoRapide.Core {
                 if ((e.MemberType & System.Reflection.MemberTypes.NestedType) == System.Reflection.MemberTypes.NestedType) return; /// Would most probably result in a <see cref="BaseAttribute.IncorrectAttributeTypeUsedException"/>
                 var a = e.GetClassMemberAttribute();
                 if (a.IsDefault) return; // We have no interest in documenting members without attributes. Will only generate noise.
-                var classMember = new ClassMember(a, db);
-                // classMember.ConnectWithDatabase(db);
-                Documentator.IndexEntity(classMember);
+                Documentator.IndexEntity(new ClassMember(a, db));
             });
         }
 

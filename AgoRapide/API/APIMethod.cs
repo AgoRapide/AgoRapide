@@ -78,7 +78,7 @@ namespace AgoRapide.API {
         /// <param name="httpMethods"></param>
         /// <param name="routeSegments"></param>
         /// <param name="method">Only relevant for <see cref="CoreAPIMethod.BaseEntityMethod"/></param>
-        public APIMethod(Type entityType, APIMethodAttribute methodAttribute, List<RouteSegmentClass> routeSegments, System.Reflection.MethodInfo baseEntityMethod, BaseDatabase db) : base(methodAttribute) {
+        private APIMethod(Type entityType, APIMethodAttribute methodAttribute, List<RouteSegmentClass> routeSegments, System.Reflection.MethodInfo baseEntityMethod, BaseDatabase db) : base(methodAttribute) {
             switch (methodAttribute.CoreMethod) {
                 case CoreAPIMethod.Configuration: NotNullReferenceException.AssertNotNull(entityType); break; // TODO: Remove this!
                 default: _entityType = entityType ?? throw new NullReferenceException(nameof(entityType)); break;
@@ -109,7 +109,7 @@ namespace AgoRapide.API {
         /// <param name="controllerMethod"></param>
         /// <param name="methodAttribute"></param>
         /// <param name="httpMethods"></param>
-        public APIMethod(Type controller, System.Reflection.MethodInfo controllerMethod, APIMethodAttribute methodAttribute, BaseDatabase db) : base(methodAttribute) {
+        private APIMethod(Type controller, System.Reflection.MethodInfo controllerMethod, APIMethodAttribute methodAttribute, BaseDatabase db) : base(methodAttribute) {
             Controller = controller ?? throw new ArgumentNullException(nameof(controller));
             if (!Controller.ToStringShort().EndsWith("Controller")) throw new InvalidControllernameException("'" + controller.ToStringShort() + "' does not end with 'Controller'");
             InvalidTypeException.AssertAssignable(Controller, typeof(BaseController), null);
@@ -156,10 +156,10 @@ namespace AgoRapide.API {
                 switch (MA.CoreMethod) {
                     case CoreAPIMethod.RootIndex:
                         RouteTemplates = new List<string> { "" };
-                        return; // Initialization is now complete.
+                        goto finished; // Initialization is now complete. 
                     case CoreAPIMethod.GenericMethod:
                         RouteTemplates = new List<string> { Util.Configuration.C.GenericMethodRouteTemplate }; // Usually "{*url}"
-                        return; // Initialization is now complete.
+                        goto finished; // Initialization is now complete. 
                     default:
                         throw new MethodInitialisationException("No " + nameof(APIMethodAttribute) + "." + nameof(MA.RouteTemplate) + ", no " + nameof(RouteSegments) + " and unknown " + nameof(CoreAPIMethod) + " (" + MA.CoreMethod + "). Possible resolution: Remove attribute " + MA.GetType().ToString() + " if not needed" + detailer1());
                 }
@@ -221,6 +221,8 @@ namespace AgoRapide.API {
             });
             if (restParameters.Count > 0) throw new MethodInitialisationException("The following parameters does not have corresponding [" + MA.GetType().ToString() + "(Sx = " + typeof(CoreP).ToString() + ".yyy)] initialisations: " + string.Join(", ", restParameters.Keys) + detailer1);
             RouteTemplates = new List<string> { string.Join("/", RouteSegments.Select(s => s.Template)) };
+
+            finished:
 
             MA.SetId(GetId());
             ConnectWithDatabase(db);
@@ -548,7 +550,7 @@ namespace AgoRapide.API {
                         entityType: t,
                         methodAttribute: new APIMethodAttribute {
                             CoreMethod = CoreAPIMethod.UpdateProperty,
-                            Description = "Adds property for entities of type " + t.ToStringShort() + " as identified by {" + CoreP.QueryId + "}.",
+                            Description = "Adds property for entities of type -" + t.ToStringShort() + "- as identified by {" + CoreP.QueryId + "}.",
                             AccessLevelUse = t.GetClassAttribute().AccessLevelWrite // Use of method equals writing to entity
                         },
                         routeSegments: new List<RouteSegmentClass> {
@@ -597,7 +599,7 @@ namespace AgoRapide.API {
                         methodAttribute: new APIMethodAttribute {
                             CoreMethod = CoreAPIMethod.History,
                             Description =
-                                "Shows history for entity identified by {" + CoreP.QueryIdInteger + "}.",
+                                "Shows history for entity of type -" + t.ToStringShort() + "- identified by {" + CoreP.QueryIdInteger + "}.",
                             AccessLevelUse = t.GetClassAttribute().AccessLevelRead // Use of method equals writing to entity
                         },
                         routeSegments: new List<RouteSegmentClass> {
@@ -762,13 +764,22 @@ namespace AgoRapide.API {
                 db.UpdateProperty(cid, method, key, value, result: null);
             }
 
-            if (method._entityType != null) updater(CoreP.EntityType.A(), method._entityType);
+            if (method._entityType != null) {
+                updater(CoreP.EntityType.A(), method._entityType);
+                updater(CoreP.EntityTypeVeryShort.A(), method._entityType.ToStringVeryShort());
+                updater(CoreP.EntityTypeCategory.A(), method._entityType.ToEntityTypeCategory());
+            }
+
             updater(APIMethodP.APIMethodOrigin.A(), origin);
             updater(APIMethodP.RequiresAuthorization.A(), requiresAuthorization);
             updater(APIMethodP.RouteTemplate.A(), method.RouteTemplates[0]);
             updater(APIMethodP.HTTPMethods.A(), httpMethods);
             switch (method.PVM<APIMethodOrigin>()) {
+                /// TODO: Implement better linking towards <see cref="ClassMember"/> than this:
+                /// TODO: Assert that <see cref="ClassMember"/> really exists.
                 case APIMethodOrigin.Autogenerated: updater(APIMethodP.Implementator.A(), nameof(BaseController) + ".HandleCoreMethod" + method.MA.CoreMethod); break;
+                /// TODO: Implement better linking towards <see cref="ClassMember"/> than this:
+                /// TODO: Assert that <see cref="ClassMember"/> really exists.
                 default: updater(APIMethodP.Implementator.A(), method.Controller.ToStringShort() + "." + method.ControllerMethod.Name); break;
             }
 
@@ -852,7 +863,7 @@ namespace AgoRapide.API {
             PV(APIMethodP.CoreAPIMethod.A(), CoreAPIMethod.None).Use(c => c == CoreAPIMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
             PV<AccessLevel>(CoreP.AccessLevelUse.A()) + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "[NO DESCRIPTION AVAILABLE]") + "</td><td>" +
+            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "&nbsp;") + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {
@@ -875,7 +886,7 @@ namespace AgoRapide.API {
     public enum APIMethodP {
         None,
 
-        [PropertyKey(Type = typeof(APIMethodOrigin), Parents = new Type[] { typeof(APIMethod) })]
+        [PropertyKey(Type = typeof(APIMethodOrigin), AccessLevelRead =AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
         APIMethodOrigin,
 
         /// <summary>
@@ -886,7 +897,7 @@ namespace AgoRapide.API {
         /// This comment describes the recommended approach to setting attributes when the type given (<see cref="PropertyKeyAttribute.Type"/>) 
         /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
         /// </summary>
-        [PropertyKey(Type = typeof(CoreAPIMethod), Parents = new Type[] { typeof(APIMethod) })]
+        [PropertyKey(Type = typeof(CoreAPIMethod), AccessLevelRead = AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
         CoreAPIMethod,
 
         /// <summary>
@@ -906,10 +917,10 @@ namespace AgoRapide.API {
         /// <see cref="APIMethod.RouteTemplates"/>[0]
         /// TODO: Document better!
         /// </summary>
-        [PropertyKey(Type = typeof(string), Parents = new Type[] { typeof(APIMethod) })]
+        [PropertyKey(Type = typeof(string), AccessLevelRead = AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
         RouteTemplate,
 
-        [PropertyKey(Type = typeof(HTTPMethod), IsMany = true, Parents = new Type[] { typeof(APIMethod) })]
+        [PropertyKey(Type = typeof(HTTPMethod), IsMany = true, AccessLevelRead = AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
         HTTPMethods,
 
         /// <summary>
@@ -919,9 +930,12 @@ namespace AgoRapide.API {
         /// </summary>
         [PropertyKey(
             Description = "Value TRUE signifies that API client needs to supply credentials in order to query API method.",
-            Type = typeof(bool), Parents = new Type[] { typeof(APIMethod) })]
+            Type = typeof(bool), AccessLevelRead = AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
         RequiresAuthorization,
 
+        /// <summary>
+        /// TODO: To be removed. Replace with <see cref="DBField.id"/> for <see cref="ClassMember"/> (IsForeignKeyOf).
+        /// </summary>
         [PropertyKey(
             Description = "The Controller class + the method within that class which implements a given method.",
             HasLimitedRange = true, /// Most probably meaningless to add since either methods are handled through <see cref="BaseController.AgoRapideGenericMethod"/> or through an individiual handler. Remove if does not give any value. 
@@ -933,7 +947,7 @@ namespace AgoRapide.API {
         /// <summary>
         /// See <see cref="APIMethodAttribute.ShowDetailedResult"/>
         /// </summary>
-        [PropertyKey(Type = typeof(bool), Parents = new Type[] { typeof(APIMethod) })]
+        [PropertyKey(Type = typeof(bool), AccessLevelRead = AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
         ShowDetailedResult,
     }
 

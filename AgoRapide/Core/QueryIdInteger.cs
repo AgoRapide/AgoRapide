@@ -37,11 +37,11 @@ namespace AgoRapide.Core {
         public new static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    (retval is QueryIdInteger ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="QueryIdInteger"/>
-                    ParseResult.Create(agoRapideAttribute, retval) :
+                    (retval is QueryIdInteger ? /// Note how <see cref="QueryId.TryParse"/> returns base class <see cref="QueryId"/>, therefore only accept the returned value if it is a <see cref="QueryIdInteger"/>
+                        ParseResult.Create(agoRapideAttribute, retval) :
                         ParseResult.Create("Not a valid " + typeof(QueryIdInteger).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
-                        ) :
-                        ParseResult.Create(errorResponse);
+                    ) :
+                    ParseResult.Create(errorResponse);
             });
     }
 }

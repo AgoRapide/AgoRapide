@@ -10,9 +10,12 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: To be extended. Parsing for instance does not work for the moment.
     /// </summary>
-    [Class(Description =
-        "The general form of -" + nameof(QueryId) + "-. " +
-        "Typical example would be : WHERE LastName LIKE 'John%'")]
+    [Class(
+        Description = "The general form of -" + nameof(QueryId) + "-. ",
+        SampleValues = new string[] {
+            "WHERE " + nameof(EntityTypeCategory) + " = " + nameof(EntityTypeCategory.APIDataObject) /// = corresponds to <see cref="Operator.EQ"/>
+        }
+    )]
     public class QueryIdKeyOperatorValue : QueryId {
 
         /// <summary>
@@ -190,7 +193,7 @@ namespace AgoRapide.Core {
                                 parameterNo++;
                                 sql.Append(DBField.strv + " " + Operator.ToSQLString() + " :" + DBField.strv + (parameterNo).ToString());
                                 SQLWhereStatementParameters.Add((DBField.strv + (parameterNo).ToString(), _string));
-                                return; 
+                                return;
                             case Type type: // Added 7 Jun 2017
                                 Operator.AssertValidForType(typeof(string), detailer);
                                 parameterNo++;
@@ -289,11 +292,11 @@ namespace AgoRapide.Core {
         public new static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
             agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    (retval is QueryIdKeyOperatorValue ? /// <see cref="QueryId.TryParse"/> returns <see cref="QueryId"/> only accept if <see cref="QueryIdKeyOperatorValue"/>
+                    (retval is QueryIdKeyOperatorValue ? /// Note how <see cref="QueryId.TryParse"/> returns base class <see cref="QueryId"/>, therefore only accept the returned value if it is a <see cref="QueryIdKeyOperatorValue"/>
                         ParseResult.Create(agoRapideAttribute, retval) :
                         ParseResult.Create("Not a valid " + typeof(QueryIdKeyOperatorValue).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
-                        ) :
-                        ParseResult.Create(errorResponse);
+                    ) :
+                    ParseResult.Create(errorResponse);
             });
     }
 }

@@ -151,6 +151,7 @@
     <Compile Include="Enum\CoreP.cs" />
     <Compile Include="Enum\DateTimeFormat.cs" />
     <Compile Include="Enum\DBField.cs" />
+    <Compile Include="Enum\EntityTypeCategory.cs" />
     <Compile Include="Enum\EnumType.cs" />
     <Compile Include="Enum\Environment.cs" />
     <Compile Include="Enum\HTTPMethod.cs" />

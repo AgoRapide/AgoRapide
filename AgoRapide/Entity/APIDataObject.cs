@@ -10,12 +10,7 @@ using AgoRapide.Core;
 namespace AgoRapide {
 
     [Class(
-        Description =
-            "Represents a basic data object that your API provides like Person, Order, Product. " +
-            "All your data object classes should inherit this class in order to get better -" + nameof(ResponseFormat.HTML) + "- functionality. " +
-            "Not used by the AgoRapide library itself",
-        LongDescription =
-            "Compare to -" + nameof(ApplicationPart) + "- which represents an internal part of your application",
+        Description = "See -" + nameof(EntityTypeCategory.APIDataObject) + "-.",
         DefinedForClass = nameof(APIDataObject)
     )]
     public class APIDataObject : BaseEntity {

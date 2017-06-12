@@ -362,7 +362,7 @@ namespace AgoRapide {
                 default: {
                         var v = V<string>();
                         if (Key.Key.A.IsDocumentation) {
-                            return Documentator.ReplaceKeys(v.HTMLEncode());
+                            return Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>");
                         } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
                             return Documentator.GetSingleReplacement(v, list);
                         } else {

@@ -85,7 +85,6 @@ namespace AgoRapide.API {
             if (CoreMethod != CoreAPIMethod.None) PropertiesParent.AddProperty(APIMethodP.CoreAPIMethod.A(), CoreMethod, d);
             if (AccessLevelUse != AccessLevel.None) PropertiesParent.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse, d);
             if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment, d);
-            // if (APIMethodOrigin != APIMethodOrigin.None) PropertiesParent.AddProperty(APIMethodP.APIMethodOrigin.A(), Environment, d);
 
             /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
             PropertiesParent.AddProperty(APIMethodP.ShowDetailedResult.A(), ShowDetailedResult, ShowDetailedResult.ToString(), GetType().GetClassMemberAttribute(nameof(ShowDetailedResult)), d);

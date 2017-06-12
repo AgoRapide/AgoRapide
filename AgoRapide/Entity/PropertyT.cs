@@ -80,6 +80,7 @@ namespace AgoRapide {
                 switch (objValue) {
                     case double dblValue: return dblValue.ToString2();
                     case DateTime dtmValue: return dtmValue.ToString(DateTimeFormat.DateHourMin);
+                    case Type type: return type.ToStringDB(); // Added 12 Jun 2017
                     default: return objValue.ToString();
                 }
             })();
