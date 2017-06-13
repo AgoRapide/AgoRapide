@@ -61,6 +61,7 @@ namespace AgoRapide {
         )]
         public QueryId IdString => _idString ?? (_idString = PV<QueryId>(CoreP.QueryId.A(), new QueryIdInteger(Id)));
 
+        private string _idFriendly;
         /// <summary>
         /// <see cref="IdString"/> is used against <see cref="CoreAPIMethod.EntityIndex"/>. 
         /// <see cref="IdFriendly"/> is used in textual contexts 
@@ -71,7 +72,7 @@ namespace AgoRapide {
         /// Made virtual in cases where it is not practical to add a <see cref="CoreP.IdFriendly"/> property.
         /// </summary>
         /// <returns></returns>
-        public virtual string IdFriendly => PV(CoreP.IdFriendly.A(), Id.ToString());
+        public virtual string IdFriendly => _idFriendly ?? (_idFriendly = PV(CoreP.IdFriendly.A(), Id.ToString()));
 
         /// <summary>
         /// <see cref="IdString"/> is used against <see cref="CoreAPIMethod.EntityIndex"/>. 

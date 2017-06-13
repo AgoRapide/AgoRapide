@@ -75,9 +75,10 @@ namespace AgoRapide.API {
                         retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</table>");
 
-                        CreateDrillDownUrls(thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(key => { // k => k.Key.A().Key.PToString is somewhat inefficient
-                            retval.Append("<p><b>" + key.Key.A().Key.PToString + "</b>: ");
-                            key.Value.ForEach(_operator => {
+                        CreateDrillDownUrls(thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
+                            var key = e.Key.A();
+                            retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.Description) + "</b>: ");
+                            e.Value.ForEach(_operator => {
                                 // Note how ordering by negative value should be more efficient then ordering and then reversing
                                 // _operator.Value.OrderBy(s => s.Value.Count).Reverse().ForEach(suggestion => {
                                 _operator.Value.OrderBy(s => -s.Value.Count).ForEach(suggestion => {

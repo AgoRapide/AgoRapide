@@ -249,7 +249,14 @@ namespace AgoRapide.Core {
                 "(In other words, separate from -" + nameof(CoreP.DBId) + "-). " +
                 "Used to link together data from external sources. "
         )]
-        public Type PrimaryKeyOf;
+        public Type ExternalPrimaryKeyOf;
+
+        /// <summary>
+        /// <see cref="Type"/> will automatically be set to long by <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+        /// </summary>
+        [ClassMember(
+            Description = "Indicates that points to related entity.")]
+        public Type ForeignKeyOf;
 
         private bool _isDocumentation;
         /// <summary>
@@ -519,7 +526,7 @@ namespace AgoRapide.Core {
 
             // Not allowed since no rationale seen, and it only seems to add complexity
             if (other.IsExternalIsSet) throw new IsExternalException(nameof(IsExternalIsSet) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":" + other.ToString());
-            if (other.PrimaryKeyOf != null) throw new IsExternalException(nameof(PrimaryKeyOf) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":" + other.ToString());
+            if (other.ExternalPrimaryKeyOf != null) throw new IsExternalException(nameof(ExternalPrimaryKeyOf) + " is illegal for " + System.Reflection.MethodBase.GetCurrentMethod().Name + ".\r\nDetails:\r\nThis: " + ToString() + "\r\n" + nameof(other) + ":" + other.ToString());
 
             /// TODO: Expand on concept of <see cref="IsManyIsSet"/> in order to improve on <see cref="EnrichFrom"/>
             if (other.IsManyIsSet) IsMany = other.IsMany;

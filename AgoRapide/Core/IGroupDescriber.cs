@@ -45,7 +45,7 @@ namespace AgoRapide.Core {
         /// <see cref="PropertyKeyAttributeEnriched"/> and the properties of its member class 
         /// <see cref="PropertyKeyAttribute"/> (<see cref="PropertyKeyAttributeEnriched.A"/>)
         /// </summary>
-        /// <param name="agoRapideAttribute"></param>
-        void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute);
+        /// <param name="key"></param>
+        void EnrichAttribute(PropertyKeyAttributeEnriched key);
     }
 }

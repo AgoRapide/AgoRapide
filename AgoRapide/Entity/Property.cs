@@ -356,11 +356,17 @@ namespace AgoRapide {
                         return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
                            (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
                                 Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
-                            typeof(BaseEntity)
+                                typeof(BaseEntity)
                            ), new QueryIdInteger(V<long>()));
                     }
                 default: {
                         var v = V<string>();
+                        if (Key.Key.A.ForeignKeyOf != null) {
+                            var foreignKey = V<long>();
+                            return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex,
+                                InMemoryCache.EntityCache.TryGetValue(foreignKey, out var foreignEntity) ? foreignEntity.IdFriendly : v, 
+                                Key.Key.A.ForeignKeyOf, new QueryIdInteger(foreignKey));
+                        }
                         if (Key.Key.A.IsDocumentation) {
                             return Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>");
                         } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {

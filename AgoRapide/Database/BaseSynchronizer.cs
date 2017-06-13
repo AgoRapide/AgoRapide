@@ -22,7 +22,7 @@ namespace AgoRapide.Database {
             "(for instance a CRM system from which the AgoRapide based application will analyze data).",
         LongDescription =
             "The data found is stored within -" + nameof(FileCache) + "-, " +
-            "only identifiers (-" + nameof(PropertyKeyAttribute.PrimaryKeyOf) + "-) are stored within -" + nameof(BaseDatabase) + "-"
+            "only identifiers (-" + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "-) are stored within -" + nameof(BaseDatabase) + "-"
     )]
     public abstract class BaseSynchronizer : Agent {
 
@@ -68,7 +68,7 @@ namespace AgoRapide.Database {
             /// TODO: Add more advanced statistics counting here... 
             /// TODO: AND STORE ALSO AS PROPERTIES WITHIN Synchronizer permanently (not only as result)            
             Log(type.ToString() + ", Count: " + externalEntities.Count, result);
-            var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.PrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.PrimaryKeyOf) + " != null for " + type);
+            var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             /// TODO: Add some identificator here for "workspace" or similar.
             /// TODO: And call <see cref="BaseDatabase.TryGetEntities"/> instead with query like
@@ -77,7 +77,7 @@ namespace AgoRapide.Database {
             /// TODO: the <see cref="DBField.id"/> of a root administrative <see cref="Person"/> for our customer.
             var internalEntities = db.GetAllEntities<T>();
             var internalEntitiesByPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(primaryKey), e => e);
-            externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.PrimaryKeyOf"/>
+            externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
                 if (!internalEntitiesByPrimaryKey.TryGetValue(e.PV<long>(primaryKey), out var internalEntity)) {
                     internalEntity = db.GetEntityById<T>(db.CreateEntity<T>(Id,
                         new List<(PropertyKeyWithIndex key, object value)> {
@@ -88,7 +88,7 @@ namespace AgoRapide.Database {
                 e.Id = internalEntity.Id;
                 // e.AddProperty(CoreP.DBId.A(), e.Id); // TODO:  Most probably unnecessary. Should be contained below. 
                 internalEntity.Properties.Values.ForEach(p => {
-                    if (p.Key.Key.A.IsExternal) return; /// Already contained in e. Would typically be <see cref="PropertyKeyAttribute.PrimaryKeyOf"/> with has to be stored in database anyway. 
+                    if (p.Key.Key.A.IsExternal) return; /// Already contained in e. Would typically be <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/> with has to be stored in database anyway. 
                     e.AddProperty(p, null);
                 });
             });

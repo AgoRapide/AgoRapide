@@ -158,7 +158,7 @@ namespace AgoRapide.Core {
             if (_coreP != null && A.InheritAndEnrichFromProperty == null && !A.EnumValue.GetType().Equals(typeof(CoreP))) {
                 A.SetEnumValueExplained(A.EnumValueExplained + " (" + nameof(CoreP) + ": " + _coreP.ToString() + ")");
             }
-            if (A.PrimaryKeyOf != null) AddParent(A.PrimaryKeyOf);
+            if (A.ExternalPrimaryKeyOf != null) AddParent(A.ExternalPrimaryKeyOf);
 
             /// Enrichment 1, explicit given
             /// -----------------------------------------
@@ -247,8 +247,18 @@ namespace AgoRapide.Core {
                 }
             }
 
+            if (A.ForeignKeyOf!=null) {
+                A.Description += (string.IsNullOrEmpty(A.Description) ? "" : "\r\n") + "Foreign key of " + A.ForeignKeyOf.ToStringShort();
+            }
+
             if (!A.TypeIsSet) {
-                A.Type = typeof(string);
+                if (A.ForeignKeyOf != null) {
+                    A.Type = typeof(long);
+                } else {
+                    A.Type = typeof(string);
+                }
+            } else {
+                if (A.ForeignKeyOf != null) InvalidTypeException.AssertEquals(A.Type, typeof(long), () => "Only long allowed when " + nameof(A.ForeignKeyOf) + " is set.\r\nDetails: " + A.ToString());
             }
 
             if (!A.HasLimitedRangeIsSet) {
@@ -394,12 +404,12 @@ namespace AgoRapide.Core {
         /// </param>
         /// <typeparam name="TParent">
         /// The parent object for which this property is intended. 
-        /// Helps with deciding value when <see cref="PropertyKeyAttribute.PrimaryKeyOf"/>
+        /// Helps with deciding value when <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
         /// </typeparam>
         /// <returns></returns>
         public Property GetSampleProperty<TParent>(int n, Dictionary<Type, int> maxN) {
             var value = new Func<string>(() => {
-                if (A.PrimaryKeyOf != null) {
+                if (A.ExternalPrimaryKeyOf != null) {
 
                     var keyGenerator = new Func<int, string>(v => {
                         if (typeof(long).Equals(A.Type)) {
@@ -415,14 +425,14 @@ namespace AgoRapide.Core {
                         }
                     });
 
-                    if (typeof(TParent).Equals(A.PrimaryKeyOf)) {
+                    if (typeof(TParent).Equals(A.ExternalPrimaryKeyOf)) {
                         /// This is the primary key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
                         /// Just assign id's starting from 1
                         return keyGenerator(n);
                     } else {
                         /// This is the foreign key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
                         /// Assign a deterministic pseudo-random value within maxN for this type. 
-                        return keyGenerator(new Random(n).Next(1, maxN.GetValue(A.PrimaryKeyOf) + 1));
+                        return keyGenerator(new Random(n).Next(1, maxN.GetValue(A.ExternalPrimaryKeyOf) + 1));
                     }
                 }
                 if (A.SampleValues != null && A.SampleValues.Length > 0) {
@@ -439,7 +449,6 @@ namespace AgoRapide.Core {
         public class SampleGenerationException : ApplicationException {
             public SampleGenerationException(PropertyKeyAttributeEnriched key, string message) : base("Unable to generate a sample value for " + key.ToString() + ".\r\nDetails:\r\n" + message) { }
         }
-
 
         public override string ToString() => A == null ? ("[" + GetType() + " NOT INITIALIZED CORRECTLY (" + nameof(A) + " == null)]") : A.ToString();
     }

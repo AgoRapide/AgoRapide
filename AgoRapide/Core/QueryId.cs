@@ -251,11 +251,11 @@ namespace AgoRapide.Core {
         /// 
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
-        /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
-            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
+        /// <param name="key"></param>
+        public static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+            key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
-                    ParseResult.Create(agoRapideAttribute, retval) :
+                    ParseResult.Create(key, retval) :
                     ParseResult.Create(errorResponse);
             });
 

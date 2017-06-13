@@ -38,7 +38,9 @@ namespace AgoRapide.Core {
         /// <summary>
         /// TODO: Consider making private
         /// </summary>
-        public static ConcurrentDictionary<string, ApplicationPart> AllApplicationParts = new ConcurrentDictionary<string, ApplicationPart>();
+        public static ConcurrentDictionary<
+            string, /// Corresponds to <see cref="BaseEntity.IdString"/>
+            ApplicationPart> AllApplicationParts = new ConcurrentDictionary<string, ApplicationPart>();
 
         /// <summary>
         /// Hack for <see cref="BaseDatabase"/>-implementation in order for <see cref="GetClassMember"/> not to be called. 
@@ -63,7 +65,6 @@ namespace AgoRapide.Core {
                 GetFromDatabaseInProgress = true;
 
                 db.GetAllEntities<T>().ForEach(ap => {
-                    // var identifier = ap.PV<string>(CoreP.IdString.A());
                     var identifier = ap.IdString.ToString(); /// Note how this assumes that <see cref="CoreP.QueryId"/> actually has been set, if not we will just get <see cref="BaseEntity.Id"/> back now
                     if (!AllApplicationParts.TryAdd(identifier, ap)) {
                         // This is a known weakness as of Jan 2017 since creation of ApplicationPart is not thread safe regarding database operations

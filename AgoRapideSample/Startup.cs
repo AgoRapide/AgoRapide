@@ -248,18 +248,20 @@ namespace AgoRapideSample {
 
                 /// --------------------- <see cref="AgoRapide.Core.Documentator"/>
 
-                Log("Calling " + nameof(AgoRapide.Core.Documentator.IndexKnowEntities));
+                Log("Calling " + nameof(AgoRapide.Core.Documentator) + "." + nameof(AgoRapide.Core.Documentator.IndexKnowEntities));
                 AgoRapide.Core.Documentator.IndexKnowEntities(db); // TODO: Make more logical choice of methdod names and placing of logic
 
+                /// Note how <see cref="AgoRapide.Core.Documentator.IndexKnowEntities"/> is not able to index 
+                /// entities residing outside its own assembly. We must therefore index "our own" entities by ourselves now.
                 Log(nameof(AgoRapide.Core.Enum.RegisterAndIndexEnum));
                 typeof(P).Assembly.GetTypes().Where(t => t.IsEnum).ToList().ForEach(t => { /// Going through <see cref="P"/> ensures we get a reference to the AgoRapideSample assembly (or you could use System.Reflection.Assembly.GetExecutingAssembly)
-                    Log("Calling " + nameof(AgoRapide.Core.Enum.RegisterAndIndexEnum) + " for " + t.ToString());
+                    Log("Calling " + nameof(AgoRapide.Core.Enum) + "." + nameof(AgoRapide.Core.Enum.RegisterAndIndexEnum) + " for " + t.ToString());
                     AgoRapide.Core.Enum.RegisterAndIndexEnum(t, db);
                 });
 
                 Log(nameof(AgoRapide.Core.Class.RegisterAndIndexClass));
                 typeof(HomeController).Assembly.GetTypes().Where(t => !t.IsEnum).ToList().ForEach(t => { /// Going through <see cref="HomeController"/> ensures we get a reference to the AgoRapideSample assembly (or you could use System.Reflection.Assembly.GetExecutingAssembly)
-                    Log("Calling " + nameof(AgoRapide.Core.Class.RegisterAndIndexClass) + " for " + t.ToString());
+                    Log("Calling " + nameof(AgoRapide.Core.Class) + "." + nameof(AgoRapide.Core.Class.RegisterAndIndexClass) + " for " + t.ToString());
                     AgoRapide.Core.Class.RegisterAndIndexClass(t, db);
                 });
 
@@ -269,6 +271,8 @@ namespace AgoRapideSample {
                     string.Join("\r\n\r\n", replacements.OrderBy(e => e.Key).Select(e => e.Key + "\r\n" + e.Value)) +
                     "\r\n\r\n");
 
+                Log("Calling " + nameof(AgoRapide.API.APIMethod) + "." + nameof(AgoRapide.API.APIMethod.SetImplementatorId));
+                AgoRapide.API.APIMethod.SetImplementatorId(db);
                 // ---------------------
 
                 var httpConfiguration = new System.Web.Http.HttpConfiguration();

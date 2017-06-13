@@ -146,6 +146,12 @@ namespace AgoRapide.Database {
         public abstract bool TryVerifyAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired, out string errorResponse);
 
         public abstract T GetEntityById<T>(long id) where T : BaseEntity, new();
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="requiredType">May be null</param>
+        /// <returns></returns>
         public abstract BaseEntity GetEntityById(long id, Type requiredType);
         public abstract bool TryGetEntityById<T>(long id, out T entity) where T : BaseEntity, new();
         /// <summary>

@@ -288,12 +288,12 @@ namespace AgoRapide.Core {
         /// TODO: enumAttribute.Cleaner=
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
-        /// <param name="agoRapideAttribute"></param>
-        public new static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) =>
-            agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value => {
+        /// <param name="key"></param>
+        public new static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+            key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is QueryIdKeyOperatorValue ? /// Note how <see cref="QueryId.TryParse"/> returns base class <see cref="QueryId"/>, therefore only accept the returned value if it is a <see cref="QueryIdKeyOperatorValue"/>
-                        ParseResult.Create(agoRapideAttribute, retval) :
+                        ParseResult.Create(key, retval) :
                         ParseResult.Create("Not a valid " + typeof(QueryIdKeyOperatorValue).ToStringShort() + " (found " + retval.GetType().ToStringShort() + ")")
                     ) :
                     ParseResult.Create(errorResponse);
