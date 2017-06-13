@@ -22,7 +22,7 @@ namespace AgoRapide {
             "In this manner it will be relatively easy to emphasize or deemphasize single properties without having to give values for all the other properties.\r\n" +
             "Eventually expand to -2, -3 or 2, 3 as needed " +
             "(there is no need for expanding the enum -" + nameof(PriorityOrder) + "- itself since any integer is a valid enum value)",
-        AgoRapideEnumType =EnumType.EnumValue
+        AgoRapideEnumType = EnumType.EnumValue
     )]
     public enum PriorityOrder {
         Important = -1,

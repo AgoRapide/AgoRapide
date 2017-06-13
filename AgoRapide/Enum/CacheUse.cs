@@ -8,9 +8,12 @@ using AgoRapide.Database;
 
 namespace AgoRapide {
 
-    [Enum(Description =
-        "Describes how aggressively cache should be used when querying a given type of -" + nameof(BaseEntity) + "-. " +
-        "(specified by -" + nameof(ClassAttribute.CacheUse) + "-.)")]
+    [Enum(
+        Description =
+            "Describes how aggressively cache should be used when querying a given type of -" + nameof(BaseEntity) + "-. " +
+            "(specified by -" + nameof(ClassAttribute.CacheUse) + "-.)",
+        AgoRapideEnumType = EnumType.EnumValue
+    )]
     public enum CacheUse {
 
         [EnumValue(Description = "The most 'safe' (and also default) approach.")]

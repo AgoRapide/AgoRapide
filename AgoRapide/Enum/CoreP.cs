@@ -371,5 +371,21 @@ namespace AgoRapide {
             IsUniqueInDatabase = true,
             Type = typeof(bool))]
         IsAnonymous,
+
+        ///// <summary>
+        ///// TODO: Is this needed here?
+        ///// </summary>
+        //[PropertyKey(
+        //    Type = typeof(Operator)
+        //)]
+        //ComparisionOperator,
+
+        ///// <summary>
+        ///// TODO: Is this needed here?
+        ///// </summary>
+        //[PropertyKey(
+        //    Type = typeof(SetOperator)
+        //)]
+        //SetOperator,
     }
 }

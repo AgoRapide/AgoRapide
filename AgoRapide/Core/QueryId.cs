@@ -137,16 +137,13 @@ namespace AgoRapide.Core {
                 value += " "; // Simplifies parsing
                 var nextWord = new Func<string>(() => {
                     var nextPos = value.IndexOf(' ', pos);
-                    if (nextPos == -1)
-                        return null;
+                    if (nextPos == -1) return null;
                     var word = value.Substring(pos, nextPos - pos);
                     pos = nextPos + 1;
                     return word;
                 });
 
-                nextWord(); var 
-                    
-                strKey = nextWord();
+                nextWord(); var strKey = nextWord();
                 if (strKey == null) {
                     id = null;
                     errorResponse = "No key given";

@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+// MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,12 +41,11 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        /// <summary>
-        /// TODO: Implement generic 
-        /// </summary>
-        /// <param name="db"></param>
-        /// <returns></returns>
         public BaseEntity GetForeignEntity(BaseDatabase db) => db.GetEntityById(Id, requiredType: Key.A.ForeignKeyOf);
+        public T GetForeignEntity<T>(BaseDatabase db) {
+            InvalidTypeException.AssertAssignable(typeof(T), Key.A.ForeignKeyOf, null);
+            return (T)(object)db.GetEntityById(Id, requiredType: Key.A.ForeignKeyOf);
+        }
 
         public static void EnrichAttribute(PropertyKeyAttributeEnriched key) {
             if (key.A.ForeignKeyOf == null) throw new NullReferenceException(nameof(key.A.ForeignKeyOf) + ". Details: " + key.ToString());

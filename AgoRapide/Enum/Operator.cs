@@ -12,10 +12,15 @@ namespace AgoRapide {
 
     /// <summary>
     /// TODO: Support IS (like IS NULL)
+    /// 
+    /// TODO: Rename in ComparisionOperator since we now have <see cref="SetOperator"/>
     /// </summary>
-    [Enum(Description = 
-        "Operators as used by -" + nameof(QueryId) + "-. " +
-        "See also -" + nameof(Extensions.ToSQLString) + "-.")]
+    [Enum(
+        Description =
+            "Operators as used by -" + nameof(QueryId) + "-. " +
+            "See also -" + nameof(Extensions.ToSQLString) + "-.",
+        AgoRapideEnumType = EnumType.EnumValue
+    )]
     public enum Operator {
         None,
         IN,

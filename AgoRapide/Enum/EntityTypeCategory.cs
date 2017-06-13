@@ -10,6 +10,7 @@ using AgoRapide.Core;
 namespace AgoRapide {
 
     [Enum(
+        AgoRapideEnumType = EnumType.EnumValue,
         Description =
             "In AgoRapide different categories of objects are treated in the same manner " +
             "as traditional application data objects (here named -" + nameof(APIDataObject) + "-). " +
@@ -20,7 +21,7 @@ namespace AgoRapide {
 
         None,
 
-        [EnumValue(Description ="Value used when more precise description is not possible. ")]
+        [EnumValue(Description = "Value used when more precise description is not possible. ")]
         BaseEntity,
 
         [EnumValue(Description =
