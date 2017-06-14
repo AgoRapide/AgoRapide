@@ -372,6 +372,14 @@ namespace AgoRapide {
             Type = typeof(bool))]
         IsAnonymous,
 
+        [PropertyKey(
+            Type = typeof(Context),
+            IsMany = true,
+            AccessLevelRead = AccessLevel.Relation,
+            AccessLevelWrite = AccessLevel.Relation
+        )]
+        Context,
+
         ///// <summary>
         ///// TODO: Is this needed here?
         ///// </summary>

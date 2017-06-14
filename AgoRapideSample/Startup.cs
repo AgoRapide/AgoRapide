@@ -273,6 +273,13 @@ namespace AgoRapideSample {
 
                 Log("Calling " + nameof(AgoRapide.API.APIMethod) + "." + nameof(AgoRapide.API.APIMethod.SetImplementatorId));
                 AgoRapide.API.APIMethod.SetImplementatorId(db);
+
+                Log("Calling " + nameof(AgoRapide.API.APIMethod) + "." + nameof(AgoRapide.API.APIMethod.GetTypeFromVeryShortString));
+                AgoRapide.API.APIMethod.GetTypeFromVeryShortString(AgoRapide.Core.Extensions.ToStringVeryShort(typeof(AgoRapide.BaseEntity)));
+
+                Log("Calling " + nameof(AgoRapide.Core.Context) + "." + nameof(AgoRapide.Core.Context.GetTraversal));
+                AgoRapide.Core.Context.GetTraversal(typeof(AgoRapide.API.APIMethod), typeof(AgoRapide.Core.ClassMember));
+
                 // ---------------------
 
                 var httpConfiguration = new System.Web.Http.HttpConfiguration();

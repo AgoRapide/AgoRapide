@@ -90,7 +90,7 @@ namespace AgoRapide.Core {
                     _toString = "WHERE " + properties[0].PToString + " = '" + value + "'";
                     Key = properties[0];
                     break; /// TODO: Improve on use of <see cref="QueryId.ToString"/>
-                default: throw new NotImplementedException(nameof(properties.Count) + ": " + properties.Count);
+                default: throw new NotImplementedException(nameof(properties.Count) + ": " + properties.Count + " (" + string.Join(",", properties.Select(p => p.PToString)) + ")");
             }
             Initialize();
         }

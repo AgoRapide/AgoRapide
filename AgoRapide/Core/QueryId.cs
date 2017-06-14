@@ -131,7 +131,7 @@ namespace AgoRapide.Core {
             }
 
             if (valueToLower.StartsWith("where")) {  // TODO: Improve on this parsing
-                value = value.Replace("%3D", "="); // HACK: FIX THIS!
+                value = value.Replace("%3D", "="); /// HACK: TODO: Fix decoding in <see cref="QueryId.TryParse"/> and <see cref="Context.TryParse
 
                 var pos = 0;
                 value += " "; // Simplifies parsing
@@ -182,6 +182,8 @@ namespace AgoRapide.Core {
                     errorResponse = "Invalid value given for " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
                     return false;
                 }
+
+                var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
 
                 id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 errorResponse = null;
@@ -275,6 +277,9 @@ namespace AgoRapide.Core {
     /// TODO: Move somewhere better!
     /// </summary>
     public class InvalidCountException : ApplicationException {
+        public static void AssertCount(long found, long expected) {
+            if (found != expected) throw new InvalidCountException(found, expected);
+        }
         public InvalidCountException(string message) : base(message) { }
         public InvalidCountException(long found, long expected) : base(nameof(expected) + ": " + expected + ", " + nameof(found) + ": " + found) { }
         public InvalidCountException(long found, long expected, string details) : base(nameof(expected) + ": " + expected + ", " + nameof(found) + ": " + found + "\r\nDetails: " + details) { }

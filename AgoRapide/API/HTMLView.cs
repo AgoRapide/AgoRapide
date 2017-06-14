@@ -13,7 +13,7 @@ namespace AgoRapide.API {
     /// <summary>
     /// Generates <see cref="ResponseFormat.HTML"/>-view of results. 
     /// </summary>
-    public class HTMLView : BaseView { 
+    public class HTMLView : BaseView {
         public HTMLView(Request request) : base(request) { }
         /// <summary>
         /// Note use of <see cref="JSONView.GenerateEmergencyResult"/> in case of an exception occurring.
@@ -161,7 +161,11 @@ namespace AgoRapide.API {
                     CoreP.RejectCredentialsNextTime.A(),
                     true
                 ) + "</p>"
-            );
+            ) +
+                "<p>" + Request.API.CreateAPILink(    /// TODO: Consider creating <see cref="CoreAPIMethod"/>.Logout in which to hide this code                                                                               
+                    CoreAPIMethod.Context, CoreAPIMethod.Context.ToString(), (Type)null     /// TODO: Create better HTML-layout. Move to upper right corner for instance
+                ) + "</p>"
+            ;
 
         /// <summary>
         /// TODO: Make configurable through <see cref="Util.Configuration"/>

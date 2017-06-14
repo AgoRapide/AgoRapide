@@ -105,6 +105,9 @@ namespace AgoRapide {
             "Executes either -" + nameof(AgoRapide.PropertyOperation.SetValid) + "- or -" + nameof(AgoRapide.PropertyOperation.SetValid) + "-.")]
         PropertyOperation,
 
+        [EnumValue(Description = "Describes the current context as set up by -" + nameof(CoreP.Context) + "- for the current user.")]
+        Context,
+
         /// <summary>
         /// See <see cref="BaseController.AgoRapideGenericMethod"/>
         /// </summary>

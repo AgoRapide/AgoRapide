@@ -75,6 +75,7 @@ namespace AgoRapide.API {
                         retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</table>");
 
+                        /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
                         CreateDrillDownUrls(thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
                             var key = e.Key.A();
                             retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.Description) + "</b>: ");
@@ -198,6 +199,8 @@ namespace AgoRapide.API {
 
         /// <summary>
         /// Extracts all distinct values 
+        /// 
+        /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
         /// </summary>
         /// <param name="entities">Alle objects are required to be of an identical type</param>
         /// <returns></returns>

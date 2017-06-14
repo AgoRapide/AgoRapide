@@ -385,6 +385,8 @@ namespace AgoRapide.Core {
         /// See also <see cref="ToStringDB(Type)"/> for a string representation compatible with <see cref="Util.TryGetTypeFromString"/>. 
         /// See also <see cref="ToStringShort(Type)"/>. 
         /// 
+        /// See also invers method <see cref="APIMethod.GetTypeFromVeryShortString"/>
+        /// 
         /// Note how caches result since operation is somewhat complicated due do generic types. 
         /// </summary>
         /// <param name="?"></param>

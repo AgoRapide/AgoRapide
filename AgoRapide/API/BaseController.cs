@@ -118,6 +118,7 @@ namespace AgoRapide.API {
                     case CoreAPIMethod.UpdateProperty: return HandleCoreMethodUpdateProperty(exactRequest);
                     case CoreAPIMethod.PropertyOperation: return HandleCoreMethodPropertyOperation(exactRequest);
                     case CoreAPIMethod.History: return HandleCoreMethodHistory(exactRequest);
+                    case CoreAPIMethod.Context: return HandleCoreMethodContext(exactRequest);
                     default: throw new NotImplementedException(nameof(exactMatch) + " with " + nameof(e.method.MA.CoreMethod) + " " + e.method.MA.CoreMethod);
                 }
             } else if (candidateMatches != null) {
@@ -308,11 +309,37 @@ namespace AgoRapide.API {
             return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntity)p).ToList());
         }
 
+        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.Context) + "-.")]
+        public object HandleCoreMethodContext(ValidRequest request) {
+            request.Method.MA.AssertCoreMethod(CoreAPIMethod.Context);
+            var context = request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()); /// TODO: Implement <see cref="BaseEntity.PVM{T}"/> also for lists
+            if (context.Count == 0) {
+                /// Suggest adding all API-methods as context
+                var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
+                r.AddProperty(CoreP.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="PropertyKeyAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
+                r.AddProperty(
+                    CoreP.SuggestedUrl.A(),
+                    request.API.CreateAPIUrl(
+                        CoreAPIMethod.UpdateProperty,
+                        request.CurrentUser.GetType(),
+                        new QueryIdInteger(request.CurrentUser.Id),
+                        CoreP.Context.A(),
+                        new Context(SetOperator.Union, typeof(APIMethod), new QueryIdKeyOperatorValue()).ToString()
+                    )
+                );
+                r.AddProperty(CoreP.Description.A(), "Set all " + nameof(APIMethod) + " as context");
+                return request.GetOKResponseAsSingleEntity(r);
+            }
+            // Show context 
+            
+            return request.GetOKResponseAsText("Test of method. " + request.CurrentUser.IdFriendly, "Looks OK");
+        }
+
         [ClassMember(Description = "See -" + nameof(CoreAPIMethod.ExceptionDetails) + "-.")]
         public object HandleCoreMethodExceptionDetails(APIMethod method) {
             Log("");
             method.MA.AssertCoreMethod(CoreAPIMethod.ExceptionDetails);
-            var request = new Request(Request, method, CurrentUser(method), exceptionHasOccurred: false);
+            var request = new Request(Request, method, GetCurrentUser(method), exceptionHasOccurred: false);
 
             var logDirectory = System.IO.Path.GetDirectoryName(Util.Configuration.C.LogPath);
             string newestFilePath = null; var newestTimeStamp = DateTime.MinValue;
@@ -492,7 +519,7 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected BaseEntity CurrentUser(APIMethod method) => TryGetCurrentUser(method, out var currentUser, out _) ? currentUser : throw new UnauthorizedAccessException("Method: " + method.ToString());
+        protected BaseEntity GetCurrentUser(APIMethod method) => TryGetCurrentUser(method, out var currentUser, out _) ? currentUser : throw new UnauthorizedAccessException("Method: " + method.ToString());
 
         /// <summary>
         /// TODO: Put functionality for CurrentUser into TryGetRequest instead

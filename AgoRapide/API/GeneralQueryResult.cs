@@ -14,7 +14,7 @@ namespace AgoRapide.API {
     /// </summary>
     [Class(
         Description = "Communicates result of -" + nameof(CoreAPIMethod.GeneralQuery) + "-",
-        AccessLevelRead = AccessLevel.User // For JSON to work something must be specified here
+        AccessLevelRead = AccessLevel.User 
     )]
     public class GeneralQueryResult : BaseEntity {
 

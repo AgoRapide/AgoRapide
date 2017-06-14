@@ -9,6 +9,9 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
+    /// <summary>
+    /// TODO: Ensure correct terminology here (from a math viewpoint)
+    /// </summary>
     [Enum(
         Description = "Describes operations on sets of -" + nameof(BaseEntity) + "-. Part of -" + nameof(Context) + "-.",
         AgoRapideEnumType = EnumType.EnumValue

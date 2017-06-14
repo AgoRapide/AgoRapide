@@ -75,9 +75,8 @@ namespace AgoRapide.Core {
             return temp as List<T> ?? throw new InvalidObjectTypeException(temp, typeof(List<T>));
         }
 
-        public static T EnumParse<T>(string _string) where T : struct, IFormattable, IConvertible, IComparable => // What we really would want is "where T : Enum"
-            EnumTryParse(_string, out T retval) ? retval : throw new InvalidEnumException<T>(_string);
-
+        public static T EnumParse<T>(string _string) where T : struct, IFormattable, IConvertible, IComparable => EnumTryParse(_string, out T retval, out var errorResponse) ? retval : throw new InvalidEnumException<T>(_string + ". Details: " + errorResponse); // What we really would want is "where T : Enum"
+        public static bool EnumTryParse<T>(string _string, out T result) where T : struct, IFormattable, IConvertible, IComparable => EnumTryParse(_string, out result, out _);  // What we really would want is "where T : Enum"
         /// <summary>
         /// Same as <see cref="Enum.TryParse{TEnum}"/> but will in addition check that: 
         /// 1) It is defined and (since <see cref="Enum.TryParse{TEnum}"/> returns true for all integers)
@@ -88,12 +87,13 @@ namespace AgoRapide.Core {
         /// <param name="_string"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static bool EnumTryParse<T>(string _string, out T result) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public static bool EnumTryParse<T>(string _string, out T result, out string errorResponse) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (!typeof(T).IsEnum) throw new NotOfTypeEnumException<T>();
             result = default(T);
-            if (!System.Enum.TryParse(_string, out result)) return false;
-            if (!System.Enum.IsDefined(typeof(T), result)) return false;
-            if (((int)(object)result) == 0) return false;
+            if (!System.Enum.TryParse(_string, out result)) { errorResponse = "Not a valid " + typeof(T) + " (" + _string + ")"; return false; } // Duplicate code below
+            if (!System.Enum.IsDefined(typeof(T), result)) { errorResponse = "!" + nameof(System.Enum.IsDefined) + " for " + typeof(T) + " (" + result + ")"; return false; } // Duplicate code below
+            if (((int)(object)result) == 0) { errorResponse = "0 is not allowed for " + typeof(T); return false; } // Duplicate code below
+            errorResponse = null;
             return true;
         }
 
@@ -103,7 +103,9 @@ namespace AgoRapide.Core {
         /// <param name="type"></param>
         /// <param name="_string"></param>
         /// <returns></returns>
-        public static object EnumParse(Type type, string _string) => EnumTryParse(type, _string, out var retval) ? retval : throw new InvalidEnumException(type, _string);
+        public static object EnumParse(Type type, string _string) => EnumTryParse(type, _string, out var retval, out var errorResponse) ? retval : throw new InvalidEnumException(type, _string + ". Details: " + errorResponse);
+
+        public static bool EnumTryParse(Type type, string _string, out object result) => EnumTryParse(type, _string, out result, out _);
 
         /// <summary>
         /// See also generic version <see cref="EnumTryParse{T}"/> which most often is more practical
@@ -112,15 +114,18 @@ namespace AgoRapide.Core {
         /// <typeparam name="T"></typeparam>
         /// <param name="_string"></param>
         /// <returns></returns>
-        public static bool EnumTryParse(Type type, string _string, out object result) {
+        public static bool EnumTryParse(Type type, string _string, out object result, out string errorResponse) {
             NotOfTypeEnumException.AssertEnum(type);
             try {
                 result = System.Enum.Parse(type, _string);
             } catch (Exception) {
-                result = null; return false;
+                result = null;
+                errorResponse = "Not a valid " + type + " (" + _string + ")"; // Duplicate code above
+                return false;
             }
-            if (!System.Enum.IsDefined(type, result)) return false;
-            if (((int)result) == 0) return false;
+            if (!System.Enum.IsDefined(type, result)) { errorResponse = "!" + nameof(System.Enum.IsDefined) + " for " + type + " (" + result + ")"; return false; } // Duplicate code above
+            if (((int)result) == 0) { errorResponse = "0 is not allowed for " + type; return false; } // Duplicate code above
+            errorResponse = null;
             return true;
         }
 
@@ -153,14 +158,15 @@ namespace AgoRapide.Core {
                     /// NOTE: as long as all enums are registered with <see cref="PropertyKeyMapper.MapEnum{T}"/> at application startup
                     var candidates = PropertyKeyMapper.AllCoreP.Where(key => key.Key.A.Type?.Equals(type) ?? false).ToList();
                     switch (candidates.Count) {
-                        case 0: return (
-                            "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + "\r\n" +
-                            "Possible cause (probably): No -" + nameof(EnumType) + "." + nameof(EnumType.PropertyKey) + "- has defined " + nameof(PropertyKeyAttribute.Type) + " = " + typeof(T).ToStringShort() + ".\r\n" +
-                            "Possible cause (less probable): There is missing a call to " + nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + " in Startup.cs.\r\n" +
-                            "Possible resolution (less probable): Look for missing calls to \r\n" + 
-                            nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + "<...>()\r\n" + 
-                            "in Startup.cs (as of Jun 2017 look for 'mapper1<...>').",
-                            null);
+                        case 0:
+                            return (
+                        "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + "\r\n" +
+                        "Possible cause (probably): No -" + nameof(EnumType) + "." + nameof(EnumType.PropertyKey) + "- has defined " + nameof(PropertyKeyAttribute.Type) + " = " + typeof(T).ToStringShort() + ".\r\n" +
+                        "Possible cause (less probable): There is missing a call to " + nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + " in Startup.cs.\r\n" +
+                        "Possible resolution (less probable): Look for missing calls to \r\n" +
+                        nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + "<...>()\r\n" +
+                        "in Startup.cs (as of Jun 2017 look for 'mapper1<...>').",
+                        null);
                         case 1:
                             var key = candidates[0];
                             return (null, (key.PropertyKeyIsSet ? key.PropertyKeyWithIndex : key.PropertyKeyAsIsManyParentOrTemplate)); // Note how that last on may fail
@@ -412,7 +418,7 @@ namespace AgoRapide.Core {
         /// <param name="password"></param>
         /// <returns></returns>
         public static string GeneratePasswordHashWithSalt(long salt, string password) {
-            if (string.IsNullOrEmpty(password)) throw new IllegalPasswordException("Null or empty " + nameof(password) + " not allowed");
+            if (string.IsNullOrEmpty(password)) throw new InvalidPasswordException("Null or empty " + nameof(password) + " not allowed");
             lock (MD5) { // ComputeHash is not thread safe, will return wrong results if simultaneous access.  // TODO: Maybe call System.Security.Cryptography.MD5.Create() each time, in order to avod locking here.
                 return string.Join("", MD5.ComputeHash(Encoding.UTF8.GetBytes(salt.ToString() + "_" + password)).Select(h => h.ToString("X2")));
             }
@@ -501,8 +507,8 @@ namespace AgoRapide.Core {
         public static string BreakpointEnabler => "";
     }
 
-    public class IllegalPasswordException : Exception {
-        public IllegalPasswordException(string message) : base(message) { }
+    public class InvalidPasswordException : Exception {
+        public InvalidPasswordException(string message) : base(message) { }
     }
 
     public class NotNullReferenceException : ApplicationException {
@@ -563,6 +569,10 @@ namespace AgoRapide.Core {
     }
 
     public class InvalidEnumException : ApplicationException {
+        public static void AssertDefined<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            if (!System.Enum.IsDefined(typeof(T), _enum)) throw new InvalidEnumException(_enum, "Not defined");
+            if (((int)(object)_enum)==0) throw new InvalidEnumException(_enum, "int value is 0");
+        }
         private static string GetMessage(object _enum, string message) => "Invalid / unknown value for enum (" + _enum.GetType().ToString() + "." + _enum.ToString() + ")." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
         public InvalidEnumException(object _enum) : base(GetMessage(_enum, null)) { }
         public InvalidEnumException(object _enum, string message) : base(GetMessage(_enum, message)) { }
@@ -579,7 +589,7 @@ namespace AgoRapide.Core {
         public InvalidObjectTypeException(object _object) : base(GetMessage(_object, null)) { }
         public InvalidObjectTypeException(object _object, Type typeExpected) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead")) { }
         public InvalidObjectTypeException(object _object, Type typeExpected, string message) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead.\r\nDetails: " + message)) { }
-        public InvalidObjectTypeException(object _object, string message) : base(GetMessage(_object, message)) { }    
+        public InvalidObjectTypeException(object _object, string message) : base(GetMessage(_object, message)) { }
     }
 
     public class InvalidIdentifierException : ApplicationException {
@@ -653,7 +663,7 @@ namespace AgoRapide.Core {
         }
 
         public InvalidTypeException(string typeFound) : this(typeFound, null) { }
-        public InvalidTypeException(string typeFound, string details) : base("Unable to reconstruct type based on " + nameof(typeFound) + " (" + typeFound + "). Possible cause (if " + nameof(typeFound) + " originates from database): Assembly name may have changed since storing in database" + (string.IsNullOrEmpty(details) ? "" : (". Details: " + details))) { }
+        public InvalidTypeException(string typeFound, string details) : base("Unable to reconstruct type based on " + nameof(typeFound) + " (" + typeFound + "). Possible cause (if " + nameof(typeFound) + " originates from database and is result of " + nameof(AgoRapide.Core.Extensions.ToStringDB) + "): Assembly name may have changed since storing in database" + (string.IsNullOrEmpty(details) ? "" : (". Details: " + details))) { }
         public InvalidTypeException(Type type) : base("Type:" + type.ToStringShort()) { }
         public InvalidTypeException(Type type, string details) : base("Type: " + type.ToStringShort() + ", " + nameof(details) + ": " + details) { }
         /// <summary>

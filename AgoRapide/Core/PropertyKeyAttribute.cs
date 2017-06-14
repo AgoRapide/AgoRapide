@@ -171,6 +171,15 @@ namespace AgoRapide.Core {
             public IsManyException(string message, Exception inner) : base(message, inner) { }
         }
 
+        public void AssertNotIsMany(Func<string> detailer) {
+            if (IsMany) throw new IsNotManyException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        public class IsNotManyException : ApplicationException {
+            public IsNotManyException(string message) : base(message) { }
+            public IsNotManyException(string message, Exception inner) : base(message, inner) { }
+        }
+
         private bool _isExternal;
         /// <summary>
         /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
