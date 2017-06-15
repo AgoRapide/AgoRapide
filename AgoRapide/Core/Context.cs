@@ -123,11 +123,11 @@ namespace AgoRapide.Core {
             });
 
             /// TODO: Add entity types connected with the types that we have, but which are not included in contexts given.
-            
+
             return retval;
         }
 
-        public static List<PropertyKey> GetTraversal(Type fromType, Type toType) => TryGetTraversal(fromType, toType, out var retval) ? retval : throw new InvalidTraversalException(fromType, toType, "No possible traversals found");
+        public static List<PropertyKey> GetTraversal(Type fromType, Type toType) => TryGetTraversal(fromType, toType, out var retval) ? retval : throw new InvalidTraversalException(fromType, toType, "No possible traversals found.\r\nPossible resolution: Ensure that " + nameof(PropertyKeyAttribute.ForeignKeyOf) + " = typeof(" + toType.ToStringVeryShort() + ") has been specified for a property of " + fromType.ToStringVeryShort() + ".");
         private static Dictionary<Type, Dictionary<Type, List<PropertyKey>>> _getTraversalCache;
         /// <summary>
         /// Returns route <paramref name="fromType"/> <paramref name="toType"/>
@@ -169,7 +169,7 @@ namespace AgoRapide.Core {
             if (!_getTraversalCache.TryGetValue(fromType, out var temp)) {
                 throw new InvalidTraversalException(fromType, toType, nameof(fromType) + " (" + fromType + ") not found in " + nameof(_getTraversalCache));
             }
-            if (!temp.TryGetValue(fromType, out traversal)) {
+            if (!temp.TryGetValue(toType, out traversal)) {
                 throw new InvalidTraversalException(fromType, toType, nameof(toType) + " (" + toType + ") not found in " + nameof(temp));
             }
             return traversal != null;
@@ -181,7 +181,11 @@ namespace AgoRapide.Core {
         /// <param name="fromType"></param>
         /// <returns></returns>
         public static Dictionary<Type, List<PropertyKey>> GetPossibleTraversalsFromType(Type fromType) {
-            if (_getTraversalCache == null) throw new NullReferenceException(nameof(_getTraversalCache) + ". Possible resolution: " + nameof(TryGetTraversal) + " must be called before this method");
+            if (_getTraversalCache == null) {
+                // throw new NullReferenceException(nameof(_getTraversalCache) + ". Possible resolution: " + nameof(TryGetTraversal) + " must be called before this method");
+                TryGetTraversal(typeof(APIMethod), typeof(ClassMember), out _);
+                if (_getTraversalCache == null) throw new NullReferenceException(nameof(_getTraversalCache));                
+            }
             return _getTraversalCache.TryGetValue(fromType, out var retval) ? retval : throw new InvalidTraversalException(fromType, fromType, "Unknown " + nameof(fromType));
         }
 

@@ -1033,8 +1033,8 @@ namespace AgoRapide.Database {
                     throw new InvalidTypeException(a.Key.A.Type, nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " (" + a.Key.A.Type + ") defined for " + typeof(DBField) + "." + f.ToString() + " is not valid");
                 })();
             })) + "\r\n" +
-            "  CONSTRAINT p_pk PRIMARY KEY (" + DBField.id + @") +
-        )
+            "  CONSTRAINT p_pk PRIMARY KEY (" + DBField.id + @") 
+)
 WITH(
   OIDS = FALSE
 );
