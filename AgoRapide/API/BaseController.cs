@@ -220,6 +220,7 @@ namespace AgoRapide.API {
             return request.GetOKResponseAsSingleEntity(Util.Configuration);
         }
 
+        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.AddEntity) + "-.")]
         public object HandleCoreMethodAddEntity(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.AddEntity);
             /// TODO: Verify that all <see cref="PropertyKeyAttribute.IsObligatory"/> really has been received now
@@ -312,7 +313,7 @@ namespace AgoRapide.API {
         [ClassMember(Description = "See -" + nameof(CoreAPIMethod.Context) + "-.")]
         public object HandleCoreMethodContext(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.Context);
-            var context = request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()); /// TODO: Implement <see cref="BaseEntity.PVM{T}"/> also for lists
+            var context = request.CurrentUser.PV(CoreP.Context.A(), new List<Context>()); /// TODO: Implement <see cref="BaseEntity.PVM{T}"/> also for lists
             if (context.Count == 0) {
                 /// Suggest adding all API-methods as context
                 var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
@@ -331,8 +332,10 @@ namespace AgoRapide.API {
                 return request.GetOKResponseAsSingleEntity(r);
             }
             // Show context 
-            
-            return request.GetOKResponseAsText("Test of method. " + request.CurrentUser.IdFriendly, "Looks OK");
+            var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB);
+            return request.GetOKResponseAsMultipleEntities(retval.SelectMany(e => e.Value.Values).ToList());
+
+            // return request.GetOKResponseAsText("Test of method. " + request.CurrentUser.IdFriendly, "Looks OK");
         }
 
         [ClassMember(Description = "See -" + nameof(CoreAPIMethod.ExceptionDetails) + "-.")]

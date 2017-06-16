@@ -104,9 +104,11 @@ namespace AgoRapide.Core {
                     if (fromType.Equals(toType)) return; // Assumed irrelevant (even though there might hypotetically be valid traversals, like from Person superior to Person subordinate or the other way.
                     if (!TryGetTraversal(fromType, toType, out var traversal)) return; // Disjoint "universes".
                     InvalidCountException.AssertCount(traversal.Count, 1); // TODO: Implement traversing over more than one level.Start with a limit of two levels(do not use recursivity)                    
-                    traversal[0].Key.A.AssertNotIsMany(() => "Traversals not yet supported"); // TOOD: Implement support for IsMany (easy to implement, just iterate through List instead of single value below)
+                    traversal[0].Key.A.AssertNotIsMany(() => "Traversals not yet supported for " + nameof(PropertyKeyAttribute.IsMany)); // TOOD: Implement support for IsMany (easy to implement, just iterate through List instead of single value below)
                     var toEntities = retval.GetValue(fromType, () => nameof(toType));
-                    fromEntities.Values.Where(e => !toEntities.ContainsKey(e.PV<long>(traversal[0]))).ToList().ForEach(e => fromEntities.Remove(e.Id));
+                    fromEntities.Values.Where(e => !toEntities.ContainsKey(e.PV<long>(traversal[0]))).ToList().ForEach(e => {
+                        fromEntities.Remove(e.Id);
+                    });
                 });
             });
 
@@ -122,7 +124,32 @@ namespace AgoRapide.Core {
                 });
             });
 
-            /// TODO: Add entity types connected with the types that we have, but which are not included in contexts given.
+            // Note how some values for retval now may very well be empty
+
+            var traversedValues = new Dictionary<Type, Dictionary<long, BaseEntity>>();
+
+            /// TODO: Add entity types connected with the types that we have, but which are not included in contexts given.            
+            types.ForEach(fromType => {
+                GetPossibleTraversalsFromType(fromType).ForEach(toType => {
+                    // TODO: Inefficient use of Contains since types is just an IEnumerable. Turn types into HashSet or similar.
+                    if (types.Contains(toType.Key)) throw new NotImplementedException("Traversal from " + fromType + " to already known type " + toType + " not yet implemented"); // TODO. Decide how to handle this, maybe just ignore
+                    if (traversedValues.ContainsKey(toType.Key)) throw new NotImplementedException("Multiple traversals to " + toType.Key + " (one of them from " + fromType + ") not yet implemented"); // TODO. Decide how to handle this, maybe just add from what already found
+                    if (toType.Value.Count > 1) throw new NotImplementedException("Traversals over multiple levels not supported (from " + fromType + " to " + toType + " via " + string.Join(",", toType.Value.Select(k => k.Key.PToString)));
+                    var foreignKey = toType.Value[0];
+
+                    var fromValues = retval.GetValue(fromType).Values;
+                    var toValues = new Dictionary<long, BaseEntity>();
+
+                    fromValues.ForEach(from => {
+                        if (!from.Properties.TryGetValue(foreignKey.Key.CoreP, out var p)) return;
+                        var foreignId = p.V<long>();
+                        if (toValues.ContainsKey(foreignId)) return;
+                        toValues[foreignId] = db.GetEntityById(foreignId, toType.Key);
+                    });
+
+                    traversedValues.Add(toType.Key, toValues);
+                });
+            });
 
             return retval;
         }
@@ -160,6 +187,8 @@ namespace AgoRapide.Core {
                                 traversalThisCombination.Add(key);
                             } else {
                                 // TODO: Implement traversing over more than one level. Start with a limit of two levels (do not use recursivity)
+
+                                // TODO: Note how traversals over more than one level fails silently here
                             }
                         });
                         traversalFrom[to] = traversalThisCombination.Count > 0 ? traversalThisCombination : null;
@@ -184,7 +213,7 @@ namespace AgoRapide.Core {
             if (_getTraversalCache == null) {
                 // throw new NullReferenceException(nameof(_getTraversalCache) + ". Possible resolution: " + nameof(TryGetTraversal) + " must be called before this method");
                 TryGetTraversal(typeof(APIMethod), typeof(ClassMember), out _);
-                if (_getTraversalCache == null) throw new NullReferenceException(nameof(_getTraversalCache));                
+                if (_getTraversalCache == null) throw new NullReferenceException(nameof(_getTraversalCache));
             }
             return _getTraversalCache.TryGetValue(fromType, out var retval) ? retval : throw new InvalidTraversalException(fromType, fromType, "Unknown " + nameof(fromType));
         }
