@@ -179,7 +179,10 @@ namespace AgoRapide {
 
         [PropertyKey(
             Description = "-" + nameof(BaseEntity.IdString) + "- of parent. See also -" + nameof(ClassAttribute.ParentType) + "-.",
-            Type = typeof(QueryId)
+            Type = typeof(QueryId),
+            Parents = new Type[] { typeof(ClassMember), typeof(EnumValue) },
+            Operators = new Operator[] { Operator.EQ }, // TODO: Remove this. Only for temporary testing.
+            HasLimitedRange = true // TODO: Remove this. Only for temporary testing.
         )]
         QueryIdParent,
 
@@ -188,7 +191,8 @@ namespace AgoRapide {
                 "Application specific general query request.\r\n" +
                 "(no connection with -" + nameof(Core.QueryId) + "-.",
             Type = typeof(string),
-            SampleValues = new string[] { "a", "b", "c" })]
+            SampleValues = new string[] { "a", "b", "c" }
+        )]
         GeneralQueryId,
 
         [PropertyKey(

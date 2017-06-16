@@ -346,7 +346,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(Created) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
+        public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         /// <summary>
         /// Note: You can safely use "public override string" for both 
@@ -357,8 +357,8 @@ namespace AgoRapide {
         /// <returns></returns>
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
-            (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "&nbsp;") + "</td></tr>\r\n";
+            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "&nbsp;") + "</td><td>" +
+            (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         /// <summary>
         /// For example of override see <see cref="BaseEntityWithLogAndCount.ToHTMLDetailed"/>

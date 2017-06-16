@@ -142,7 +142,7 @@ namespace AgoRapide.Core {
 
                     fromValues.ForEach(from => {
                         if (!from.Properties.TryGetValue(foreignKey.Key.CoreP, out var p)) return;
-                        var foreignId = p.V<long>();
+                        var foreignId = p.V<long>();                        
                         if (toValues.ContainsKey(foreignId)) return;
                         toValues[foreignId] = db.GetEntityById(foreignId, toType.Key);
                     });
@@ -151,11 +151,16 @@ namespace AgoRapide.Core {
                 });
             });
 
+            traversedValues.ForEach(t => retval.AddValue(t.Key, t.Value));
+
             return retval;
         }
 
         public static List<PropertyKey> GetTraversal(Type fromType, Type toType) => TryGetTraversal(fromType, toType, out var retval) ? retval : throw new InvalidTraversalException(fromType, toType, "No possible traversals found.\r\nPossible resolution: Ensure that " + nameof(PropertyKeyAttribute.ForeignKeyOf) + " = typeof(" + toType.ToStringVeryShort() + ") has been specified for a property of " + fromType.ToStringVeryShort() + ".");
-        private static Dictionary<Type, Dictionary<Type, List<PropertyKey>>> _getTraversalCache;
+        private static Dictionary<Type, Dictionary<
+            Type, 
+            List<PropertyKey>> // Note how this is stored as Null (not an empty List) if no traversals exists between the two types
+        > _getTraversalCache; 
         /// <summary>
         /// Returns route <paramref name="fromType"/> <paramref name="toType"/>
         /// 
@@ -204,19 +209,21 @@ namespace AgoRapide.Core {
             return traversal != null;
         }
 
+        private static System.Collections.Concurrent.ConcurrentDictionary<Type, Dictionary<Type, List<PropertyKey>>> _getPossibleTraversalsFromTypeCache = new System.Collections.Concurrent.ConcurrentDictionary<Type, Dictionary<Type, List<PropertyKey>>>();
         /// <summary>
         /// <see cref="TryGetTraversal"/> must have been called once before this method.
         /// </summary>
         /// <param name="fromType"></param>
         /// <returns></returns>
-        public static Dictionary<Type, List<PropertyKey>> GetPossibleTraversalsFromType(Type fromType) {
+        public static Dictionary<Type, List<PropertyKey>> GetPossibleTraversalsFromType(Type fromType) => _getPossibleTraversalsFromTypeCache.GetOrAdd(fromType, t => {
             if (_getTraversalCache == null) {
                 // throw new NullReferenceException(nameof(_getTraversalCache) + ". Possible resolution: " + nameof(TryGetTraversal) + " must be called before this method");
                 TryGetTraversal(typeof(APIMethod), typeof(ClassMember), out _);
                 if (_getTraversalCache == null) throw new NullReferenceException(nameof(_getTraversalCache));
             }
-            return _getTraversalCache.TryGetValue(fromType, out var retval) ? retval : throw new InvalidTraversalException(fromType, fromType, "Unknown " + nameof(fromType));
-        }
+            if (!_getTraversalCache.TryGetValue(fromType, out var temp)) throw new InvalidTraversalException(fromType, fromType, "Unknown " + nameof(fromType));
+            return temp.Where(e => e.Value != null).ToDictionary(e => e.Key, e => e.Value);
+        });
 
         public class InvalidTraversalException : ApplicationException {
             public InvalidTraversalException(string message) : base(message) { }

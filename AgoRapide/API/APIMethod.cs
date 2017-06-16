@@ -942,12 +942,14 @@ namespace AgoRapide.API {
                     }
                 });
                 _allEntityTypes = new HashSet<Type>();
-                _typeFromVeryShortStringCache.Values.ForEach(t => _allEntityTypes.Add(t));
+                _typeFromVeryShortStringCache.Values.Where(t => !t.Equals(typeof(BaseEntity))).ForEach(t => _allEntityTypes.Add(t));
             }
             return _typeFromVeryShortStringCache.TryGetValue(_string, out type);
         }
         private static HashSet<Type> _allEntityTypes;
-        [ClassMember(Description = "All different -" + nameof(APIMethod.EntityType) + "- found in -" + nameof(AllMethods) + "-.")]
+        [ClassMember(Description =
+            "All different -" + nameof(APIMethod.EntityType) + "- found in -" + nameof(AllMethods) + "-.\r\n" +
+            "Note how -" + nameof(BaseEntity) + "- is NOT included in this collection.")]
         public static HashSet<Type> AllEntityTypes { get => _allEntityTypes ?? throw new NullReferenceException(nameof(_allEntityTypes)); }
 
     }

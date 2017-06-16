@@ -210,7 +210,7 @@ namespace AgoRapide.API {
                     Operator,
                     Dictionary<
                         string, // The actual values found. 
-                        DrillDownSuggestions
+                        DrillDownSuggestion
                     >
                 >
              > CreateDrillDownUrls(List<BaseEntity> entities) {
@@ -221,7 +221,7 @@ namespace AgoRapide.API {
                     Operator,
                     Dictionary<
                         string, // The actual values found. 
-                        DrillDownSuggestions
+                        DrillDownSuggestion
                     >
                 >
              >();
@@ -237,21 +237,38 @@ namespace AgoRapide.API {
                 if (key.Key.A.Operators == null) return;
                 if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) return;
 
-                ///// TOOD: Create som <see cref="PropertyKeyAttribute"/>-property like IsSuitableForDrilldown or similar as replacement for this code
-                //if (key.Key.A.IsDocumentation) return; // 
-                //if (typeof(QueryId).IsAssignableFrom(key.Key.A.Type)) return;
-                ///// TOOD: Create som <see cref="PropertyKeyAttribute"/>-property like IsSuitableForDrilldown or similar as replacement for this code
+                // Note how Distinct() is called weakly typed for object, meaning it uses the Equals(object other)-method.
+                var objValues = entities.Select(e => e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p.Value : null).Distinct(); /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
 
-                var values = entities.Select(e => {
-                    if (!e.Properties.TryGetValue(key.Key.CoreP, out var p)) return null;
-                    return p.Value;
-                }).Distinct(); // All distinct values for this key
+                /// Note that the Distinct() operation done above will not work properly of IEquatable is not implemented for the actual type.
+                /// We therefore work around this by collecting together all object-values with the same string-representation
+                /// (Since the resulting API command is string-based this should not present any issues)
+                var objStrValues = objValues.Where(v => v != null).Select(v => (v, key.Key.ConvertObjectToString(v))).Distinct(new EqualityComparerTupleObjectString());
+
+                if (typeof(ITypeDescriber).IsAssignableFrom(key.Key.A.Type)) { /// Enforce IEquatable or similar for these classes anyway as it will improve performance (less calls to <see cref="PropertyKeyAttributeEnriched.ConvertObjectToString"/>)
+                    if (objStrValues.Count() != objValues.Count()) {
+                        var t = typeof(IEquatable<>).MakeGenericType(new Type[] { key.Key.A.Type });
+                        throw new InvalidCountException(objStrValues.Count(), objValues.Count(),
+                            nameof(PropertyKeyAttributeEnriched.ConvertObjectToString) + " is inconsistent with " + nameof(Enumerable.Distinct) + " for " + key.Key.A.Type + ".\r\n" +
+                            "Possible cause: " + // TODO: This explanation is possible wrong. It is the Equals(object other)-method that most probably is missing, and that does not have any connection with IEquatable
+                                (t.IsAssignableFrom(key.Key.A.Type) ?
+                                    ("Wrongly implemented " + t.ToStringShort() + " for " + key.Key.A.Type.ToStringShort()) :
+                                    ("Missing implementation of " + t.ToStringShort() + " for " + key.Key.A.Type.ToStringShort())
+                                ) + "\r\n" +
+                            "Remember to also always implement Equals (both Equals(object other) and Equals(" + key.Key.A.Type.ToStringVeryShort() + " other) and GetHashCode together with " + t.ToStringShort()
+                        );
+                    }
+                } else {
+                    /// We can not enforce IEquatable for other classes. 
+                    /// Note that it is of course worth it anyway to implement IEquatable for all your classes (with corresponding Equals and GetHashCode))
+                    /// (it can for instance dramatically reduce the size of the objValues-collection, improving the performance here)
+                }
 
                 var r1 = new Dictionary<
                     Operator,
                     Dictionary<
                         string, // The actual values found. 
-                        DrillDownSuggestions
+                        DrillDownSuggestion
                     >
                 >();
 
@@ -262,19 +279,22 @@ namespace AgoRapide.API {
 
                     var r2 = new Dictionary<
                         string, // The actual values found. 
-                        DrillDownSuggestions
+                        DrillDownSuggestion
                     >();
-                    values.ForEach(v => {
-                        if (v == null) return; /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
-                        var query = new QueryIdKeyOperatorValue(key.Key, o, v);
+                    objStrValues.ForEach(t => {
+                        var query = new QueryIdKeyOperatorValue(key.Key, o, t.Item1); // Now how it is "random" which object value (out of several with identical string-representation) is chosen now. But we assume that all of them have the same predicate effect
                         var count = entities.Where(query.ToPredicate).Count();
+
                         if (count > 0 && count != entities.Count) { // Note how we do not offer drill down if all entities match
-                            r2.AddValue(v.ToString(), new DrillDownSuggestions {
-                                Count = count,
-                                Url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
-                                Text = key.Key.ConvertObjectToString(v) + " (" + count + ")",
-                                QueryId = query
-                            });
+                            r2.AddValue(
+                                t.Item2,
+                                new DrillDownSuggestion {
+                                    Count = count,
+                                    Url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
+                                    Text = t.Item2 + " (" + count + ")",
+                                    QueryId = query
+                                }
+                           );
                         }
                     });
                     if (r2.Count > 0) r1.AddValue(o, r2);
@@ -285,9 +305,17 @@ namespace AgoRapide.API {
         }
 
         /// <summary>
+        /// Work around problems with <see cref="Enumerable.Distinct"/> and <see cref="PropertyKeyAttributeEnriched.ConvertObjectToString"/>
+        /// </summary>
+        public class EqualityComparerTupleObjectString : IEqualityComparer<(object, string)> {
+            public bool Equals((object, string) t1, (object, string) t2) => t1.Item2.Equals(t2.Item2);
+            public int GetHashCode((object, string) t) => t.Item2.GetHashCode();
+        }
+
+        /// <summary>
         /// TODO: Make immutable
         /// </summary>
-        public class DrillDownSuggestions {
+        public class DrillDownSuggestion {
             /// <summary>
             /// Number of entities resulting if querying according to this suggestion
             /// </summary>

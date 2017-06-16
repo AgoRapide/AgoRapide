@@ -44,7 +44,7 @@ namespace AgoRapide.Core {
             "WHERE value IN ('A', 'B'" /// TODO: Add more common syntax errors and check that <see cref="TryParse"/> returns good error messages for each kind if syntax error
         }
     )]
-    public abstract class QueryId : ITypeDescriber {
+    public abstract class QueryId : ITypeDescriber, IEquatable<QueryId> {
 
         /// <summary>
         /// Note that a <see cref="QueryIdKeyOperatorValue"/> may also be <see cref="IsSingle"/> (for <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/>)
@@ -83,6 +83,9 @@ namespace AgoRapide.Core {
                 "\"key = 'Name' AND strv IN (:strv1, :strv2, :strv3)\" (with corresponding parameters in -" + nameof(SQLWhereStatementParameters) + "-)"
         )]
         public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ". Should have been set by sub class");
+        public bool Equals(QueryId other) => SQLWhereStatement.Equals(other.SQLWhereStatement);
+        public override bool Equals(object other) => SQLWhereStatement.Equals((other as QueryId ?? throw new InvalidTypeException(other.GetType(), typeof(QueryId))).SQLWhereStatement);
+        public override int GetHashCode() => SQLWhereStatement.GetHashCode();
 
         /// <summary>
         /// TODO: MAKE INTO <see cref="IEnumerable{object}"/>

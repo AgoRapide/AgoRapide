@@ -185,7 +185,7 @@ namespace AgoRapide.API {
             }
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.BaseEntityMethod) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.BaseEntityMethod) + "-.")]
         public object HandleCoreMethodBaseEntityMethod(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.BaseEntityMethod);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
@@ -214,13 +214,13 @@ namespace AgoRapide.API {
             }
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.Configuration) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.Configuration) + "-.")]
         public object HandleCoreMethodConfiguration(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.Configuration);
             return request.GetOKResponseAsSingleEntity(Util.Configuration);
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.AddEntity) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.AddEntity) + "-.")]
         public object HandleCoreMethodAddEntity(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.AddEntity);
             /// TODO: Verify that all <see cref="PropertyKeyAttribute.IsObligatory"/> really has been received now
@@ -232,7 +232,7 @@ namespace AgoRapide.API {
         }
 
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.EntityIndex) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.EntityIndex) + "-.")]
         public object HandleCoreMethodEntityIndex(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
@@ -262,7 +262,7 @@ namespace AgoRapide.API {
             return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.UpdateProperty) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.UpdateProperty) + "-.")]
         public object HandleCoreMethodUpdateProperty(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.UpdateProperty);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
@@ -289,7 +289,7 @@ namespace AgoRapide.API {
             return request.GetResponse();
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.PropertyOperation) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.PropertyOperation) + "-.")]
         public object HandleCoreMethodPropertyOperation(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.PropertyOperation);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
@@ -303,14 +303,14 @@ namespace AgoRapide.API {
             return request.GetResponse();
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.History) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.History) + "-.")]
         public object HandleCoreMethodHistory(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.History);
             if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, entity: out BaseEntity entity, errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
             return request.GetOKResponseAsMultipleEntities(DB.GetEntityHistory(entity).Select(p => (BaseEntity)p).ToList());
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.Context) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.Context) + "-.")]
         public object HandleCoreMethodContext(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.Context);
             var context = request.CurrentUser.PV(CoreP.Context.A(), new List<Context>()); /// TODO: Implement <see cref="BaseEntity.PVM{T}"/> also for lists
@@ -338,7 +338,7 @@ namespace AgoRapide.API {
             // return request.GetOKResponseAsText("Test of method. " + request.CurrentUser.IdFriendly, "Looks OK");
         }
 
-        [ClassMember(Description = "See -" + nameof(CoreAPIMethod.ExceptionDetails) + "-.")]
+        [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.ExceptionDetails) + "-.")]
         public object HandleCoreMethodExceptionDetails(APIMethod method) {
             Log("");
             method.MA.AssertCoreMethod(CoreAPIMethod.ExceptionDetails);
