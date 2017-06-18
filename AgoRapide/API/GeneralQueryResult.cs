@@ -14,7 +14,8 @@ namespace AgoRapide.API {
     /// </summary>
     [Class(
         Description = "Communicates result of -" + nameof(CoreAPIMethod.GeneralQuery) + "-",
-        AccessLevelRead = AccessLevel.User 
+        LongDescription = "Usually contains a -" + nameof(CoreP.SuggestedUrl) + "- and -" + nameof(CoreP.Description) + "-.",
+        AccessLevelRead = AccessLevel.User
     )]
     public class GeneralQueryResult : BaseEntity {
 

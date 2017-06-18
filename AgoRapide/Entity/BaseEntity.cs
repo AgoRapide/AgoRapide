@@ -391,6 +391,11 @@ namespace AgoRapide {
             if (a.ChildrenType != null) { // Link from parent to children
                 retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Children " + a.ChildrenType.ToStringVeryShort(), a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString())) + "</p>");
             }
+
+            Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this).ForEach(c => {
+                retval.Append("<p><a href=\"" + c.PV<string>(CoreP.SuggestedUrl.A()) + "\">" + c.PV<string>(CoreP.Description.A()).HTMLEncode() + "</a></p>");
+            });
+
             // Suggested URLs for this specific entity
             if (Id > 0) retval.Append("<p>" + string.Join("<br>", BaseEntityUrls.Select(url => request.API.CreateAPILink(url))) + "</p>");
 
@@ -402,10 +407,13 @@ namespace AgoRapide {
 
         private List<string> _baseEntityUrls;
         /// <summary>
-        /// Returns urls for operation on this entity. 
         /// TODO: Maybe rename into "UrlsForOperationOnThisEntity" or "RelevantUrls"
+        /// 
         /// Returns <see cref="Extensions.GetBaseEntityMethods(Type)"/> relevant for this instance, with this.<see cref="Id"/> filled in, that is, returns complete URLs.
+        /// 
+        /// See also <see cref="Context.GetPossibleContextOperationsForCurrentUserAndEntity"/>
         /// </summary>
+        [ClassMember(Description = "Returns urls for operation on this entity.")]
         public List<string> BaseEntityUrls => _baseEntityUrls ?? (_baseEntityUrls = GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(APIMethodP.BaseEntityMethodUrl.A()).Select(uri => uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString()))).OrderBy(url => url).ToList());
 
         /// <summary>

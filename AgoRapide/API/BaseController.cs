@@ -237,6 +237,18 @@ namespace AgoRapide.API {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
 
+            switch (queryId) {
+                case QueryIdString queryIdString:
+                    if (queryIdString.ToString().Equals(CoreAPIMethod.Context.ToString())) {
+                        var contextEntities = Context.ExecuteContextsQueries(request.CurrentUser, request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()), DB);
+                        if (!contextEntities.TryGetValue(request.Method.EntityType, out var thisType) || thisType.Count == 0) {
+                            return request.GetErrorResponse(new ErrorResponse(ResultCode.data_error, "No entities of type " + request.Method.EntityType + " contained within current context"));
+                        }
+                        return request.GetOKResponseAsMultipleEntities(thisType.Values.ToList());
+                    }
+                    break;
+            }
+
             /// TODO: Replace code below with automatic use of <see cref="InMemoryCache"/> from <see cref="BaseDatabase"/>
             /// -------------------
             /// TODO: Mark all <see cref="ClassAttribute"/> with bool UseCache and 
@@ -314,28 +326,48 @@ namespace AgoRapide.API {
         public object HandleCoreMethodContext(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.Context);
             var context = request.CurrentUser.PV(CoreP.Context.A(), new List<Context>()); /// TODO: Implement <see cref="BaseEntity.PVM{T}"/> also for lists
-            if (context.Count == 0) {
-                /// Suggest adding all API-methods as context
-                var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
-                r.AddProperty(CoreP.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="PropertyKeyAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
-                r.AddProperty(
-                    CoreP.SuggestedUrl.A(),
-                    request.API.CreateAPIUrl(
-                        CoreAPIMethod.UpdateProperty,
-                        request.CurrentUser.GetType(),
-                        new QueryIdInteger(request.CurrentUser.Id),
-                        CoreP.Context.A(),
-                        new Context(SetOperator.Union, typeof(APIMethod), new QueryIdKeyOperatorValue()).ToString()
-                    )
-                );
-                r.AddProperty(CoreP.Description.A(), "Set all " + nameof(APIMethod) + " as context");
-                return request.GetOKResponseAsSingleEntity(r);
-            }
-            // Show context 
-            var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB);
-            return request.GetOKResponseAsMultipleEntities(retval.SelectMany(e => e.Value.Values).ToList());
 
-            // return request.GetOKResponseAsText("Test of method. " + request.CurrentUser.IdFriendly, "Looks OK");
+            if (context.Count == 0) { /// No existing context, suggest starting points for context 
+                return request.GetOKResponseAsMultipleEntities(APIMethod.AllEntityTypes.Select(type => {
+                    var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
+                    r.AddProperty(
+                        CoreP.SuggestedUrl.A(),
+                        request.API.CreateAPIUrl(
+                            CoreAPIMethod.UpdateProperty,
+                            request.CurrentUser.GetType(),
+                            new QueryIdInteger(request.CurrentUser.Id),
+                            CoreP.Context.A(),
+                            new Context(SetOperator.Union, type, new QueryIdKeyOperatorValue()).ToString() // Query "All"
+                        )
+                    );
+                    r.AddProperty(CoreP.Description.A(), "Set context to " + type.ToStringVeryShort());
+                    return (BaseEntity)r;
+                }).ToList());
+            }
+
+            // Show actual context 
+            var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB);
+            request.Result.MultipleEntitiesResult = retval.SelectMany(e => e.Value.Values).ToList();
+
+            // Suggest removal of context properties
+            if (request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var contextParent)) {
+                contextParent.Properties.Values.ForEach(p => {
+                    var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
+                    r.AddProperty(
+                        CoreP.SuggestedUrl.A(),
+                        request.API.CreateAPIUrl(
+                            CoreAPIMethod.PropertyOperation,
+                            typeof(Property),
+                            new QueryIdInteger(p.Id),
+                            PropertyOperation.SetInvalid
+                        )
+                    );
+                    r.AddProperty(CoreP.Description.A(), p.V<string>() + " => " + PropertyOperation.SetInvalid);
+                    request.Result.MultipleEntitiesResult.Add(r);
+                });
+            }
+            request.Result.ResultCode = ResultCode.ok;
+            return request.GetResponse();
         }
 
         [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.ExceptionDetails) + "-.")]

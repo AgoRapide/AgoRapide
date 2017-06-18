@@ -162,9 +162,21 @@ namespace AgoRapide.API {
                     true
                 ) + "</p>"
             ) +
-                "<p>" + Request.API.CreateAPILink(    /// TODO: Consider creating <see cref="CoreAPIMethod"/>.Logout in which to hide this code                                                                               
-                    CoreAPIMethod.Context, CoreAPIMethod.Context.ToString(), (Type)null     /// TODO: Create better HTML-layout. Move to upper right corner for instance
-                ) + "</p>"
+            "<p>" +
+                Request.API.CreateAPILink(
+                    CoreAPIMethod.Context, CoreAPIMethod.Context.ToString(), (Type)null
+                ) +
+                (Request.CurrentUser == null ? "" : // Suggest Context for all entities
+                    string.Join("", Request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()).Select(c => c.Type).Distinct().Select(t =>
+                        "&nbsp;" +
+                        Request.API.CreateAPILink(
+                        CoreAPIMethod.EntityIndex,
+                        t.ToStringVeryShort(),
+                        t,
+                        new QueryIdString(CoreAPIMethod.Context.ToString())
+                    )))
+                ) +
+            "</p>"
             ;
 
         /// <summary>

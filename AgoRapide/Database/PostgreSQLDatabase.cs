@@ -68,6 +68,12 @@ namespace AgoRapide.Database {
             return entities;
         }
 
+        public override List<BaseEntity> GetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType) {
+            id.AssertIsMultiple();
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out var entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
+            return entities;
+        }
+
         public override bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out T entity, out ErrorResponse errorResponse) {
             id.AssertIsSingle();
             if (!TryGetEntities(currentUser, id, accessTypeRequired, out List<T> temp, out errorResponse)) {

@@ -6,11 +6,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AgoRapide;
+using AgoRapide.API;
 
 namespace AgoRapide.Core {
 
     /// <summary>
     /// Note how <see cref="QueryId.TryParse"/> can recognize <see cref="CoreP.IdDoc"/> and replace with the full <see cref="CoreP.QueryId"/>
+    /// 
+    /// Note how literal string "<see cref="CoreAPIMethod.Context"/>" is treated by <see cref="BaseController.HandleCoreMethodEntityIndex"/>
     /// </summary>
     [Class(
         Description =

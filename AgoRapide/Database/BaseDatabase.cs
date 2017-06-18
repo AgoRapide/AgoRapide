@@ -85,6 +85,8 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new();
 
+        public abstract List<BaseEntity> GetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType);
+
         /// <summary>
         /// Generic alternative to <see cref="TryGetEntities"/>
         /// </summary>

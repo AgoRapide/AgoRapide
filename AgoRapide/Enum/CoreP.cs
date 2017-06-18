@@ -321,7 +321,7 @@ namespace AgoRapide {
                 "Will often accompany a -" + nameof(AgoRapide.ResultCode.missing_parameter_error) + "- or -" + nameof(AgoRapide.ResultCode.invalid_parameter_error) + "-. " +
                 "Used in " + nameof(APIMethod) + " for giving samples. " +
                 "Also useful for suggesting follow-up API-calls. ",
-            IsMany = true,
+            IsMany = true, /// TODO: For use within <see cref="GeneralQueryResult"/> we only use a single property.
             Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult), typeof(APIMethod) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
         SuggestedUrl,
 
