@@ -87,6 +87,7 @@ namespace AgoRapide.API {
             if (detailer == null) throw new ArgumentNullException(nameof(detailer));
             Type = (segment ?? throw new ArgumentNullException(nameof(segment))) as Type;
             if (Type != null) {
+                if (!typeof(BaseEntity).IsAssignableFrom(Type)) throw new InvalidTypeException(Type, typeof(BaseEntity), "All types used with " + nameof(APIMethod) + " must inherit " + nameof(BaseEntity));
                 SampleValues = new List<string> { Type.ToStringVeryShort() };
                 TypeToStringShortToLower = SampleValues[0].ToLower();
                 Template = Type.ToStringVeryShort();

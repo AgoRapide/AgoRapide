@@ -237,18 +237,6 @@ namespace AgoRapide.API {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.EntityIndex);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
 
-            switch (queryId) {
-                case QueryIdString queryIdString:
-                    if (queryIdString.ToString().Equals(CoreAPIMethod.Context.ToString())) {
-                        var contextEntities = Context.ExecuteContextsQueries(request.CurrentUser, request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()), DB);
-                        if (!contextEntities.TryGetValue(request.Method.EntityType, out var thisType) || thisType.Count == 0) {
-                            return request.GetErrorResponse(new ErrorResponse(ResultCode.data_error, "No entities of type " + request.Method.EntityType + " contained within current context"));
-                        }
-                        return request.GetOKResponseAsMultipleEntities(thisType.Values.ToList());
-                    }
-                    break;
-            }
-
             /// TODO: Replace code below with automatic use of <see cref="InMemoryCache"/> from <see cref="BaseDatabase"/>
             /// -------------------
             /// TODO: Mark all <see cref="ClassAttribute"/> with bool UseCache and 

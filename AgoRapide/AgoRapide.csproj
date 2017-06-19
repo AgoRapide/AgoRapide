@@ -127,6 +127,7 @@
     <Compile Include="Core\PropertyKeyMapper.cs" />
     <Compile Include="Core\PropertyKeyWithIndex.cs" />
     <Compile Include="Core\QueryId.cs" />
+    <Compile Include="Core\QueryIdContext.cs" />
     <Compile Include="Core\QueryIdInteger.cs" />
     <Compile Include="Core\QueryIdKeyOperatorValue.cs" />
     <Compile Include="Core\QueryIdMultiple.cs" />

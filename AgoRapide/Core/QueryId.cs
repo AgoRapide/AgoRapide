@@ -133,6 +133,12 @@ namespace AgoRapide.Core {
                 return true;
             }
 
+            if (valueToLower.Equals(QueryIdContext.AS_STRING_ToLower)) {
+                id = new QueryIdContext();
+                errorResponse = null;
+                return true;
+            }
+
             if (valueToLower.StartsWith("where")) {  // TODO: Improve on this parsing
                 value = value.Replace("%3D", "="); /// HACK: TODO: Fix decoding in <see cref="QueryId.TryParse"/> and <see cref="Context.TryParse
 

@@ -100,6 +100,7 @@ namespace AgoRapide.Core {
             }
             if (A.Type.Equals(typeof(DateTime))) return (obj as DateTime? ?? throw new NullReferenceException(nameof(obj) + " for " + A.ToString())).ToString(DateTimeFormat.DateHourMin);
             if (A.Type.Equals(typeof(double))) return (obj as double? ?? throw new NullReferenceException(nameof(obj) + " for " + A.ToString())).ToString2();
+            if (A.Type.Equals(typeof(Type))) return (obj as Type ?? throw new NullReferenceException(nameof(obj) + " for " + A.ToString())).ToStringDB(); // Added 19 Jun 2017
             // Type of object is unknown, we just have to trust that ToString is good enough for use in an URL.
             return obj.ToString(); // int and enums for instance should work quite OK now.
         }

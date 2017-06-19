@@ -171,9 +171,9 @@ namespace AgoRapide.API {
                         "&nbsp;" +
                         Request.API.CreateAPILink(
                         CoreAPIMethod.EntityIndex,
-                        t.ToStringVeryShort(),
+                        t.ToStringVeryShort(), /// TODO: Consider using <see cref="Extensions.ToStringDB"/> instead
                         t,
-                        new QueryIdString(CoreAPIMethod.Context.ToString())
+                        new QueryIdContext()
                     )))
                 ) +
             "</p>"

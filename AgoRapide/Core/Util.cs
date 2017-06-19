@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
-
+using AgoRapide.API;
 
 namespace AgoRapide.Core {
 
@@ -428,6 +428,7 @@ namespace AgoRapide.Core {
         public static Type GetTypeFromString(string strType) => TryGetTypeFromString(strType, out var retval) ? retval : throw new InvalidTypeException(strType);
         /// <summary>
         /// <see cref="Extensions.ToStringDB"/> corresponds to <see cref="Util.TryGetTypeFromString"/>
+        /// Now how types in <see cref="APIMethod.AllEntityTypes"/> are understood also in a short-hand form. 
         /// 
         /// See <see cref="Extensions.ToStringDB"/> for documentation. 
         /// 
@@ -440,7 +441,15 @@ namespace AgoRapide.Core {
             type = _typeToStringCache.GetOrAdd(strType, s => {
                 var t = s.Split(':'); // Remove result of ToStringShort placed in front of strType. 
                 switch (t.Length) {
-                    case 1: s = t[0].Trim(); break;
+                    case 1: s = t[0].Trim();
+                        if ("Entity".Equals(s)) return typeof(BaseEntity);
+                        var candidates = APIMethod.AllEntityTypes.Where(e => s.Equals(e.ToStringVeryShort()) || s.Equals(e.ToStringShort()) || s.Equals(e.ToString())).ToList();
+                        switch (candidates.Count) {
+                            case 0:  break; /// Finding type as a <see cref="BaseEntity"/>-type did not succeed. Continue in normal manner.
+                            case 1: return candidates[0];
+                            default: throw new InvalidCountException(candidates.Count, 1, "Multiple " + nameof(APIMethod.AllEntityTypes) + " corresponds to '" + strType + "'. (" + string.Join(",", candidates.Select(e => e.ToStringDB())) + ")");
+                        }
+                        break;
                     case 2: s = t[1].Trim(); break;
                     default: throw new InvalidTypeException(s, "Invalid number of colons : (" + (t.Length - 1) + ")");
                 }
@@ -671,14 +680,14 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="foundType"></param>
         /// <param name="expectedType"></param>
-        public InvalidTypeException(Type foundType, Type expectedType) : base(nameof(expectedType) + ": " + expectedType.ToString() + ", " + nameof(foundType) + ": " + foundType) { }
+        public InvalidTypeException(Type foundType, Type expectedType) : base(nameof(expectedType) + ": " + expectedType.ToString() + ",\r\n" + nameof(foundType) + ": " + foundType) { }
         /// <summary>
         /// TODO: CHANGE ORDERING OF FOUND/EXPECTED
         /// </summary>
         /// <param name="foundType"></param>
         /// <param name="expectedType"></param>
         /// <param name="details"></param>
-        public InvalidTypeException(Type foundType, Type expectedType, string details) : base(nameof(expectedType) + ": " + expectedType.ToString() + ", " + nameof(foundType) + ": " + foundType + ", " + nameof(details) + ": " + details) { }
+        public InvalidTypeException(Type foundType, Type expectedType, string details) : base(nameof(expectedType) + ": " + expectedType.ToString() + ",\r\n" + nameof(foundType) + ": " + foundType + ",\r\n" + nameof(details) + ": " + details) { }
     }
 
     /// <summary>

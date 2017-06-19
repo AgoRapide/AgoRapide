@@ -53,7 +53,7 @@ namespace AgoRapide.Core {
             var strSetOperator = nextWord(); if (string.IsNullOrEmpty(strSetOperator)) { id = null; errorResponse = "No " + nameof(SetOperator) + " found"; return false; }
             if (!Util.EnumTryParse<SetOperator>(strSetOperator, out var setOperator, out errorResponse)) { id = null; return false; };
             var strType = nextWord(); if (string.IsNullOrEmpty(strType)) { id = null; errorResponse = "No type found"; return false; }
-            if (!APIMethod.TryGetTypeFromVeryShortString(strType, out var type)) { id = null; errorResponse = "Invalid type (" + strType + ") found"; return false; }
+            if (!Util.TryGetTypeFromString(strType, out var type)) { id = null; errorResponse = "Invalid type (" + strType + ") found"; return false; }
             // TODO: Improve parser, there may be ; within QueryId
             var strQueryId = nextWord(); if (string.IsNullOrEmpty(strQueryId)) { id = null; errorResponse = "No " + nameof(QueryId) + " found"; return false; }
             if (!QueryId.TryParse(strQueryId, out var queryId, out errorResponse)) { id = null; return false; };
@@ -171,6 +171,13 @@ namespace AgoRapide.Core {
             public InvalidContextException(string message, Exception inner) : base(message, inner) { }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentUser"></param>
+        /// <param name="contexts">TODO: Consider removal of this parameter</param>
+        /// <param name="db"></param>
+        /// <returns></returns>
         public static Dictionary<Type, Dictionary<long, BaseEntity>> ExecuteContextsQueries(BaseEntity currentUser, List<Context> contexts, BaseDatabase db) {
             var types = contexts.Select(c => c.Type).Distinct();
 

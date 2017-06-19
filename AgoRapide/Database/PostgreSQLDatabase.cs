@@ -95,10 +95,27 @@ namespace AgoRapide.Database {
         }
 
         public override bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
-            Log(nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
+            Log(nameof(currentUser) + ": " + (currentUser?.IdFriendly ?? "[NULL]") + ", " + nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
             switch (id) {
+                case QueryIdContext context: // TOOD: Move this code into BaseDatabase
+                    if (currentUser == null) {
+                        entities = null;
+                        errorResponse = new ErrorResponse(ResultCode.client_error,
+                            "Unable to execute " + nameof(QueryIdContext) + " (" + context.ToString() + ") because no " + nameof(currentUser) + ". " +
+                            "Possible cause: " + nameof(APIMethod.RequiresAuthorization) + " = FALSE for current method"); // TODO: Known weakness in AgoRapide as of June 2017
+                        return false;
+                    }
+                    var contextEntities = Context.ExecuteContextsQueries(currentUser, currentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()), this);
+                    if (!contextEntities.TryGetValue(requiredType, out var thisType) || thisType.Count == 0) {
+                        entities = null;
+                        errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + requiredType + " contained within current context for " + currentUser.IdFriendly);
+                        return false;
+                    }
+                    entities = thisType.Values.ToList();
+                    errorResponse = null;
+                    return true;
                 case QueryIdInteger integerId: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
-                    if (!TryGetEntityById(integerId.Id, requiredType, out BaseEntity temp)) {
+                    if (!TryGetEntityById(integerId.Id, requiredType, out BaseEntity temp)) { // TOOD: Move this code into BaseDatabase
                         entities = null;
                         errorResponse = new ErrorResponse(ResultCode.data_error, requiredType.ToStringVeryShort() + " with " + nameof(id) + " " + id + " not found");
                         return false;
