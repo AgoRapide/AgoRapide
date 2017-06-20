@@ -84,7 +84,7 @@ namespace AgoRapide.Database {
                             (primaryKey.PropertyKeyWithIndex, e.PV<long>(primaryKey))
                         }, result));
                 }
-                // Transfer from internal to external (assumed to the least amount to transfer)
+                // Transfer from internal to external (assumed to constitute the least amount to transfer)
                 e.Id = internalEntity.Id;
                 // e.AddProperty(CoreP.DBId.A(), e.Id); // TODO:  Most probably unnecessary. Should be contained below. 
                 internalEntity.Properties.Values.ForEach(p => {

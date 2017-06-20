@@ -185,6 +185,32 @@ namespace AgoRapide.API {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="TPerson">Type of <see cref="ConfigurationAttribute.AnonymousUser"/> and <see cref="ConfigurationAttribute.SystemUser"/></typeparam>
+        /// <param name="Email"></param>
+        /// <param name="Password"></param>
+        /// <returns></returns>
+        public object AddFirstAdminUser<TPerson>(string Email, string Password) where TPerson: BaseEntity, new() {
+            if (!TryGetRequest(Email, Password, out var request, out var completeErrorResponse)) return completeErrorResponse;
+
+            /// Check that the only person in the database at the moment is the anonymous user created by Startup.cs
+            /// TODO: CHECK IN <see cref="Startup.Initialize{TPerson}"/> IF TPERSON EXISTS AND DISABLE THIS METHOD IF IT DOES 
+            /// TODO: (less costly, less risk of DDOS against this method)
+            /// TODO: (it not disabled we can still make a check, reading all entities)
+            var persons = DB.GetRootPropertyIds(typeof(TPerson));  // TODO: This is costly! Check in a less costly manner!
+                                                                   // TODO: If client has forgot admin credentials, give instructions for recovery. Like sending e-mail, deleting
+                                                                   // TODO: password from database or deleting all properties for admin-user.
+            var au = Util.Configuration.C.AnonymousUser;
+            InvalidTypeException.AssertEquals(au.GetType(), typeof(TPerson), () => nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly. Must correspond with call to " + nameof(Startup.Initialize));
+            if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "Admin user already exists. There is no need for calling this method.");
+            if (persons[0] != au.Id) throw new Exception(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
+            request.Parameters.AddProperty(CoreP.AccessLevelGiven.A(), AccessLevel.Admin);
+            request.Result.LogInternal("Note how this API-method gives you a high level of details in the generated result because -" + nameof(APIMethodAttribute) + "." + nameof(APIMethodAttribute.ShowDetailedResult) + "- = true", GetType());
+            return request.GetOKResponseAsEntityId(typeof(TPerson), DB.CreateEntity<TPerson>(GetId(MethodBase.GetCurrentMethod()), request.Parameters, request.Result), null);
+        }
+
         [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.BaseEntityMethod) + "-.")]
         public object HandleCoreMethodBaseEntityMethod(ValidRequest request) {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.BaseEntityMethod);

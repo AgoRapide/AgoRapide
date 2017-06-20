@@ -65,6 +65,13 @@ namespace AgoRapide.Core {
         /// </summary>
         private static Dictionary<Type, List<string>> overriddenAttributes = new Dictionary<Type, List<string>>();
 
+        public static void MapKnownEnums(Action<string> noticeLogger) {
+            MapEnum<DBField>(noticeLogger); /// This is a quasi <see cref="AgoRapide.Core.PropertyKeyAttribute"/>
+            MapEnum<CoreP>(noticeLogger);
+            MapEnum<ConfigurationAttribute.ConfigurationP>(noticeLogger);
+            MapEnum<API.APIMethodP>(noticeLogger);
+            MapEnum<API.ResultP>(noticeLogger);
+        }
         /// <summary>
         /// TODO: Rename into something else. MapEnum for instance.
         /// 

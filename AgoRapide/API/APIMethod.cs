@@ -386,15 +386,37 @@ namespace AgoRapide.API {
         /// </summary>
         public List<RouteSegmentClass> RouteSegments { get; private set; }
 
-        [ClassMember(Description = "List will be completed by call to -" + nameof(SetImplementatorIdAndCompleteAllEntityTypes) + "-.")]
-        public static void SetInitialEntityTypes(List<Type> types) {
+        private static HashSet<Type> _allEntityTypes;
+        /// <summary>
+        /// </summary>
+        /// <param name="clientAssemblies">Used to look for <see cref="AgoRapide.BaseEntity"/>-derived class in your project. Do not include assembly where <see cref="BaseEntity"/> resides as that is included automatically</param>
+        [ClassMember(Description =
+            "Adds all -" + nameof(BaseEntity) + "- types found in the given assemblies to -" + nameof(APIMethod.AllEntityTypes) + "-. "
+        )]
+        public static void SetEntityTypes(IEnumerable<System.Reflection.Assembly> clientAssemblies) {
+            var assemblies = clientAssemblies.ToList(); assemblies.Add(typeof(BaseEntity).Assembly);
             _allEntityTypes = new HashSet<Type>();
-            types.ForEach(t => {
-                if (t.Equals(typeof(BaseEntity))) return; /// See comment for <see cref="_allEntityTypes"/>, do not include <see cref="BaseEntity"/>
+            assemblies.SelectMany(a => a.GetTypes()).Where(t => {
+                if (!typeof(BaseEntity).IsAssignableFrom(t)) return false;
+                if (t.IsGenericTypeDefinition) return false;
+                if (t.IsAbstract) return false; /// Typically <see cref="ApplicationPart"/>, <see cref="APIDataObject"/>, <see cref="BaseSynchronizer"/>
+                if (t.Equals(typeof(BaseEntity))) return false; /// Note how this is not abstract. See else comment for <see cref="_allEntityTypes"/>, do not include <see cref="BaseEntity"/>                
+                return true;
+            }).ForEach(t => {
+                if (t.Equals(typeof(BaseEntity))) throw new InvalidTypeException(t, "Not needed in " + nameof(AllEntityTypes) + " collection");
                 if (_allEntityTypes.Contains(t)) throw new InvalidTypeException(t, "Already contained in " + nameof(_allEntityTypes));
                 _allEntityTypes.Add(t);
             });
         }
+
+        [ClassMember(
+            Description =
+                "All relevant -" + nameof(BaseEntity) + "--types.\r\n" +
+                "Note how -" + nameof(BaseEntity) + "- is NOT included in this collection.",
+            LongDescription =
+                "Set by -" + nameof(SetEntityTypes) + "-."
+        )]
+        public static HashSet<Type> AllEntityTypes { get => _allEntityTypes ?? throw new NullReferenceException(nameof(_allEntityTypes)); }
 
         protected static Dictionary<string, APIMethod> _allMethodsByRouteTemplate;
         /// <summary>
@@ -738,8 +760,7 @@ namespace AgoRapide.API {
         }
 
         [ClassMember(
-            Description = "Sets -" + nameof(APIMethodP.ImplementatorId) + "- for -" + nameof(AllMethods) + "-.",
-            LongDescription = "Will also add any extra types found now to -" + nameof(AllEntityTypes) + "-."
+            Description = "Sets -" + nameof(APIMethodP.ImplementatorId) + "- for -" + nameof(AllMethods) + "-."
         )]
         public static void SetImplementatorIdAndCompleteAllEntityTypes(BaseDatabase db) {
             var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db).Id;
@@ -758,8 +779,6 @@ namespace AgoRapide.API {
                     updater(APIMethodP.ImplementatorId.A(), implementator.Id);
                 }
             });
-            /// See comment for <see cref="_allEntityTypes"/>, do not include <see cref="BaseEntity"/>
-            AllMethods.SelectMany(m => m.RouteSegments).Where(s => s.Type != null && !s.Type.Equals(typeof(BaseEntity)) && !AllEntityTypes.Contains(s.Type)).ForEach(s => AllEntityTypes.Add(s.Type));
         }
 
         private Id GetId() {
@@ -935,44 +954,6 @@ namespace AgoRapide.API {
 
         protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
 
-        //public static Type GetTypeFromVeryShortString(string _string) => TryGetTypeFromVeryShortString(_string, out var retval) ? retval : throw new InvalidTypeException(_string, null);
-        //private static Dictionary<string, Type> _typeFromVeryShortStringCache;
-        ///// <summary>
-        ///// Not thread-safe for initial call. Therefore first call to this method must be done single threaded at application startup. 
-        ///// </summary>
-        ///// <param name="_string"></param>
-        ///// <param name="type"></param>
-        ///// <returns></returns>
-        //[ClassMember(
-        //    Description = // TODO: Improve description here
-        //        "Returns type based on all different types seen in " + nameof(AllMethods) + ". " +
-        //        "See also inverse method -" + nameof(Extensions.ToStringVeryShort) + "-."
-        //)]
-        //public static bool TryGetTypeFromVeryShortString(string _string, out Type type) {
-        //    if (_typeFromVeryShortStringCache == null) {
-        //        _typeFromVeryShortStringCache = new Dictionary<string, Type>();
-        //        AllMethods.SelectMany(m => m.RouteSegments).Where(s => s.Type != null).ForEach(s => {
-        //            if (_typeFromVeryShortStringCache.TryGetValue(s.Template, out var existingType)) {
-        //                InvalidTypeException.AssertEquals(existingType, s.Type, () => "Inconsistent types found for very short string representation '" + s.Template + "'");
-        //            } else {
-        //                _typeFromVeryShortStringCache.Add(s.Template, s.Type);
-        //            }
-        //        });
-        //        _allEntityTypes = new HashSet<Type>();
-        //        _typeFromVeryShortStringCache.Values.Where(t => !t.Equals(typeof(BaseEntity))).ForEach(t => _allEntityTypes.Add(t));
-        //    }
-        //    return _typeFromVeryShortStringCache.TryGetValue(_string, out type);
-        //}
-
-        private static HashSet<Type> _allEntityTypes;
-        [ClassMember(
-            Description =
-                "All different -" + nameof(APIMethod.EntityType) + "- found in -" + nameof(AllMethods) + "-.\r\n" +
-                "Note how -" + nameof(BaseEntity) + "- is NOT included in this collection.",
-            LongDescription =
-                "Set by -" + nameof(SetInitialEntityTypes) + "- and -" + nameof(SetImplementatorIdAndCompleteAllEntityTypes) + "-"
-        )]
-        public static HashSet<Type> AllEntityTypes { get => _allEntityTypes ?? throw new NullReferenceException(nameof(_allEntityTypes)); }
     }
 
     [EnumAttribute(AgoRapideEnumType = EnumType.PropertyKey)]

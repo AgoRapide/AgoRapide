@@ -51,25 +51,15 @@ namespace AgoRapideSample {
         }
 
         /// <summary>
-        /// Insert your preferred logging mechanism in:
-        /// AgoRapideSample.BaseController.LogFinal and AgoRapideSample.BaseController.LogException AND
-        /// Startup.cs (multiple places)
+        /// Insert your preferred logging mechanism in <see cref="BaseController.LogFinal"/>, <see cref="BaseController.LogException"/>, <see cref="Startup.Log"/>, 
         /// </summary>
         /// <param name="text"></param>
         private static void LogFinal(string text) => Util.Log(text);
 
         /// <summary>
-        /// Insert your preferred logging mechanism in:
-        /// AgoRapideSample.BaseController.LogFinal and AgoRapideSample.BaseController.LogException AND
-        /// Startup.cs (multiple places)
+        /// Insert your preferred logging mechanism in <see cref="BaseController.LogFinal"/>, <see cref="BaseController.LogException"/>, <see cref="Startup.Log"/>, 
         /// </summary>
         /// <param name="ex"></param>
-        private static void LogException(Exception ex) => Util.LogException(ex);
-
-        ///// <summary>
-        ///// A short name is used since it is repeated frequently in classes inheriting <see cref="BaseController"/>
-        ///// </summary>
-        //public class M : MethodAttribute {
-        //}
+        public static void LogException(Exception ex) => Util.LogException(ex);
     }
 }

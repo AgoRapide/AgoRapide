@@ -90,6 +90,7 @@
     <Compile Include="API\APIMethodCandidate.cs" />
     <Compile Include="API\APIMethodMapper.cs" />
     <Compile Include="API\BaseController.cs" />
+    <Compile Include="API\BasicAuthenticationAttribute.cs" />
     <Compile Include="API\GeneralQueryResult.cs" />
     <Compile Include="API\HTMLView.cs" />
     <Compile Include="API\JSONView.cs" />
@@ -132,6 +133,7 @@
     <Compile Include="Core\QueryIdKeyOperatorValue.cs" />
     <Compile Include="Core\QueryIdMultiple.cs" />
     <Compile Include="Core\QueryIdString.cs" />
+    <Compile Include="Core\Startup.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Database\BaseDatabase.cs" />

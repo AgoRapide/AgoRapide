@@ -554,7 +554,7 @@ namespace AgoRapide {
         /// <param name="maxN">
         /// Gives the maximum number of elements that will be generated for all types, not only <typeparamref name="T"/>. 
         /// Number for all types is needed by <see cref="PropertyKeyAttributeEnriched.GetSampleProperty{TParent}"/> in order to
-        /// determine range of foreign keys. 
+        /// determine range of foreign keys (<see cref="PropertyKeyAttribute.ForeignKeyOf"/>)
         /// </param>
         /// <returns></returns>
         public static List<T> GetMockEntities<T>(Func<PropertyKey, bool> propertyPredicate, Dictionary<Type, int> maxN) where T : BaseEntity, new() {

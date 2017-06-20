@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using AgoRapide.API;
+using AgoRapide.Database;
 
 namespace AgoRapide.Core {
     /// <summary>
@@ -48,26 +49,34 @@ namespace AgoRapide.Core {
         public string RootUrl { get; private set; }
 
         /// <summary>
+        /// Note the useless default value offered in the default instance of <see cref="ConfigurationAttribute"/> offered through <see cref="Util.Configuration"/>
+        /// </summary>
+        public Func<Type, BaseDatabase> DatabaseGetter { get; private set; }
+
+        /// <summary>
         /// <see cref="LogPath"/> and <see cref="RootUrl"/> are the only values that have to be set when initializing this class. 
         /// All other properties have sensible default values.
         /// </summary>
         /// <param name="rootUrl"></param>
-        public ConfigurationAttribute(string logPath, string rootUrl) {
+        public ConfigurationAttribute(string logPath, string rootUrl, Func<Type, BaseDatabase> databaseGetter) {
             Description = "Contains all Configuration information for AgoRapide";
-            LogPath = logPath;
-            RootUrl = rootUrl;
+            LogPath = logPath ?? throw new ArgumentNullException(nameof(logPath));
+            RootUrl = rootUrl ?? throw new ArgumentNullException(nameof(rootUrl));
+            DatabaseGetter = databaseGetter ?? throw new ArgumentNullException(nameof(databaseGetter));
         }
 
         public Environment Environment { get; set; } = Environment.Test;
 
         private BaseEntity _anonymousUser;
         /// <summary>
-        /// The <see cref="AnonymousUser"/> should be created at application startup if it does not exist in database. 
-        /// 
-        /// TODO: Explain why we create <see cref="AnonymousUser"/> in database but not <see cref="SystemUser"/>
+        /// The <see cref="AnonymousUser"/> should be created at application startup if it does not exist in database.  
         /// </summary>
         public BaseEntity AnonymousUser {
-            get => _anonymousUser ?? throw new NullReferenceException(nameof(AnonymousUser) + ". Should have been set at application startup, like in Startup.cs");
+            get {
+                if (_anonymousUser == null) throw new NullReferenceException(nameof(AnonymousUser) + ". Should have been set at application startup, like in Startup.cs");
+                if (_anonymousUser.Id <= 0) throw new Exception(nameof(_anonymousUser) + " not set up correctly (" + nameof(_anonymousUser.Id) + ": " + _anonymousUser.Id + ")");
+                return _anonymousUser;
+            }
             set => _anonymousUser = value ?? throw new NullReferenceException(nameof(AnonymousUser));
         }
 
@@ -77,7 +86,7 @@ namespace AgoRapide.Core {
         /// <see cref="DBField.cid"/> / <see cref="DBField.vid"/> / <see cref="DBField.iid"/> since we use 
         /// <see cref="ClassMember"/> for that purpose. 
         /// 
-        /// TODO: Explain why we create <see cref="AnonymousUser"/> in database but not <see cref="SystemUser"/>
+        /// Note that <see cref="AnonymousUser"/> on the other hand, IS stored in database.
         /// </summary>
         public BaseEntity SystemUser {
             get => _systemUser ?? throw new NullReferenceException(nameof(SystemUser) + ". Should have been set at application startup, like in Startup.cs");

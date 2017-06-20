@@ -17,15 +17,13 @@ namespace AgoRapide.Core {
     public static class Util {
 
         /// <summary>
-        /// You should definitely set this instance yourself at startup because 
-        /// this default instance has two major fault:
-        /// 1) The automatic generated links to API methods will not work at all since we do not
-        ///    have any sensible value for <see cref="ConfigurationAttribute.RootUrl"/>.
-        /// 2) Logging will most probably not work
+        /// Note that the default instance is only meant for temporary use at application startup. 
+        /// 
         /// </summary>
         public static Configuration Configuration { get; set; } = new Configuration(new ConfigurationAttribute(
             logPath: @"c:\AgoRapideLog_[DATE_HOUR].txt", // TODO: Find a better default value than this
-            rootUrl: "[RootUrlNotSetInAgoRapideConfiguration]"
+            rootUrl: "[" + nameof(ConfigurationAttribute.RootUrl) + "NotSetInDefaultInstanceOf" + nameof(Configuration) + "]",
+            databaseGetter: ownersType => throw new NullReferenceException(nameof(ConfigurationAttribute.DatabaseGetter) + "NotSetInDefaultInstanceOf" + nameof(Configuration))
         ));
 
         private static ConcurrentDictionary<Type, List<string>> _enumNamesCache = new ConcurrentDictionary<Type, List<string>>();
@@ -219,14 +217,6 @@ namespace AgoRapide.Core {
             return str;
         }
 
-        /// <summary>
-        /// Useful for getting shorter exception messages (shorter stack traces)
-        /// <see cref="LogException"/> will remove all occurrences in this list when listing out stack traces
-        /// </summary>
-        public static List<string> SuperfluousStackTraceStrings = new List<string> {
-            @"c:\AgoRapide"
-        };
-
         private static long exceptionSerialNo = 0;
         /// <summary>
         /// Logs exception on disk, both in ordinary logfile (summary) and in separate file (detailed)
@@ -301,10 +291,7 @@ namespace AgoRapide.Core {
                 }
 
                 var stackTrace = ex.StackTrace + "";
-                if (SuperfluousStackTraceStrings != null) {
-                    // TODO: DEBUG THIS, NOT WORKING AS OF MARCH 2017
-                    SuperfluousStackTraceStrings.ForEach(s => stackTrace = stackTrace.Replace(s, ""));
-                }
+                Configuration.C.SuperfluousStackTraceStrings.ForEach(s => stackTrace = stackTrace.Replace(s, ""));
 
                 // Remove parameters. We assume that line numbers are sufficient.
                 var start = stackTrace.IndexOf("(");
@@ -441,11 +428,12 @@ namespace AgoRapide.Core {
             type = _typeToStringCache.GetOrAdd(strType, s => {
                 var t = s.Split(':'); // Remove result of ToStringShort placed in front of strType. 
                 switch (t.Length) {
-                    case 1: s = t[0].Trim();
+                    case 1:
+                        s = t[0].Trim();
                         if ("Entity".Equals(s)) return typeof(BaseEntity);
                         var candidates = APIMethod.AllEntityTypes.Where(e => s.Equals(e.ToStringVeryShort()) || s.Equals(e.ToStringShort()) || s.Equals(e.ToString())).ToList();
                         switch (candidates.Count) {
-                            case 0:  break; /// Finding type as a <see cref="BaseEntity"/>-type did not succeed. Continue in normal manner.
+                            case 0: break; /// Finding type as a <see cref="BaseEntity"/>-type did not succeed. Continue in normal manner.
                             case 1: return candidates[0];
                             default: throw new InvalidCountException(candidates.Count, 1, "Multiple " + nameof(APIMethod.AllEntityTypes) + " corresponds to '" + strType + "'. (" + string.Join(",", candidates.Select(e => e.ToStringDB())) + ")");
                         }
@@ -580,7 +568,7 @@ namespace AgoRapide.Core {
     public class InvalidEnumException : ApplicationException {
         public static void AssertDefined<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (!System.Enum.IsDefined(typeof(T), _enum)) throw new InvalidEnumException(_enum, "Not defined");
-            if (((int)(object)_enum)==0) throw new InvalidEnumException(_enum, "int value is 0");
+            if (((int)(object)_enum) == 0) throw new InvalidEnumException(_enum, "int value is 0");
         }
         private static string GetMessage(object _enum, string message) => "Invalid / unknown value for enum (" + _enum.GetType().ToString() + "." + _enum.ToString() + ")." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
         public InvalidEnumException(object _enum) : base(GetMessage(_enum, null)) { }
@@ -738,6 +726,10 @@ namespace AgoRapide.Core {
         public OfTypeEnumException(Type type, string details) : base("Expected !Type.IsEnum but got type " + type.ToString() + ".\r\nDetails: " + details) { }
     }
 
+    public class UnknownEnvironmentException : ApplicationException {
+        public UnknownEnvironmentException(string message) : base(message) { }
+        public UnknownEnvironmentException(string message, Exception inner) : base(message, inner) { }
+    }
 
     /// <summary>
     /// TODO: Not in use as of Jan 2017
