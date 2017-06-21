@@ -84,7 +84,13 @@ namespace AgoRapide.Core {
         )]
         public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ". Should have been set by sub class");
         public bool Equals(QueryId other) => SQLWhereStatement.Equals(other.SQLWhereStatement);
-        public override bool Equals(object other) => SQLWhereStatement.Equals((other as QueryId ?? throw new InvalidTypeException(other.GetType(), typeof(QueryId))).SQLWhereStatement);
+        public override bool Equals(object other) {
+            if (other == null) return false;
+            switch (other) {
+                case QueryId queryId: return SQLWhereStatement.Equals(queryId.SQLWhereStatement);
+                default: return false;
+            }
+        }
         public override int GetHashCode() => SQLWhereStatement.GetHashCode();
 
         /// <summary>

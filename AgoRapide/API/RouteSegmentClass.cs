@@ -95,10 +95,16 @@ namespace AgoRapide.API {
             }
 
             if (segment.GetType().IsEnum) { /// Turn into <see cref="PropertyKey"/>
-                if (PropertyKeyMapper.TryGetA(segment.ToString(), out var temp)) {
-                    segment = temp;
+                if (EnumAttribute.GetAttribute(segment.GetType()).AgoRapideEnumType != EnumType.PropertyKey) {
+                    throw new InvalidRouteSegmentClassException(segment.GetType().ToString());
                 } else {
-                    throw new InvalidRouteSegmentClassException(segment.GetType() + "." + segment + " not recognized by " + nameof(PropertyKeyMapper) + " as an -" + nameof(EnumType.PropertyKey) + "-");
+                    if (PropertyKeyMapper.TryGetA(segment.ToString(), out var temp)) {
+                        segment = temp;
+                    } else {
+                        throw new InvalidRouteSegmentClassException(
+                            segment.GetType() + "." + segment + " not recognized by " + nameof(PropertyKeyMapper) + "\r\n\r\n" +
+                            PropertyKeyMapper.GetProbableCauseAndResolutionForInvalidMapping(segment.GetType()));
+                    }
                 }
             }
 
@@ -187,7 +193,7 @@ namespace AgoRapide.API {
             public InvalidRouteSegmentClassException(string message) : base(
                 "A " + nameof(RouteSegmentClass) + " must have one of the following types:\r\n\r\n" +
                 "-" + typeof(Type).ToString() + ",\r\n" +
-                "-" + typeof(PropertyKeyWithIndex).ToString() + " (or an -" + nameof(EnumType.PropertyKey) + "-),\r\n" +
+                "-" + typeof(PropertyKeyWithIndex).ToString() + " (or an -" + nameof(EnumType) + "-.-" + nameof(EnumType.PropertyKey) + "--enum recognized by -" + nameof(PropertyKeyMapper) + "),\r\n" +
                 "-" + typeof(string).ToString() + ".\r\n\r\nThis does not correspond to the following:\r\n" + message) { }
         }
     }

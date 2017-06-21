@@ -21,7 +21,7 @@ namespace AgoRapide.Core {
         // public override string ToAPIQuery() => ToString();
 
         public QueryIdInteger(long id) {
-            Id = id != 0 ? id : throw new ArgumentException(nameof(id) + ": " + id);
+            Id = id != 0 ? id : throw new ArgumentException(Util.BreakpointEnabler + nameof(id) + ": " + id);
             IsSingle = true;
             IsMultiple = false;
             _SQLWhereStatement = "WHERE " + DBField.id + " = " + Id;

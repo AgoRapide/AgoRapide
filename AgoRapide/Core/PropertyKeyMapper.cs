@@ -71,6 +71,8 @@ namespace AgoRapide.Core {
             MapEnum<ConfigurationAttribute.ConfigurationP>(noticeLogger);
             MapEnum<API.APIMethodP>(noticeLogger);
             MapEnum<API.ResultP>(noticeLogger);
+            MapEnum<SynchronizerP>(noticeLogger);
+            MapEnum<PersonP>(noticeLogger);
         }
         /// <summary>
         /// TODO: Rename into something else. MapEnum for instance.
@@ -101,7 +103,7 @@ namespace AgoRapide.Core {
             _allCoreP = null; // TODO: REMOVE USE OF THIS!
             overriddenAttributes[typeof(T)] = new List<string>();
             var excludedValue = typeof(T).Equals(typeof(DBField)) ? (T)(object)-1 : (T)(object)0;
-            if (!"None".Equals(excludedValue.ToString())) throw new InvalidEnumException(excludedValue, 
+            if (!"None".Equals(excludedValue.ToString())) throw new InvalidEnumException(excludedValue,
                 "The string representation corresponding to " + ((int)(object)excludedValue).ToString() + " for enum " + typeof(T) + " is expected to be 'None', not " + excludedValue.ToString() + ".\r\n" +
                 "(The rationale for this is to be able to catch values not being set propertly.)\r\n" +
                 "Possible resolution: Add 'None' as first element of enum " + typeof(T));
@@ -115,12 +117,12 @@ namespace AgoRapide.Core {
                         existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
                 }
                 _fromStringMaps[e.ToString()] = a;
-                if (a.Key.A.InheritAndEnrichFromProperty != null && !a.Key.A.InheritAndEnrichFromProperty.ToString().Equals(e.ToString())) {
-                    if (_fromStringMaps.TryGetValue(a.Key.A.InheritAndEnrichFromProperty.ToString(), out existing)) {
+                if (a.Key.A.InheritFrom != null && !a.Key.A.InheritFrom.ToString().Equals(e.ToString())) {
+                    if (_fromStringMaps.TryGetValue(a.Key.A.InheritFrom.ToString(), out existing)) {
                         overriddenAttributes.GetValue(existing.Key.A.EnumValue.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
                             existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
                     }
-                    _fromStringMaps[a.Key.A.InheritAndEnrichFromProperty.ToString()] = a;
+                    _fromStringMaps[a.Key.A.InheritFrom.ToString()] = a;
                 }
                 var test = a.Key.A.EnumValueExplained;
             });
@@ -179,12 +181,7 @@ namespace AgoRapide.Core {
         public static bool TryGetA<T>(T _enum, out PropertyKey key) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
             _cache.TryGetValue(typeof(T), out var dict) ?
                 dict.TryGetValue((int)(object)_enum, out key) :
-                throw new InvalidMappingException<T>(_enum,
-                    "Most probably because no corresponding call was made to " + nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + " for " + typeof(T) + ".\r\n" +
-                    "Possible resolution:\r\n" +
-                    "Add the statement\r\n" +
-                    nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + "<" + typeof(T) + ">()\r\n" +
-                    "to Startup.cs (as of Jun 2017 look for 'mapper1<...>').");
+                throw new InvalidMappingException<T>(_enum, GetProbableCauseAndResolutionForInvalidMapping(typeof(T)));
 
         public static PropertyKey GetA(string _enum) => _fromStringMaps.GetValue(_enum);
 
@@ -212,7 +209,7 @@ namespace AgoRapide.Core {
             }
 
             // TODO: This should not have been accepted for IsMany!
-            var key = new PropertyKey( 
+            var key = new PropertyKey(
                 new PropertyKeyAttributeEnrichedDyn(
                     new PropertyKeyAttribute(
                         property: _enum,
@@ -249,5 +246,12 @@ namespace AgoRapide.Core {
         }
 
         public static bool TryGetA(string _enum, out PropertyKey key) => _fromStringMaps.TryGetValue(_enum, out key);
+
+        public static string GetProbableCauseAndResolutionForInvalidMapping(Type type) =>
+            "Most probably because no corresponding call was made to " + nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + " for " + type + ".\r\n" +
+            "Possible resolution:\r\n" +
+            "Add the statement\r\n" +
+            nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + "<" + type + ">()\r\n" +
+            "to Startup.cs (as of Jun 2017 look for 'mapper1<...>')."; /// See also <see cref="MapKnownEnums"/> of course
     }
 }

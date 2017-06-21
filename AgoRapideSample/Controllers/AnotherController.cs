@@ -73,19 +73,19 @@ namespace AgoRapideSample {
                 if (!TryGetRequest(QueryIdInteger, out var request, out var completeErrorResponse)) return completeErrorResponse;
                 if (!DB.TryGetEntity(request.CurrentUser, request.Parameters.PVM<QueryIdInteger>(), AccessType.Read, entity: out Car car, errorResponse: out var errorResponse)) return request.GetErrorResponse(errorResponse);
 
-                var v1 = "All colours (variant 1): " + string.Join(", ", car.PV<List<Colour>>(P.Colour2.A()).Select(c => c.ToString()));
-                var v2 = "All colours (variant 2): " + car.PV<string>(P.Colour2.A());
-                car.AddProperty(P.Colour2.A(), Colour.Blue);
-                var v3 = "All colours (variant 3, Blue added): " + car.PV<string>(P.Colour2.A());
+                var v1 = "All colours (variant 1): " + string.Join(", ", car.PV<List<Colour>>(CarP.Colour2.A()).Select(c => c.ToString()));
+                var v2 = "All colours (variant 2): " + car.PV<string>(CarP.Colour2.A());
+                car.AddProperty(CarP.Colour2.A(), Colour.Blue);
+                var v3 = "All colours (variant 3, Blue added): " + car.PV<string>(CarP.Colour2.A());
                 // This will fail
                 // car.AddProperty(P.Colour2.A(), new List<Colour> { Colour.Red, Colour.Green }); // Fails!                
-                new List<Colour> { Colour.Red, Colour.Green }.ToIsManyParent(car, P.Colour2.A(), null).Use(
+                new List<Colour> { Colour.Red, Colour.Green }.ToIsManyParent(car, CarP.Colour2.A(), null).Use(
                     p => car.Properties[p.Key.Key.CoreP] = p); // This works
-                var v4 = "All colours (variant 4, Only Red and Green): " + car.PV<string>(P.Colour2.A());
+                var v4 = "All colours (variant 4, Only Red and Green): " + car.PV<string>(CarP.Colour2.A());
 
                 // This of course works
-                car.AddProperty(P.Colour3.A(), new List<Colour> { Colour.Red, Colour.Green });
-                var v5 = "All colours (variant 5, colour3): " + car.PV<string>(P.Colour3.A());
+                car.AddProperty(CarP.Colour3.A(), new List<Colour> { Colour.Red, Colour.Green });
+                var v5 = "All colours (variant 5, colour3): " + car.PV<string>(CarP.Colour3.A());
 
                 return request.GetOKResponseAsSingleEntity(car,
                     v1 + "\r\n" +

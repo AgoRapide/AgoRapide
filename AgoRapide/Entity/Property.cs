@@ -335,6 +335,19 @@ namespace AgoRapide {
         /// </summary>
         public object Value => _value ?? throw new NullReferenceException(nameof(_value) + ".\r\n" + (IsIsManyParent ? ("Possible cause: " + nameof(IsIsManyParent) + ", as of June 2017 these are not initialized with " + nameof(_value) + "\r\n") : "") + "Details: " + ToString());
 
+        private bool? _showValueHTMLSeparate;
+        [ClassMember(Description =
+            "Denotes whether the HTML representation of value should be shown separately (from for instance an input-box used for saving the value).\r\n" +
+            "(this is relevant for instance when the HTML representation constitutes a link).\r\n" +
+            "TRUE except for very \"simple\" properties")]
+        private bool ShowValueHTMLSeparate {
+            get {
+                if (_showValueHTMLSeparate == null) {
+                    var dummy = ValueHTML;
+                }
+                return (bool)_showValueHTMLSeparate;
+            }
+        }
         private string _valueHTML;
         /// <summary>
         /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
@@ -346,6 +359,7 @@ namespace AgoRapide {
         /// </summary>
         /// <returns></returns>
         public string ValueHTML => _valueHTML ?? (_valueHTML = new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
+            _showValueHTMLSeparate = true;
             switch (Key.Key.CoreP) {
                 case CoreP.QueryId: {
                         var v = V<QueryId>();
@@ -364,7 +378,7 @@ namespace AgoRapide {
                         if (Key.Key.A.ForeignKeyOf != null) {
                             var foreignKey = V<long>();
                             return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex,
-                                InMemoryCache.EntityCache.TryGetValue(foreignKey, out var foreignEntity) ? foreignEntity.IdFriendly : v, 
+                                InMemoryCache.EntityCache.TryGetValue(foreignKey, out var foreignEntity) ? foreignEntity.IdFriendly : v,
                                 Key.Key.A.ForeignKeyOf, new QueryIdInteger(foreignKey));
                         }
                         if (Key.Key.A.IsDocumentation) {
@@ -372,6 +386,7 @@ namespace AgoRapide {
                         } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
                             return Documentator.GetSingleReplacement(v, list);
                         } else {
+                            _showValueHTMLSeparate = false;
                             return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance);
                         }
                     }
@@ -466,6 +481,7 @@ namespace AgoRapide {
         /// </summary>
         public class InvalidPropertyException : ApplicationException {
             public InvalidPropertyException(string message) : base(message) { }
+            public InvalidPropertyException(Property p, string message) : base("Property " + p.Id + " is invalid.\r\nDetails: " + message + ".\r\nProperty details: " + p.ToString()) { }
         }
 
         /// <summary>
@@ -528,6 +544,7 @@ namespace AgoRapide {
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
                     (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML)) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
+                        (IsTemplateOnly || !ShowValueHTMLSeparate ? "" : (ValueHTML + "&nbsp;")) + /// Added <see cref="ValueHTML"/> 21 Jun 2017
                         "<input " + // TODO: Vary size according to attribute.
                             "id=\"input_" + KeyHTML + "\"" +
                             (!a.IsPassword ? "" : " type=\"password\"") +

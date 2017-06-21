@@ -44,7 +44,7 @@ namespace AgoRapide.Core {
                             nameof(_propertyKeyWithIndex) + ". " +
                             "Possible reason: " +
                             new Func<string>(() => {
-                                if (Key.A.IsMany) return nameof(PropertyKeyAttribute.IsMany) + "(" + Key.A.IsMany + ") = TRUE";
+                                if (Key.A.IsMany) return nameof(PropertyKeyAttribute.IsMany) + " (" + Key.A.IsMany + ") = TRUE";
                                 return "Maybe this instance does not originate from " + nameof(PropertyKeyMapper);
                             })() +
                             "\r\n" +

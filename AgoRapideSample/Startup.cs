@@ -77,14 +77,16 @@ namespace AgoRapideSample {
                     },
                 });
 
-                var assemblies = new List<System.Reflection.Assembly> { typeof(HomeController).Assembly, typeof(DData.P).Assembly };
-                AgoRapide.API.APIMethod.SetEntityTypes(assemblies);
+                /// Include all assemblies in which your controllers and <see cref="AgoRapide.BaseEntity"/>-classes resides.
+                var assemblies = new List<System.Reflection.Assembly> { typeof(HomeController).Assembly };
+                AgoRapide.API.APIMethod.SetEntityTypes(assemblies, new List<Type>()); /// Exclude <see cref="AgoRapide.Person"/> now if you do not want to use that class. 
 
                 AgoRapide.Core.PropertyKeyMapper.MapKnownEnums(s => Log(nameof(AgoRapide.Core.PropertyKeyMapper.MapKnownEnums) + ": " + s)); /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
 
                 /// Mapping must be done now because of a lot of static properties which calls one of <see cref="AgoRapide.Core.Extensions.A"/>
                 void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.Core.PropertyKeyMapper.MapEnum<T>(s => Log(nameof(AgoRapide.Core.PropertyKeyMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
-                mapper1<P>();         /// TODO: Automate this somehow by using information in current assembly
+                mapper1<CarP>();        /// TODO: Automate this somehow by using information in current assembly
+                mapper1<P>();           /// TODO: Automate this somehow by using information in current assembly
                 /// Add all your <see cref="AgoRapide.EnumType.PropertyKey"/> at bottom of list, in order of inheritance (if any)
 
                 AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize) + ": " + s));
@@ -104,11 +106,11 @@ namespace AgoRapideSample {
                 mapper2<P>();
 
                 Log("Miscellaneous testing");
-                AgoRapideSample.ExtensionsP.A(AgoRapideSample.P.Password).Key.A.AssertIsPassword(null);
+                AgoRapide.ExtensionsPersonP.A(AgoRapide.PersonP.Password).Key.A.AssertIsPassword(null);
 
                 Log(nameof(AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE) + ":\r\n\r\n" + new AgoRapide.Database.PostgreSQLDatabase(BaseController.DATABASE_OBJECTS_OWNER, null, BaseController.DATABASE_TABLE_NAME, typeof(Startup)).SQL_CREATE_TABLE + "\r\n");
 
-                var httpConfiguration = new AgoRapide.Core.Startup().Initialize<Person>(
+                var httpConfiguration = new AgoRapide.Core.Startup().Initialize<AgoRapide.Person>(
                     attributeClassesSignifyingRequiresAuthorization: new List<Type> {
                         typeof(System.Web.Http.AuthorizeAttribute),
                         typeof(AgoRapide.API.BasicAuthenticationAttribute)

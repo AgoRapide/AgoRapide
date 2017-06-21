@@ -98,7 +98,7 @@ namespace AgoRapide.Database {
         }
     }
 
-    [EnumAttribute(AgoRapideEnumType = EnumType.PropertyKey)]
+    [Enum(AgoRapideEnumType = EnumType.PropertyKey)]
     public enum SynchronizerP {
         None,
 
@@ -116,6 +116,7 @@ namespace AgoRapide.Database {
                 "Size of data set to be used for -" + nameof(UseMockData) + "-. " +
                 "It is up to the implementation to interpret the value, typically as a -" + nameof(Percentile.Tertile) + "-",
             Type = typeof(Percentile),
+            SampleValues = new string[] { "1P", "5P", "25P", "50P", "75P", "100P" },
             Parents = new Type[] { typeof(BaseSynchronizer) },
             AccessLevelRead = AccessLevel.Relation,
             AccessLevelWrite = AccessLevel.Relation

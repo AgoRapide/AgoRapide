@@ -24,14 +24,17 @@ namespace AgoRapide {
         LongDescription =
             "See -" + nameof(AccessLocation) + "- for how -" + nameof(AccessLevel) + "- " +
             "(for -" + nameof(AccessType.Read) + "- / -" + nameof(AccessType.Write) + "-) may be specified.",
-        AgoRapideEnumType =EnumType.EnumValue
+        AgoRapideEnumType = EnumType.EnumValue
     )]
     public enum AccessLevel {
         None,
 
         Anonymous,
 
-        [EnumValue(Description = "Access is given for to all entities that are registered as users in the system")]
+        [EnumValue(
+            Description = "Access is given for to all entities that are registered as users in the system.",
+            LongDescription = "Will in practise correspond to -" + nameof(Anonymous) + "- except that the system can log who accessed what data."
+            )]
         User,
 
         /// <summary>
@@ -43,6 +46,6 @@ namespace AgoRapide {
 
         Admin,
 
-        System            
+        System
     }
 }

@@ -52,7 +52,7 @@ namespace AgoRapide.Core {
                 "At the same time attributes for that property will be overridden by this -" + nameof(PropertyKeyAttribute) + "- " +
                 "(conceptual similar to virtual overridden C# properties). " +
                 "The value will often correspond to a -" + nameof(CoreP) + "- value")]
-        public object InheritAndEnrichFromProperty { get; set; }
+        public object InheritFrom { get; set; }
 
         public PriorityOrder PriorityOrder { get; set; }
 
@@ -261,10 +261,10 @@ namespace AgoRapide.Core {
         public Type ExternalPrimaryKeyOf;
 
         /// <summary>
-        /// <see cref="Type"/> will automatically be set to long by <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+        /// <see cref="Type"/> will automatically be set to <see cref="Int64"/> (long) by <see cref="PropertyKeyAttributeEnriched.Initialize"/>
         /// </summary>
         [ClassMember(
-            Description = "Indicates that points to related entity.")]
+            Description = "Indicates that value points to related entity.")]
         public Type ForeignKeyOf;
 
         private bool _isDocumentation;
@@ -311,7 +311,7 @@ namespace AgoRapide.Core {
 
         private Type _genericListType;
         [ClassMember(Description = "Returns the corresponding generic List<> type. Only allowed to call when -" + nameof(IsMany) + "-")]
-        public Type GenericListType => IsMany ? (_genericListType ?? (_genericListType = typeof(List<>).MakeGenericType(Type))) : throw new IsManyException("!" + nameof(IsMany) + ".\r\nDetails: " + ToString());
+        public Type GenericListType => IsMany ? (_genericListType ?? (_genericListType = typeof(List<>).MakeGenericType(Type))) : throw new IsManyException(Util.BreakpointEnabler + "!" + nameof(IsMany) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// Only relevant when <see cref="Type"/> is <see cref="DateTime"/>

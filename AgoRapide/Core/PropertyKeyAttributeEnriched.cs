@@ -156,17 +156,17 @@ namespace AgoRapide.Core {
             PToString = A.EnumValue.ToString();
             A.SetEnumValueExplained(A.EnumValue.GetType().ToStringVeryShort() + "." + PToString);
             // TODO: Clean up code for documentation here.
-            if (_coreP != null && A.InheritAndEnrichFromProperty == null && !A.EnumValue.GetType().Equals(typeof(CoreP))) {
+            if (_coreP != null && A.InheritFrom == null && !A.EnumValue.GetType().Equals(typeof(CoreP))) {
                 A.SetEnumValueExplained(A.EnumValueExplained + " (" + nameof(CoreP) + ": " + _coreP.ToString() + ")");
             }
             if (A.ExternalPrimaryKeyOf != null) AddParent(A.ExternalPrimaryKeyOf);
 
             /// Enrichment 1, explicit given
             /// -----------------------------------------
-            if (A.InheritAndEnrichFromProperty != null) {
-                NotOfTypeEnumException.AssertEnum(A.InheritAndEnrichFromProperty.GetType(), () => nameof(A.InheritAndEnrichFromProperty) + "\r\n" + ToString());
-                if (A.EnumValue.Equals(A.InheritAndEnrichFromProperty)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.EnumValue) + " (" + A.EnumValue + ").Equals(" + nameof(A) + "." + nameof(A.InheritAndEnrichFromProperty) + ")\r\nDetails: " + ToString());
-                var key = PropertyKeyMapper.GetA(A.InheritAndEnrichFromProperty.ToString());
+            if (A.InheritFrom != null) {
+                NotOfTypeEnumException.AssertEnum(A.InheritFrom.GetType(), () => nameof(A.InheritFrom) + "\r\n" + ToString());
+                if (A.EnumValue.Equals(A.InheritFrom)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.EnumValue) + " (" + A.EnumValue + ").Equals(" + nameof(A) + "." + nameof(A.InheritFrom) + ")\r\nDetails: " + ToString());
+                var key = PropertyKeyMapper.GetA(A.InheritFrom.ToString());
                 _coreP = key.Key.CoreP;
                 A.EnrichFrom(key.Key.A);
                 A.SetEnumValueExplained(A.EnumValueExplained + " <- " + key.Key.A.EnumValueExplained);
@@ -421,7 +421,7 @@ namespace AgoRapide.Core {
                                 "For instance, for sources like Salesforce the keys are strings, not integer. " +
                                 "Solution: We will have to implement a string generator based on " + nameof(v) + ". This should not be too difficult. " +
                                 "We could create a MD5 hash based on the long-value for instance, and use that. " +
-                                "(of course we could quite possible just return " + nameof(v) + " itself). "
+                                "(of course we could quite possible just return " + nameof(v) + ".ToString() itself). "
                             );
                         }
                     });
@@ -442,8 +442,12 @@ namespace AgoRapide.Core {
                 throw new SampleGenerationException(this, "No " + nameof(PropertyKeyAttribute.SampleValues) + " available");
             })();
             if (!TryValidateAndParse(value, out var result)) throw new SampleGenerationException(this, result.ErrorResponse);
-            /// TODO: Add support for <see cref="PropertyKeyAttribute.IsMany"/>
-            result.Result.SetKey(CoreP.A().PropertyKeyWithIndex);
+            var key = CoreP.A();
+            if (!key.Key.A.IsMany) {
+                result.Result.SetKey(key.PropertyKeyWithIndex); /// Safe to ask for <see cref="PropertyKey.PropertyKeyWithIndex"/>
+            } else { /// Added support for <see cref="PropertyKeyAttribute.IsMany"/> 21 Jun 2017
+                result.Result.SetKey(new PropertyKeyWithIndex(key.Key, 1)); // Note how we only create a single value.
+            }
             return result.Result;
         }
 

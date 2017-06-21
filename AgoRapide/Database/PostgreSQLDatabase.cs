@@ -453,11 +453,6 @@ namespace AgoRapide.Database {
             return retval;
         }
 
-        public override long CreateEntity<T>(long cid, Result result) => CreateEntity(cid, typeof(T), properties: (IEnumerable<(PropertyKeyWithIndex key, object value)>)null, result: result);
-        public override long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable<(PropertyKeyWithIndex key, object value)>)null, result: result);
-        public override long CreateEntity<T>(long cid, Parameters properties, Result result) => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => (p.Key, p.Value)), result);
-        public override long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => (p.Key, p.Value)), result);
-        public override long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) => CreateEntity(cid, typeof(T), properties, result);
         public override long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) {
             Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
             InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntity), detailer: null);

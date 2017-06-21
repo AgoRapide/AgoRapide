@@ -18,7 +18,7 @@ namespace AgoRapide {
     /// For values clearly belonging to only a specific entity separate enums are created that map towards <see cref="CoreP"/>, like 
     /// <see cref="ConfigurationAttribute.ConfigurationP"/>, <see cref="APIMethodP"/>, <see cref="ResultP"/>. 
     /// 
-    /// You may change names and meaning by using <see cref="PropertyKeyAttribute.InheritAndEnrichFromProperty"/> for your own <see cref="EnumType.PropertyKey"/> enums like this:
+    /// You may change names and meaning by using <see cref="PropertyKeyAttribute.InheritFrom"/> for your own <see cref="EnumType.PropertyKey"/> enums like this:
     /// 
     /// [Enum(EnumType = EnumType.PropertyKey)]
     /// public enum P {
@@ -106,12 +106,13 @@ namespace AgoRapide {
             PriorityOrder = PriorityOrder.Important)]
         Username,
 
-        /// <summary>
-        /// Note deliberate use of blank string for <see cref="PropertyKeyAttribute.SampleValues"/>. 
-        /// We do not want for instance <see cref="RouteSegmentClass"/> to produce 
-        /// a default value being used over and over again in installations worldwide.
-        /// </summary>
-        [PropertyKey(IsObligatory = true, IsPassword = true, Type = typeof(string), SampleValues = new string[] { "" })]
+        ///// <summary>
+        ///// Note deliberate use of blank string for <see cref="PropertyKeyAttribute.SampleValues"/>. 
+        ///// We do not want for instance <see cref="RouteSegmentClass"/> to produce 
+        ///// a default value being used over and over again in installations worldwide.
+        ///// </summary>
+
+        [PropertyKey(IsObligatory = true, IsPassword = true, Type = typeof(string))] // Do NOT give any SampleValue here, as it would most probably be used over and over again in installations worldwide.
         Password,
 
         /// <summary>

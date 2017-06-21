@@ -20,7 +20,13 @@ namespace AgoRapide.Core {
         public QueryId QueryId { get; private set; }
 
         public bool Equals(Context other) => SetOperator == other.SetOperator && Type.Equals(other.Type) && QueryId.Equals(other.QueryId);
-        public override bool Equals(object other) => Equals(other as Context ?? throw new InvalidTypeException(other.GetType(), typeof(Context)));
+        public override bool Equals(object other) {
+            if (other == null) return false;
+            switch (other) {
+                case Context context: return Equals(context);
+                default: return false;
+            }
+        }
         private int? _hashcode;
         public override int GetHashCode() => (int)(_hashcode ?? (_hashcode = (SetOperator + "_" + Type + "_" + QueryId.ToString()).GetHashCode()));
 

@@ -195,11 +195,13 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract List<T> GetAllEntities<T>() where T : BaseEntity, new();
 
-        public abstract long CreateEntity<T>(long cid, Result result) where T : BaseEntity;
-        public abstract long CreateEntity(long cid, Type entityType, Result result);
-        public abstract long CreateEntity<T>(long cid, Parameters properties, Result result) where T : BaseEntity;
-        public abstract long CreateEntity(long cid, Type entityType, Parameters properties, Result result);
-        public abstract long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) where T : BaseEntity;
+        public long CreateEntity<T>(long cid, Result result) => CreateEntity(cid, typeof(T), properties: (IEnumerable<(PropertyKeyWithIndex key, object value)>)null, result: result);
+        public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable<(PropertyKeyWithIndex key, object value)>)null, result: result);
+        public long CreateEntity<T>(long cid, Parameters properties, Result result) => CreateEntity(cid, typeof(T), properties.Properties.Values.Select(p => (p.Key, p.Value)), result);
+        public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => (p.Key, p.Value)), result);
+        public long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) => CreateEntity(cid, typeof(T), properties, result);
+        public long CreateEntity<T>(long cid, Dictionary<CoreP, Property> properties, Result result) => CreateEntity(cid, typeof(T), properties.Values.Select(p => (p.Key, p.Value)), result);
+        
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -453,15 +455,15 @@ namespace AgoRapide.Database {
             }
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="text"></param>
-        /// <param name="result">May be null</param>
-        /// <param name="caller"></param>
-        protected void Log(string text, Result result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
-            Log(text, caller);
-            result?.LogInternal(text, GetType(), caller);
-        }
+        ///// <summary>
+        ///// </summary>
+        ///// <param name="text"></param>
+        ///// <param name="result">May be null</param>
+        ///// <param name="caller"></param>
+        //protected void Log(string text, Result result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
+        //    Log(text, caller);
+        //    result?.LogInternal(text, GetType(), caller);
+        //}
 
         public class OpenDatabaseConnectionException : ApplicationException {
             public OpenDatabaseConnectionException(string message) : base(message) { }

@@ -33,7 +33,7 @@ namespace AgoRapide.Core {
         /// 
         /// Typical examples:
         /// CoreP.Username
-        /// P.Email &lt;- CoreP.Username (when <see cref="PropertyKeyAttribute.InheritAndEnrichFromProperty"/> is used)
+        /// P.Email &lt;- CoreP.Username (when <see cref="PropertyKeyAttribute.InheritFrom"/> is used)
         /// P.FirstName (CoreP 42) (when no corresponding <see cref="CoreP"/> exists. 
         /// 
         /// TODO: If very high value (like almost MaxInt), then explain this as a IsMany-property where P is the index

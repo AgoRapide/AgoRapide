@@ -389,11 +389,22 @@ namespace AgoRapide.API {
         private static HashSet<Type> _allEntityTypes;
         /// <summary>
         /// </summary>
-        /// <param name="clientAssemblies">Used to look for <see cref="AgoRapide.BaseEntity"/>-derived class in your project. Do not include assembly where <see cref="BaseEntity"/> resides as that is included automatically</param>
+        /// <param name="clientAssemblies">
+        /// Used to look for <see cref="AgoRapide.BaseEntity"/>-derived class in your project. 
+        /// Do not include assembly where <see cref="BaseEntity"/> resides as that is included automatically
+        /// </param>
+        /// <param name="exclude">
+        /// Types to exclude. You might want to exclude <see cref="Person"/> as that class is provided only out of convenience.
+        /// 
+        /// In addition to types given here the following will also be excluded:
+        /// All <see cref="Type.IsGenericTypeDefinition"/>
+        /// All <see cref="Type.IsAbstract"/>
+        /// <see cref="BaseEntity"/>
+        /// </param>
         [ClassMember(Description =
             "Adds all -" + nameof(BaseEntity) + "- types found in the given assemblies to -" + nameof(APIMethod.AllEntityTypes) + "-. "
         )]
-        public static void SetEntityTypes(IEnumerable<System.Reflection.Assembly> clientAssemblies) {
+        public static void SetEntityTypes(IEnumerable<System.Reflection.Assembly> clientAssemblies, IEnumerable<Type> exclude) {
             var assemblies = clientAssemblies.ToList(); assemblies.Add(typeof(BaseEntity).Assembly);
             _allEntityTypes = new HashSet<Type>();
             assemblies.SelectMany(a => a.GetTypes()).Where(t => {

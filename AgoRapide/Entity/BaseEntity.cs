@@ -59,7 +59,7 @@ namespace AgoRapide {
             "May be used as replacement of -" + nameof(BaseEntity.Id) + "-, for instance for use as parameter against -" + nameof(CoreAPIMethod.EntityIndex) + "- " +
             "(because will often give a more human friendly value)."
         )]
-        public QueryId IdString => _idString ?? (_idString = PV<QueryId>(CoreP.QueryId.A(), new QueryIdInteger(Id)));
+        public QueryId IdString => _idString ?? (_idString = PV<QueryId>(CoreP.QueryId.A(), (Id > 0 ? (QueryId)new QueryIdInteger(Id) : (QueryId)new QueryIdString("UNKNOWN"))));
 
         private string _idFriendly;
         /// <summary>
@@ -333,7 +333,7 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         public class InvalidPropertyException<T> : ApplicationException {
             public InvalidPropertyException(CoreP p, string value, string details) : base(
-                    "The value found for " + typeof(CoreP) + "." + p + "\r\n" +
+                    "The value found for " + p.A().Key.PToString + "\r\n" +
                     "(" + value + ")\r\n" +
                     "is not valid for " + typeof(T) + ".\r\n" +
                     "Details: " + details) { }
@@ -560,7 +560,7 @@ namespace AgoRapide {
         public static List<T> GetMockEntities<T>(Func<PropertyKey, bool> propertyPredicate, Dictionary<Type, int> maxN) where T : BaseEntity, new() {
             var retval = new List<T>();
             var type = typeof(T);
-            var properties = type.GetChildProperties().Values.Where(propertyPredicate);
+            var properties = type.GetChildProperties().Values.Where(propertyPredicate).ToList(); // Turning into list improves performance since accessed many times. 
             var maxT = maxN.GetValue(type);
             for (var n = 1; n <= maxT; n++) {
                 var e = new T() {

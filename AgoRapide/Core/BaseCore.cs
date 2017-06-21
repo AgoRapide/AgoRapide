@@ -39,7 +39,7 @@ namespace AgoRapide.Core {
         /// <param name="caller"></param>
         protected void Log(string text, Result result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             Log(text, caller);
-            result.LogInternal(text, GetType(), caller);
+            result?.LogInternal(text, GetType(), caller);
         }
 
         /// <summary>
