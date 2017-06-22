@@ -29,6 +29,8 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Only relevant when attribute for <see cref="BaseEntity"/> or <see cref="ITypeDescriber"/>. 
         /// TODO: Consider making an EntityAttribute class in addition to <see cref="ClassAttribute"/>
+        /// 
+        /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
         /// </summary>
         [ClassMember(
             Description = "The type of the parent (if any). See also -" + nameof(CoreP.QueryIdParent) + "-.",
@@ -36,6 +38,9 @@ namespace AgoRapide.Core {
         )]
         public Type ParentType;
 
+        /// <summary>
+        /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
+        /// </summary>
         [ClassMember(
             Description =
                 "The type of the children (if any), like " +

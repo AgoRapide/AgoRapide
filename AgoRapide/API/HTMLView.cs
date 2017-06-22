@@ -167,7 +167,7 @@ namespace AgoRapide.API {
                     CoreAPIMethod.Context, CoreAPIMethod.Context.ToString(), (Type)null
                 ) +
                 (Request.CurrentUser == null ? "" : // Suggest Context for all entities
-                    string.Join("", Request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()).Select(c => c.Type).Distinct().Select(t =>
+                    string.Join("", Context.GetAllRelatedTypes(Request .CurrentUser.PV(CoreP.Context.A(), new List<Context>())).Select(t =>
                         "&nbsp;" +
                         Request.API.CreateAPILink(
                         CoreAPIMethod.EntityIndex,

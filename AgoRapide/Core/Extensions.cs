@@ -336,6 +336,10 @@ namespace AgoRapide.Core {
             return retval;
         }
 
+        private static ConcurrentDictionary<Type, List<(Type, PropertyKey)>> _typesWhereIsForeignKeyCache = new ConcurrentDictionary<Type, List<(Type, PropertyKey)>>();
+        public static List<(Type type, PropertyKey key)> GetTypesWhereIsForeignKey(this Type type) => _typesWhereIsForeignKeyCache.GetOrAdd(type, t =>
+            PropertyKeyMapper.AllCoreP.Where(k => k.Key.A.ForeignKeyOf == t).SelectMany(k => k.Key.A.Parents == null ? new List<(Type, PropertyKey)>() : k.Key.A.Parents.Select(p => (p, k)).ToList()).ToList());
+
         public static EntityTypeCategory ToEntityTypeCategory(this Type type) {
             if (typeof(Agent).IsAssignableFrom(type)) return EntityTypeCategory.Agent;
             if (typeof(APIDataObject).IsAssignableFrom(type)) return EntityTypeCategory.APIDataObject;
@@ -343,7 +347,7 @@ namespace AgoRapide.Core {
             if (typeof(BaseEntity).IsAssignableFrom(type)) return EntityTypeCategory.BaseEntity;
             throw new InvalidTypeException(type, "Not of type " + typeof(BaseEntity));
         }
-        
+
         private static ConcurrentDictionary<Type, string> _toStringShortCache = new ConcurrentDictionary<Type, string>();
         /// <summary>
         /// See <see cref="CoreP.EntityTypeShort"/>
@@ -438,7 +442,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static string ToStringDB(this Type type) => _toStringDBCache.GetOrAdd(type, t => {            
+        public static string ToStringDB(this Type type) => _toStringDBCache.GetOrAdd(type, t => {
             if (APIMethod.AllEntityTypes.Contains(t)) return t.ToStringVeryShort(); /// Now how types in <see cref="APIMethod.AllEntityTypes"/> are stored in a short-hand form.
             var retval = t.ToString() + "," + t.Assembly.GetName().Name;
             if (!t.IsGenericType) return ToStringShort(t) + " : " + retval;

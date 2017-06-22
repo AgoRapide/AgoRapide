@@ -13,11 +13,27 @@ namespace AgoRapide.API {
     /// NOTE: Never stored in database. 
     /// </summary>
     [Class(
-        Description = "Communicates result of -" + nameof(CoreAPIMethod.GeneralQuery) + "-",
+        Description = 
+            "Communicates result of -" + nameof(CoreAPIMethod.GeneralQuery) + "-. " +
+            "Also used for general communication of API call suggestions.",
         LongDescription = "Usually contains a -" + nameof(CoreP.SuggestedUrl) + "- and -" + nameof(CoreP.Description) + "-.",
         AccessLevelRead = AccessLevel.User
     )]
     public class GeneralQueryResult : BaseEntity {
+
+        public GeneralQueryResult() {
+        }
+
+        /// <summary>
+        /// Convenience constructor.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="description"></param>
+        public GeneralQueryResult(string url, string description) {
+            AddProperty(CoreP.SuggestedUrl.A(), url);
+            AddProperty(CoreP.Description.A(), description);
+        }
+
 
         /// <summary>
         /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>

@@ -192,7 +192,7 @@ namespace AgoRapide.API {
         /// <param name="request">Parameters must correspond to <see cref="PropertyKeyAttribute.IsObligatory"/> for <typeparamref name="TPerson"/></param>
         /// <returns></returns>
         [ClassMember(Description = "Adds the first administrative user to the system. Only allowed if no entities of given type parameter exists")]
-        public object AddFirstAdminUser<TPerson>(ValidRequest request) where TPerson: BaseEntity, new() {
+        public object AddFirstAdminUser<TPerson>(ValidRequest request) where TPerson : BaseEntity, new() {
 
             /// Check that the only <typeparam name="TPerson"/> entity in the database at the moment is the anonymous user created by Startup.cs
             /// TODO: CHANGE TO CHECK IN <see cref="Startup.Initialize{TPerson}"/> IF TPERSON EXISTS AND DISABLE THIS METHOD IF IT DOES 
@@ -215,7 +215,7 @@ namespace AgoRapide.API {
         /// <typeparam name="TPerson">Type of <see cref="ConfigurationAttribute.AnonymousUser"/> and <see cref="ConfigurationAttribute.SystemUser"/></typeparam>
         /// <param name="GeneralQueryId"></param>
         /// <returns></returns>
-        public object GeneralQuery<TPerson>(ValidRequest request, QueryId queryId) where TPerson : BaseEntity, new() {            
+        public object GeneralQuery<TPerson>(ValidRequest request, QueryId queryId) where TPerson : BaseEntity, new() {
             /// Note relatively expensive reading of whole <see cref="TPerson"/> entities now
             if (!DB.TryGetEntities(
                 request.CurrentUser.RepresentedByEntity ?? request.CurrentUser, /// Note how search will always be done viewed from <see cref="BaseEntity.RepresentedByEntity"/>
@@ -226,20 +226,15 @@ namespace AgoRapide.API {
             // Note, you can search for other types of entities here also, and add the corresponding persons to the
             // persons collection found now. 
             if (tpersons.Count == 0) return request.GetErrorResponse(ResultCode.data_error, "No " + typeof(TPerson).ToStringVeryShort() + " found for query '" + queryId + "'");
-            return request.GetOKResponseAsMultipleEntities(tpersons.Select(p => {
-                var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
-                r.AddProperty(CoreP.AccessLevelRead.A(), AccessLevel.Anonymous); /// Since <see cref="PropertyKeyAttribute.Parents"/> are specified for properties belonging to <see cref="GeneralQueryResult"/> we must also set general access right for each and every such entity.
-                r.AddProperty(
-                    CoreP.SuggestedUrl.A(),
-                    request.API.CreateAPIUrl(
-                        CoreAPIMethod.UpdateProperty,
-                        typeof(TPerson),  /// Note important point here, do NOT set <see cref="CoreP.EntityToRepresent"/> for <see cref="CoreP.EntityToRepresent"/>!
+            return request.GetOKResponseAsMultipleEntities(tpersons.Select(p =>
+                (BaseEntity)new GeneralQueryResult(
+                request.API.CreateAPIUrl(
+                    CoreAPIMethod.UpdateProperty,
+                    typeof(TPerson),  /// Note important point here, do NOT set <see cref="CoreP.EntityToRepresent"/> for <see cref="CoreP.EntityToRepresent"/>!
                             new QueryIdInteger(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
-                    )
-                );
-                r.AddProperty(CoreP.Description.A(), p.IdFriendly);
-                return (BaseEntity)r;
-            }).ToList());
+                ),
+                p.IdFriendly
+           )).ToList());
         }
 
         [ClassMember(Description = "See " + nameof(CoreAPIMethod) + ".-" + nameof(CoreAPIMethod.BaseEntityMethod) + "-.")]
@@ -373,43 +368,53 @@ namespace AgoRapide.API {
             var context = request.CurrentUser.PV(CoreP.Context.A(), new List<Context>()); /// TODO: Implement <see cref="BaseEntity.PVM{T}"/> also for lists
 
             if (context.Count == 0) { /// No existing context, suggest starting points for context 
-                return request.GetOKResponseAsMultipleEntities(APIMethod.AllEntityTypes.Select(type => {
-                    var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
-                    r.AddProperty(
-                        CoreP.SuggestedUrl.A(),
-                        request.API.CreateAPIUrl(
-                            CoreAPIMethod.UpdateProperty,
-                            request.CurrentUser.GetType(),
-                            new QueryIdInteger(request.CurrentUser.Id),
-                            CoreP.Context.A(),
-                            new Context(SetOperator.Union, type, new QueryIdKeyOperatorValue()).ToString() // Query "All"
-                        )
-                    );
-                    r.AddProperty(CoreP.Description.A(), "Set context to " + type.ToStringVeryShort());
-                    return (BaseEntity)r;
-                }).ToList());
+                return request.GetOKResponseAsMultipleEntities(APIMethod.AllEntityTypes.Select(type => (BaseEntity)new GeneralQueryResult(
+                    request.API.CreateAPIUrl(
+                        CoreAPIMethod.UpdateProperty,
+                        request.CurrentUser.GetType(),
+                        new QueryIdInteger(request.CurrentUser.Id),
+                        CoreP.Context.A(),
+                        new Context(SetOperator.Intersect, type, new QueryIdKeyOperatorValue()).ToString() // Query "All"
+                    ),
+                    "Set context to " + type.ToStringVeryShort()
+                )).ToList());
             }
 
             // Show actual context 
+            request.Result.MultipleEntitiesResult = new List<BaseEntity>();
+
             var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB);
-            request.Result.MultipleEntitiesResult = retval.SelectMany(e => e.Value.Values).ToList();
+            retval.ForEach(type => {
+                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( // All entities of this type
+                    request.API.CreateAPIUrl(
+                        CoreAPIMethod.EntityIndex,
+                        type.Key,
+                        new QueryIdContext()),
+                    type.Key.ToStringVeryShort() + " (" + type.Value.Count + ")"
+                ));
+
+                var drilldown = Result.CreateDrillDownUrls(type.Value.Values); 
+                drilldown.ForEach(coreP => {
+                    var corePAsString = coreP.Key.A().Key.PToString;
+                    coreP.Value.ForEach(_operator => {
+                        _operator.Value.ForEach(suggestion => {
+                            request.Result.MultipleEntitiesResult.Add(suggestion.Value.ToContext(request, type.Key.ToStringVeryShort() + " " + corePAsString + " " + _operator.Key));
+                        });
+                    });
+                });
+            });
 
             // Suggest removal of context properties
             if (request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var contextParent)) {
-                contextParent.Properties.Values.ForEach(p => {
-                    var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
-                    r.AddProperty(
-                        CoreP.SuggestedUrl.A(),
-                        request.API.CreateAPIUrl(
-                            CoreAPIMethod.PropertyOperation,
-                            typeof(Property),
-                            new QueryIdInteger(p.Id),
-                            PropertyOperation.SetInvalid
-                        )
-                    );
-                    r.AddProperty(CoreP.Description.A(), p.V<string>() + " => " + PropertyOperation.SetInvalid);
-                    request.Result.MultipleEntitiesResult.Add(r);
-                });
+                request.Result.MultipleEntitiesResult.AddRange(contextParent.Properties.Values.Select(p => (BaseEntity)new GeneralQueryResult(
+                    request.API.CreateAPIUrl(
+                        CoreAPIMethod.PropertyOperation,
+                        typeof(Property),
+                        new QueryIdInteger(p.Id),
+                        PropertyOperation.SetInvalid
+                    ),
+                    p.V<string>() + " => " + PropertyOperation.SetInvalid
+                )));
             }
             request.Result.ResultCode = ResultCode.ok;
             return request.GetResponse();

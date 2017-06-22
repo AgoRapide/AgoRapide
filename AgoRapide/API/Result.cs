@@ -83,7 +83,22 @@ namespace AgoRapide.API {
                                 // Note how ordering by negative value should be more efficient then ordering and then reversing
                                 // _operator.Value.OrderBy(s => s.Value.Count).Reverse().ForEach(suggestion => {
                                 _operator.Value.OrderBy(s => -s.Value.Count).ForEach(suggestion => {
-                                    retval.Append("<a href=\"" + suggestion.Value.Url + "\">" + suggestion.Value.Text.HTMLEncode() + "<a>&nbsp;");
+                                    if (request.CurrentUser == null) {
+                                        // Only suggest general query
+                                        retval.Append("<a href=\"" + suggestion.Value.Url + "\">" + suggestion.Value.Text.HTMLEncode() + "<a>&nbsp;");
+                                    } else {
+                                        // Suggest both adding to context
+                                        retval.Append(request.API.CreateAPILink(
+                                            CoreAPIMethod.UpdateProperty,
+                                            suggestion.Value.Text,
+                                            request.CurrentUser.GetType(),
+                                            new QueryIdInteger(request.CurrentUser.Id),
+                                            CoreP.Context.A(),
+                                            new Context(SetOperator.Intersect, t, suggestion.Value.QueryId).ToString()
+                                        ));
+                                        // and showing all with this value (general query)
+                                        retval.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>&nbsp;");
+                                    }
                                 });
                             });
                             retval.Append("</p>");
@@ -204,7 +219,7 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="entities">Alle objects are required to be of an identical type</param>
         /// <returns></returns>
-        public Dictionary<
+        public static Dictionary<
                 CoreP,
                 Dictionary<
                     Operator,
@@ -213,7 +228,7 @@ namespace AgoRapide.API {
                         DrillDownSuggestion
                     >
                 >
-             > CreateDrillDownUrls(List<BaseEntity> entities) {
+             > CreateDrillDownUrls(IEnumerable<BaseEntity> entities) {
 
             var retval = new Dictionary<
                 CoreP,
@@ -226,7 +241,8 @@ namespace AgoRapide.API {
                 >
              >();
 
-            if (entities.Count == 0) return retval;
+            var totalCount = entities.Count();
+            if (totalCount == 0) return retval;
 
             var type = entities.First().GetType();
             /// Note how this code (in <see cref="Result.CreateDrillDownUrls"/>) only gives suggestions for existing values.
@@ -285,10 +301,11 @@ namespace AgoRapide.API {
                         var query = new QueryIdKeyOperatorValue(key.Key, o, t.Item1); // Now how it is "random" which object value (out of several with identical string-representation) is chosen now. But we assume that all of them have the same predicate effect
                         var count = entities.Where(query.ToPredicate).Count();
 
-                        if (count > 0 && count != entities.Count) { // Note how we do not offer drill down if all entities match
+                        if (count > 0 && count != totalCount) { // Note how we do not offer drill down if all entities match
                             r2.AddValue(
                                 t.Item2,
-                                new DrillDownSuggestion {
+                                new DrillDownSuggestion { // TODO: Implement constructor forcing parameters here
+                                    EntityType = type,
                                     Count = count,
                                     Url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
                                     Text = t.Item2 + " (" + count + ")",
@@ -316,6 +333,7 @@ namespace AgoRapide.API {
         /// TODO: Make immutable
         /// </summary>
         public class DrillDownSuggestion {
+            public Type EntityType; // TODO: Implement constructor forcing parameters here
             /// <summary>
             /// Number of entities resulting if querying according to this suggestion
             /// </summary>
@@ -323,8 +341,28 @@ namespace AgoRapide.API {
             public string Url;
             public string Text;
             public QueryIdKeyOperatorValue QueryId;
-        }
 
+            /// <summary>
+            /// TODO: Find a better name for this method / property
+            /// </summary>
+            /// <param name="header"></param>
+            /// <returns></returns>
+            public GeneralQueryResult ToQuery(string header) => new GeneralQueryResult(Url, header + ": " + Text);
+            /// <summary>
+            /// TODO: Find a better name for this method / property
+            /// </summary>
+            /// <param name="header"></param>
+            /// <returns></returns>
+            public GeneralQueryResult ToContext(ValidRequest request, string header) => new GeneralQueryResult(
+                request.API.CreateAPIUrl(
+                    CoreAPIMethod.UpdateProperty,
+                    request.CurrentUser.GetType(),
+                    new QueryIdInteger(request.CurrentUser.Id),
+                    CoreP.Context.A(),
+                    new Context(SetOperator.Intersect, EntityType, QueryId).ToString()
+                ),
+                header + ": " + Text);
+        }
     }
 
     [EnumAttribute(AgoRapideEnumType = EnumType.PropertyKey)]

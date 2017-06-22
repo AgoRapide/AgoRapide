@@ -580,6 +580,13 @@ namespace AgoRapide.Database {
             return retval;
         }
 
+        /// <summary>
+        /// TODO: Almost all this code can be moved into <see cref="BaseDatabase"/>
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <param name="currentUser"></param>
+        /// <returns></returns>
         [ClassMember(Description =
             "Pragmatic simple and easy to understand mechanism for verification of credentials. " +
             "Only to be used in systems requiring low levels of security.")]
@@ -600,7 +607,7 @@ namespace AgoRapide.Database {
             // Note that although it is expensive to read the whole entity now, a practical AgoRapide implementation would
             // probably need the whole object anyway for later purposes, and a typical Authentication mechanism could make
             // the returned object available for such purposes.
-            // (check for instance code in Startup.cs, BasicAuthenticationAttribute.AuthenticateAsync
+            /// (check for instance code in <see cref="BasicAuthenticationAttribute.AuthenticateAsync"/>)
             //    context.Request.Properties["AgoRapideCurrentUser"] = currentUser
             // )
             if (!TryGetEntityById(entityId, requiredType: null, entity: out currentUser)) return false;
@@ -827,17 +834,21 @@ namespace AgoRapide.Database {
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE\r\n" +
                 // TODO: CHECK IF THIS IS STILL THE CORRECT METHOD
                 "(\r\n" +
-                "  " + DBField.pid + " = " + parentProperty.Id + " OR\r\n" +
-                "  (\r\n" +                                               // pid IS NOT NULl and fid = parent is for limiting to relations
-                "    (" + DBField.pid + " IS NOT NULL) AND\r\n" +                        // where this entity is the foreign entity. Note the  
-                "    (" + DBField.fid + " = " + parentProperty.Id + ")\r\n" +            // careful construct because we DO NOT WANT root-properties
-                                                                                         // TODO: Consider adding AND name LIKE 
-                                                                                         // 'Relation%' here as an additional measure
-                "  )\r\n" +                                              // where we are indicated as QueryCompoent to be included
-                ") AND\r\n" +                                            // (that would result in lots of properties being set no-longer-current)
+                "  " + DBField.pid + " = " + parentProperty.Id + " " +
+
+                /// June 2017: Giving up on reading fid will result in <see cref="PropertyOperation.SetInvalid"/> if multiple found.
+                //"OR (\r\n" +                                               // pid IS NOT NULl and fid = parent is for limiting to relations
+                //"    (" + DBField.pid + " IS NOT NULL) AND\r\n" +                        // where this entity is the foreign entity. Note the  
+                //"    (" + DBField.fid + " = " + parentProperty.Id + ")\r\n" +            // careful construct because we DO NOT WANT root-properties
+                //                                                                         // TODO: Consider adding AND name LIKE 
+                //                                                                         // 'Relation%' here as an additional measure
+                //"  )\r\n" +                                              // where we are indicated as QueryCompoent to be included
+                ") " +
+
+                "AND\r\n" +                                            // (that would result in lots of properties being set no-longer-current)
                 DBField.invalid + " IS NULL\r\n" +
                 "ORDER BY " + DBField.id + " ASC", _cn1);
-            return ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates(cmd);
+            return ReadAllPropertyValuesAndInvalidateDuplicates(cmd);
         }
 
         /// <summary>
@@ -935,7 +946,7 @@ namespace AgoRapide.Database {
             LongDescription =
                 "It is therefore important to always read properties in ASCending order from database before calling this method"
         )]
-        protected Dictionary<CoreP, Property> ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates(Npgsql.NpgsqlCommand cmd) {
+        protected Dictionary<CoreP, Property> ReadAllPropertyValuesAndInvalidateDuplicates(Npgsql.NpgsqlCommand cmd) {
             var dict = new Dictionary<CoreP, Property>();
             lock (GetLock(cmd)) {
                 Npgsql.NpgsqlDataReader r;

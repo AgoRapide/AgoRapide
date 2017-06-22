@@ -13,6 +13,6 @@ namespace AgoRapide {
         Description = "See -" + nameof(EntityTypeCategory.APIDataObject) + "-.",
         DefinedForClass = nameof(APIDataObject)
     )]
-    public class APIDataObject : BaseEntity {
+    public abstract class APIDataObject : BaseEntity {
     }
 }

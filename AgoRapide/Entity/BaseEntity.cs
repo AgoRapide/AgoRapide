@@ -383,14 +383,21 @@ namespace AgoRapide {
                     "<br>Name: " + IdFriendly.HTMLEncode() + "</h1>");
             }
             var a = GetType().GetClassAttribute();
+
+            /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
             /// TOOD: Consider removing this. Should be available from <see cref="Property.ToHTMLTableRow"/> anyway.
             if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) { // Link from child to parent
                 queryIdParent.AssertIsSingle(() => ToString());
                 retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Parent " + a.ParentType.ToStringVeryShort(), a.ParentType, queryIdParent) + "</p>");
             }
+            /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
             if (a.ChildrenType != null) { // Link from parent to children
                 retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Children " + a.ChildrenType.ToStringVeryShort(), a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString())) + "</p>");
             }
+
+            var whereForeignKey = GetType().GetTypesWhereIsForeignKey();
+            if (whereForeignKey.Count > 0) retval.Append("<p>Related entities:<br>" + string.Join("<br>", whereForeignKey.Select(t => 
+                request.API.CreateAPILink(CoreAPIMethod.EntityIndex, t.type.ToStringVeryShort(), t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id)))) + "</p>");
 
             Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this).ForEach(c => {
                 retval.Append("<p><a href=\"" + c.PV<string>(CoreP.SuggestedUrl.A()) + "\">" + c.PV<string>(CoreP.Description.A()).HTMLEncode() + "</a></p>");

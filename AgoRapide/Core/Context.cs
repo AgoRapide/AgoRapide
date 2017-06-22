@@ -122,21 +122,18 @@ namespace AgoRapide.Core {
             if (entity.Id == 0) return retval;
             var contexts = request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>());
 
-            var adder = new Action<SetOperator>(setOperator => {
-                var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
-                r.AddProperty(
-                    CoreP.SuggestedUrl.A(),
+            var adder = new Action<SetOperator>(setOperator =>
+                retval.Add(new GeneralQueryResult(
                     request.API.CreateAPIUrl(
                         CoreAPIMethod.UpdateProperty,
                         request.CurrentUser.GetType(),
                         new QueryIdInteger(request.CurrentUser.Id),
                         CoreP.Context.A(),
                         new Context(setOperator, entity.GetType(), new QueryIdInteger(entity.Id)).ToString()
-                    )
-                );
-                r.AddProperty(CoreP.Description.A(), nameof(SetOperator) + "." + setOperator);
-                retval.Add(r);
-            });
+                    ),
+                    nameof(SetOperator) + "." + setOperator
+                ))
+            );
 
             if (contexts.Any(c => c.SpecifiesEntityAsPart(entity) && (c.SetOperator == SetOperator.Union || c.SetOperator == SetOperator.Intersect))) {
                 adder(SetOperator.Remove);
@@ -148,20 +145,15 @@ namespace AgoRapide.Core {
 
             /// <see cref="PropertyOperation.SetInvalid"/> for context properties which may be removed.
             if (request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var contextParent)) {
-                contextParent.Properties.Values.Where(p => p.V<Context>().SpecifiesEntityExact(entity)).ForEach(p => {
-                    var r = new GeneralQueryResult(); /// TODO: Consider adding constructor for <see cref="GeneralQueryResult"/> with these properties as parameters
-                    r.AddProperty(
-                        CoreP.SuggestedUrl.A(),
-                        request.API.CreateAPIUrl(
-                            CoreAPIMethod.PropertyOperation,
-                            typeof(Property),
-                            new QueryIdInteger(p.Id),
-                            PropertyOperation.SetInvalid
-                        )
-                    );
-                    r.AddProperty(CoreP.Description.A(), nameof(Context) + "." + PropertyOperation.SetInvalid);
-                    retval.Add(r);
-                });
+                retval.AddRange(contextParent.Properties.Values.Where(p => p.V<Context>().SpecifiesEntityExact(entity)).Select(p => new GeneralQueryResult(
+                    request.API.CreateAPIUrl(
+                        CoreAPIMethod.PropertyOperation,
+                        typeof(Property),
+                        new QueryIdInteger(p.Id),
+                        PropertyOperation.SetInvalid
+                    ),
+                    nameof(Context) + "." + PropertyOperation.SetInvalid
+                )));
             }
             return retval;
         }
@@ -176,6 +168,13 @@ namespace AgoRapide.Core {
             public InvalidContextException(string message) : base(message) { }
             public InvalidContextException(string message, Exception inner) : base(message, inner) { }
         }
+
+        [ClassMember(Description = "Returns all related types for the given context.")]
+        public static List<Type> GetAllRelatedTypes(List<Context> contexts) => contexts.Select(c => c.Type).Distinct().SelectMany(t => {
+            var retval = new List<Type> { t };
+            retval.AddRange(GetPossibleTraversalsFromType(t).Keys);
+            return retval;
+        }).Distinct().ToList();
 
         /// <summary>
         /// 
@@ -220,12 +219,12 @@ namespace AgoRapide.Core {
                     var traversal = traversals[0];
                     traversal.Key.Key.A.AssertNotIsMany(() => "Traversals not yet supported for " + nameof(PropertyKeyAttribute.IsMany)); // TOOD: Implement support for IsMany (easy to implement, just iterate through List instead of single value below)
 
-                    var toEntities = retval.GetValue(fromType, () => nameof(toType));
+                    var toEntities = retval.GetValue(toType, () => nameof(toType));
 
                     switch (traversal.Direction) {
                         case TraversalDirection.FromForeignKey:
                             InvalidTypeException.AssertAssignable(toType, traversal.Key.Key.A.ForeignKeyOf, () => "Invalid assumption about traversal from " + fromType + ": " + traversal.Key);
-                            fromEntities.Values.Where(from => !toEntities.ContainsKey(from.PV<long>(traversal.Key))).ToList().ForEach(e => {
+                            fromEntities.Values.Where(from => !toEntities.ContainsKey(from.PV<long>(traversal.Key, 0))).ToList().ForEach(e => {
                                 fromEntities.Remove(e.Id);
                             }); break;
                         case TraversalDirection.ToForeignKey:
@@ -258,7 +257,11 @@ namespace AgoRapide.Core {
             types.ForEach(fromType => {
                 GetPossibleTraversalsFromType(fromType).ForEach(traversals => {
                     // TODO: Inefficient use of Contains since types is just an IEnumerable. Turn types into HashSet or similar.
-                    if (types.Contains(traversals.Key)) throw new NotImplementedException("Traversal from " + fromType + " to already known type " + traversals + " not yet implemented"); // TODO. Decide how to handle this, maybe just ignore
+                    if (types.Contains(traversals.Key)) {
+                        // This is quite normal because if we can go from type A to type B we can also go the other way. Just ignore.
+                        return;
+                        // throw new NotImplementedException("Traversal from " + fromType + " to already known type " + traversals.Key + " not yet implemented"); // TODO. Decide how to handle this, maybe just ignore
+                    }
                     if (traversedValues.ContainsKey(traversals.Key)) throw new NotImplementedException("Multiple traversals to " + traversals.Key + " (one of them from " + fromType + ") not yet implemented"); // TODO. Decide how to handle this, maybe just add from what already found
                     if (traversals.Value.Count > 1) throw new NotImplementedException("Traversals over multiple levels not supported (from " + fromType + " to " + traversals.Key + " via " + string.Join(",", traversals.Value.Select(t => t.ToString())));
 
