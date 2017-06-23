@@ -75,6 +75,7 @@ namespace AgoRapide.API {
                         retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</table>");
 
+                        /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs
                         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
                         CreateDrillDownUrls(thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
                             var key = e.Key.A();
@@ -88,14 +89,16 @@ namespace AgoRapide.API {
                                         retval.Append("<a href=\"" + suggestion.Value.Url + "\">" + suggestion.Value.Text.HTMLEncode() + "<a>&nbsp;");
                                     } else {
                                         // Suggest both adding to context
-                                        retval.Append(request.API.CreateAPILink(
+
+                                        new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
+                                        retval.Append("&nbsp;" + request.API.CreateAPILink(
                                             CoreAPIMethod.UpdateProperty,
-                                            suggestion.Value.Text,
+                                            s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0,1),
                                             request.CurrentUser.GetType(),
                                             new QueryIdInteger(request.CurrentUser.Id),
                                             CoreP.Context.A(),
-                                            new Context(SetOperator.Intersect, t, suggestion.Value.QueryId).ToString()
-                                        ));
+                                            new Context(s, t, suggestion.Value.QueryId).ToString()
+                                        )));
                                         // and showing all with this value (general query)
                                         retval.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>&nbsp;");
                                     }
@@ -350,18 +353,23 @@ namespace AgoRapide.API {
             public GeneralQueryResult ToQuery(string header) => new GeneralQueryResult(Url, header + ": " + Text);
             /// <summary>
             /// TODO: Find a better name for this method / property
+            /// 
+            /// TODO: Clean up use of parameters.
             /// </summary>
+            /// <param name="setOperator"></param>
+            /// <param name="request"></param>
             /// <param name="header"></param>
+            /// <param name="useOnlyHeader"></param>
             /// <returns></returns>
-            public GeneralQueryResult ToContext(ValidRequest request, string header) => new GeneralQueryResult(
+            public GeneralQueryResult ToContext(SetOperator setOperator, ValidRequest request, string header, bool useOnlyHeader) => new GeneralQueryResult(
                 request.API.CreateAPIUrl(
                     CoreAPIMethod.UpdateProperty,
                     request.CurrentUser.GetType(),
                     new QueryIdInteger(request.CurrentUser.Id),
                     CoreP.Context.A(),
-                    new Context(SetOperator.Intersect, EntityType, QueryId).ToString()
+                    new Context(setOperator, EntityType, QueryId).ToString()
                 ),
-                header + ": " + Text);
+                useOnlyHeader ? header : (header + ": " + Text));
         }
     }
 

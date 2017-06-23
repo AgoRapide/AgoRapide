@@ -396,10 +396,10 @@ namespace AgoRapide {
             }
 
             var whereForeignKey = GetType().GetTypesWhereIsForeignKey();
-            if (whereForeignKey.Count > 0) retval.Append("<p>Related entities:<br>" + string.Join("<br>", whereForeignKey.Select(t => 
+            if (whereForeignKey.Count > 0) retval.Append("<p>Related entities:<br>" + string.Join("<br>", whereForeignKey.Select(t =>
                 request.API.CreateAPILink(CoreAPIMethod.EntityIndex, t.type.ToStringVeryShort(), t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id)))) + "</p>");
 
-            Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this).ForEach(c => {
+            Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
                 retval.Append("<p><a href=\"" + c.PV<string>(CoreP.SuggestedUrl.A()) + "\">" + c.PV<string>(CoreP.Description.A()).HTMLEncode() + "</a></p>");
             });
 

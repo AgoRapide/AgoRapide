@@ -384,8 +384,32 @@ namespace AgoRapide.API {
             request.Result.MultipleEntitiesResult = new List<BaseEntity>();
 
             var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB);
+
             retval.ForEach(type => {
-                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( // All entities of this type
+                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( // All entities of this type (also repeated, see below)
+                    request.API.CreateAPIUrl(
+                        CoreAPIMethod.EntityIndex,
+                        type.Key,
+                        new QueryIdContext()),
+                    type.Key.ToStringVeryShort() + " (" + type.Value.Count + ")"
+                ));
+            });
+
+            
+            if (request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var contextParent)) { // Suggest removal of context properties
+                request.Result.MultipleEntitiesResult.AddRange(contextParent.Properties.Values.Select(p => (BaseEntity)new GeneralQueryResult(
+                     request.API.CreateAPIUrl(
+                         CoreAPIMethod.PropertyOperation,
+                         typeof(Property),
+                        new QueryIdInteger(p.Id),
+                        PropertyOperation.SetInvalid
+                    ),
+                    p.V<string>() + " => " + PropertyOperation.SetInvalid
+                )));
+            }
+
+            retval.ForEach(type => { 
+                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( // All entities of this type (repeated from above)
                     request.API.CreateAPIUrl(
                         CoreAPIMethod.EntityIndex,
                         type.Key,
@@ -393,29 +417,19 @@ namespace AgoRapide.API {
                     type.Key.ToStringVeryShort() + " (" + type.Value.Count + ")"
                 ));
 
-                var drilldown = Result.CreateDrillDownUrls(type.Value.Values); 
+                var drilldown = Result.CreateDrillDownUrls(type.Value.Values); // Present all drill-down suggestions. TODO: Find better way of organising this. 
                 drilldown.ForEach(coreP => {
                     var corePAsString = coreP.Key.A().Key.PToString;
                     coreP.Value.ForEach(_operator => {
                         _operator.Value.ForEach(suggestion => {
-                            request.Result.MultipleEntitiesResult.Add(suggestion.Value.ToContext(request, type.Key.ToStringVeryShort() + " " + corePAsString + " " + _operator.Key));
+                            new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
+                               request.Result.MultipleEntitiesResult.Add(suggestion.Value.ToContext(s, request, s == SetOperator.Intersect ? (s + " " + type.Key.ToStringVeryShort() + " " + corePAsString + " " + _operator.Key) : s.ToString(), s != SetOperator.Intersect))
+                                );
                         });
                     });
                 });
             });
 
-            // Suggest removal of context properties
-            if (request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var contextParent)) {
-                request.Result.MultipleEntitiesResult.AddRange(contextParent.Properties.Values.Select(p => (BaseEntity)new GeneralQueryResult(
-                    request.API.CreateAPIUrl(
-                        CoreAPIMethod.PropertyOperation,
-                        typeof(Property),
-                        new QueryIdInteger(p.Id),
-                        PropertyOperation.SetInvalid
-                    ),
-                    p.V<string>() + " => " + PropertyOperation.SetInvalid
-                )));
-            }
             request.Result.ResultCode = ResultCode.ok;
             return request.GetResponse();
         }

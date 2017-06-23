@@ -109,13 +109,15 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// 
+        /// Note how this returns both <see cref="CoreAPIMethod.UpdateProperty"/> and <see cref="CoreAPIMethod.PropertyOperation"/> (<see cref="PropertyOperation.SetInvalid"/>)
+        /// TODO: Try to split up logic into two levels, with a core-method returning something more basic and not dependening on a <see cref="ValidRequest"/>
         /// </summary>
-        /// <param name="currentUser">May be null (in which case empty list will be returned)</param>
+        /// <param name="request"></param>
         /// <param name="entity">Id may be null (in which case empty list will be returned)</param>
+        /// <param name="strict">If FALSE then will always return both <see cref="SetOperator.Remove"/> and <see cref="SetOperator.Union"/></param>
         /// <returns></returns>
         [ClassMember(Description = "Note that returned result may have omissions or contain superfluous items")]
-        public static List<GeneralQueryResult> GetPossibleContextOperationsForCurrentUserAndEntity(Request request, BaseEntity entity) {
+        public static List<GeneralQueryResult> GetPossibleContextOperationsForCurrentUserAndEntity(Request request, BaseEntity entity, bool strict) {
             var retval = new List<GeneralQueryResult>();
             if (entity is Property) return retval; // This most probably only creates confusion in the API HTML administrative interface.
             if (request.CurrentUser == null) return retval;
@@ -135,11 +137,11 @@ namespace AgoRapide.Core {
                 ))
             );
 
-            if (contexts.Any(c => c.SpecifiesEntityAsPart(entity) && (c.SetOperator == SetOperator.Union || c.SetOperator == SetOperator.Intersect))) {
+            if (!strict || contexts.Any(c => c.SpecifiesEntityAsPart(entity) && (c.SetOperator == SetOperator.Union || c.SetOperator == SetOperator.Intersect))) {
                 adder(SetOperator.Remove);
             }
 
-            if (!contexts.Any(c => c.SpecifiesEntityAsPart(entity) || c.SpecifiesEntityExact(entity))) {
+            if (!strict || !contexts.Any(c => c.SpecifiesEntityAsPart(entity) || c.SpecifiesEntityExact(entity))) {
                 adder(SetOperator.Union);
             }
 
