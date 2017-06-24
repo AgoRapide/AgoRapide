@@ -30,7 +30,7 @@ AgoRapide is open for contributions and new ideas. As of June 2017 it is mostly 
 
 AgoRapide consists of two main areas of functionality, the API and the key-value data storage. The current sample application (AgoRapideSample) demonstrates use of both but there is nothing inherent in the API forcing you to use a key-value data storage.
 
-1) API: The REST API functionality with documentation, unit-testing and HTML administrative interface. There is also a smalle AgoRapide-0.1.js to include in your web-project. This in turn depends on jquery-3.1.1.min.js. 
+1) API: The REST API functionality with documentation, unit-testing and HTML administrative interface. There is also a small AgoRapide-0.1.js to include in your web-project. This in turn depends on jquery-3.1.1.min.js. 
 
 2) Data storage: (Optional to use) Data access towards a database with a single table based on the key-value principle (only supports PostgreSQL at the moment, some abstraction is built in, in order to prepare for other database engines). 
 The objects in the entity model consist of a general collection of properties, together with functionality for strongly tagging these properties with meta data. 
@@ -68,7 +68,8 @@ public class SomeController : BaseController {
     [HttpGet]
     [Method(
         Description = "Doubles the number given (every time)",
-        S1 = "DemoDoubler", S2 = P.SomeNumber)]
+        S1 = nameof(DemoDoubler), S2 = P.SomeNumber
+    )]
     public object DemoDoubler(string SomeNumber) {
         try {
             if (!TryGetRequest(SomeNumber, out var request, out var completeErrorResponse)) return completeErrorResponse;
@@ -308,7 +309,7 @@ Properties are only added to the database, with older properties marked as inval
 
 The entity (the user) doing the change is also logged telling you who changed what data. 
 
-See methods like [Property/{QueryIdInteger}/History](http://sample.agorapide.com/api/APIMethod/1360/HTML) and [example](http://sample.agorapide.com/api/Property/1744/History/HTML)
+See methods like [Property/{QueryIdInteger}/History](http://sample.agorapide.com/api/APIMethod/APIMethod_Property__QueryIdInteger__History/HTML) and [example](http://sample.agorapide.com/api/Property/5614/History/HTML) (Note: Last link may be broken).
 
 ## A C# centric approach. 
 AgoRapide is more C# centric than database centric in the sense that the database schema is in reality stored as C# code. Auto generated libraries are then used as basis for access through other programming environment (like Java, Swift, ObjectiveC and so on). 
@@ -374,7 +375,7 @@ Inbuilt support for "traditional" database tables (multiple tables instead of th
 ## What do you  mean by HTML administrative view?
 A rudimentary interface useful for administrering your backend, API, and doing support for your customers. 
 
-Example: [HTML interface](http://sample.agorapide.com/api/Car/1563/HTML)&nbsp;&nbsp;[(correspondig data as JSON)](http://sample.agorapide.com/api/Car/1563)
+Example: [HTML interface](http://sample.agorapide.com/api/Car/5109/HTML)&nbsp;&nbsp;[(correspondig data as JSON)](http://sample.agorapide.com/api/Car/5109)
 
 As you can see the HTML interface is like a clone of the JSON interface with the addition of useful links and documentation. 
 (the current functionality is quite limited but we assume that you get the idea. Similar philosophies has been used to a great extent with success in other applications)
@@ -387,14 +388,14 @@ No, it is built on top of WebAPI. We use as much as possible of the standard fun
 ## Is AgoRapide technically complicated? 
 We strive to keep the code as simple as possible. 
 
-For instance there is almost no use of reflection in the code. Use of generics is also kept to a minimum, with only a few generic types, like &lt;TProperty&gt; used throughout (even this is on its way out as we are tweaking the internal mechanism of AgoRapide).
+For instance there is almost no use of reflection in the code. Use of generics is also kept to a minimum.
 
 ## Is AgoRapide easy to get started with?
 Yes. 
 
 You need very little boilerplate code to get started. We have also striven to make all error messages VERY detailed, always pinpointing the exact cause of any problems. 
 
-Use AgoRapideSample as a starting point and you should be up and running with your first API in minutes.
+Use AgoRapideSample as a starting point and you should be up and running with your first API in minutes. Please feel free to email bef at bef.no for guidance.
 
 ## Other interesting aspects about AgoRapide?
 Yes, of course! 
@@ -408,11 +409,11 @@ Old [AgoRapide.com](http://AgoRapide.com) is our earlier implementation of the s
 
 AgoRapide.com uses a schema language (see [panSL.org](http://panSL.org)) from which a dynamic HTML interface is generated. 
 
-AgoRapide.com is also able to generate C# code. The properties as given in the schema language corresponds closely to the recommended &lt;TProperty&gt; implementation in AgoRapide in the sense that as much as possible of the application logic is stored there.
+AgoRapide.com is also able to generate C# code. The properties as given in the schema language corresponds closely to the "P"-enums in AgoRapide in the sense that as much as possible of the application logic is stored there.
 
 But AgoRapide.com is much more limited since you would totally depend on our server and infrastructure. Neither can the autogenerated C# code from AgoRapide.com be modified and fed back in the schema generator. 
 
-With the new AgoRapide C# library you also have full control of both your code and of the library code (since the library is MIT licensed).
+With the new AgoRapide C# library you write and control your own code. In addition the MIT license of AgoRapide gives you great flexibility in how to deploy your application.
 
 ## How is the performance of the AgoRapide library? 
 AgoRapide delivers very good performance. 
@@ -423,16 +424,16 @@ The call stack imposes by AgoRapide is very short.
 
 Great care has been taken in order to avoid repetitive calculations within the code. There is for instance a lot of use of ConcurrentDictionary in order to cache frequent calculations.
 
-Entity properties however are read from a dictionary, instad of directly. This could be an issue if you intensively use certain properties repeatedly. In such cases you can always implement traditional cached properties though as needed.
+Entity properties however are read from a dictionary, instad of directly. This could be an issue if you intensively use certain properties repeatedly. In such cases you can always implement traditional (cached) property getters as needed.
 
-## What security features does AgoRapide has?
-There is a focus on offering user friendliness if you so desire. 
+## What security features does AgoRapide have?
+AgoRapide has a built in Basic Authentication mechanism. If your needed security level is very basic and you desire a focus on user friendliness then you may use this. Use with caution however!
 
-This means that you have the choice of having only the basic authorization done by an "outside" mechanism like Basic Authentication, OAuth or similar. 
+For more strict needs you are supposed to supply a more thorough mechanism like OAuth or similar. 
 
-You may choose to have further authorization like distinguishing between ordinary users and administrative users of your application done within the library. This gives easy administration and friendly error messages. 
+Apart from that there is of course a basic eye to security throughout the library. Passwords are salted and hashed for instance and SQL injection / Javascript injection attacks should in principle not be possible.
 
-Use with caution however!
+But, we would of course be happy for any input from experts in the field of security.
 
 ## How does AgoRapide relate to Entity Framework and Razor?
 AgoRapide does not use any of these concepts. 

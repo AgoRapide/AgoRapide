@@ -93,7 +93,7 @@ namespace AgoRapide.API {
                                         new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
                                         retval.Append("&nbsp;" + request.API.CreateAPILink(
                                             CoreAPIMethod.UpdateProperty,
-                                            s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0,1),
+                                            s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
                                             request.CurrentUser.GetType(),
                                             new QueryIdInteger(request.CurrentUser.Id),
                                             CoreP.Context.A(),
@@ -257,7 +257,7 @@ namespace AgoRapide.API {
                 if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) return;
 
                 // Note how Distinct() is called weakly typed for object, meaning it uses the Equals(object other)-method.
-                var objValues = entities.Select(e => e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p.Value : null).Distinct(); /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
+                var objValues = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p.Value : null)).Distinct(); /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
 
                 /// Note that the Distinct() operation done above will not work properly of IEquatable is not implemented for the actual type.
                 /// We therefore work around this by collecting together all object-values with the same string-representation
@@ -268,7 +268,7 @@ namespace AgoRapide.API {
                     if (objStrValues.Count() != objValues.Count()) {
                         var t = typeof(IEquatable<>).MakeGenericType(new Type[] { key.Key.A.Type });
                         throw new InvalidCountException(objStrValues.Count(), objValues.Count(),
-                            nameof(PropertyKeyAttributeEnriched.ConvertObjectToString) + " is inconsistent with " + nameof(Enumerable.Distinct) + " for " + key.Key.A.Type + ".\r\n" +
+                                nameof(PropertyKeyAttributeEnriched.ConvertObjectToString) + " is inconsistent with " + nameof(Enumerable.Distinct) + " for " + key.Key.A.Type + ".\r\n" +
                             "Possible cause: " + // TODO: This explanation is possible wrong. It is the Equals(object other)-method that most probably is missing, and that does not have any connection with IEquatable
                                 (t.IsAssignableFrom(key.Key.A.Type) ?
                                     ("Wrongly implemented " + t.ToStringShort() + " for " + key.Key.A.Type.ToStringShort()) :

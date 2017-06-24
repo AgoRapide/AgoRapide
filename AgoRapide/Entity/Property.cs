@@ -648,9 +648,9 @@ namespace AgoRapide {
                     "</td><td>" +
                     (value != null && value != 0 ?
                         (InMemoryCache.EntityCache.TryGetValue((long)value, out var entity) ?
-                            request.API.CreateAPILink(entity) :
-                            value.ToString()) :
-                        "&nbsp;"
+                            request.API.CreateAPILink(entity) : /// Preferred variant, link to known entity
+                            request.API.CreateAPILink(CoreAPIMethod.EntityIndex, value.ToString(), typeof(BaseEntity), new QueryIdInteger((long)value))) : /// Secondary variant, link to <see cref="BaseEntity"/> since we do not know type of entity
+                        "&nbsp;" // No value available
                     ) +
                     "</td></tr>");
             });
@@ -673,6 +673,11 @@ namespace AgoRapide {
             adder(DBField.invalid, Invalid?.ToString(DateTimeFormat.DateHourMinSec));
             adderWithLink(DBField.iid, InvalidatorId);
             retval.AppendLine("</table>");
+
+            request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
+                request.Result.AddProperty(CoreP.SuggestedUrl.A(), cmd);
+                retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
+            });
 
             /// This is no longer needed after introduction of <see cref="Extensions.GetBaseEntityMethods(Type)"/>
             //var cmds = new List<string>();
