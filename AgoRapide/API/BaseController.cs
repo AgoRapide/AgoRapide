@@ -22,6 +22,12 @@ namespace AgoRapide.API {
 
         protected abstract BaseDatabase DB { get; }
         public event Action<string> LogEvent;
+        [ClassMember(Description =
+            "-" + nameof(HandledExceptionEvent) + "- is used for already handled exceptions in the sense that " +
+            "what is left for the event handler to do is to log the exception as desired."
+        )]
+        public event Action<Exception> HandledExceptionEvent;
+
         protected void Log(string text, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogEvent?.Invoke(GetType().ToStringShort() + "." + caller + ": " + text);
         /// <summary>
         /// Logs both via standard <see cref="LogEvent"/> and to <paramref name="result"/> (which will be returned to API-client)
@@ -31,14 +37,9 @@ namespace AgoRapide.API {
         /// <param name="caller"></param>
         protected void Log(string text, Result result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             LogEvent?.Invoke(GetType().ToStringShort() + "." + caller + ": " + text);
+            if (result == null) throw new NullReferenceException(nameof(result));
             result.LogInternal(text, GetType(), caller);
         }
-
-        /// <summary>
-        /// The <see cref="HandledExceptionEvent"/> is used for already handled exceptions in the sense that
-        /// what is left for the event handler to do is to log the exception as needed. 
-        /// </summary>
-        public event Action<Exception> HandledExceptionEvent;
 
         /// <summary>
         /// </summary>

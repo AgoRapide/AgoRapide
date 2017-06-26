@@ -10,25 +10,21 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
-    /// <summary>
-    /// Extension on <see cref="BaseEntity"/> with internal logging and counting of vital statistics.
-    /// Useful for:
-    /// 1) Long-lived classes like <see cref="ApplicationPart"/> where you want to record different kind of statistics for their use. 
-    /// 2) Classes for which it is desireable to communicate details about their contents like <see cref="Result"/>. 
-    /// 
-    /// Examples of inheriting classes in AgoRapide are: 
-    /// <see cref="Result"/>, 
-    /// <see cref="ApplicationPart"/>, 
-    /// <see cref="APIMethod"/>
-    /// </summary>
-    public abstract class BaseEntityWithLogAndCount : BaseEntity { 
+    [Class(Description = 
+        "Extension on -" + nameof(BaseEntity) + "- with internal logging and counting of vital statistics.\r\n" +
+        "Useful for:\r\n" +
+        "1) Long-lived classes like -" + nameof(ApplicationPart) + "- where you want to record different kind of statistics for their use.\r\n" +
+        "2) Classes for which it is desireable to communicate details about their contents like -" + nameof(Result) + "-.\r\n" + 
+        "\r\n" +
+        "Examples of inheriting classes in AgoRapide are:\r\n" +
+        "-" + nameof(ApplicationPart) + "-\r\n" +
+        "-" + nameof(Result) + "-\r\n" +
+        "-" + nameof(APIMethod) + "-\r\n"
+    )]
+    public abstract class BaseEntityWithLogAndCount : BaseEntity {
+
         public StringBuilder LogData = new StringBuilder();
-        /// <summary>
-        /// Note difference between <see cref="BaseCore.Log"/> and <see cref="BaseEntityWithLogAndCount.LogInternal"/>
-        /// The former communicates via <see cref="BaseCore.LogEvent"/> and is usually meant for ordinary server logging to disk or similar while
-        /// the latter is used for more short-lived in-memory only logging where really detailed information is desired.
-        /// </summary>
-        /// <param name="text"></param>
+        [ClassMember(Description = "In-memory only logging (often used for short-lived logging like with -" + nameof(Result) + "-).")]
         public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogData.AppendLine(DateTime.Now.ToString(DateTimeFormat.DateHourMinSecMs) + ": " + callerType.ToStringShort() + "." + caller + ": " + text);
 
         public Dictionary<CoreP, long> Counts = new Dictionary<CoreP, long>();

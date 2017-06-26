@@ -7,7 +7,8 @@ using AgoRapide.Core;
 
 namespace AgoRapide.API {
     /// <summary>
-    /// Basic Authentication is used in DAPI for ease-of-getting-started purposes only. 
+    /// Basic Authentication is used in AgoRapide for ease-of-getting-started purposes only. 
+    /// 
     /// Do not use Basic Authentication in production! Use OAuth 2.0 or similar.
     /// 
     /// Code is copied from http://stackoverflow.com/questions/28352998/using-both-oauth-and-basic-auth-in-asp-net-web-api-with-owin
@@ -60,7 +61,7 @@ namespace AgoRapide.API {
                             "with " + nameof(exactMatch.Value.method.Origin) + " " + exactMatch.Value.method.Origin + " " +
                             "and " + nameof(exactMatch.Value.method.RequiresAuthorization) + " " + exactMatch.Value.method.RequiresAuthorization + ". " +
                             "This is not logical, as such an URL should not result in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " being called");
-                        generatePrincipal(Util.Configuration.C.AnonymousUser); 
+                        generatePrincipal(Util.Configuration.C.AnonymousUser);
                     }
                 } else {
                     var credArray = System.Text.Encoding.GetEncoding("UTF-8").GetString(Convert.FromBase64String(headers.Authorization.Parameter)).Split(':');
@@ -107,6 +108,5 @@ namespace AgoRapide.API {
         }
 
         public bool AllowMultiple => false;
-        private static void Log(string text, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => AgoRapide.Core.Util.Log(typeof(BasicAuthenticationAttribute).ToString() + "." + caller + ": " + text);
     }
 }

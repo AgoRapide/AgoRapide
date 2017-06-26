@@ -12,10 +12,7 @@ namespace AgoRapide.API {
     /// <summary>
     /// Never stored in database. 
     /// 
-    /// Note how many of the methods in the AgoRapide-library will log 
-    /// extensively to <see cref="BaseEntityWithLogAndCount.LogInternal"/> in <see cref="Result"/>.
-    /// (meaning your server logs are not filled up with unnecessary clutter, but the system is still available to give an API client
-    /// detailed information about problems). 
+    /// Communicates result of API method back to client. 
     /// 
     /// See also <see cref="APIMethodAttribute.ShowDetailedResult"/>
     /// 

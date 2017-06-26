@@ -43,7 +43,7 @@ namespace AgoRapideSample {
         /// <param name="appBuilder"></param>
         public void Configuration(Owin.IAppBuilder appBuilder) {
             try {
-                var logPath = @"c:\p\Logfiles\AgoRapideSample\AgoRapideLogX_[DATE_HOUR].txt";
+                var logPath = @"c:\p\Logfiles\AgoRapideSample\AgoRapideLog_[DATE_HOUR].txt";
 
                 /// Note how we set AgoRapide.Core.Util.Configuration twice, 
                 /// First in order to set <see cref="AgoRapide.Core.ConfigurationAttribute.LogPath"/> (so we can call <see cref="AgoRapide.Core.Util.Log"/>), 
@@ -54,10 +54,10 @@ namespace AgoRapideSample {
                     databaseGetter: type => throw new NullReferenceException(nameof(AgoRapide.Core.ConfigurationAttribute.DatabaseGetter) + " not yet set")
                 ));
 
-                Log("");
+                Log(null, "");
                 var environment = GetEnvironment();
-                Log("rootUrl: " + environment.rootUrl); // Necessary because System.Web.HttpContext.Current.Request.Url not available now. 
-                Log("environment: " + environment.environment);
+                Log(null, "rootUrl: " + environment.rootUrl); // Necessary because System.Web.HttpContext.Current.Request.Url not available now. 
+                Log(null, "environment: " + environment.environment);
 
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl, rootPath and databaseGetter
                 AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(new AgoRapide.Core.ConfigurationAttribute(
@@ -81,22 +81,22 @@ namespace AgoRapideSample {
                 var assemblies = new List<System.Reflection.Assembly> { typeof(HomeController).Assembly };
                 AgoRapide.API.APIMethod.SetEntityTypes(assemblies, new List<Type>()); /// Exclude <see cref="AgoRapide.Person"/> now if you do not want to use that class. 
 
-                AgoRapide.Core.PropertyKeyMapper.MapKnownEnums(s => Log(nameof(AgoRapide.Core.PropertyKeyMapper.MapKnownEnums) + ": " + s)); /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
+                AgoRapide.Core.PropertyKeyMapper.MapKnownEnums(s => Log("MapEnums", nameof(AgoRapide.Core.PropertyKeyMapper.MapKnownEnums) + ": " + s)); /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
 
                 /// Mapping must be done now because of a lot of static properties which calls one of <see cref="AgoRapide.Core.Extensions.A"/>
-                void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.Core.PropertyKeyMapper.MapEnum<T>(s => Log(nameof(AgoRapide.Core.PropertyKeyMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
+                void mapper1<T>() where T : struct, IFormattable, IConvertible, IComparable => AgoRapide.Core.PropertyKeyMapper.MapEnum<T>(s => Log("MapEnums", nameof(AgoRapide.Core.PropertyKeyMapper.MapEnum) + ": " + s)); // What we really would want is "where T : Enum"
                 mapper1<CarP>();        /// TODO: Automate this somehow by using information in current assembly
                 mapper1<P>();           /// TODO: Automate this somehow by using information in current assembly
-                /// Add all your <see cref="AgoRapide.EnumType.PropertyKey"/> at bottom of list, in order of inheritance (if any)
+                                        /// Add all your <see cref="AgoRapide.EnumType.PropertyKey"/> at bottom of list, in order of inheritance (if any)
 
-                AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize(s => Log(nameof(AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize) + ": " + s));
+                AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize(s => Log("MapEnums", nameof(AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize) + ": " + s));
 
-                Log("\r\n\r\n" +
+                Log("MapEnums", "\r\n\r\n" +
                     "Asserting mapping towards " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
                     "(note mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards)");
                 void mapper2<T>() where T : struct, IFormattable, IConvertible, IComparable // What we really would want is "where T : Enum"
                 {
-                    Log(
+                    Log("MapEnums",
                         typeof(T) + " to " + typeof(AgoRapide.CoreP) + ":\r\n" +
                         string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<T>().Select(p => nameof(T) + "." + p + " => " + AgoRapide.Core.PropertyKeyMapper.GetA(p).Key.CoreP)) + "\r\n");
                 }
@@ -105,33 +105,35 @@ namespace AgoRapideSample {
                 mapper2<AgoRapide.API.APIMethodP>();        /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
                 mapper2<P>();
 
-                Log("Miscellaneous testing");
+                Log(null, "Miscellaneous testing");
                 AgoRapide.ExtensionsPersonP.A(AgoRapide.PersonP.Password).Key.A.AssertIsPassword(null);
 
-                Log(nameof(AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE) + ":\r\n\r\n" + new AgoRapide.Database.PostgreSQLDatabase(BaseController.DATABASE_OBJECTS_OWNER, null, BaseController.DATABASE_TABLE_NAME, typeof(Startup)).SQL_CREATE_TABLE + "\r\n");
+                Log(nameof(AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE), nameof(AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE) + ":\r\n\r\n" + new AgoRapide.Database.PostgreSQLDatabase(BaseController.DATABASE_OBJECTS_OWNER, null, BaseController.DATABASE_TABLE_NAME, typeof(Startup)).SQL_CREATE_TABLE + "\r\n");
 
                 var httpConfiguration = new AgoRapide.Core.Startup().Initialize<AgoRapide.Person>(
                     attributeClassesSignifyingRequiresAuthorization: new List<Type> {
                         typeof(System.Web.Http.AuthorizeAttribute),
                         typeof(AgoRapide.API.BasicAuthenticationAttribute)
                     },
-                    clientAssemblies: assemblies
+                    clientAssemblies: assemblies,
+                    Log: (category, text) => Log(category, text) // Note the special logging mechanism utilizing different category files. 
                 );
 
-                Log("Calling Owin.WebApiAppBuilderExtensions.UseWebApi");
+                Log(null, "Calling Owin.WebApiAppBuilderExtensions.UseWebApi");
                 Owin.WebApiAppBuilderExtensions.UseWebApi(appBuilder, httpConfiguration);
 
-                Log("Completed");
+                Log(null, "Completed");
             } catch (Exception ex) {
                 BaseController.LogException(ex);
             }
         }
 
         /// <summary>
-        /// Insert your preferred logging mechanism in <see cref="BaseController.LogFinal"/>, <see cref="BaseController.LogException"/>, <see cref="Startup.Log"/>, 
+        /// Insert your preferred logging mechanism in <see cref="BaseController.LogFinal"/>, <see cref="BaseController.LogException"/>, <see cref="Startup.Log"/>
         /// </summary>
         /// <param name="text"></param>
         /// <param name="caller"></param>
-        private void Log(string text, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => AgoRapide.Core.Util.Log(GetType().ToString() + "." + caller + ": " + text);
+        private void Log(string category, string text, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => 
+            AgoRapide.Core.Util.Log(category==null ? null : "Startup_" + category, GetType().ToString() + "." + caller + ": " + text);        
     }
 }

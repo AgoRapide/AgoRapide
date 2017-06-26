@@ -1076,8 +1076,8 @@ COMMENT ON TABLE p IS 'Main property table';
             string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => f.A().Key).Select(f =>
                 "COMMENT ON COLUMN p." + f.A.EnumValue + " IS '" + makeSQLSafe(f.A.Description) + (string.IsNullOrEmpty(f.A.LongDescription) ? "" : (" // " + nameof(f.A.LongDescription) + ": " + f.A.LongDescription)) + "';")) +
 
-        // TODO: As of Jan 2017 we have troubles with newlines in the CREATE SEQUENCE below with the Visual Studio RC 2017 editor.
         @"
+
 CREATE SEQUENCE " + SEQUENCE_NAME + @"
 INCREMENT 1
 MINVALUE 1

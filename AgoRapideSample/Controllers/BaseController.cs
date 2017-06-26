@@ -33,7 +33,7 @@ namespace AgoRapideSample {
                 tableName: DATABASE_TABLE_NAME,
                 applicationType: ownersType
             );
-            retval.LogEvent += LogFinal; // Note how LogEvent and HandledExceptionEvent is deliberately left out of IDatabase[TProperty] so you may implement your own logging mechanism instead
+            retval.LogEvent += LogFinal; /// Note how <see cref="LogEvent"/> and <see cref="HandledExceptionEvent"/> is deliberately left out of AgoRapide so you may implement your own logging mechanism instead
             retval.HandledExceptionEvent += LogException; // TODO: Is that a good idea? Why not have them as standard within the AgoRapide-library?
             return retval;
         }
@@ -54,7 +54,7 @@ namespace AgoRapideSample {
         /// Insert your preferred logging mechanism in <see cref="BaseController.LogFinal"/>, <see cref="BaseController.LogException"/>, <see cref="Startup.Log"/>, 
         /// </summary>
         /// <param name="text"></param>
-        private static void LogFinal(string text) => Util.Log(text);
+        public static void LogFinal(string text) => Util.Log(null, text);
 
         /// <summary>
         /// Insert your preferred logging mechanism in <see cref="BaseController.LogFinal"/>, <see cref="BaseController.LogException"/>, <see cref="Startup.Log"/>, 

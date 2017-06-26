@@ -245,7 +245,7 @@ namespace AgoRapide.Core {
             var writer = new Action(() => {
                 var exceptionPath = logPath + "_" + "Exception " + timeStamp.Replace(":", ".") + " " + (serialNo).ToString("0000") + " " + ex.GetType().ToStringShort().Replace("<", "{").Replace(">", "}") + ".txt";
                 System.IO.File.WriteAllText(exceptionPath, text + "\r\n");
-                Log("\r\n--\r\nAn exception of type " + ex.GetType().ToStringShort() + " occurred.\r\nSee\r\n" + exceptionPath + "\r\nfor details\r\n--\r\n");
+                Log(null, "\r\n--\r\nAn exception of type " + ex.GetType().ToStringShort() + " occurred.\r\nSee\r\n" + exceptionPath + "\r\nfor details\r\n--\r\n");
             });
             try {
                 writer();
@@ -330,10 +330,7 @@ namespace AgoRapide.Core {
             return threadId;
         }
 
-        /// <summary>
-        /// Used by LogException in order to add data to exception message
-        /// Also used as object for locking when writing to log file
-        /// </summary>
+        [ClassMember(Description = "Contains the latest log-data seen by -" + nameof(Log) + "-. Used by -" + nameof(LogException) + "-.")]
         private static LinkedList<string> lastLogData = new LinkedList<string>();
 
         /// <summary>
@@ -352,8 +349,14 @@ namespace AgoRapide.Core {
         /// Note delayed logging through separate thread. This might be a concern in cases where the application terminates abruptly 
         /// because you risk loosing log information explaining events leading up to the application terminating. 
         /// </summary>
+        /// <param name="category">
+        /// Usually null. 
+        /// If set then logging will be done twice, once in ordinary <see cref="ConfigurationAttribute.LogPath"/> and once in 
+        /// <see cref="ConfigurationAttribute.LogPath"/> extended with <paramref name="category"/>
+        /// Typically used at startup when separate log-files is desired and by <see cref="BasicAuthenticationAttribute"/>. Apart from that not in general use in AgoRapide. 
+        /// </param>
         /// <param name="text"></param>
-        public static void Log(string text) {
+        public static void Log(string category, string text) {
             var logPath = Configuration.C.LogPath;
             if (string.IsNullOrWhiteSpace(logPath)) {
                 // Will most probably not happen since Configuration.LogPath has a default value
@@ -371,6 +374,10 @@ namespace AgoRapide.Core {
             }
 
             logQueue.Enqueue((logPath, logText));
+            if (!string.IsNullOrEmpty(category)) {
+                logQueue.Enqueue((logPath + "_" + category + ".txt", logText));
+            }
+
             var wasRunning = System.Threading.Interlocked.Exchange(ref loggerThreadIsRunning, 1);
             if (wasRunning == 0) System.Threading.Tasks.Task.Factory.StartNew(() => {               // Start separate thread for actual logging to disk (the idea is to reduce dramatically the number of disk I/O-operations needed)
                 try {
