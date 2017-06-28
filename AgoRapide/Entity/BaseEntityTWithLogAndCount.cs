@@ -10,11 +10,11 @@ using AgoRapide.API;
 
 namespace AgoRapide {
 
-    [Class(Description = 
+    [Class(Description =
         "Extension on -" + nameof(BaseEntity) + "- with internal logging and counting of vital statistics.\r\n" +
         "Useful for:\r\n" +
         "1) Long-lived classes like -" + nameof(ApplicationPart) + "- where you want to record different kind of statistics for their use.\r\n" +
-        "2) Classes for which it is desireable to communicate details about their contents like -" + nameof(Result) + "-.\r\n" + 
+        "2) Classes for which it is desireable to communicate details about their contents like -" + nameof(Result) + "-.\r\n" +
         "\r\n" +
         "Examples of inheriting classes in AgoRapide are:\r\n" +
         "-" + nameof(ApplicationPart) + "-\r\n" +
@@ -40,10 +40,18 @@ namespace AgoRapide {
         /// TODO: This could transfer <see cref="Counts"/> values to / from database automatically. 
         /// </summary>
         /// <param name="id"></param>
+        public void Count(CountP id) => Count(id.A().Key.CoreP);
         public void Count(CoreP id) => Counts[id] = Counts.TryGetValue(id, out var count) ? ++count : 1;
+
+        public void SetCount(CountP id, long value) => SetCount(id.A().Key.CoreP, value);
         public void SetCount(CoreP id, long value) => Counts[id] = value;
+
+        public long GetCount(CountP id) => GetCount(id.A().Key.CoreP);
         public long GetCount(CoreP id) => TryGetCount(id, out var retval) ? retval : throw new CountNotFoundException(id);
-        public bool TryGetCount(CoreP id, out long count) => TryGetCount(id, out count);
+
+        public bool TryGetCount(CountP id, out long count) => TryGetCount(id.A().Key.CoreP, out count);
+        public bool TryGetCount(CoreP id, out long count) => Counts.TryGetValue(id, out count);
+
         public class CountNotFoundException : ApplicationException {
             public CountNotFoundException(CoreP id) : base(id.ToString()) { }
         }
@@ -67,10 +75,31 @@ namespace AgoRapide {
             } else {
                 retval.AppendLine("<h1>" + nameof(Counts) + "</h1>");
                 retval.AppendLine("<table><tr><th>Key</th><th>Value</th></tr>");
-                retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => " <tr><td>" + e.Key.A().Key.PToString + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n")));
+                retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => {
+                    var key = e.Key.A();
+                    return "<tr><td>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.WholeDescription) + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n";
+                })));
                 retval.AppendLine("</table>");
             }
             return retval.ToString();
+        }
+
+        public class AggregationKey : PropertyKey {
+            public AggregationKey() : base(null) {
+
+            }
+
+            public AggregationKey GetAggregationKey(Type entityType, PropertyKey key, AggregationType aggregationType) {
+                return null;
+            }
+        }
+
+        public enum AggregationType {
+            None,
+            Count,
+            Sum,
+            Min,
+            Max
         }
 
         /// <summary>
@@ -105,6 +134,62 @@ namespace AgoRapide {
             }
             return retval;
         }
+    }
+
+    /// <summary>
+    /// Note that you are not limited to using only <see cref="CountP"/>-values in you application. 
+    /// <see cref="BaseEntityWithLogAndCount.Count"/> operates on any <see cref="EnumType"/>. 
+    /// </summary>
+    [Enum(AgoRapideEnumType = EnumType.PropertyKey)]
+    public enum CountP {
+        [PropertyKey(
+            Description = "New properties created.",
+            Type = typeof(long))]
+        PCreatedCount,
+
+        [PropertyKey(
+            Description = "New entities created.",
+            Type = typeof(long))]
+        ECreatedCount,
+
+        [PropertyKey(
+            Description = "Properties removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
+            Type = typeof(long))]
+        PSetInvalidCount,
+
+        [PropertyKey(
+            Description = "Entities removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
+            Type = typeof(long))]
+        ESetInvalidCount,
+
+        [PropertyKey(
+            Description = "Count of all properties considered.",
+            Type = typeof(long))]
+        PTotalCount,
+
+        [PropertyKey(
+            Description = "Count of all entities considered.",
+            Type = typeof(long))]
+        ETotalCount,
+
+        [PropertyKey(
+            Description = "Properties affected (as result of some database operation like INSERT, DELETE or UPDATE).",
+            Type = typeof(long))]
+        PAffectedCount,
+
+        [PropertyKey(
+            Description = "Changed properties.",
+            Type = typeof(long))]
+        PChangedCount,
+
+        [PropertyKey(
+            Description = "Unchanged properties.",
+            Type = typeof(long))]
+        PUnchangedCount,
+    }
+
+    public static class ExtensionsCountP {
+        public static PropertyKey A(this CountP p) => PropertyKeyMapper.GetA(p);
     }
 
     ///// <summary>

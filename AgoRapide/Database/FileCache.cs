@@ -34,7 +34,7 @@ namespace AgoRapide.Database {
     public class FileCache : BaseCore {
 
         private FileCache() { }
-        public static readonly FileCache instance = new FileCache(); /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. Apart from this need for logging the class could have just been made static instead.
+        public static readonly FileCache Instance = new FileCache(); /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. Apart from this need for logging the class could have just been made static instead.
 
         private const string RECORD_SEPARATOR = "\r\n-!-\r\n";
         /// <summary>

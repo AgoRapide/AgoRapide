@@ -285,6 +285,9 @@ namespace AgoRapide.Core {
 
         public string GenericMethodRouteTemplate = "{*url}";
 
+        /// <summary>
+        /// TODO: Consider moving these "outside" of <see cref="ConfigurationAttribute"/>-class like other <see cref="EnumType.PropertyKey"/>
+        /// </summary>
         [Enum(AgoRapideEnumType = EnumType.PropertyKey)]
         public enum ConfigurationP {
             None,

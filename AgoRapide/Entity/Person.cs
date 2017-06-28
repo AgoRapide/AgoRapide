@@ -15,7 +15,7 @@ namespace AgoRapide {
     /// You may exclude this class at call to <see cref="APIMethod.SetEntityTypes"/> (usually located in Startup.cs).
     /// 
     /// Note use of "TPerson" type-parameter in methods like <see cref="BaseController.AddFirstAdminUser{TPerson}"/> and <see cref="BaseController.GeneralQuery{TPerson}"/> 
-    /// enabling you to implement your own class.
+    /// enabling you to implement your own class substituting for <see cref="Person"/>. 
     /// </summary>
     [Class(
         Description = "Represents a person like employee, customer or similar",

@@ -55,7 +55,7 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// The order in which <see cref="MapEnum"/> was being called.
-        /// Only used temporarily at application startup by <see cref="MapEnum{T}"/> and <see cref="MapEnumFinalize"/>
+        /// Only used temporarily by <see cref="MapEnum{T}"/> and <see cref="MapEnumFinalize"/> (when called from <see cref="Startup.Initialize{TPerson}"/>). 
         /// </summary>
         private static List<Type> mapOrders = new List<Type>();
 
@@ -69,6 +69,7 @@ namespace AgoRapide.Core {
             MapEnum<DBField>(noticeLogger); /// This is a quasi <see cref="AgoRapide.Core.PropertyKeyAttribute"/>
             MapEnum<CoreP>(noticeLogger);
             MapEnum<ConfigurationAttribute.ConfigurationP>(noticeLogger);
+            MapEnum<CountP>(noticeLogger);
             MapEnum<API.APIMethodP>(noticeLogger);
             MapEnum<API.ResultP>(noticeLogger);
             MapEnum<SynchronizerP>(noticeLogger);

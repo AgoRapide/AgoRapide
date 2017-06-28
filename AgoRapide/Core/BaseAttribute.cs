@@ -56,7 +56,8 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// Note: If <see cref="Type"/> is one of your own classes / enums, or one of the AgoRapide classes / enums 
+        /// TODO: Fix comment text, what is ???
+        /// Note: If ??? is one of your own classes / enums, or one of the AgoRapide classes / enums 
         /// then you are recommended to not set <see cref="Description"/> / <see cref="LongDescription"/> for the enum value  
         /// but instead rely on using <see cref="PropertyKeyAttribute"/> belonging to the enum / class given by <see cref="Type"/>
         /// For an example see how it is implemented for <see cref="CoreP.CoreAPIMethod"/> and <see cref="AgoRapide.CoreAPIMethod"/>
@@ -66,7 +67,8 @@ namespace AgoRapide.Core {
         public string Description { get; set; }
 
         /// <summary>
-        /// Note: If <see cref="Type"/> is one of your own classes / enums, or one of the AgoRapide classes / enums 
+        /// TODO: Fix comment text, what is ???
+        /// Note: If ??? is one of your own classes / enums, or one of the AgoRapide classes / enums 
         /// then you are recommended to not set <see cref="Description"/> / <see cref="LongDescription"/> for the enum value  
         /// but instead rely on using <see cref="ClassAttribute"/> belonging to the enum / class given by <see cref="Type"/>
         /// For an example see how it is implemented for <see cref="CoreP.CoreAPIMethod"/> and <see cref="AgoRapide.CoreAPIMethod"/>

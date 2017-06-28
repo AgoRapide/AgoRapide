@@ -281,11 +281,10 @@ namespace AgoRapide.Database {
             }
 
             if (useCacheDynamically && InMemoryCache.EntityCache.TryGetValue(id, out var entityTemp)) {
-                if (entityTemp == null) {
-                    entity = null;
+                entity = entityTemp;
+                if (entity == null) {
                     return false;
                 }
-                entity = entityTemp as BaseEntity ?? throw new InvalidTypeException(entityTemp.GetType(), typeof(BaseEntity));
                 if (requiredType != null && !requiredType.IsAssignableFrom(entity.GetType())) throw new InvalidTypeException(entity.GetType(), requiredType, "Entity found in cache does not match required type");
                 return true;
             }
@@ -420,12 +419,12 @@ namespace AgoRapide.Database {
                     break;
                 default: throw new InvalidEnumException(operation);
             }
-            result?.Count(CoreP.PAffectedCount);
+            result?.Count(CountP.PAffectedCount);
         }
 
         public override List<long> GetRootPropertyIds(Type type) {
-            Log(nameof(type) + ": " + type.ToStringShort());
-            var cmd = new Npgsql.NpgsqlCommand(
+            Log(nameof(type) + ": " + type.ToStringShort()); /// Note how this code does not use <see cref="InMemoryCache"/> in any manner
+            var cmd = new Npgsql.NpgsqlCommand( 
                 "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " +
                 DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
                 DBField.strv + " = '" + type.ToStringDB() + "' AND " +
@@ -810,9 +809,9 @@ namespace AgoRapide.Database {
                 if (key.Key.A.IsPassword) throw new Exception(nameof(PropertyKeyAttribute) + "." + nameof(key.Key.A.IsPassword) + " only valid for strings, not " + value.GetType());
             }
             var propertiesAffected = ExecuteNonQuery(cmd, expectedRows: 1, doLogging: false);
-            result?.SetCount(CoreP.PAffectedCount, propertiesAffected);
-            result?.Count(CoreP.PCreatedCount);
-            result?.Count(CoreP.PTotalCount);
+            result?.SetCount(CountP.PAffectedCount, propertiesAffected);
+            result?.Count(CountP.PCreatedCount.A().Key.CoreP);
+            result?.Count(CountP.PTotalCount);
 
             return id;
         }

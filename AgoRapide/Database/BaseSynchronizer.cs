@@ -65,9 +65,7 @@ namespace AgoRapide.Database {
         /// </param>
         protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
             var type = typeof(T);
-            /// TODO: Add more advanced statistics counting here... 
-            /// TODO: AND STORE ALSO AS PROPERTIES WITHIN Synchronizer permanently (not only as result)            
-            Log(type.ToString() + ", Count: " + externalEntities.Count, result);
+            SetAndStoreCount(CountP.ETotalCount, externalEntities.Count, result, db);
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             /// TODO: Add some identificator here for "workspace" or similar.
@@ -77,24 +75,44 @@ namespace AgoRapide.Database {
             /// TODO: the <see cref="DBField.id"/> of a root administrative <see cref="Person"/> for our customer.
             var internalEntities = db.GetAllEntities<T>();
             var internalEntitiesByPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(primaryKey), e => e);
+            var newCount = 0;
             externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
-                if (!internalEntitiesByPrimaryKey.TryGetValue(e.PV<long>(primaryKey), out var internalEntity)) {
+                if (internalEntitiesByPrimaryKey.TryGetValue(e.PV<long>(primaryKey), out var internalEntity)) {
+                    internalEntitiesByPrimaryKey.Remove(e.PV<long>(primaryKey)); // Remove in order to check at end for any left
+                } else {
                     internalEntity = db.GetEntityById<T>(db.CreateEntity<T>(Id,
                         new List<(PropertyKeyWithIndex key, object value)> {
                             (primaryKey.PropertyKeyWithIndex, e.PV<long>(primaryKey))
                         }, result));
+                    newCount++;
                 }
+
                 // Transfer from internal to external (assumed to constitute the least amount to transfer)
                 e.Id = internalEntity.Id;
-                // e.AddProperty(CoreP.DBId.A(), e.Id); // TODO:  Most probably unnecessary. Should be contained below. 
                 internalEntity.Properties.Values.ForEach(p => {
-                    if (p.Key.Key.A.IsExternal) return; /// Already contained in e. Would typically be <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/> with has to be stored in database anyway. 
-                    e.AddProperty(p, null);
+                    if (p.Key.Key.A.IsExternal) {
+                        /// Already contained in e. 
+                        /// Would typically be <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/> with has to be stored in database anyway. 
+                        /// Can also be the result of e being a cached entity (see caching below).
+                        return;
+                    }
+                    e.AddProperty(p, detailer: null);
                 });
+                InMemoryCache.EntityCache[e.Id] = e; // Put into cache
             });
-            FileCache.instance.StoreToDisk(externalEntities);
+            SetAndStoreCount(CountP.ETotalCount, externalEntities.Count, result, db);
+            /// TODO: Add more advanced statistics counting here... 
+            /// TODO: AND STORE ALSO AS PROPERTIES WITHIN Synchronizer permanently (not only as result)
+            Log(type.ToString() + ", NewCount: " + newCount, result);
+            /// TODO: Add more advanced statistics counting here... 
+            /// TODO: AND STORE ALSO AS PROPERTIES WITHIN Synchronizer permanently (not only as result)
+            Log(type.ToString() + ", DeletedCount: " + internalEntitiesByPrimaryKey.Count, result);
+            internalEntitiesByPrimaryKey.ForEach(e => { // Remove any internal entities left.
+                db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid, null);
+                if (InMemoryCache.EntityCache.ContainsKey(e.Value.Id)) InMemoryCache.EntityCache.TryRemove(e.Value.Id, out _);
+            });
 
-            // TODO: Store in InMemoryCache also!
+            FileCache.Instance.StoreToDisk(externalEntities);
         }
     }
 

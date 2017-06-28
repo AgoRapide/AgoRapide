@@ -276,46 +276,6 @@ namespace AgoRapide {
         [PropertyKey(Type = typeof(PropertyOperation))]
         PropertyOperation,
 
-        /// <summary>
-        /// See <see cref="Result"/>
-        /// </summary>
-        [PropertyKey(
-            Description = "Count of new properties created.",
-            Type = typeof(long))]
-        PCreatedCount,
-
-        /// <summary>
-        /// See <see cref="Result"/>
-        /// </summary>
-        [PropertyKey(
-            Description = "Count of properties affected (as result of some database operation like INSERT, DELETE or UPDATE).",
-            Type = typeof(long))]
-        PAffectedCount,
-
-        /// <summary>
-        /// See <see cref="Result"/>
-        /// </summary>
-        [PropertyKey(
-            Description = "Count of changed properties.",
-            Type = typeof(long))]
-        PChangedCount,
-
-        /// <summary>
-        /// See <see cref="Result"/>
-        /// </summary>
-        [PropertyKey(
-            Description = "Count of unchanged properties.",
-            Type = typeof(long))]
-        PUnchangedCount,
-
-        /// <summary>
-        /// See <see cref="Result"/>
-        /// </summary>
-        [PropertyKey(
-            Description = "Count of all properties considered.",
-            Type = typeof(long))]
-        PTotalCount,
-
         [PropertyKey(
             Description =
                 "URL suggested to client. " +

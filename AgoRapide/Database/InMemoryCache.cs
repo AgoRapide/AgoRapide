@@ -11,8 +11,8 @@ using AgoRapide.Core;
 namespace AgoRapide.Database {
 
     /// <summary>
-    /// TODO: Now that useCache was removed as parameter to <see cref="BaseDatabase"/>-methods we may 
-    /// TODO: add convenience methods here like TryGetEntityById which take a <see cref="BaseDatabase"/> instance as parameter 
+    /// TODO: Now that useCache was removed as parameter to <see cref="BaseDatabase"/>-methods. 
+    /// TODO: We could add convenience methods here like TryGetEntityById which take a <see cref="BaseDatabase"/> instance as parameter 
     /// TODO: and uses that if result is not found in our cache. 
     /// </summary>
     [Class(
@@ -28,7 +28,7 @@ namespace AgoRapide.Database {
         public static readonly InMemoryCache instance = new InMemoryCache(); /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. Apart from this need for logging the class could have just been made static instead.
 
         /// <summary>
-        /// Cache as relevant for <see cref="CacheUse.Dynamic"/>. 
+        /// Cache as relevant for <see cref="CacheUse.Dynamic"/> and <see cref="CacheUse.All"/>
         /// 
         /// Also used directly by methods such as <see cref="Extensions.AsEntityName(long)"/>
         /// 
@@ -40,10 +40,11 @@ namespace AgoRapide.Database {
         /// The system does however make a "best effort" attempt at keeping the cache up-to-date
         /// and invalidating known no-longer-valid  entries
         /// 
-        /// Note subtle point about the entity being stored in the cache, not the root-property (in other words, entity root properties (<see cref="CoreP.RootProperty"/>)
-        /// are not found in cache itself)
+        /// Note subtle point about the entity being stored in the cache, not the root-property 
+        /// (in other words, entity root properties (<see cref="CoreP.RootProperty"/>) are not found in cache itself)
         /// </summary>
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
+
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
         /// </summary>

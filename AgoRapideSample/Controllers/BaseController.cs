@@ -39,9 +39,9 @@ namespace AgoRapideSample {
         }
 
         /// <summary>
-        /// Type of <see cref="_db"/> could without any problem be set to 
-        /// <see cref="PostgreSQLDatabase"/> instead of 
-        /// <see cref="IDatabase"/>
+        /// Note that type of <see cref="_db"/> could be <see cref="PostgreSQLDatabase"/> instead of <see cref="BaseDatabase"/> 
+        /// but that might lead to using <see cref="PostgreSQLDatabase"/>-specific functionality in your application 
+        /// so therefore it is not recommended. 
         /// </summary>
         protected BaseDatabase _db;
         protected override BaseDatabase DB => _db ?? (_db = GetDatabase(GetType()));
