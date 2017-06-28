@@ -335,6 +335,20 @@ namespace AgoRapide {
         /// </summary>
         public object Value => _value ?? throw new NullReferenceException(nameof(_value) + ".\r\n" + (IsIsManyParent ? ("Possible cause: " + nameof(IsIsManyParent) + ", as of June 2017 these are not initialized with " + nameof(_value) + "\r\n") : "") + "Details: " + ToString());
 
+        private Percentile _percentile;
+        /// <summary>
+        /// Note how getter throws <see cref="NullReferenceException"/> if value not set. 
+        /// 
+        /// TODO: Consider expanding this to one value for each <see cref="Context"/>
+        /// TODO: (like Dictionary with <see cref="Context"/>-id)
+        /// TODO: As of June 2017 we only have Percentiles based on the whole "universe" of same properties
+        /// </summary>
+        public Percentile Percentile {
+            get => _percentile ?? throw new NullReferenceException(nameof(Percentile) + ". Details: " + ToString());
+            set => _percentile = value ?? throw new ArgumentNullException(nameof(value) + ". Details: " + ToString());
+        }
+        public bool PercentileIsSet => _percentile != null;
+
         private bool? _showValueHTMLSeparate;
         [ClassMember(Description =
             "Denotes whether the HTML representation of value should be shown separately (from for instance an input-box used for saving the value).\r\n" +
@@ -667,6 +681,7 @@ namespace AgoRapide {
 
             /// TODO: Maybe keep information about from which <see cref="DBField"/> <see cref="_stringValue"/> originated?
             retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? Value : "[NULL[]") + "</td></tr>\r\n");
+            if (_percentile != null) retval.AppendLine("<tr><td>Percentile</td><td>" + _percentile + "</td></tr>\r\n");
 
             adder(DBField.valid, Valid?.ToString(DateTimeFormat.DateHourMinSec));
             adderWithLink(DBField.vid, ValidatorId);
@@ -732,7 +747,7 @@ namespace AgoRapide {
                     ValidatorId = ValidatorId,
                     Invalid = Invalid,
                     InvalidatorId = InvalidatorId
-
+                    /// TODO: Consider communicating the <see cref="Property.Percentile"/>-value now (assumed that concept is not expanded with a <see cref="Context"/>-id)
                 };
                 propertyAdder(retval);
                 return retval;

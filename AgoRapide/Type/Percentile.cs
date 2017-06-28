@@ -34,28 +34,47 @@ namespace AgoRapide {
                 return false;
             }
 
-            if (!value.EndsWith("P")) {
+            if (!AllValues.TryGetValue(value, out percentile)) {
                 percentile = null;
-                errorResponse = "!" + nameof(value) + ".EndsWith(\"P\")";
+                errorResponse = "Not recognized, must be on the form \"[1-100]P\" like 9P or 69P";
                 return false;
             }
 
-            if (!int.TryParse(value.Substring(0, value.Length - 1), out var intValue)) {
-                percentile = null;
-                errorResponse = "Invalid integer value";
-                return false;
-            }
-
-            if (intValue < 1 || intValue > 100) {
-                percentile = null;
-                errorResponse = "Outside valid range [1-100] (" + intValue + ")";
-                return false;
-            }
-
-            percentile = new Percentile(intValue);
             errorResponse = null;
             return true;
+
+            //if (!value.EndsWith("P")) {
+            //    percentile = null;
+            //    errorResponse = "!" + nameof(value) + ".EndsWith(\"P\")";
+            //    return false;
+            //}
+
+            //if (!int.TryParse(value.Substring(0, value.Length - 1), out var intValue)) {
+            //    percentile = null;
+            //    errorResponse = "Invalid integer value";
+            //    return false;
+            //}
+
+            //if (intValue < 1 || intValue > 100) {
+            //    percentile = null;
+            //    errorResponse = "Outside valid range [1-100] (" + intValue + ")";
+            //    return false;
+            //}
+
+            //percentile = new Percentile(intValue);
+            //errorResponse = null;
+            //return true;
         }
+
+        private static Dictionary<string, Percentile> _allValues;
+        /// <summary>
+        /// Note how having a single static set of values avoid repeating millions of otherwise identical instances
+        /// </summary>
+        private static Dictionary<string, Percentile> AllValues => _allValues ?? (_allValues = new Func<Dictionary<string, Percentile>>(() => {
+            var retval = new Dictionary<string, Percentile>();
+            for (var i = 1; i <= 100; i++) retval.Add(i + "P", new Percentile(i));
+            return retval;
+        })());
 
         public static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
@@ -134,7 +153,5 @@ namespace AgoRapide {
             Septile6,
             Septile7,
         }
-
-
     }
 }

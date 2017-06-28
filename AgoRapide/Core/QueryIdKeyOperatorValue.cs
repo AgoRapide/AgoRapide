@@ -37,22 +37,6 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public override string ToString() => _toString ?? throw new NullReferenceException(nameof(_toString));
 
-        ///// <summary>
-        ///// Constructor for generic parsing of any kind of SQL expression. 
-        ///// (usually used when query originates from "outside" of API)
-        ///// 
-        ///// TODO: IMPLEMENT PARSING HERE!
-        ///// </summary>
-        ///// <param name="sql">
-        ///// SQL WHERE like expression like 
-        /////   WHERE first_name LIKE 'John%' 
-        ///// or
-        /////   WHERE date_of_birth > '2017-01-01' 
-        ///// </param>
-        //public PropertyValueQueryId(string sql) {
-        //    if (!TryParse(value, out var ))
-        //}
-
         /// <summary>
         /// Constructor for "all" query (results in an empty <see cref="QueryId.SQLWhereStatement"/>
         /// </summary>
@@ -265,6 +249,8 @@ namespace AgoRapide.Core {
         /// Returns true if <paramref name="entity"/> satisfies this query. 
         /// 
         /// TODO: Implement for more than <see cref="Operator.EQ"/>
+        /// 
+        /// TODO: Find a better name. 
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
@@ -272,10 +258,23 @@ namespace AgoRapide.Core {
             if (Key == null) throw new NullReferenceException(nameof(Key) + ". Details: " + ToString());
             if (entity.Properties == null) return false;
             if (!entity.Properties.TryGetValue(Key.CoreP, out var p)) return false;
-            switch (Operator) {
-                case Operator.EQ:
-                    return p.Value.Equals(Value);
-                default: throw new NotImplementedException(nameof(Operator) + ": " + Operator);
+            switch (Value) {
+                case Percentile percentile:
+                    if (!p.PercentileIsSet) throw new Property.InvalidPropertyException("!" + nameof(p.PercentileIsSet) + " for " + p.ToString() + ".\r\n" + nameof(entity) + ": " + entity.ToString());
+                    switch (Operator) {
+                        case Operator.LT: return percentile.Value < p.Percentile.Value;
+                        case Operator.LEQ: return percentile.Value <= p.Percentile.Value;
+                        case Operator.EQ: return percentile.Value == p.Percentile.Value;
+                        case Operator.GEQ: return percentile.Value >= p.Percentile.Value;
+                        case Operator.GT: return percentile.Value > p.Percentile.Value;
+                        default: throw new InvalidEnumException(Operator);
+                    }
+                default:
+                    switch (Operator) {
+                        case Operator.EQ:
+                            return p.Value.Equals(Value);
+                        default: throw new NotImplementedException(nameof(Operator) + ": " + Operator);
+                    }
             }
         }
 

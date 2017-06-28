@@ -11,7 +11,10 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
 
     [Class(
-        Description = "Building block for drill down functionality and AgoRapide query language"
+        Description = 
+            "Building block for drill down functionality and AgoRapide query language. " +
+            "Consists of -" + nameof(AgoRapide.SetOperator) + "-, Type and a -" + nameof(AgoRapide.Core.QueryId) + "-. " +
+            "Typical value: \"Intersect;Person;WHERE department = 'East'\"."
     )]
     public class Context : ITypeDescriber, IEquatable<Context> {
 

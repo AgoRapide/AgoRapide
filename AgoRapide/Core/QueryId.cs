@@ -82,7 +82,7 @@ namespace AgoRapide.Core {
                 "\"key = 'AccessRight' AND strv IN ('User', 'Relation', 'Admin')\"\r\n" +
                 "\"key = 'Name' AND strv IN (:strv1, :strv2, :strv3)\" (with corresponding parameters in -" + nameof(SQLWhereStatementParameters) + "-)"
         )]
-        public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ". Should have been set by sub class");
+        public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ". Should have been set by sub class. Will probably not be set for " + nameof(Percentile) + " " + nameof(QueryIdKeyOperatorValue) + " as these are in-memory based. Details: " + ToString());
         public bool Equals(QueryId other) => SQLWhereStatement.Equals(other.SQLWhereStatement);
         public override bool Equals(object other) {
             if (other == null) return false;
@@ -110,7 +110,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <returns></returns>
         public abstract override string ToString();
-        public string ToStringDebug() => SQLWhereStatement + (SQLWhereStatementParameters.Count == 0 ? "" : "\r\nParameter: ") + string.Join("\r\nParameter: ", SQLWhereStatementParameters.Select(p => p.ToString()));
+        public string ToStringDebug() => (_SQLWhereStatement ?? ("No " + nameof(_SQLWhereStatement) + " defined. Ordinary ToString-result is " + ToString())) + (SQLWhereStatementParameters.Count == 0 ? "" : "\r\nParameter: ") + string.Join("\r\nParameter: ", SQLWhereStatementParameters.Select(p => p.ToString()));
 
         // public abstract string ToAPIQuery(); /// Unnecessary, equivalent to ToString()
 
