@@ -419,7 +419,7 @@ namespace AgoRapide.Database {
                     break;
                 default: throw new InvalidEnumException(operation);
             }
-            result?.Count(CountP.PAffectedCount);
+            result?.Count(typeof(Property), CountP.Affected);
         }
 
         public override List<long> GetRootPropertyIds(Type type) {
@@ -809,10 +809,8 @@ namespace AgoRapide.Database {
                 if (key.Key.A.IsPassword) throw new Exception(nameof(PropertyKeyAttribute) + "." + nameof(key.Key.A.IsPassword) + " only valid for strings, not " + value.GetType());
             }
             var propertiesAffected = ExecuteNonQuery(cmd, expectedRows: 1, doLogging: false);
-            result?.SetCount(CountP.PAffectedCount, propertiesAffected);
-            result?.Count(CountP.PCreatedCount.A().Key.CoreP);
-            result?.Count(CountP.PTotalCount);
-
+            result?.Count(typeof(Property), CountP.Created);
+            result?.Count(typeof(Property), CountP.Total); // TODO: Are we sure about this?
             return id;
         }
 

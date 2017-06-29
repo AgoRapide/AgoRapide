@@ -940,15 +940,14 @@ namespace AgoRapide.API {
         /// <param name="request"></param>
         /// <returns></returns>
         public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
-        public const string HTMLTableHeading = "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreAPIMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
+        public const string HTMLTableHeading = "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreAPIMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
             PV(APIMethodP.CoreAPIMethod.A(), CoreAPIMethod.None).Use(c => c == CoreAPIMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
             PV<AccessLevel>(CoreP.AccessLevelUse.A()) + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "&nbsp;") + "</td><td>" +
-            (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
+            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "&nbsp;") + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {
             public MethodAttributeInitialisationException(string message) : base(message) { }

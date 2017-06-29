@@ -141,8 +141,22 @@ namespace AgoRapide.Core {
             Log(nameof(APIMethod), "Calling " + nameof(APIMethod) + "." + nameof(APIMethod.SetImplementatorIdAndCompleteAllEntityTypes));
             APIMethod.SetImplementatorIdAndCompleteAllEntityTypes(_db);
 
-            Log(nameof(APIMethod), "Calling " + nameof(Util) + "." + nameof(Util.GetTypeFromString));
+            Log(nameof(APIMethod), "Calling " + nameof(Util) + "." + nameof(Util.GetTypeFromString) + " (as assertion that works)");
             Util.GetTypeFromString(typeof(APIMethod).ToStringVeryShort());
+
+            { /// Create all combinations of <see cref="AggregationKey"/> for <see cref="CountP"/>
+                Log("MapEnums", "Creating " + nameof(CountP) + " aggregations");
+                var aggregations = new StringBuilder();
+                Util.EnumGetValues<CountP>().ForEach(c => {
+                    var attribute = c.A();
+                    APIMethod.AllEntityTypes.ForEach(t => {
+                        attribute.Key.A.AggregationTypes.ForEach(a => {
+                            aggregations.AppendLine(AggregationKey.GetAggregationKey(a, t, attribute).Key.PToString);
+                        });
+                    });
+                });
+                Log("MapEnums", nameof(CountP) + " aggregations:\r\n\r\n" + aggregations + "\r\n");
+            }
 
             Log("EntityRelations", "\r\n\r\nEntity relation traversals found:" + string.Join("", APIMethod.AllEntityTypes.OrderBy(t => t.ToStringVeryShort()).Select(t => "\r\nFrom: " + t + ": " +
                 string.Join("", Context.GetPossibleTraversalsFromType(t).Select(e => (e.Value == null ? "" : ("\r\nTo: " + e.Key + " via " + string.Join(", ", e.Value))))))) + "\r\n\r\n");

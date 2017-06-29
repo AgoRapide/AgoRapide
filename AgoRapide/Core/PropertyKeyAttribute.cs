@@ -26,7 +26,7 @@ namespace AgoRapide.Core {
         public PropertyKeyAttribute() { }
 
         /// <summary>
-        /// Constructor for when originates from database (See <see cref="PropertyKeyMapper.TryAddA"/>)
+        /// Constructor for <see cref="AggregationKey"/> or when originates from database (See <see cref="PropertyKeyMapper.TryAddA"/>)
         /// </summary>
         public PropertyKeyAttribute(
             string property,
@@ -314,6 +314,12 @@ namespace AgoRapide.Core {
         public Type GenericListType => IsMany ? (_genericListType ?? (_genericListType = typeof(List<>).MakeGenericType(Type))) : throw new IsManyException(Util.BreakpointEnabler + "!" + nameof(IsMany) + ".\r\nDetails: " + ToString());
 
         /// <summary>
+        /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.
+        /// </summary>
+        [ClassMember(Description = "List of aggregations desired for -" + nameof(Type) + "- like -" + nameof(AggregationType.Count) + "- or -" + nameof(AggregationType.Sum) + "-.")]
+        public AggregationType[] AggregationTypes;
+
+        /// <summary>
         /// Only relevant when <see cref="Type"/> is <see cref="DateTime"/>
         /// </summary>
         public DateTimeFormat DateTimeFormat { get; set; }
@@ -470,12 +476,21 @@ namespace AgoRapide.Core {
             // TODO: Constantly ensure that all properties are included here (Jan 2017)
             if (!TypeIsSet && other.TypeIsSet) Type = other.Type;
 
+            if (AggregationTypes == null) {
+                AggregationTypes = other.AggregationTypes;
+            } else if (other.AggregationTypes == null) { // No changes
+            } else { // Merge both lists
+                var temp = AggregationTypes.ToList();
+                temp.AddRange(other.AggregationTypes.Where(o => !temp.Any(p => p == o)).ToList());
+                AggregationTypes = temp.ToArray();
+            }
+
             if (Parents == null) {
                 Parents = other.Parents;
             } else if (other.Parents == null) { // No changes
             } else { // Merge both lists
                 var temp = Parents.ToList();
-                temp.AddRange(other.Parents.ToList());
+                temp.AddRange(other.Parents.Where(o => !temp.Any(p => p == o)).ToList());
                 Parents = temp.ToArray();
             }
 

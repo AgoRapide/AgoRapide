@@ -147,6 +147,8 @@
     <Compile Include="Entity\BaseEntityTWithLogAndCount.cs" />
     <Compile Include="Entity\Person.cs" />
     <Compile Include="Entity\Property.cs" />
+    <Compile Include="Entity\PropertyCounter.cs" />
+    <Compile Include="Entity\PropertyLogger.cs" />
     <Compile Include="Entity\PropertyT.cs" />
     <Compile Include="Enum\AccessLevel.cs" />
     <Compile Include="Enum\AccessLocation.cs" />

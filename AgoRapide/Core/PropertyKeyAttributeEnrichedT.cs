@@ -19,7 +19,7 @@ namespace AgoRapide.Core {
     /// Apart from that no differences from <see cref="PropertyKeyAttributeEnriched"/>.
     /// 
     /// <see cref="PropertyKeyAttributeEnrichedT{T}"/>: Attribute originating from C# code.
-    /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
+    /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: <see cref="AggregationKey"/> or attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// This class is assumed to have marginal use.
     /// </summary>

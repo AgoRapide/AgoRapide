@@ -17,7 +17,7 @@ namespace AgoRapide.Core {
     /// 
     /// See subclasses 
     /// <see cref="PropertyKeyAttributeEnrichedT{T}"/>: Attribute originating from C# code.
-    /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
+    /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: <see cref="AggregationKey"/> or attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// TODO: As of Jan 2017 there is still some work to be done in this class regarding parsing and validation
     /// </summary>
@@ -248,7 +248,7 @@ namespace AgoRapide.Core {
                 }
             }
 
-            if (A.ForeignKeyOf!=null) {
+            if (A.ForeignKeyOf != null) {
                 A.Description += (string.IsNullOrEmpty(A.Description) ? "" : "\r\n") + "Foreign key of " + A.ForeignKeyOf.ToStringShort();
             }
 
@@ -261,6 +261,8 @@ namespace AgoRapide.Core {
             } else {
                 if (A.ForeignKeyOf != null) InvalidTypeException.AssertEquals(A.Type, typeof(long), () => "Only long allowed when " + nameof(A.ForeignKeyOf) + " is set.\r\nDetails: " + A.ToString());
             }
+
+            if (A.AggregationTypes == null) A.AggregationTypes = new AggregationType[0];
 
             if (!A.HasLimitedRangeIsSet) {
                 if (

@@ -65,7 +65,10 @@ namespace AgoRapide.Database {
         /// </param>
         protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
             var type = typeof(T);
-            SetAndStoreCount(CountP.ETotalCount, externalEntities.Count, result, db);
+            /// Note how we cannot just do 
+            ///   SetAndStoreCount(CountP.Total, externalEntities.Count, result, db);
+            /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as old value would just be overridden)
+            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.Total.A()), externalEntities.Count, result, db);
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             /// TODO: Add some identificator here for "workspace" or similar.
@@ -100,17 +103,12 @@ namespace AgoRapide.Database {
                 });
                 InMemoryCache.EntityCache[e.Id] = e; // Put into cache
             });
-            SetAndStoreCount(CountP.ETotalCount, externalEntities.Count, result, db);
-            /// TODO: Add more advanced statistics counting here... 
-            /// TODO: AND STORE ALSO AS PROPERTIES WITHIN Synchronizer permanently (not only as result)
-            Log(type.ToString() + ", NewCount: " + newCount, result);
-            /// TODO: Add more advanced statistics counting here... 
-            /// TODO: AND STORE ALSO AS PROPERTIES WITHIN Synchronizer permanently (not only as result)
-            Log(type.ToString() + ", DeletedCount: " + internalEntitiesByPrimaryKey.Count, result);
+            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.Created.A()), newCount, result, db);
             internalEntitiesByPrimaryKey.ForEach(e => { // Remove any internal entities left.
-                db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid, null);
+                db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid,result);
                 if (InMemoryCache.EntityCache.ContainsKey(e.Value.Id)) InMemoryCache.EntityCache.TryRemove(e.Value.Id, out _);
             });
+            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
 
             FileCache.Instance.StoreToDisk(externalEntities);
         }
@@ -145,5 +143,4 @@ namespace AgoRapide.Database {
     public static class SynchronizerPExtensions {
         public static PropertyKey A(this SynchronizerP p) => PropertyKeyMapper.GetA(p);
     }
-
 }

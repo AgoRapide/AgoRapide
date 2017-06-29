@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// Attribute originating dynamically (from database / API client, not C# code)
+    /// <see cref="AggregationKey"/> or attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// TODO: Candidate for removal. Put functionality into <see cref="PropertyKey"/> instead.
     /// 
@@ -17,7 +17,7 @@ namespace AgoRapide.Core {
     /// to clarify origin of the attribute. 
     /// 
     /// <see cref="PropertyKeyAttributeEnrichedT{T}"/>: Attribute originating from C# code.
-    /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: Attribute originating dynamically (from database / API client, not C# code)
+    /// <see cref="PropertyKeyAttributeEnrichedDyn"/>: <see cref="AggregationKey"/> or attribute originating dynamically (from database / API client, not C# code)
     /// 
     /// This class is assumed to have marginal use.
     /// </summary>

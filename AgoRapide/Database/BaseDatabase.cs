@@ -309,14 +309,14 @@ namespace AgoRapide.Database {
                         } else {
                             OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
                         }
-                        result?.Count(CountP.PUnchangedCount);
+                        result?.Count(typeof(Property), CountP.StillValid);
                     } else { // Vanlig variant
                              // TODO: Use of default value.ToString() here is not optimal
                              // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
                              // TODO: At least for presenting DateTime-objects and double in a preferred manner
                         Log(detailer() + ". Property changed from '" + existingValue + "' to '" + valueToUpdate + "'", result);
                         var changedProperty = creator(keyToUse, valueToUpdate);
-                        result?.Count(CountP.PChangedCount);
+                        result?.Count(typeof(Property), CountP.Changed);
                         entityOrIsManyParent.Properties[keyAsCoreP] = changedProperty; // TOOD: result-Property from creator has not been initialized properly now (with Parent for instance)
                     }
                 } else {
@@ -326,7 +326,7 @@ namespace AgoRapide.Database {
                     Log(detailer() + ". Property was not known. Initial value: '" + valueToUpdate + "'", result);
                     var newProperty = creator(keyToUse, valueToUpdate);
                     entityOrIsManyParent.Properties[keyAsCoreP] = newProperty; // TOOD: result-Property from creator has not been initialized properly now (with Parent for instance)
-                    result?.Count(CountP.PTotalCount);
+                    result?.Count(typeof(Property), CountP.Total);
                 }
             });
 
@@ -342,7 +342,6 @@ namespace AgoRapide.Database {
 
                                 /// Do <see cref="PropertyOperation.SetInvalid"/> and <see cref="PropertyOperation.SetValid"/> as appropriate for existing
                                 /// properties and add new ones                            
-
 
                                 if (key.Key.A.Type.IsValueType) {
                                     if (key.Key.A.Type.IsEnum) {

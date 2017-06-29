@@ -15,7 +15,6 @@ namespace AgoRapide {
     /// See <see cref="Property"/> for overview and detailed documentation about properties. 
     /// 
     /// Note that <typeparamref name="T"/> does not necessarily have to correspond to <see cref="PropertyKeyAttribute.Type"/>.
-    /// See <see cref="PropertyT{T}.PropertyT"/> for details.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [Class(Description =
@@ -86,104 +85,6 @@ namespace AgoRapide {
             })();
         }
 
-        /// <summary>
-        /// TODO: Might this replace all the others XXXValue-properties?
-        /// 
-        /// TODO: Change name into objValue maybe?
-        /// </summary>
         private T _genericValue;
-        ///// <summary>
-        ///// Note how this throws an Exception if <see cref="_ADotTypeValue"/> is not set. 
-        ///// Property should be used with caution. Usually used from <see cref="Parameters"/> when ... ????????? 
-        ///// TODO: DOCUMENT BETTER! USE BETTER!
-        ///// 
-        ///// TODO: Make much better. Try to avoid if-else-if-else-if ... below.
-        ///// TODO: Think through all this much better!
-        ///// </summary>
-        //public object ADotTypeValue() => TryGetADotTypeValue(out var retval) ? retval : throw new NullReferenceException(nameof(_ADotTypeValue) + ": This property is usually set from this constructor: public Property(TProperty keyT, object objValue). Details: " + ToString());
-        //public bool TryGetADotTypeValue(out object aDotTypeValue) {
-        //    var type = Key.Key.A.Type;
-        //    if (type == null) {
-        //        if (_ADotTypeValue == null) {
-        //            // TODO: This is NOT preferred! We are assuming string as default type
-        //            aDotTypeValue = V<string>(); // This will also set _ADotTypeValue for next call
-        //        } else {
-        //            aDotTypeValue = _ADotTypeValue; // TODO: This is NOT preferred! We are just accepting whatever we already have. Clean up this!
-        //        }
-        //    } else if (_ADotTypeValue != null && _ADotTypeValue.GetType().Equals(type)) {
-        //        // This is quite OK
-        //        aDotTypeValue = _ADotTypeValue;
-        //    } else if (type.Equals(typeof(long))) {
-        //        aDotTypeValue = V<long>();
-        //    } else if (type.Equals(typeof(double))) {
-        //        aDotTypeValue = V<double>();
-        //    } else if (type.Equals(typeof(bool))) {
-        //        aDotTypeValue = V<bool>();
-        //    } else if (type.Equals(typeof(DateTime))) {
-        //        aDotTypeValue = V<DateTime>();
-        //    } else if (type.Equals(typeof(string))) {
-        //        aDotTypeValue = V<string>();
-        //    } else if (type.Equals(typeof(Type))) {
-        //        aDotTypeValue = V<Type>();
-        //    } else if (type.Equals(typeof(Uri))) {
-        //        aDotTypeValue = V<Uri>();
-        //    } else if (type.IsEnum) {
-        //        /// TODO: We should be able to call <see cref="V{T}"/> here also...
-        //        /// Do not use Util.EnumParse, we want a more detailed exception message
-        //        /// aDotTypeValue = Util.EnumParse(KeyA.A.Type, V<string>());
-        //        /// Or rather, do not do this either:
-        //        // aDotTypeValue = Util.EnumTryParse(KeyA.A.Type, V<string>(), out var temp) ? temp : throw new InvalidPropertyException("Unable to parse '" + V<string>() + "' as " + KeyA.A.Type + ". Details: " + ToString());
-        //        /// But this:
-        //        aDotTypeValue = Util.EnumTryParse(type, V<string>(), out var temp) ? temp : null; // Just give up if fails
-        //    } else if (typeof(ITypeDescriber).IsAssignableFrom(type)) {
-        //        aDotTypeValue = Key.Key.TryValidateAndParse(V<string>(), out var temp) ? temp.ObjResult : null;
-        //    } else {
-        //        throw new InvalidTypeException(type, "Not implemented. Details: " + ToString());
-        //    }
-        //    return aDotTypeValue != null;
-        //}
-
-        ///// <summary>
-        ///// The general value.
-        ///// Populated from one of lng, dbl, dtm, geo, strValue by Initialize
-        ///// 
-        ///// TODO: THIS IS CANDIDATE FOR REMOVAL. PROBABLY NOT NEEDED.
-        ///// 
-        ///// TODO: Rename into DebugValue. Set it from the future planned generic subclass of <see cref="Property"/>
-        ///// TODO: (Mar 2017 release of Visual Studio crashes when attempting to rename this property)
-        ///// </summary>
-        //public string Value { get; private set; }
-
-        // -----------------------------------------------------
-        // Fields as stored in database
-        // TODO: CONSIDER REMOVING ALL THESE!
-        // -----------------------------------------------------
-
-        ///// <summary>
-        ///// <see cref="DBField.lngv"/>
-        ///// </summary>
-        //private long? LngValue;
-        ///// <summary>
-        ///// <see cref="DBField.dblv"/>
-        ///// </summary>
-        //private double? DblValue;
-        ///// <summary>
-        ///// <see cref="DBField.blnv"/>
-        ///// </summary>
-        //private bool? BlnValue;
-        ///// <summary>
-        ///// <see cref="DBField.dtmv"/>
-        ///// </summary>
-        //private DateTime? DtmValue;
-        ///// <summary>
-        ///// <see cref="DBField.geov"/>
-        ///// </summary>
-        //private string GeoValue;
-        ///// <summary>
-        ///// <see cref="DBField.strv"/>
-        ///// </summary>
-        //private string StrValue;
-
-        // -----------------------------------------------------
     }
 }

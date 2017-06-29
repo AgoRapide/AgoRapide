@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.Database;
+using AgoRapide;
 
 namespace AgoRapide.Core {
 
@@ -40,11 +41,8 @@ namespace AgoRapide.Core {
         /// </summary>
         private static Dictionary<Type, Dictionary<int, PropertyKey>> _cache = new Dictionary<Type, Dictionary<int, PropertyKey>>();
 
-        /// <summary>
-        /// TODO: Define atomic increasing of this value.
-        /// </summary>
         private static int lastCorePId = (int)(object)Util.EnumGetValues<CoreP>().Max();
-        private static int GetNextCorePId() => System.Threading.Interlocked.Increment(ref lastCorePId);
+        public static int GetNextCorePId() => System.Threading.Interlocked.Increment(ref lastCorePId);
 
         /// <summary>
         /// Key is string which is mapped from. 
@@ -125,6 +123,14 @@ namespace AgoRapide.Core {
                     }
                     _fromStringMaps[a.Key.A.InheritFrom.ToString()] = a;
                 }
+
+                if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later in <see cref="AddA"/>)
+                    a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
+                        a.Key.A.Parents.ToList().ForEach(parent => {
+                            var dummy = AggregationKey.GetAggregationKey(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
+                        });
+                    });
+                }
                 var test = a.Key.A.EnumValueExplained;
             });
             mapOrders.Add(typeof(T));
@@ -187,8 +193,6 @@ namespace AgoRapide.Core {
         public static PropertyKey GetA(string _enum) => _fromStringMaps.GetValue(_enum);
 
         /// <summary>
-        /// TODO: Correct not thread safe use of <see cref="_cache"/> in <see cref="TryAddA"/>
-        /// 
         /// Called from <see cref="PostgreSQLDatabase"/>.ReadOneProperty.
         /// </summary>
         /// <param name="_enum"></param>
@@ -210,7 +214,7 @@ namespace AgoRapide.Core {
             }
 
             // TODO: This should not have been accepted for IsMany!
-            var key = new PropertyKey(
+            var key = new PropertyKey( // Note that 
                 new PropertyKeyAttributeEnrichedDyn(
                     new PropertyKeyAttribute(
                         property: _enum,
@@ -221,29 +225,49 @@ namespace AgoRapide.Core {
                     (CoreP)GetNextCorePId()
                 )
             );
-            key.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
             if (!_enum.Equals(key.Key.PToString)) throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(_enum) + " (" + _enum + ") != " + nameof(key.Key.PToString) + " (" + key.Key.PToString + ")");
+
+            AddA(key);
+
+            strErrorResponse = null;
+            return true;
+        }
+
+        /// <summary>
+        /// TODO: Correct not thread safe use of <see cref="_cache"/> in <see cref="PropertyKeyMapper.AddA"/>
+        /// </summary>
+        /// <param name="key"></param>
+        [ClassMember(Description = "Adds -" + nameof(AggregationKey) + "- or attribute originating dynamically")]
+        public static void AddA(PropertyKey key) {
+            key.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
 
             // _allCoreP.Add(key); Not needed (and not thread-safe either)
             if (!_fromStringMaps.TryAdd(key.Key.PToString, key)) {
-                // This could just be a thread issue. In other words we could choose to just ignore this exception. 
-                // or we could instead just do 
-                //   _fromStringMaps[key.Key.PToString] = key;
-                throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + description);
+                switch (key) {
+                    case AggregationKey aggregationKey:
+                        /// We are been called from <see cref="AggregationKey.GetAggregationKey"/>, but key already exists. 
+                        /// This would typically happen if all possible combinations of aggregations are not registered at application startup
+                        /// resulting in <see cref="TryAddA"/> having already been called when unknown string was found in database, and then later (that is now), 
+                        /// we get a name collision when <see cref="AggregationKey.GetAggregationKey"/> is being called. 
+                        throw new PropertyKeyWithIndex.InvalidPropertyKeyException(
+                            nameof(key.Key.PToString) + " already exists for " + key.Key.ToString() + ".\r\n" +
+                            "Possible cause: Aggregation combination was not registered at application startup and there are properties already stored in database.");
+                    default:
+                        // This could just be a thread issue. In other words we could choose to just ignore this exception. 
+                        // or we could instead just do 
+                        //   _fromStringMaps[key.Key.PToString] = key;
+                        throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + key.Key.ToString());
+                }
             }
 
             /// TODO: NOT THREAD SAFE
             /// TODO: Correct this not thread safe use of <see cref="_cache"/> in <see cref="TryAddA"/>
             /// TODO: NOT THREAD SAFE
-            var dict = _cache.GetValue(typeof(CoreP));
-            dict[(int)key.Key.CoreP] = key;
+            _cache.GetValue(typeof(CoreP))[(int)key.Key.CoreP] = key;
 
             // TODO: STORE THIS IN DATABASE
             // TODO: THINK ABOUT THREAD ISSUES 
             // TODO: READ AT STARTUP!!! (Take into consideration later adding to C# code of _enum)
-
-            strErrorResponse = null;
-            return true;
         }
 
         public static bool TryGetA(string _enum, out PropertyKey key) => _fromStringMaps.TryGetValue(_enum, out key);

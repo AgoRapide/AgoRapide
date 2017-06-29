@@ -196,21 +196,28 @@ namespace AgoRapide.API {
                                          // TODO: Also create link to HTML version
                     retval.Append("The properties listed above are assumed to result in an " + ex.GetType() + " when attempting to call System.Web.Helpers.Json.Decode\r\n");
                     retval.Append("(the exception will most probably not occur if you ask for HTML-format instead of JSON-format in returned data)\r\n");
-                    retval.Append("Possible resolution: Set some properties no-longer-current so you end up with all identical lower case keys\r\n");
+                    retval.Append("Possible resolution: Do some " + nameof(PropertyOperation) + "." + nameof(PropertyOperation.SetInvalid) + " so you end up with all identical lower case keys\r\n");
                     return retval.ToString();
                 }
                 return "Unable to understand why " + ex.GetType() + " occurred";
             })(), ex) { }
         }
 
+        /// <summary>
+        /// TODO: Not in use as of June 2017
+        /// </summary>
+        /// <param name="other"></param>
         public void Include(Result other) {
             if (other.SingleEntityResult != null) throw new NotNullReferenceException(nameof(other.SingleEntityResult) + ". (" + other.SingleEntityResult.ToString() + ")");
             if (other.MultipleEntitiesResult != null) throw new NotNullReferenceException(nameof(other.MultipleEntitiesResult) + ". Count: " + other.MultipleEntitiesResult.Count);
             if (other.ResultCode > ResultCode) ResultCode = other.ResultCode;
-            other.Counts.ForEach(otherCount => SetCount(otherCount.Key, Counts.TryGetValue(otherCount.Key, out var myValue) ? myValue + otherCount.Value : otherCount.Value));
-            if (other.LogData.Length > 0) LogData.Append(other.LogData);
+            other.Properties.ForEach(o => {
+                switch (o.Value) {
+                    case PropertyCounter otherCount: Count(o.Key, otherCount.V<long>()); break;
+                    case PropertyLogger logger: Log(logger.V<string>()); break;
+                }
+            });
         }
-
 
         /// <summary>
         /// Extracts all distinct values 

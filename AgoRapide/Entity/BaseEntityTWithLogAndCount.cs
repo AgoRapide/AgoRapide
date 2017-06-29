@@ -2,14 +2,21 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.API;
+using AgoRapide.Database;
 
 namespace AgoRapide {
 
+    /// <summary>
+    /// TODO: This class has marginal value. 
+    /// TODO: Since all data is stored in the ordinary <see cref="BaseEntity.Properties"/>-collection 
+    /// TODO: we could just as well move all the methods here into <see cref="BaseEntity"/> and having this functionality available for all classes.
+    /// </summary>
     [Class(Description =
         "Extension on -" + nameof(BaseEntity) + "- with internal logging and counting of vital statistics.\r\n" +
         "Useful for:\r\n" +
@@ -23,184 +30,240 @@ namespace AgoRapide {
     )]
     public abstract class BaseEntityWithLogAndCount : BaseEntity {
 
-        public StringBuilder LogData = new StringBuilder();
+        public BaseEntityWithLogAndCount() => Properties = new Dictionary<CoreP, Property>(); // TODO: Initialize more deterministically for the different classes.
+        
         [ClassMember(Description = "In-memory only logging (often used for short-lived logging like with -" + nameof(Result) + "-).")]
-        public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogData.AppendLine(DateTime.Now.ToString(DateTimeFormat.DateHourMinSecMs) + ": " + callerType.ToStringShort() + "." + caller + ": " + text);
-
-        public Dictionary<CoreP, long> Counts = new Dictionary<CoreP, long>();
-        /// <summary>
-        /// TODO: Consider removing Counts-dictionary altogether. 
-        /// 
-        /// Use counts to keep track of different problems and general statistics
-        /// 
-        /// TODO: Consider if Counts can be implemented straight from Properties collection
-        /// TODO: At least, let the ToHTML-method transfer all counts to Properties collection
-        /// 
-        /// TODO: Consider adding IsCount to <see cref="PropertyKeyAttribute"/>. 
-        /// TODO: This could transfer <see cref="Counts"/> values to / from database automatically. 
-        /// </summary>
-        /// <param name="id"></param>
-        public void Count(CountP id) => Count(id.A().Key.CoreP);
-        public void Count(CoreP id) => Counts[id] = Counts.TryGetValue(id, out var count) ? ++count : 1;
-
-        public void SetCount(CountP id, long value) => SetCount(id.A().Key.CoreP, value);
-        public void SetCount(CoreP id, long value) => Counts[id] = value;
-
-        public long GetCount(CountP id) => GetCount(id.A().Key.CoreP);
-        public long GetCount(CoreP id) => TryGetCount(id, out var retval) ? retval : throw new CountNotFoundException(id);
-
-        public bool TryGetCount(CountP id, out long count) => TryGetCount(id.A().Key.CoreP, out count);
-        public bool TryGetCount(CoreP id, out long count) => Counts.TryGetValue(id, out count);
-
-        public class CountNotFoundException : ApplicationException {
-            public CountNotFoundException(CoreP id) : base(id.ToString()) { }
-        }
-
-        /// <summary>
-        /// Calls first <see cref="BaseEntity.ToHTMLDetailed"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        public override string ToHTMLDetailed(Request request) {
-            var retval = new StringBuilder();
-            retval.Append(base.ToHTMLDetailed(request));
-            if (LogData.Length == 0) {
-                // Do not bother with any of these
+        public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
+            text = DateTime.Now.ToString(DateTimeFormat.DateHourMinSecMs) + ": " + callerType.ToStringShort() + "." + caller + ": " + text;
+            if (!Properties.TryGetValue(CoreP.Log, out var p)) {
+                Properties.AddValue(CoreP.Log, new PropertyLogger(CoreP.Log.A().PropertyKeyWithIndex, initialValue: text));
             } else {
-                retval.AppendLine("<h1>" + nameof(LogInternal) + "</h1>");
-                retval.AppendLine("<p>" + LogData.ToString().HTMLEncode().Replace("\r\n", "<br>\r\n") + "</p>");
+                (p as PropertyLogger ?? throw new InvalidObjectTypeException(p, typeof(PropertyLogger))).Log(text + "\r\n");
             }
-            if (Counts.Count == 0) {
-                // Do not bother with any of these
+        }
+
+        public void Count(Type type, CountP id) => Count(AggregationKey.GetAggregationKey(AggregationType.Count, type, id.A()));
+        public void Count(PropertyKey id) => Count(id.Key.CoreP, 1);
+        public void Count(CoreP id, long increment) {
+            if (!Properties.TryGetValue(id, out var p)) {
+                Properties.AddValue(id, new PropertyCounter(id.A().PropertyKeyWithIndex, initialValue: increment));
             } else {
-                retval.AppendLine("<h1>" + nameof(Counts) + "</h1>");
-                retval.AppendLine("<table><tr><th>Key</th><th>Value</th></tr>");
-                retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => {
-                    var key = e.Key.A();
-                    return "<tr><td>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.WholeDescription) + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n";
-                })));
-                retval.AppendLine("</table>");
-            }
-            return retval.ToString();
-        }
-
-        public class AggregationKey : PropertyKey {
-            public AggregationKey() : base(null) {
-
-            }
-
-            public AggregationKey GetAggregationKey(Type entityType, PropertyKey key, AggregationType aggregationType) {
-                return null;
+                (p as PropertyCounter ?? throw new InvalidObjectTypeException(p, typeof(PropertyCounter))).Count(increment);
             }
         }
 
-        public enum AggregationType {
-            None,
-            Count,
-            Sum,
-            Min,
-            Max
-        }
+        //public class CountNotFoundException : ApplicationException {
+        //    public CountNotFoundException(CoreP id) : base(id.ToString()) { }
+        //}
 
-        /// <summary>
-        /// Calls first <see cref="BaseEntity.ToJSONEntity"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
-        /// </summary>
-        /// <returns></returns>
-        public override JSONEntity0 ToJSONEntity(Request request) {
-            var retval = base.ToJSONEntity(request) as JSONEntity1 ?? throw new InvalidObjectTypeException(base.ToJSONEntity(request), typeof(JSONEntity1), ToString());
-            if (LogData.Length == 0) {
-                // Do not bother with any of these
-            } else {
-                var p = CoreP.Log;
-                var key = p.A().Key.PToString;
-                if (retval.Properties.TryGetValue(key, out var existing)) {
-                    throw new KeyAlreadyExistsException<CoreP>(p,
-                        "Unable to add " + nameof(LogData) + "\r\n-------\r\n" + LogData.ToString() + "\r\n" +
-                        "-------Because of existing property\r\n-------\r\n" +
-                        ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + ". Details: " + ToString());
-                }
-                retval.Properties[key] = new JSONProperty0 { Value = LogData.ToString() };
-            }
-            if (Counts.Count == 0) {
-                // Do not bother with any of these
-            } else {
-                Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
-                    var key = c.Key.A().Key.PToString;
-                    if (retval.Properties.TryGetValue(key, out var existing)) {
-                        throw new KeyAlreadyExistsException<CoreP>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.A().Key.A.EnumValueExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
-                    }
-                    retval.Properties[key] = new JSONProperty0 { Value = c.Value.ToString() };
-                });
-            }
-            return retval;
-        }
+        ///// <summary>
+        ///// Calls first <see cref="BaseEntity.ToHTMLDetailed"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
+        ///// </summary>
+        ///// <param name="request"></param>
+        ///// <returns></returns>
+        //public override string ToHTMLDetailed(Request request) {
+        //    var retval = new StringBuilder();
+        //    retval.Append(base.ToHTMLDetailed(request));
+        //    if (LogData.Length == 0) {
+        //        // Do not bother with any of these
+        //    } else {
+        //        retval.AppendLine("<h1>" + nameof(LogInternal) + "</h1>");
+        //        retval.AppendLine("<p>" + LogData.ToString().HTMLEncode().Replace("\r\n", "<br>\r\n") + "</p>");
+        //    }
+        //    //if (Counts.Count == 0) {
+        //    //    // Do not bother with any of these
+        //    //} else {
+        //    //    retval.AppendLine("<h1>" + nameof(Counts) + "</h1>");
+        //    //    retval.AppendLine("<table><tr><th>Key</th><th>Value</th></tr>");
+        //    //    retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => {
+        //    //        var key = e.Key.A();
+        //    //        return "<tr><td>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.WholeDescription) + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n";
+        //    //    })));
+        //    //    retval.AppendLine("</table>");
+        //    //}
+        //    return retval.ToString();
+        //}
+
+        ///// <summary>
+        ///// Calls first <see cref="BaseEntity.ToJSONEntity"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
+        ///// </summary>
+        ///// <returns></returns>
+        //public override JSONEntity0 ToJSONEntity(Request request) {
+        //    var retval = base.ToJSONEntity(request) as JSONEntity1 ?? throw new InvalidObjectTypeException(base.ToJSONEntity(request), typeof(JSONEntity1), ToString());
+        //    if (LogData.Length == 0) {
+        //        // Do not bother with any of these
+        //    } else {
+        //        var p = CoreP.Log;
+        //        var key = p.A().Key.PToString;
+        //        if (retval.Properties.TryGetValue(key, out var existing)) {
+        //            throw new KeyAlreadyExistsException<CoreP>(p,
+        //                "Unable to add " + nameof(LogData) + "\r\n-------\r\n" + LogData.ToString() + "\r\n" +
+        //                "-------Because of existing property\r\n-------\r\n" +
+        //                ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + ". Details: " + ToString());
+        //        }
+        //        retval.Properties[key] = new JSONProperty0 { Value = LogData.ToString() };
+        //    }
+        //    //if (Counts.Count == 0) {
+        //    //    // Do not bother with any of these
+        //    //} else {
+        //    //    Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
+        //    //        var key = c.Key.A().Key.PToString;
+        //    //        if (retval.Properties.TryGetValue(key, out var existing)) {
+        //    //            throw new KeyAlreadyExistsException<CoreP>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.A().Key.A.EnumValueExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
+        //    //        }
+        //    //        retval.Properties[key] = new JSONProperty0 { Value = c.Value.ToString() };
+        //    //    });
+        //    //}
+        //    return retval;
+        //}
     }
 
     /// <summary>
     /// Note that you are not limited to using only <see cref="CountP"/>-values in you application. 
-    /// <see cref="BaseEntityWithLogAndCount.Count"/> operates on any <see cref="EnumType"/>. 
+    /// <see cref="BaseEntityWithLogAndCount.Count"/> operates on any <see cref="EnumType.PropertyKey"/>. 
+    /// 
+    /// Note that although you can use these enum values directly, they are usually used within a <see cref="AggregationKey"/> in order to 
+    /// specify entity type and <see cref="AggregationType"/>. 
     /// </summary>
     [Enum(AgoRapideEnumType = EnumType.PropertyKey)]
     public enum CountP {
-        [PropertyKey(
-            Description = "New properties created.",
-            Type = typeof(long))]
-        PCreatedCount,
+
+        None,
+
+        // TODO: Clean up in the use of values here.
 
         [PropertyKey(
-            Description = "New entities created.",
+            Description = "Entities created",
+            AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        ECreatedCount,
+        Created,
 
         [PropertyKey(
-            Description = "Properties removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
+            Description = "Entities still valid (usually in connection with -" + nameof(PropertyOperation.SetValid) + "-).",
+            AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        PSetInvalidCount,
+        StillValid,
 
         [PropertyKey(
-            Description = "Entities removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
+            Description = "Entities changed (usually in connection with -" + nameof(BaseDatabase.UpdateProperty) + "-).",
+            AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        ESetInvalidCount,
+        Changed,
 
         [PropertyKey(
-            Description = "Count of all properties considered.",
+            Description = "Entities set invalid (usually in connection with -" + nameof(PropertyOperation.SetInvalid) + "-).",
+            AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        PTotalCount,
+        SetInvalid,
 
         [PropertyKey(
-            Description = "Count of all entities considered.",
+            Description = "Entities affected (usually in connection with -" + nameof(PropertyOperation) + "-).",
+            AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        ETotalCount,
+        Affected,
 
         [PropertyKey(
-            Description = "Properties affected (as result of some database operation like INSERT, DELETE or UPDATE).",
+            Description = "Total entities considered.",
+            AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        PAffectedCount,
+        Total,
 
-        [PropertyKey(
-            Description = "Changed properties.",
-            Type = typeof(long))]
-        PChangedCount,
+        //// ================================================
+        //// TODO: DELETE ALL PROPERTIES BELOW:
+        //// ================================================
 
-        [PropertyKey(
-            Description = "Unchanged properties.",
-            Type = typeof(long))]
-        PUnchangedCount,
+        //[PropertyKey(
+        //    Description = "New properties created.",
+        //    Type = typeof(long))]
+        //PCreatedCount,
+
+        //[PropertyKey(
+        //    Description = "New entities created.",
+        //    Type = typeof(long))]
+        //ECreatedCount,
+
+        //[PropertyKey(
+        //    Description = "Properties removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
+        //    Type = typeof(long))]
+        //PSetInvalidCount,
+
+        //[PropertyKey(
+        //    Description = "Entities removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
+        //    Type = typeof(long))]
+        //ESetInvalidCount,
+
+        //[PropertyKey(
+        //    Description = "Count of all properties considered.",
+        //    Type = typeof(long))]
+        //PTotalCount,
+
+        //[PropertyKey(
+        //    Description = "Count of all entities considered.",
+        //    Type = typeof(long))]
+        //ETotalCount,
+
+        //[PropertyKey(
+        //    Description = "Properties affected (as result of some database operation like INSERT, DELETE or UPDATE).",
+        //    Type = typeof(long))]
+        //PAffectedCount,
+
+        //[PropertyKey(
+        //    Description = "Changed properties.",
+        //    Type = typeof(long))]
+        //PChangedCount,
+
+        //[PropertyKey(
+        //    Description = "Unchanged properties.",
+        //    Type = typeof(long))]
+        //PUnchangedCount,
     }
 
     public static class ExtensionsCountP {
         public static PropertyKey A(this CountP p) => PropertyKeyMapper.GetA(p);
     }
 
-    ///// <summary>
-    ///// See <see cref="BaseEntity.ToJSONEntity"/>
-    ///// 
-    ///// Simpler version of a <see cref="BaseEntity"/>-class, more suited for transfer to client as JSON-data.
-    ///// 
-    ///// Extend this class as needed. For examples see xxxx
-    ///// </summary>
-    //public class JSONEntityWithLogAndCount {
-    //    public Dictionary<string, JSONProperty1> Properties { get; set; }
-    //    public long Id { get; set; }
-    //}
+    /// <summary>
+    /// TODO: Move to separate file
+    /// 
+    /// Two examples of aggregation:
+    /// 1) <see cref="AggregationType.Sum"/>, <see cref="Person"/>, Salary. 
+    ///    Used for instance for a given <see cref="Context"/>, giving statistics about the data seen.
+    /// 2) <see cref="AggregationType.Count"/>, <see cref="Person"/>, <see cref="CountP.Created"/>
+    ///    Typically used for communicating result of API call to client. 
+    /// </summary>
+    public class AggregationKey : PropertyKey {
+        public AggregationKey(PropertyKeyAttributeEnriched key) : base(key) { }
+
+        private static ConcurrentDictionary<string, AggregationKey> _aggregations = new ConcurrentDictionary<string, AggregationKey>();
+
+        public static AggregationKey GetAggregationKey(AggregationType aggregationType, Type entityType, PropertyKey property) => _aggregations.GetOrAdd(
+            aggregationType + "_" + entityType.ToStringVeryShort() + "_" + property.Key.PToString, key => {
+                var retval = new AggregationKey( /// Note that ideally this should only happen at application startup (<see cref="PropertyKeyMapper.MapEnum{T}"/> / <see cref="Startup.Initialize{TPerson}"/>)
+                    new PropertyKeyAttributeEnrichedDyn(
+                        new PropertyKeyAttribute(
+                            property: key,
+                            description: "-" + aggregationType + "- for -" + entityType.ToStringVeryShort() + "- -" + property.Key.PToString + "-",
+                            longDescription: "",
+                            isMany: false
+                        ) {
+                            Type = typeof(long) /// TODO: Maybe allow double also for aggregations?
+                        },
+                        (CoreP)PropertyKeyMapper.GetNextCorePId()
+                    )
+                );
+                PropertyKeyMapper.AddA(retval);
+                return retval;
+            });
+    }
+
+    /// <summary>
+    /// TODO: Move to separate file
+    /// </summary>
+    public enum AggregationType {
+        None,
+        Count,
+        Sum,
+        Min,
+        Max
+    }
 }

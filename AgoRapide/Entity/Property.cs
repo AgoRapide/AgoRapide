@@ -52,7 +52,10 @@ namespace AgoRapide {
     ///    TODO: Make a class called PropertyTemplate instead of using <see cref="IsTemplateOnly" />
     ///    TODO: Make a class called PropertyIsManyParent instead of using <see cref="IsIsManyParent" />
     /// 
-    /// Subclass: <see cref="PropertyT{T}"/>
+    /// Subclasses: 
+    /// <see cref="PropertyT{T}"/>
+    /// <see cref="PropertyCounter"/>
+    /// <see cref="PropertyLogger"/>
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
     /// <see cref="BaseDatabase.TryGetEntities{T}"/> 
@@ -222,7 +225,7 @@ namespace AgoRapide {
 
         /// <summary>
         /// Dummy constructor for internal use in order to being able to disable parameterless constructor above. 
-        /// Used by <see cref="CreateTemplate"/> and <see cref="CreateIsManyParent"/> and by <see cref="PropertyT{T}"/>
+        /// Used by <see cref="CreateTemplate"/>, <see cref="CreateIsManyParent"/>, <see cref="PropertyT{T}"/>, <see cref="PropertyCounter"/>, <see cref="PropertyLogger"/>
         /// </summary>
         /// <param name="dummy"></param>
         protected Property(object dummy) {
@@ -445,6 +448,16 @@ namespace AgoRapide {
                 }
             } else {
                 if (typeof(string).Equals(t)) {
+                    if (_stringValue == null) {
+                        switch (_value) {
+                            case StringBuilder stringBuilder: /// HACK: Usually because we are a <see cref="PropertyLogger"/>
+                                value = (T)(object)(stringBuilder.ToString());
+                                return true;
+                            case long lng: /// HACK: Usually because we are a <see cref="PropertyCounter"/>
+                                value = (T)(object)(lng.ToString());
+                                return true;
+                        }
+                    }
                     value = (T)(object)(_stringValue ?? throw new NullReferenceException(nameof(_stringValue) + ". Details: " + ToString()));
                     return true;
                 }

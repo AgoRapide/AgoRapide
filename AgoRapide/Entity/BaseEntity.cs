@@ -129,6 +129,8 @@ namespace AgoRapide {
         /// 
         /// Note how <see cref="PropertyKeyAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="PropertyKeyAttribute.IsMany"/>-parent and
         /// the different properties as properties under that again with dictionary index equal to <see cref="int.MaxValue"/> minus index
+        /// 
+        // TODO: Initialize more deterministically for the different classes.
         /// </summary>
         public Dictionary<CoreP, Property> Properties { get; set; }
 
@@ -340,18 +342,18 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Note: You can safely use "public override string" for both 
-        /// Note: <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
-        /// Note: since <see cref="Result.ToHTMLDetailed"/> will use separate tables for each type found.
+        /// Note: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// 
+        /// TODO: Try to generate heading and row automatically based on enum-information. 
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
 
         /// <summary>
-        /// Note: You can safely use "public override string" for both 
-        /// Note: <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
-        /// Note: since <see cref="Result.ToHTMLDetailed"/> will use separate tables for each type found.
+        /// Note: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// 
+        /// TODO: Try to generate heading and row automatically based on enum-information. 
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>

@@ -202,10 +202,11 @@ namespace AgoRapide.API {
             var persons = DB.GetRootPropertyIds(typeof(TPerson));  // TODO: This is costly! Check in a less costly manner!
                                                                    // TODO: If client has forgot admin credentials, give instructions for recovery. Like sending e-mail, deleting
                                                                    // TODO: password from database or deleting all properties for admin-user.
+            if (persons.Count == 0) throw new InvalidCountException("No persons found, not even the anonymous user");
             var au = Util.Configuration.C.AnonymousUser;
             InvalidTypeException.AssertEquals(au.GetType(), typeof(TPerson), () => nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly. Must correspond with call to " + nameof(Startup.Initialize));
             if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "Admin user already exists. There is no need for calling this method.");
-            if (persons[0] != au.Id) throw new Exception(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
+            if (persons[0] != au.Id) throw new ApplicationException(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
             request.Parameters.AddProperty(CoreP.AccessLevelGiven.A(), AccessLevel.Admin);
             request.Result.LogInternal("Note how this API-method gives you a high level of details in the generated result because -" + nameof(APIMethodAttribute) + "." + nameof(APIMethodAttribute.ShowDetailedResult) + "- = true", GetType());
             return request.GetOKResponseAsEntityId(typeof(TPerson), DB.CreateEntity<TPerson>(GetId(MethodBase.GetCurrentMethod()), request.Parameters, request.Result), null);
@@ -396,7 +397,7 @@ namespace AgoRapide.API {
                 ));
             });
 
-            
+
             if (request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var contextParent)) { // Suggest removal of context properties
                 request.Result.MultipleEntitiesResult.AddRange(contextParent.Properties.Values.Select(p => (BaseEntity)new GeneralQueryResult(
                      request.API.CreateAPIUrl(
@@ -409,7 +410,7 @@ namespace AgoRapide.API {
                 )));
             }
 
-            retval.ForEach(type => { 
+            retval.ForEach(type => {
                 request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( // All entities of this type (repeated from above)
                     request.API.CreateAPIUrl(
                         CoreAPIMethod.EntityIndex,
