@@ -130,36 +130,54 @@ namespace AgoRapide.Database {
                     return true;
             }
 
-            Npgsql.NpgsqlCommand cmd;
-            if (id.IsAll) {
-                cmd = new Npgsql.NpgsqlCommand(
-                    "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "' AND\r\n" +
-                    DBField.invalid + " IS NULL "
-                    // + "ORDER BY " + DBField.id
-                    , _cn1
-                );
-            } else {
-                cmd = new Npgsql.NpgsqlCommand(
-                    "SELECT DISTINCT(pid) FROM " + _tableName + " WHERE\r\n" +
+            List<BaseEntity> allEntities;
+
+            switch (requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None) {
+                case CacheUse.All:
+                    switch (id) {
+                        case QueryIdKeyOperatorValue keyOperatorValue: /// TODO: Move code into <see cref="InMemoryCache"/>
+                            allEntities = InMemoryCache.EntityCache.Values.Where(e => {
+                                if (requiredType != null && !requiredType.IsAssignableFrom(e.GetType())) return false;
+                                return keyOperatorValue.ToPredicate(e);
+                            }).ToList(); break;
+                        default:
+                            throw new InvalidObjectTypeException(id);
+                    }
+                    break;
+                default: // Lookup in database 
+                    Npgsql.NpgsqlCommand cmd;
+                    if (id.IsAll) {
+                        cmd = new Npgsql.NpgsqlCommand(
+                            "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "' AND\r\n" +
+                            DBField.invalid + " IS NULL "
+                            // + "ORDER BY " + DBField.id
+                            , _cn1
+                        );
+                    } else {
+                        cmd = new Npgsql.NpgsqlCommand(
+                            "SELECT DISTINCT(pid) FROM " + _tableName + " WHERE\r\n" +
                     /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all known sub-classes.
                     DBField.pid + " IN\r\n" +
-                    "(SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
-                    (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
-                    DBField.invalid + " IS NULL "
-                    // + "ORDER BY " + DBField.id
-                    , _cn1
-                );
-                AddIdParameters(id, cmd);
+                            "(SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
+                            (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
+                            DBField.invalid + " IS NULL "
+                            // + "ORDER BY " + DBField.id
+                            , _cn1
+                        );
+                        AddIdParameters(id, cmd);
+                    }
+
+                    if (requiredType.Equals(typeof(BaseEntity))) throw new InvalidTypeException(requiredType, "Meaningless value because the query\r\n\r\n" + cmd.CommandText + "\r\n\r\nwill never return anything");
+
+                    // Log(cmd.CommandText);
+
+                    /// TODO: This has room for improvement. 
+                    /// TODO: Note that at least two separate queries will be executed for each and every entity in <see cref="GetEntityById"/>
+                    /// TODO: Improve by reading all properties in one go, and populating entities based on this.
+                    allEntities = ReadAllIds(cmd).Select(pid => GetEntityById(pid, requiredType)).ToList();
+                    break;
             }
 
-            if (requiredType.Equals(typeof(BaseEntity))) throw new InvalidTypeException(requiredType, "Meaningless value because the query\r\n\r\n" + cmd.CommandText + "\r\n\r\nwill never return anything");
-
-            // Log(cmd.CommandText);
-
-            /// TODO: This has room for improvement. 
-            /// TODO: Note that at least two separate queries will be executed for each and every entity in <see cref="GetEntityById"/>
-            /// TODO: Improve by reading all properties in one go, and populating entities based on this.
-            var allEntities = ReadAllIds(cmd).Select(pid => GetEntityById(pid, requiredType)).ToList();
             Log(nameof(allEntities) + ".Count: " + allEntities.Count);
             id.AssertCountFound(allEntities.Count);
             var lastAccessErrorResponse = "";
@@ -341,6 +359,9 @@ namespace AgoRapide.Database {
             });
             retval.Properties.AddValue(CoreP.RootProperty, root);
             retval.AddProperty(CoreP.DBId.A(), id);
+            switch (retval) {
+                case IStaticProperties s: s.GetStaticProperties().ForEach(p => retval.Properties.AddValue(p.Key, p.Value)); break;
+            }
 
             if (useCacheDynamically) InMemoryCache.EntityCache[id] = retval; // Note how entity itself is stored in cache, not root-property
             entity = retval;
@@ -424,7 +445,7 @@ namespace AgoRapide.Database {
 
         public override List<long> GetRootPropertyIds(Type type) {
             Log(nameof(type) + ": " + type.ToStringShort()); /// Note how this code does not use <see cref="InMemoryCache"/> in any manner
-            var cmd = new Npgsql.NpgsqlCommand( 
+            var cmd = new Npgsql.NpgsqlCommand(
                 "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " +
                 DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
                 DBField.strv + " = '" + type.ToStringDB() + "' AND " +

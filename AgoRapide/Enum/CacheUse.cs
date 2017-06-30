@@ -26,9 +26,9 @@ namespace AgoRapide {
 
         [EnumValue(Description = 
             "All instances to be cached (usually at application startup). " + 
-            "Use when limited number of elements exists or when performance is critical. " + 
+            "Use when limited number of elements exists or when performance is critical. " +     
             "Obligatory when using -" + nameof(FileCache) + "-. " +
-            "Queries will always go through -" + nameof(InMemoryCache) + "-")]
+            "Queries will always go through -" + nameof(InMemoryCache) + "- (-" + nameof(All) + "- signifies that entity is probably not stored i database at all).")]
         All
     }
 }

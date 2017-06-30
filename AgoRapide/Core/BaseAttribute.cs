@@ -151,45 +151,26 @@ namespace AgoRapide.Core {
             return new T { IsDefault = true };
         }
 
-        private Property _propertiesParent;
-        /// <summary>
-        /// Serves the purpose of getting access to <see cref="BaseEntity.AddProperty{T}"/> for the purpose of generating the 
-        /// collection accessed through <see cref="Properties"/>
-        /// 
-        /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
-        /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
-        /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
-        /// 
-        /// NOTE: IMPORTANT. 
-        /// NOTE: IMPORTANT. Do not attempt to eliminate <see cref="_propertiesParent"/> and shorten this to = new Property ... 
-        /// NOTE> IMPORTANT. because then you will get type initializer exception at application startup because
-        /// NOTE: IMPORTANT: <see cref="PropertyKeyMapper.MapEnum{T}"/> will not have been called yet in application lifetime for <see cref="CoreP"/>. 
-        /// NOTE: IMPORTANT: In other words you will trip a chicken-and-egg trap
-        /// NOTE: IMPORTANT. 
-        /// </summary>
-        protected Property PropertiesParent => _propertiesParent ?? (_propertiesParent = new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, ""));
         private Dictionary<CoreP, Property> _properties;
         /// <summary>
         /// Returns a <see cref="BaseEntity.Properties"/> collection based on properties of this instance.
         /// </summary>
         public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
             var retval = GetProperties();
-            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
-            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
-            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
-            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            var p = Util.GetNewPropertiesParent();
+
             Func<string> d = () => ToString();
 
-            PropertiesParent.AddProperty(CoreP.QueryId.A(), Id.IdString, d);
-            PropertiesParent.AddProperty(CoreP.IdFriendly.A(), Id.IdFriendly, d);
-            PropertiesParent.AddProperty(CoreP.IdDoc.A(), Id.IdDoc, d);
-            if (Id.Parent != null) PropertiesParent.AddProperty(CoreP.QueryIdParent.A(), Id.Parent, d);
+            p.AddProperty(CoreP.QueryId.A(), Id.IdString, d);
+            p.AddProperty(CoreP.IdFriendly.A(), Id.IdFriendly, d);
+            p.AddProperty(CoreP.IdDoc.A(), Id.IdDoc, d);
+            if (Id.Parent != null) p.AddProperty(CoreP.QueryIdParent.A(), Id.Parent, d);
 
-            PropertiesParent.AddProperty(CoreP.Description.A(), Description + "", Description + "", GetType().GetClassMemberAttribute(nameof(Description)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
-            PropertiesParent.AddProperty(CoreP.LongDescription.A(), LongDescription + "", LongDescription + "", GetType().GetClassMemberAttribute(nameof(LongDescription)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            p.AddProperty(CoreP.Description.A(), Description + "", Description + "", GetType().GetClassMemberAttribute(nameof(Description)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
+            p.AddProperty(CoreP.LongDescription.A(), LongDescription + "", LongDescription + "", GetType().GetClassMemberAttribute(nameof(LongDescription)), d); // (TODO: Implement mechanism for setting no-longer-current of existing property instead (when this value becomes null))
 
-            PropertiesParent.Properties.ForEach(p => {
-                retval.AddValue2(p.Key, p.Value, d);
+            p.Properties.ForEach(e => {
+                retval.AddValue2(e.Key, e.Value, d);
             });
             return retval;
         })());

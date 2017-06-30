@@ -34,11 +34,11 @@ namespace AgoRapide {
         
         [ClassMember(Description = "In-memory only logging (often used for short-lived logging like with -" + nameof(Result) + "-).")]
         public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
-            text = DateTime.Now.ToString(DateTimeFormat.DateHourMinSecMs) + ": " + callerType.ToStringShort() + "." + caller + ": " + text;
+            text = DateTime.Now.ToString(DateTimeFormat.DateHourMinSecMs) + ": " + callerType.ToStringShort() + "." + caller + ": " + text + "\r\n";
             if (!Properties.TryGetValue(CoreP.Log, out var p)) {
                 Properties.AddValue(CoreP.Log, new PropertyLogger(CoreP.Log.A().PropertyKeyWithIndex, initialValue: text));
             } else {
-                (p as PropertyLogger ?? throw new InvalidObjectTypeException(p, typeof(PropertyLogger))).Log(text + "\r\n");
+                (p as PropertyLogger ?? throw new InvalidObjectTypeException(p, typeof(PropertyLogger))).Log(text);
             }
         }
 

@@ -302,26 +302,23 @@ namespace AgoRapide.Core {
         }
 
         protected override Dictionary<CoreP, Property> GetProperties() {
-            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
-            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
-            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
-            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            var p = Util.GetNewPropertiesParent();
             Func<string> d = () => ToString();
 
             /// Note how we are not adding None-values since they will be considered invalid at later reading from database.
             /// Note how string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) are easily deduced by <see cref="PropertyT{T}"/> in this case so we do not need to add those as parameters here.
-            if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment);
+            if (Environment != Environment.None) p.AddProperty(CoreP.Environment.A(), Environment);
 
             /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
-            PropertiesParent.AddProperty(ConfigurationP.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)), d);
-            PropertiesParent.AddProperty(ConfigurationP.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)), d);
-            PropertiesParent.AddProperty(ConfigurationP.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)), d);
-            PropertiesParent.AddProperty(ConfigurationP.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)), d);
+            p.AddProperty(ConfigurationP.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)), d);
+            p.AddProperty(ConfigurationP.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)), d);
+            p.AddProperty(ConfigurationP.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)), d);
+            p.AddProperty(ConfigurationP.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)), d);
 
-            PropertiesParent.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
+            p.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
             /// TODO: Add more values to this list. Expand <see cref="ConfigurationP"/> as needed.
 
-            return PropertiesParent.Properties;
+            return p.Properties;
         }
 
         public override string ToString() => base.ToString();

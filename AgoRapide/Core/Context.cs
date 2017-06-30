@@ -14,7 +14,7 @@ namespace AgoRapide.Core {
         Description = 
             "Building block for drill down functionality and AgoRapide query language. " +
             "Consists of -" + nameof(AgoRapide.SetOperator) + "-, Type and a -" + nameof(AgoRapide.Core.QueryId) + "-. " +
-            "Typical value: \"Intersect;Person;WHERE department = 'East'\"."
+            "Typical value: \"Intersect;Person;WHERE Department = 'East'\"."
     )]
     public class Context : ITypeDescriber, IEquatable<Context> {
 
@@ -162,6 +162,7 @@ namespace AgoRapide.Core {
             }
             return retval;
         }
+
         public static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?

@@ -74,24 +74,20 @@ namespace AgoRapide.API {
         public string SuggestedNextMethod { get; set; }
 
         protected override Dictionary<CoreP, Property> GetProperties() {
-            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
-            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
-            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
-            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            var p = Util.GetNewPropertiesParent();
             Func<string> d = () => ToString();
-
             /// Note how we are not adding None-values since they will be considered invalid at later reading from database.
             /// Note how string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) are easily deduced by <see cref="PropertyT{T}"/> in this case so we do not need to add those as parameters here.
-            if (CoreMethod != CoreAPIMethod.None) PropertiesParent.AddProperty(APIMethodP.CoreAPIMethod.A(), CoreMethod, d);
-            if (AccessLevelUse != AccessLevel.None) PropertiesParent.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse, d);
-            if (Environment != Environment.None) PropertiesParent.AddProperty(CoreP.Environment.A(), Environment, d);
+            if (CoreMethod != CoreAPIMethod.None) p.AddProperty(APIMethodP.CoreAPIMethod.A(), CoreMethod, d);
+            if (AccessLevelUse != AccessLevel.None) p.AddProperty(CoreP.AccessLevelUse.A(), AccessLevelUse, d);
+            if (Environment != Environment.None) p.AddProperty(CoreP.Environment.A(), Environment, d);
 
             /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
-            PropertiesParent.AddProperty(APIMethodP.ShowDetailedResult.A(), ShowDetailedResult, ShowDetailedResult.ToString(), GetType().GetClassMemberAttribute(nameof(ShowDetailedResult)), d);
+            p.AddProperty(APIMethodP.ShowDetailedResult.A(), ShowDetailedResult, ShowDetailedResult.ToString(), GetType().GetClassMemberAttribute(nameof(ShowDetailedResult)), d);
 
-            PropertiesParent.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
+            p.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
             /// TODO: Add more values to this list. Expand <see cref="ConfigurationKey"/> as needed.
-            return PropertiesParent.Properties;
+            return p.Properties;
         }
 
         /// <summary>

@@ -63,13 +63,8 @@ namespace AgoRapide {
             Type = typeof(Type), Parents = new Type[] { typeof(BaseEntity) }, CanHaveChildren = true)]
         RootProperty,
 
-        /// <summary>
-        /// General type of entity.
-        /// 
-        /// Added to <see cref="BaseEntity.Properties"/> by <see cref="BaseDatabase.TryGetEntityById"/>
-        /// </summary>
         [PropertyKey(
-            Description = "Corresponds to C# / .NET Type-object.",
+            Description = "Corresponds to a -" + nameof(BaseEntity) + "--derived type.",
             Type = typeof(Type), Parents = new Type[] { typeof(APIMethod) })]
         EntityType,
 

@@ -205,7 +205,7 @@ namespace AgoRapide.API {
             if (persons.Count == 0) throw new InvalidCountException("No persons found, not even the anonymous user");
             var au = Util.Configuration.C.AnonymousUser;
             InvalidTypeException.AssertEquals(au.GetType(), typeof(TPerson), () => nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly. Must correspond with call to " + nameof(Startup.Initialize));
-            if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "Admin user already exists. There is no need for calling this method.");
+            if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "An admin user already exists. There is no need for calling this method.");
             if (persons[0] != au.Id) throw new ApplicationException(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
             request.Parameters.AddProperty(CoreP.AccessLevelGiven.A(), AccessLevel.Admin);
             request.Result.LogInternal("Note how this API-method gives you a high level of details in the generated result because -" + nameof(APIMethodAttribute) + "." + nameof(APIMethodAttribute.ShowDetailedResult) + "- = true", GetType());

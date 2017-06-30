@@ -500,6 +500,11 @@ namespace AgoRapide.Core {
             return retval;
         }
 
+        [ClassMember(Description =
+            "Returns an object that can contain -" + nameof(BaseEntity.Properties) + "-." +
+            "Serves the purpose of getting access to -" + nameof(BaseEntity.AddProperty) + "- in order to generate a properties collection.")]
+        public static BaseEntity GetNewPropertiesParent() => new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, "");
+
         /// <summary>
         /// Exists in order to facilitate placement of breakpoints in expressions in addition to statements
         /// 

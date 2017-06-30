@@ -89,7 +89,7 @@ namespace AgoRapide.Database {
         }
 
         /// <summary>
-        /// Return value false means that <see cref="Synchronize{T}"/> has to be called. 
+        /// Return value false means that <see cref="BaseSynchronizer.Synchronize{T}"/> has to be called. 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entitiesFromDatabase">
@@ -98,7 +98,7 @@ namespace AgoRapide.Database {
         [ClassMember(Description =
             "Called at application startup. " +
             "Enriches the entities with -" + nameof(PropertyKeyAttribute.IsExternal) + "- as found on disk")]
-        public bool TryEnrichFromDisk<T>(Dictionary<long, T> entitiesFromDatabase) where T : BaseEntity, new() {
+        public bool TryEnrichFromDisk<T>(BaseDatabase db) where T : BaseEntity, new() {
             var type = typeof(T);
             Log(nameof(T) + ": " + type);
             var filepath = GetFilePath(type);
@@ -112,6 +112,7 @@ namespace AgoRapide.Database {
             var propertiesOrder = GetProperties(type);
             var resolution = "\r\n\r\nPossible resolution: Delete file " + filepath;
             var recordNo = -1;
+            Dictionary<long, T> entitiesFromDatabase = null;
             foreach (var r in recordsFromDisk) {
                 if (((recordNo++) % 100) == 0) Log(nameof(recordNo) + ": " + recordNo + " of " + recordsFromDisk.Count);
 
@@ -124,6 +125,7 @@ namespace AgoRapide.Database {
                             GetFingerprint(type));
                         return false;
                     }
+                    entitiesFromDatabase = db.GetAllEntities<T>().ToDictionary(e => e.Id, e => e);
                     first = false;
                     continue;
                 }
@@ -156,7 +158,7 @@ namespace AgoRapide.Database {
             public InvalidFileException(string filename, string record, PropertyKey key, string valueFound, string details) : base(
                 "Invalid " + nameof(valueFound) + " '" + valueFound + "' as " + key.Key.PToString + " found in " + nameof(record) + "\r\n" + record + "\r\n" +
                 nameof(details) + " : " + details + "\r\n" +
-                "Possible resolution: Delete file " + filename) { }
+                "Possible resolution: Delete file " + filename + " and restart application") { }
             public InvalidFileException(string message) : base(message) { }
             public InvalidFileException(string message, Exception inner) : base(message, inner) { }
         }

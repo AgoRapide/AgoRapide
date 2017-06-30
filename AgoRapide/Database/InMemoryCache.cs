@@ -28,27 +28,28 @@ namespace AgoRapide.Database {
         public static readonly InMemoryCache instance = new InMemoryCache(); /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. Apart from this need for logging the class could have just been made static instead.
 
         /// <summary>
-        /// Cache as relevant for <see cref="CacheUse.Dynamic"/> and <see cref="CacheUse.All"/>
-        /// 
         /// Also used directly by methods such as <see cref="Extensions.AsEntityName(long)"/>
         /// 
+        /// ===============================
         /// TODO: Improve on this situation.
         /// TODO: Make the cache foolproof, that is, ensure that it always returns correct information. 
+        /// ===============================
         /// As of May 2017 the cache is not guaranteed to be 100% correct.
         /// In general the cache should therefore mostly be used for nice-to-have functionality, like showing names instead
         /// of ids in HTML interface without any performance hits. 
         /// The system does however make a "best effort" attempt at keeping the cache up-to-date
         /// and invalidating known no-longer-valid  entries
+        /// ===============================
         /// 
         /// Note subtle point about the entity being stored in the cache, not the root-property 
         /// (in other words, entity root properties (<see cref="CoreP.RootProperty"/>) are not found in cache itself)
         /// </summary>
+        [ClassMember(Description = "Cache as relevant for -" + nameof(CacheUse.Dynamic) + "- and -" + nameof(CacheUse.All) + "-.")]
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
         /// </summary>
         public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
-
     }
 }

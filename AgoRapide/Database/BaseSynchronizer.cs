@@ -105,7 +105,7 @@ namespace AgoRapide.Database {
             });
             SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.Created.A()), newCount, result, db);
             internalEntitiesByPrimaryKey.ForEach(e => { // Remove any internal entities left.
-                db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid,result);
+                db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid, result);
                 if (InMemoryCache.EntityCache.ContainsKey(e.Value.Id)) InMemoryCache.EntityCache.TryRemove(e.Value.Id, out _);
             });
             SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
@@ -125,11 +125,11 @@ namespace AgoRapide.Database {
             AccessLevelRead = AccessLevel.Relation,
             AccessLevelWrite = AccessLevel.Relation
         )]
-        UseMockData,
+        SynchronizerUseMockData,
 
         [PropertyKey(
             Description =
-                "Size of data set to be used for -" + nameof(UseMockData) + "-. " +
+                "Size of data set to be used for -" + nameof(SynchronizerUseMockData) + "-. " +
                 "It is up to the implementation to interpret the value, typically as a -" + nameof(Percentile.Tertile) + "-",
             Type = typeof(Percentile),
             SampleValues = new string[] { "1P", "5P", "25P", "50P", "75P", "100P" },
@@ -137,7 +137,32 @@ namespace AgoRapide.Database {
             AccessLevelRead = AccessLevel.Relation,
             AccessLevelWrite = AccessLevel.Relation
         )]
-        MockSize,
+        SynchronizerMockSize,
+
+        [PropertyKey(
+            Description = "-" + nameof(BaseEntity) + "--derived types that this synchronizer supports.",
+            Type = typeof(Type),
+            IsMany = true,
+            Parents = new Type[] { typeof(BaseSynchronizer) },
+            AccessLevelRead = AccessLevel.Relation
+        )]
+        SynchronizerExternalType,
+
+        [PropertyKey(
+            Description = "Last update against source.",
+            Type = typeof(DateTime), DateTimeFormat =DateTimeFormat.DateHourMin,
+            Parents = new Type[] { typeof(BaseSynchronizer) },
+            AccessLevelRead = AccessLevel.Relation
+        )]
+        SynchronizerLastUpdateAgainstSource,
+
+        [PropertyKey(
+            Description = "TRUE if actual data has been read into -" + nameof(InMemoryCache) + "- after application startup.",
+            Type = typeof(bool),
+            Parents = new Type[] { typeof(BaseSynchronizer) },
+            AccessLevelRead = AccessLevel.Relation
+        )]
+        SynchronizerDataHasBeenReadIntoMemoryCache,
     }
 
     public static class SynchronizerPExtensions {

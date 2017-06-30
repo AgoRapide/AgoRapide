@@ -86,14 +86,11 @@ namespace AgoRapide.Core {
          );
 
         protected override Dictionary<CoreP, Property> GetProperties() {
-            /// TODO: Replace <see cref="PropertiesParent"/> with a method someting to <see cref="BaseEntity.AddProperty{T}"/> instead.
-            /// TODO: Maybe with [System.Runtime.CompilerServices.CallerMemberName] string caller = "" in order to
-            /// TDOO: call <see cref="ClassMemberAttribute.GetAttribute(Type, string)"/> automatically for instance.
-            PropertiesParent.Properties = new Dictionary<CoreP, Property>(); // Hack, since maybe reusing collection
+            var p = Util.GetNewPropertiesParent();
             Func<string> d = () => ToString();
             // Adds the full method information (in order to distinguish overloads from each other)
-            PropertiesParent.AddProperty(CoreP.IdFriendlyDetailed.A(), MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.ToString(), d);
-            return PropertiesParent.Properties;
+            p.AddProperty(CoreP.IdFriendlyDetailed.A(), MemberInfo.ReflectedType.ToStringShort() + "." + MemberInfo.ToString(), d);
+            return p.Properties;
         }
     }
 }
