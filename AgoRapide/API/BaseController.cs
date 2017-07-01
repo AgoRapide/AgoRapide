@@ -385,10 +385,10 @@ namespace AgoRapide.API {
             // Show actual context 
             request.Result.MultipleEntitiesResult = new List<BaseEntity>();
 
-            var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB);
+            var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB, request.Result);
 
-            retval.ForEach(type => {
-                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( // All entities of this type (also repeated, see below)
+            retval.ForEach(type => { /// For each type add links to all entities of this type All entities of this type (also repeated, see below)
+                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( 
                     request.API.CreateAPIUrl(
                         CoreAPIMethod.EntityIndex,
                         type.Key,
@@ -410,8 +410,8 @@ namespace AgoRapide.API {
                 )));
             }
 
-            retval.ForEach(type => {
-                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( // All entities of this type (repeated from above)
+            retval.ForEach(type => { /// For each type add links to all entities of this type All entities of this type (repeated from above)
+                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult(
                     request.API.CreateAPIUrl(
                         CoreAPIMethod.EntityIndex,
                         type.Key,

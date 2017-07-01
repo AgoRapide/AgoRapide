@@ -20,12 +20,13 @@ namespace AgoRapide {
     /// Other examples of inheriting classes: <see cref="Parameters"/>, <see cref="Result"/>. 
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
-    /// <see cref="BaseDatabase.GetEntityById{T}(long)"/> 
+    /// <see cref="BaseDatabase.GetEntityById{T}(long)"/>. Since there are no natural abstract methods in this class this should be quite ok 
+    /// (we actually want to avoid abstract methods anyway in order to make inheritance of <see cref="BaseEntity"/> as simple as possible)
     /// 
     /// Note how <see cref="BaseEntity"/> inherits <see cref="BaseCore"/> meaning you can listen to <see cref="BaseCore.LogEvent"/> and
-    /// <see cref="BaseCore.HandledExceptionEvent"/> but these are not used internally in AgoRapide as of Januar 2017 
+    /// <see cref="BaseCore.HandledExceptionEvent"/> but these are NOT used internally in AgoRapide as of Januar 2017 
     /// (it is felt unnecessary for entity classes to do logging). 
-    /// Note however <see cref="BaseEntityWithLogAndCount.LogInternal"/> 
+    /// Note however <see cref="BaseEntityWithLogAndCount.LogInternal"/>. 
     /// </summary>
     [Class(
         Description = "Basic entity supporting storage in database and collection of -" + nameof(Properties) + "-",

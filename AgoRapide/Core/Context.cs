@@ -11,7 +11,7 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
 
     [Class(
-        Description = 
+        Description =
             "Building block for drill down functionality and AgoRapide query language. " +
             "Consists of -" + nameof(AgoRapide.SetOperator) + "-, Type and a -" + nameof(AgoRapide.Core.QueryId) + "-. " +
             "Typical value: \"Intersect;Person;WHERE Department = 'East'\"."
@@ -34,11 +34,12 @@ namespace AgoRapide.Core {
         public override int GetHashCode() => (int)(_hashcode ?? (_hashcode = (SetOperator + "_" + Type + "_" + QueryId.ToString()).GetHashCode()));
 
         /// <summary>
+        /// TODO: Clarify what is meant below:
         /// TODO: Implement <see cref="Context.Size"/>
         /// TODO: Analyze whole database / all results given from <see cref="BaseSynchronizer"/>, store in <see cref="PropertyKeyAttributeEnriched"/>
         /// TODO: Use that again against <see cref="Context.QueryId"/>
         /// </summary>
-        public Percentile Size = new Percentile(50);
+        public Percentile Size = new Percentile(50); // Return median size
 
         public Context(SetOperator setOperator, Type type, QueryId queryId) {
             SetOperator = setOperator; InvalidEnumException.AssertDefined(SetOperator);
@@ -183,13 +184,51 @@ namespace AgoRapide.Core {
         }).Distinct().ToList();
 
         /// <summary>
-        /// 
+        /// Returns all entities found for the given context, by type.
         /// </summary>
         /// <param name="currentUser"></param>
-        /// <param name="contexts">TODO: Consider removal of this parameter</param>
+        /// <param name="allContexts">TODO: Consider removal of this parameter</param>
         /// <param name="db"></param>
+        /// <param name="result">Will be populated with statistics only if <see cref="BaseSynchronizer.Synchronize{T}"/> was called</param>
         /// <returns></returns>
-        public static Dictionary<Type, Dictionary<long, BaseEntity>> ExecuteContextsQueries(BaseEntity currentUser, List<Context> contexts, BaseDatabase db) {
+        public static bool TryExecuteContextsQueries(BaseEntity currentUser, List<Context> allContexts, BaseDatabase db, Result result, out Dictionary<Type, Dictionary<long, BaseEntity>> entitiesByType, out ErrorResponse errorResponse) {
+
+            var synchronizers = allContexts.Where(c => typeof(BaseSynchronizer).IsAssignableFrom(c.Type)).ToList();
+            synchronizers.ForEach(s => {
+                /// Note how this does not work because <see cref="BaseSynchronizer"/> is abstract.
+                /// var synchronizer = db.TryGetEntity<BaseSynchronizer>(currentUser, s.QueryId, AccessType.Read, out BaseSynchronizer synchronizer, out var errorResponse);
+                /// (we could consider removing the new()-restriction for calls to <see cref="BaseDatabase"/>)
+                var synchronizer = (BaseSynchronizer)db.GetEntity(currentUser, s.QueryId, AccessType.Read, typeof(BaseSynchronizer));
+                if (!synchronizer.PV<bool>(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A())) {
+                    // This logging helps explain the resulting long response time of this query.
+                    result.LogInternal("Calling " + nameof(synchronizer.Synchronize) + " for " + synchronizer.IdFriendly, typeof(Context));
+                    // TODO: ONLY READ FROM FILE HERE!!!! 
+                    // TODO: FOR THIS SPECIFIC SYNCHRONIZER
+                    synchronizer.Synchronize<BaseEntity>(db, result); // This will take some time
+                }
+            });
+
+            var contexts = allContexts.Where(c => !typeof(BaseSynchronizer).IsAssignableFrom(c.Type));
+            foreach (var c in contexts) {
+                switch (c.QueryId) {
+                    case QueryIdKeyOperatorValue keyOperatorValue:
+                        if (keyOperatorValue.Key.A.IsExternal) {
+                            if (!synchronizers.Any(s => true)) {
+                                entitiesByType = null;
+                                errorResponse = new ErrorResponse(ResultCode.client_error, /// TODO: This error message should most probably be radically improved.
+                                    "Query " + keyOperatorValue + " specifies an " + nameof(PropertyKeyAttribute.IsExternal) + " property " +
+                                    "but none of the " + nameof(BaseSynchronizer) + " specified " +
+                                    "(" + (synchronizers.Count == 0 ? "[NONE SPECIFIED]" : string.Join(", ", synchronizers.Select(s => s.ToString()))) + ") " +
+                                    "read the corresponding type " + c.Type + ".\r\n" +
+                                    "Unable the ensure " + SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache + ".\r\n" +
+                                    "Possible resolution: Add in 'context' a " + nameof(BaseSynchronizer) + " that reads " + c.Type + ".");
+                                return false;
+                            }
+                        }
+                        break;
+                    default: throw new InvalidObjectTypeException(c.QueryId);
+                }
+            }
             var types = contexts.Select(c => c.Type).Distinct();
 
             /// Built up dictionary for each type based on <see cref="AgoRapide.SetOperator.Intersect"/> and <see cref="AgoRapide.SetOperator.Union"/>. 
@@ -302,7 +341,10 @@ namespace AgoRapide.Core {
             });
 
             traversedValues.ForEach(t => retval.AddValue(t.Key, t.Value));
-            return retval;
+
+            entitiesByType = retval;
+            errorResponse = null;
+            return true;
         }
 
         public static List<Traversal> GetTraversal(Type fromType, Type toType) => TryGetTraversal(fromType, toType, out var retval) ? retval : throw new InvalidTraversalException(fromType, toType, "No possible traversals found.\r\nPossible resolution: Ensure that " + nameof(PropertyKeyAttribute.ForeignKeyOf) + " = typeof(" + toType.ToStringVeryShort() + ") has been specified for a property of " + fromType.ToStringVeryShort() + ".");

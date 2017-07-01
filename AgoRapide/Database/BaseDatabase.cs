@@ -45,8 +45,9 @@ namespace AgoRapide.Database {
             _applicationType = applicationType;
         }
 
-        public void UseInMemoryCache<T>(BaseSynchronizer synchronizer) {
-        }
+        //public void UseInMemoryCache<T>(BaseSynchronizer synchronizer) {
+        //}
+
         /// <summary>
         /// An implementation should support use of the following <see cref="CoreP"/> properties: 
         /// <see cref="CoreP.Username"/>
@@ -60,6 +61,22 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser);
 
+        public abstract BaseEntity GetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType);
+        /// <summary>
+        /// Convenience method, easier alternative to <see cref="TryGetEntities"/>
+        /// 
+        /// Only use this method for <see cref="QueryId.IsSingle"/> 
+        /// </summary>
+        /// <param name="currentUser"></param>
+        /// <param name="id"></param>
+        /// <param name="accessTypeRequired"></param>
+        /// <param name="requiredType"></param>
+        /// <param name="entity"></param>
+        /// <param name="errorResponse"></param>
+        /// <returns></returns>
+        public abstract bool TryGetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out BaseEntity entity, out ErrorResponse errorResponse);
+
+        public abstract T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new();
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
         /// 

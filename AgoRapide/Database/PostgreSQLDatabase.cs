@@ -73,7 +73,8 @@ namespace AgoRapide.Database {
             if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out var entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
             return entities;
         }
-
+    
+        public override T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) => TryGetEntity<T>(currentUser, id, accessTypeRequired, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
         public override bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out T entity, out ErrorResponse errorResponse) {
             id.AssertIsSingle();
             if (!TryGetEntities(currentUser, id, accessTypeRequired, out List<T> temp, out errorResponse)) {
@@ -84,6 +85,18 @@ namespace AgoRapide.Database {
             entity = temp[0];
             return true;
         }
+        public override BaseEntity GetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType) => TryGetEntity(currentUser, id, accessTypeRequired, requiredType, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
+        public override bool TryGetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out BaseEntity entity, out ErrorResponse errorResponse) {
+            id.AssertIsSingle();
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out List<BaseEntity> temp, out errorResponse)) {
+                entity = null;
+                return false;
+            }
+            temp.AssertExactOne(() => nameof(id) + ": " + id.ToString());
+            entity = temp[0];
+            return true;
+        }
+
 
         public override bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) {
             if (!TryGetEntities(currentUser, id, accessTypeRequired, typeof(T), out var temp, out errorResponse)) {
