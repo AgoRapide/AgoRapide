@@ -268,6 +268,14 @@ namespace AgoRapide {
             Type = typeof(string))]
         Message,
 
+        /// <summary>
+        /// Typical used by <see cref="Request"/> / <see cref="Result"/>. 
+        /// </summary>
+        [PropertyKey(
+            Description = "Typically name of method that generated an -" + nameof(ErrorResponse) + "-.",
+            Type = typeof(string))]
+        Caller,
+
         [PropertyKey(Type = typeof(PropertyOperation))]
         PropertyOperation,
 

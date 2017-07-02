@@ -110,7 +110,7 @@ namespace AgoRapide.Database {
             });
             SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
 
-            FileCache.Instance.StoreToDisk(externalEntities);
+            FileCache.Instance.StoreToDisk(this, externalEntities);
         }
     }
 

@@ -61,14 +61,14 @@ namespace AgoRapide.Database {
             "Returns fingerprint used to decide whether structure found on disk (as specified by -" + nameof(GetProperties) + "-) " +
             "is still compatible with (or rather identical to) the current implementation. " +
             "If not compatible then the locally stored structure has to be discarded and " +
-            "a new call to -" + nameof(BaseSynchronizer) + "- has to be made for a complete update (at least for the given type)")]
+            "a new call to -" + nameof(BaseSynchronizer.Synchronize) + "- has to be made for a complete update (at least for the given type)")]
         public static string GetFingerprint(Type type) => _fingerprintCache.GetOrAdd(type, t =>
             string.Join("\r\n", GetProperties(t).Select(p => p.Key.PToString)));
 
-        public void StoreToDisk<T>(List<T> entities) where T : BaseEntity, new() {
+        public void StoreToDisk<T>(BaseSynchronizer synchronizer, List<T> entities) where T : BaseEntity, new() {
             var type = typeof(T);
             Log(nameof(T) + ": " + type);
-            var filepath = GetFilePath(type);
+            var filepath = GetFilePath(synchronizer, type);
             Log(nameof(filepath) + ": " + filepath);
             var propertiesOrder = GetProperties(type);
             var dir = System.IO.Path.GetDirectoryName(filepath);
@@ -98,10 +98,10 @@ namespace AgoRapide.Database {
         [ClassMember(Description =
             "Called at application startup. " +
             "Enriches the entities with -" + nameof(PropertyKeyAttribute.IsExternal) + "- as found on disk")]
-        public bool TryEnrichFromDisk<T>(BaseDatabase db) where T : BaseEntity, new() {
+        public bool TryEnrichFromDisk<T>(BaseSynchronizer synchronizer, BaseDatabase db) where T : BaseEntity, new() {
             var type = typeof(T);
             Log(nameof(T) + ": " + type);
-            var filepath = GetFilePath(type);
+            var filepath = GetFilePath(synchronizer, type);
             Log(nameof(filepath) + ": " + filepath);
             if (!System.IO.File.Exists(filepath)) {
                 Log("!System.IO.File.Exists");
@@ -125,6 +125,7 @@ namespace AgoRapide.Database {
                             GetFingerprint(type));
                         return false;
                     }
+                    /// TODO: Limit this to only entities belonging to the given <see cref="BaseSynchronizer"/>
                     entitiesFromDatabase = db.GetAllEntities<T>().ToDictionary(e => e.Id, e => e);
                     first = false;
                     continue;
@@ -152,7 +153,7 @@ namespace AgoRapide.Database {
         private static string _dataFolder;
         private static string DataFolder => _dataFolder ?? (_dataFolder = System.IO.Path.GetDirectoryName(Util.Configuration.C.LogPath) + System.IO.Path.DirectorySeparatorChar + "Data" + System.IO.Path.DirectorySeparatorChar);
 
-        private static string GetFilePath(Type type) => DataFolder + type.ToStringVeryShort() + ".txt";
+        private static string GetFilePath(BaseSynchronizer synchronizer, Type type) => DataFolder + synchronizer.Id + System.IO.Path.DirectorySeparatorChar + type.ToStringVeryShort() + ".txt";
 
         public class InvalidFileException : ApplicationException {
             public InvalidFileException(string filename, string record, PropertyKey key, string valueFound, string details) : base(

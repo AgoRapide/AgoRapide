@@ -185,6 +185,9 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// Returns all entities found for the given context, by type.
+        /// 
+        /// Returns false in the following cases:
+        /// 1) A necessary <see cref="BaseSynchronizer"/> is missing from <paramref name="allContexts"/> related to <see cref="PropertyKeyAttribute.IsExternal"/>
         /// </summary>
         /// <param name="currentUser"></param>
         /// <param name="allContexts">TODO: Consider removal of this parameter</param>
@@ -236,7 +239,7 @@ namespace AgoRapide.Core {
                 Dictionary<long, BaseEntity> retvalThisType = null;
                 /// Start with smallest sized set. TODO: <see cref="Context.Size"/> is not implemented as of June 2017.
                 contexts.Where(c => c.Type.Equals(t) && c.SetOperator == SetOperator.Intersect).OrderBy(c => c.Size.Value).Reverse().ToList().ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Intersect"/>
-                    if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out var errorResponse)) return;
+                    if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out _)) return;
                     var tempDict = temp.ToDictionary(e => e.Id);
                     if (retvalThisType == null) {
                         retvalThisType = tempDict;
@@ -246,7 +249,7 @@ namespace AgoRapide.Core {
                 });
                 if (retvalThisType == null) retvalThisType = new Dictionary<long, BaseEntity>();
                 contexts.Where(c => c.Type.Equals(t) && c.SetOperator == SetOperator.Union).ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Union"/>
-                    if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out var errorResponse)) return;
+                    if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out var _)) return;
                     temp.ForEach(e => retvalThisType[e.Id] = e); // Adds to dictionary (if not already there)
                 });
                 return (Type: t, Dictiomary: retvalThisType);
@@ -287,7 +290,7 @@ namespace AgoRapide.Core {
                 var entities = retval.GetValue(t, () => nameof(t));
                 if (entities.Count == 0) return; // Nothing to remove
                 contexts.Where(c => c.Type.Equals(t) && c.SetOperator == SetOperator.Remove).ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Remove"/>
-                    if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out var errorResponse)) return;
+                    if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out _)) return;
                     temp.ForEach(e => {
                         if (entities.ContainsKey(e.Id)) entities.Remove(e.Id);
                     });

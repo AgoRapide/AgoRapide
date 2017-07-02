@@ -104,6 +104,7 @@ namespace AgoRapide.API {
             //message += nameof(AgoRapideAttribute.Description) + ": " + resultCode.GetAgoRapideAttribute().A.Description;
 
             Result.ResultCode = resultCode;
+            if (!string.IsNullOrEmpty(caller)) Result.AddProperty(CoreP.Caller.A(), caller);
             if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }

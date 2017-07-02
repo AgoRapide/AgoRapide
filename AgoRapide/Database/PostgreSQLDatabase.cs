@@ -118,7 +118,13 @@ namespace AgoRapide.Database {
                             "Possible cause: " + nameof(APIMethod.RequiresAuthorization) + " = FALSE for current method"); // TODO: Known weakness in AgoRapide as of June 2017
                         return false;
                     }
-                    var contextEntities = Context.ExecuteContextsQueries(currentUser, currentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()), this);
+                    var result = new Result();
+                    if (!Context.TryExecuteContextsQueries(currentUser, currentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()), this, result, out var contextEntities, out errorResponse)) {
+                        entities = null;
+                        return false;
+                    }
+                    // Note that "result" is now discarded.
+                    // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
                     if (!contextEntities.TryGetValue(requiredType, out var thisType) || thisType.Count == 0) {
                         entities = null;
                         errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + requiredType + " contained within current context for " + currentUser.IdFriendly);

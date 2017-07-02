@@ -385,7 +385,7 @@ namespace AgoRapide.API {
             // Show actual context 
             request.Result.MultipleEntitiesResult = new List<BaseEntity>();
 
-            var retval = Context.ExecuteContextsQueries(request.CurrentUser, context, DB, request.Result);
+            if (!Context.TryExecuteContextsQueries(request.CurrentUser, context, DB, request.Result, out var retval, out var errorResponse)) return request.GetErrorResponse(errorResponse);
 
             retval.ForEach(type => { /// For each type add links to all entities of this type All entities of this type (also repeated, see below)
                 request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( 
