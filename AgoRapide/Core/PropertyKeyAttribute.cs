@@ -261,7 +261,7 @@ namespace AgoRapide.Core {
         public Type ExternalPrimaryKeyOf;
 
         /// <summary>
-        /// <see cref="Type"/> will automatically be set to <see cref="Int64"/> (long) by <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+        /// <see cref="Type"/> will automatically be set to <see cref="long"/> (long) by <see cref="PropertyKeyAttributeEnriched.Initialize"/>
         /// </summary>
         [ClassMember(
             Description = "Indicates that value points to related entity.")]

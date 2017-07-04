@@ -22,11 +22,11 @@ namespace AgoRapideSample {
         [BasicAuthentication(AccessLevelUse = AccessLevel.Admin)]
         [APIMethod(
             Description = "Generates mock-data for -" + nameof(Person) + "- and -" + nameof(Car) + "-. Will generate 100*(percentilevalue^2) cars",
-            S1 = nameof(GenerateMockData), S2 = SynchronizerP.MockSize)]
+            S1 = nameof(GenerateMockData), S2 = SynchronizerP.SynchronizerMockSize)]
         public object GenerateMockData(string MockSize) {
             try {
                 if (!TryGetRequest(MockSize, out var request, out var completeErrorResponse)) return completeErrorResponse;
-                var percentileValue = request.Parameters.PV<Percentile>(SynchronizerP.MockSize.A()).Value;
+                var percentileValue = request.Parameters.PV<Percentile>(SynchronizerP.SynchronizerMockSize.A()).Value;
                 var maxCars = percentileValue * percentileValue * 100; // Note _VERY_ primitive use of Percentile-concept here, assuming 100P sizes are 4x 50P sizes.
                 var maxN = new Dictionary<Type, int> {
                     { typeof(Person), maxCars / 2 },
@@ -75,7 +75,8 @@ namespace AgoRapideSample {
                 });
 
                 request.Result.ResultCode = ResultCode.ok;
-                request.Result.LogData.Clear();
+                // TODO: Clear log-data now (?)
+                // request.Result.LogData.Clear();
                 Log("\r\n" + string.Join("\r\n", maxN.Select(e => e.Key + ": " + e.Value)), request.Result); /// TODO: Use <see cref="BaseEntityWithLogAndCount.Count"/> instead. 
                 return request.GetResponse();
             } catch (Exception ex) {
