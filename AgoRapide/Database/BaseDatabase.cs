@@ -9,13 +9,8 @@ using System.Reflection;
 using AgoRapide.Core;
 using AgoRapide.API;
 
-/// <summary>
-/// TODO: Make into abstract base class inheriting <see cref="BaseCore"/>. Meaningless to have as an interface.
-/// </summary>
 namespace AgoRapide.Database {
     /// <summary>
-    /// TODO: RENAME FILE TO BaseDatabase.
-    /// 
     /// TOOD: Move functionality from <see cref="PostgreSQLDatabase"/> into <see cref="BaseDatabase"/>
     /// TODO: Abstract the basic <see cref="Npgsql.NpgsqlCommand"/> and similar, in order to support multiple databases
     /// TODO: without implementing full sub classes of <see cref="BaseDatabase"/>.
@@ -23,6 +18,7 @@ namespace AgoRapide.Database {
     /// TODO: Add TryGetEntityIds and GetEntityIds with <see cref="QueryId"/> as parameter just like done with 
     /// <see cref="GetEntities{T}"/> and <see cref="TryGetEntities{T}"/>
     /// </summary>
+    [Class(Description = "Provides the fundamentals for reading and writing towards a database")]
     public abstract class BaseDatabase : BaseCore, IDisposable {
 
         [ClassMember(Description = "Name of main table in database. Also used for naming other objects in database like sequence_p_id.")]
@@ -218,7 +214,7 @@ namespace AgoRapide.Database {
         public long CreateEntity(long cid, Type entityType, Parameters properties, Result result) => CreateEntity(cid, entityType, properties.Properties.Values.Select(p => (p.Key, p.Value)), result);
         public long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) => CreateEntity(cid, typeof(T), properties, result);
         public long CreateEntity<T>(long cid, Dictionary<CoreP, Property> properties, Result result) => CreateEntity(cid, typeof(T), properties.Values.Select(p => (p.Key, p.Value)), result);
-        
+
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -471,16 +467,6 @@ namespace AgoRapide.Database {
             }
         }
 
-        ///// <summary>
-        ///// </summary>
-        ///// <param name="text"></param>
-        ///// <param name="result">May be null</param>
-        ///// <param name="caller"></param>
-        //protected void Log(string text, Result result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
-        //    Log(text, caller);
-        //    result?.LogInternal(text, GetType(), caller);
-        //}
-
         public class OpenDatabaseConnectionException : ApplicationException {
             public OpenDatabaseConnectionException(string message) : base(message) { }
             public OpenDatabaseConnectionException(string message, Exception inner) : base(message, inner) { }
@@ -491,18 +477,12 @@ namespace AgoRapide.Database {
             public NoResultFromDatabaseException(string message, Exception inner) : base(message, inner) { }
         }
 
-        /// <summary>
-        /// TODO: Move into <see cref="BaseDatabase"/>
-        /// </summary>
         public class ExactOneEntityNotFoundException : ApplicationException {
             public ExactOneEntityNotFoundException() : base() { }
             public ExactOneEntityNotFoundException(string message) : base(message) { }
             public ExactOneEntityNotFoundException(long id) : base("Entity id " + id + " not found") { }
         }
 
-        /// <summary>
-        /// TODO: Move into <see cref="BaseDatabase"/>
-        /// </summary>
         public class ExactOnePropertyNotFoundException : ApplicationException {
             public ExactOnePropertyNotFoundException(string message) : base(message) { }
             public ExactOnePropertyNotFoundException(string message, Exception inner) : base(message, inner) { }
@@ -516,18 +496,12 @@ namespace AgoRapide.Database {
             public UniquenessException(string message, Exception inner) : base(message, inner) { }
         }
 
-        /// <summary>
-        /// TODO: Move into <see cref="BaseDatabase"/>
-        /// </summary>
         public class InvalidPasswordException<T> : ApplicationException where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             public InvalidPasswordException(T property) : this(property, null, null) { }
             public InvalidPasswordException(T property, string message) : this(property, message, null) { }
             public InvalidPasswordException(T property, string message, Exception inner) : base(property.GetEnumValueAttribute().EnumValueExplained + (string.IsNullOrEmpty(message) ? "" : (". Details: " + message)), inner) { }
         }
 
-        /// <summary>
-        /// TODO: Move into <see cref="BaseDatabase"/>
-        /// </summary>
         public class PropertyNotFoundException : ApplicationException {
             public PropertyNotFoundException(long id) : base("Property with id '" + id + "' not found") { }
         }

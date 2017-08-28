@@ -17,9 +17,6 @@ namespace AgoRapide.Database {
     /// TODO: Abstract the basic <see cref="Npgsql.NpgsqlCommand"/> and similar, in order to support multiple databases
     /// TODO: without implementing full sub classes of <see cref="BaseDatabase"/>.
     /// 
-    /// You should probably inherit this class, and use that subclass in your project, in order to have the necessary flexibility.
-    /// (even better would of course be some interface implementation in order not to depend on PostgreSQL)
-    /// 
     /// TODO: Add TryGetEntityIds and GetEntityIds with <see cref="QueryId"/> as parameter just like done with 
     /// <see cref="GetEntities{T}"/> and <see cref="TryGetEntities{T}"/>
     /// </summary>
@@ -40,13 +37,13 @@ namespace AgoRapide.Database {
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="objectsOwner">See <see cref="_objectsOwner"/></param>
         /// <param name="connectionString">
         /// May be null in which case this instance will be unable to execute any queries. 
-        /// Use null in cases where you want to generate <see cref="SQL_CREATE_TABLE"/>. 
+        /// Use null in when you only want to use this class for generating <see cref="SQL_CREATE_TABLE"/>. 
         /// </param>
-        /// <param name="fileCache"></param>
-        /// <param name="tableName"></param>
-        /// <param name="applicationType"></param>
+        /// <param name="tableName">See <see cref="BaseDatabase._tableName"/></param>
+        /// <param name="applicationType">See <see cref="BaseDatabase._applicationType"/></param>
         public PostgreSQLDatabase(string objectsOwner, string connectionString, string tableName, Type applicationType) : base(tableName, applicationType) {
             // Do not log connectionString (may contain password). 
             Log(nameof(objectsOwner) + ": " + objectsOwner);
@@ -85,6 +82,7 @@ namespace AgoRapide.Database {
             entity = temp[0];
             return true;
         }
+
         public override BaseEntity GetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType) => TryGetEntity(currentUser, id, accessTypeRequired, requiredType, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
         public override bool TryGetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out BaseEntity entity, out ErrorResponse errorResponse) {
             id.AssertIsSingle();
@@ -96,7 +94,6 @@ namespace AgoRapide.Database {
             entity = temp[0];
             return true;
         }
-
 
         public override bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) {
             if (!TryGetEntities(currentUser, id, accessTypeRequired, typeof(T), out var temp, out errorResponse)) {
@@ -505,28 +502,6 @@ namespace AgoRapide.Database {
             return pid;
         }
 
-        ///// <summary>
-        ///// See <see cref="Property"/> for more information. 
-        ///// </summary>
-        //protected string propertySelect = "SELECT " +
-        //    "id, " +      //  0                                                           bigint
-        //    "created, " + //  1 Timestamp when created in database                        timestamp without time zone
-        //    "cid, " +     //  2 creator id (entity which created this property)           bigint
-        //    "pid, " +     //  3 parent id                                                 bigint
-        //    "fid, " +     //  4 foreign id (when this property is a relation              bigint
-        //    "key, " +     //  5                                                           text
-        //    "lngv, " +    //  6 Long value                                                bigint
-        //    "dblv, " +    //  7 Double value                                              double
-        //    "blnv, " +    //  8 Bool value                                                boolean
-        //    "dtmv, " +    //  9 Date time value                                           timestamp without time zone
-        //    "geov" +      // 10 Geometry value. TODO: ADD!                                text. TODO: ADD!
-        //    "strv, " +    // 11 String value (also used for enums)                        text
-        //    "valid, " +   // 12 Timestamp when last known valid                           timestamp without time zone
-        //    "vid, " +     // 13 validator id (entity which last validated this property)  bigint
-        //    "invalid, " + // 12 Timestamp when invalidated (null if still valid)          timestamp without time zone
-        //    "iid " +      // 13 invalidator id (entity which invalidated this property)   bigint
-        //    "FROM p ";
-
         /// <summary>
         /// Populates property object with information from database
         /// </summary>
@@ -598,14 +573,6 @@ namespace AgoRapide.Database {
                 invalidatorId: r.IsDBNull((int)DBField.iid) ? (long?)null : r.GetInt64((int)DBField.iid)
             );
 
-            // 13 Oct 2015 We could consider doing this, that is, ALWAYS read children if they may exist
-            // (instead it is being done as desired by BaseController.GetProperties)
-            // BE CAREFUL ABOUT PERFORMANCE (WHEN READING A LONG LIST OF PERSONS OR DEALS FOR INSTANCE)
-            // (retval.CanHaveChildren) AddChildrenToProperty(retval);
-
-            // retval.Initialize(); // Removed Apr 2017 (no longer needed)
-
-            // TODO: FIX THIS!
             if (retval.ParentId == 0) {
                 /// This is an entity root property (<see cref="CoreP.RootProperty"/>). We can not put that into cache because the same id will be used
                 /// to store the entity itself. We do not have any use for it either (because <see cref="CreateProperty"/> does not need it)
@@ -630,7 +597,7 @@ namespace AgoRapide.Database {
             "Pragmatic simple and easy to understand mechanism for verification of credentials. " +
             "Only to be used in systems requiring low levels of security.")]
         public override bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser) {
-            // Note how password is NOT logged.
+            // Note how password must NOT logged.
             // Log(nameof(email) + ": " + email + ", " + nameof(password) + ": " + (string.IsNullOrEmpty(password) ? "[NULL_OR_EMPTY]" : " [SET]"));
 
             currentUser = null;
@@ -667,6 +634,8 @@ namespace AgoRapide.Database {
             }
             if (password.Equals(correctPasswordHashedWithSalt)) throw new InvalidPasswordException<CoreP>(CoreP.Password, nameof(password) + ".Equals(" + nameof(correctPasswordHashedWithSalt) + "). Either 1) Password was not correct stored in database (check that " + nameof(CreateProperty) + " really salts and hashes passwords), or 2) The caller actually supplied an already salted and hashed password.");
 
+            // NOTE: OAuth or similar would give better performance. Now we have to calculate the hash value for every authentication attempt.
+            // TODO: Consider caching hashed value found. 
             var passwordHashedWithSalt = Util.GeneratePasswordHashWithSalt(currentUser.Id, password);
             if (correctPasswordHashedWithSalt != passwordHashedWithSalt) {
                 // A bit expensive to store in database, but useful information. 
@@ -1143,7 +1112,6 @@ OWNER TO " + _objectsOwner + @";
         /// } finally {
         ///    DBDispose();
         /// }
-        /// 
         /// It is important to close connections because we do not close after each query. 
         /// </summary>
         public override void Dispose() {
@@ -1160,24 +1128,6 @@ OWNER TO " + _objectsOwner + @";
                     Log("_cn1 " + ex.GetType().ToString() + ", " + ex.Message);
                 }
             }
-            //if (_cn2 != null) {
-            //    try {
-            //        _cn2.Close();
-            //        _cn2 = null;
-            //        Log("_cn2 closed OK");
-            //    } catch (Exception ex) {
-            //        Log("_cn2 " + ex.GetType().ToString() + ", " + ex.Message);
-            //    }
-            //}
-            //if (_cn3 != null) {
-            //    try {
-            //        _cn3.Close();
-            //        _cn3 = null;
-            //        Log("_cn3 closed OK");
-            //    } catch (Exception ex) {
-            //        Log("_cn3 " + ex.GetType().ToString() + ", " + ex.Message);
-            //    }
-            //}
             try {
                 Npgsql.NpgsqlConnection.ClearAllPools();
                 Log("Npgsql.NpgsqlConnection.ClearAllPools OK");

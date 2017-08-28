@@ -139,10 +139,14 @@ namespace AgoRapide.API {
                 var retvalList = new List<dynamic>();
                 MultipleEntitiesResult.ForEach(e => retvalList.Add(e.ToJSONEntity(request)));
 
+                // TODO: This is old "working" code that definitely can be improved upon somehow...
+
                 // This does not work. It will create a table into which we are unable to insert nameof(ResultCode) and similar
                 // var json = System.Web.Helpers.Json.Decode(System.Web.Helpers.Json.Encode(retval));
                 // Instead we must do like this:
                 json = new System.Web.Helpers.DynamicJsonObject(new Dictionary<string, object>());
+
+                // TODO: This is old "working" code that definitely can be improved upon somehow...
 
                 // New method, workaround when big results. We can not use json["dapi_array"] = System.Web.Helpers.Json.Decode(System.Web.Helpers.Json.Encode(retvalList));
                 var serializer = new System.Web.Script.Serialization.JavaScriptSerializer { MaxJsonLength = 1024 * 1024 * 64 };
@@ -203,21 +207,21 @@ namespace AgoRapide.API {
             })(), ex) { }
         }
 
-        /// <summary>
-        /// TODO: Not in use as of June 2017
-        /// </summary>
-        /// <param name="other"></param>
-        public void Include(Result other) {
-            if (other.SingleEntityResult != null) throw new NotNullReferenceException(nameof(other.SingleEntityResult) + ". (" + other.SingleEntityResult.ToString() + ")");
-            if (other.MultipleEntitiesResult != null) throw new NotNullReferenceException(nameof(other.MultipleEntitiesResult) + ". Count: " + other.MultipleEntitiesResult.Count);
-            if (other.ResultCode > ResultCode) ResultCode = other.ResultCode;
-            other.Properties.ForEach(o => {
-                switch (o.Value) {
-                    case PropertyCounter otherCount: Count(o.Key, otherCount.V<long>()); break;
-                    case PropertyLogger logger: Log(logger.V<string>()); break;
-                }
-            });
-        }
+        ///// <summary>
+        ///// TODO: Not in use as of June 2017
+        ///// </summary>
+        ///// <param name="other"></param>
+        //public void Include(Result other) {
+        //    if (other.SingleEntityResult != null) throw new NotNullReferenceException(nameof(other.SingleEntityResult) + ". (" + other.SingleEntityResult.ToString() + ")");
+        //    if (other.MultipleEntitiesResult != null) throw new NotNullReferenceException(nameof(other.MultipleEntitiesResult) + ". Count: " + other.MultipleEntitiesResult.Count);
+        //    if (other.ResultCode > ResultCode) ResultCode = other.ResultCode;
+        //    other.Properties.ForEach(o => {
+        //        switch (o.Value) {
+        //            case PropertyCounter otherCount: Count(o.Key, otherCount.V<long>()); break;
+        //            case PropertyLogger logger: Log(logger.V<string>()); break;
+        //        }
+        //    });
+        //}
 
         /// <summary>
         /// Extracts all distinct values 

@@ -92,19 +92,20 @@ namespace AgoRapide.Database {
         /// Return value false means that <see cref="BaseSynchronizer.Synchronize{T}"/> has to be called. 
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="entitiesFromDatabase">
-        /// These entities would normally contain all properties which are not <see cref="PropertyKeyAttribute.IsExternal"/>
-        /// </param>
+        /// <param name="synchronizer"></param>
+        /// <param name="db"></param>
+        /// <param name="errorResponse"></param>
         [ClassMember(Description =
             "Called at application startup. " +
             "Enriches the entities with -" + nameof(PropertyKeyAttribute.IsExternal) + "- as found on disk")]
-        public bool TryEnrichFromDisk<T>(BaseSynchronizer synchronizer, BaseDatabase db) where T : BaseEntity, new() {
+        public bool TryEnrichFromDisk<T>(BaseSynchronizer synchronizer, BaseDatabase db, out string errorResponse) where T : BaseEntity, new() {
             var type = typeof(T);
             Log(nameof(T) + ": " + type);
             var filepath = GetFilePath(synchronizer, type);
             Log(nameof(filepath) + ": " + filepath);
             if (!System.IO.File.Exists(filepath)) {
                 Log("!System.IO.File.Exists");
+                errorResponse = "File " + filepath + " not found";
                 return false;
             }
             var recordsFromDisk = System.IO.File.ReadAllText(filepath, Encoding.Default).Split(RECORD_SEPARATOR);
@@ -118,11 +119,12 @@ namespace AgoRapide.Database {
 
                 if (first) {
                     if (!r.Equals(GetFingerprint(type))) {
-                        Log(
-                            "Fingerprint mismatch, incorrect fingerprint found\r\n\r\n" +
+                        var msg = "Fingerprint mismatch, incorrect fingerprint found\r\n\r\n" +
                             r + "\r\n\r\n" +
                             "instead of\r\n\r\n" +
-                            GetFingerprint(type));
+                            GetFingerprint(type);
+                        Log(msg);
+                        errorResponse = msg;
                         return false;
                     }
                     /// TODO: Limit this to only entities belonging to the given <see cref="BaseSynchronizer"/>
@@ -147,6 +149,7 @@ namespace AgoRapide.Database {
                     i++;
                 });
             }
+            errorResponse = null;
             return true;
         }
 

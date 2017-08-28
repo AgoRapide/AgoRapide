@@ -18,11 +18,10 @@ namespace AgoRapide.Database {
     /// </summary>
     [Class(
         Description =
-            "Synchronizes data from external data storage " +
-            "(for instance a CRM system from which the AgoRapide based application will analyze data).",
+            "Synchronizes data from an external data source, usually with the goal of using AgoRapide to easily browse the data.",
         LongDescription =
             "The data found is stored within -" + nameof(FileCache) + "-, " +
-            "only identifiers (-" + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "-) are stored within -" + nameof(BaseDatabase) + "-"
+            "only identifiers (-" + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "-) are stored within -" + nameof(BaseDatabase) + "-."
     )]
     public abstract class BaseSynchronizer : Agent {
 
@@ -55,13 +54,20 @@ namespace AgoRapide.Database {
         public abstract void Synchronize<T>(BaseDatabase db, Result result) where T : BaseEntity, new();
 
         /// <summary>
+        /// Reconciles data found from external data source with what we already have stored in database. 
+        /// Primary keys are stored in database. 
+        /// Entities in database with primary keys which are no longer found are <see cref="PropertyOperation.SetInvalid"/>. 
+        /// 
         /// "Callback" from the implementation of <see cref="Synchronize{T}"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="externalEntities"></param>
+        /// <param name="externalEntities">
+        /// This must be the complete list of all entities from external data source. 
+        /// </param>
         /// <param name="db"></param>
         /// <param name="result">
         /// TODO: Change this parameter to <see cref="Request"/>. 
+        /// TODO: Aug 2017. Why?
         /// </param>
         protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
             var type = typeof(T);
