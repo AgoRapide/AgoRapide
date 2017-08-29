@@ -9,17 +9,11 @@ namespace AgoRapide {
 
     /// <summary>
     /// TODO: Implement comparisions operators for this class. 
-    /// TODO: Also implement    
     /// </summary>
     [Class(Description = "Describes a percentile like 5P or 95P")]
     public class Percentile : ITypeDescriber {
 
         public int Value { get; private set; }
-
-        // TODO: Implement, together with comparisions operators.
-        //public Quintile ToQuintile() => {
-
-        //}
 
         public Percentile(int value) {
             if (value < 1 || value > 100) throw new InvalidPercentileException("Outside valid range 1-100 (" + value + ")");
@@ -42,28 +36,6 @@ namespace AgoRapide {
 
             errorResponse = null;
             return true;
-
-            //if (!value.EndsWith("P")) {
-            //    percentile = null;
-            //    errorResponse = "!" + nameof(value) + ".EndsWith(\"P\")";
-            //    return false;
-            //}
-
-            //if (!int.TryParse(value.Substring(0, value.Length - 1), out var intValue)) {
-            //    percentile = null;
-            //    errorResponse = "Invalid integer value";
-            //    return false;
-            //}
-
-            //if (intValue < 1 || intValue > 100) {
-            //    percentile = null;
-            //    errorResponse = "Outside valid range [1-100] (" + intValue + ")";
-            //    return false;
-            //}
-
-            //percentile = new Percentile(intValue);
-            //errorResponse = null;
-            //return true;
         }
 
         private static Dictionary<string, Percentile> _allValues;
@@ -105,20 +77,12 @@ namespace AgoRapide {
             }
         }
 
-        // TODO: Do not do like this. Do in a more flexible manner like having a Size-class which itself gives different descriptions.
-        // TODO: Or just have a Size-enum which does the same ting.
-        // public string[] TertileDescriberSize = new string[] { "Small", "Normal", "Big" };
-
         public enum Quartile {
             Quartile1,
             Quartile2,
             Quartile3,
             Quartile4
         }
-
-        // TODO: Do not do like this. Do in a more flexible manner like having a Size-class which itself gives different descriptions.
-        // TODO: Or just have a Size-enum which does the same ting.
-        // public string[] QuantileDescriberSize = new string[] { "Small", "A little below average (???)", "A little above average (???)", "Big" };
 
         public Quartile ToQuartile() {
             if (Value <= 25) return Quartile.Quartile1;

@@ -50,72 +50,7 @@ namespace AgoRapide {
             } else {
                 (p as PropertyCounter ?? throw new InvalidObjectTypeException(p, typeof(PropertyCounter))).Count(increment);
             }
-        }
-
-        //public class CountNotFoundException : ApplicationException {
-        //    public CountNotFoundException(CoreP id) : base(id.ToString()) { }
-        //}
-
-        ///// <summary>
-        ///// Calls first <see cref="BaseEntity.ToHTMLDetailed"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
-        ///// </summary>
-        ///// <param name="request"></param>
-        ///// <returns></returns>
-        //public override string ToHTMLDetailed(Request request) {
-        //    var retval = new StringBuilder();
-        //    retval.Append(base.ToHTMLDetailed(request));
-        //    if (LogData.Length == 0) {
-        //        // Do not bother with any of these
-        //    } else {
-        //        retval.AppendLine("<h1>" + nameof(LogInternal) + "</h1>");
-        //        retval.AppendLine("<p>" + LogData.ToString().HTMLEncode().Replace("\r\n", "<br>\r\n") + "</p>");
-        //    }
-        //    //if (Counts.Count == 0) {
-        //    //    // Do not bother with any of these
-        //    //} else {
-        //    //    retval.AppendLine("<h1>" + nameof(Counts) + "</h1>");
-        //    //    retval.AppendLine("<table><tr><th>Key</th><th>Value</th></tr>");
-        //    //    retval.AppendLine(string.Join("", Counts.OrderBy(e => e.Value.ToString()).Select(e => {
-        //    //        var key = e.Key.A();
-        //    //        return "<tr><td>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.WholeDescription) + "</td><td align=\"right\">" + e.Value + "</td></tr>\r\n";
-        //    //    })));
-        //    //    retval.AppendLine("</table>");
-        //    //}
-        //    return retval.ToString();
-        //}
-
-        ///// <summary>
-        ///// Calls first <see cref="BaseEntity.ToJSONEntity"/> then adds <see cref="LogData"/> and <see cref="Counts"/>
-        ///// </summary>
-        ///// <returns></returns>
-        //public override JSONEntity0 ToJSONEntity(Request request) {
-        //    var retval = base.ToJSONEntity(request) as JSONEntity1 ?? throw new InvalidObjectTypeException(base.ToJSONEntity(request), typeof(JSONEntity1), ToString());
-        //    if (LogData.Length == 0) {
-        //        // Do not bother with any of these
-        //    } else {
-        //        var p = CoreP.Log;
-        //        var key = p.A().Key.PToString;
-        //        if (retval.Properties.TryGetValue(key, out var existing)) {
-        //            throw new KeyAlreadyExistsException<CoreP>(p,
-        //                "Unable to add " + nameof(LogData) + "\r\n-------\r\n" + LogData.ToString() + "\r\n" +
-        //                "-------Because of existing property\r\n-------\r\n" +
-        //                ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + ". Details: " + ToString());
-        //        }
-        //        retval.Properties[key] = new JSONProperty0 { Value = LogData.ToString() };
-        //    }
-        //    //if (Counts.Count == 0) {
-        //    //    // Do not bother with any of these
-        //    //} else {
-        //    //    Counts.ForEach(c => { /// Do not bother with <see cref="AccessLevel"/> for these. 
-        //    //        var key = c.Key.A().Key.PToString;
-        //    //        if (retval.Properties.TryGetValue(key, out var existing)) {
-        //    //            throw new KeyAlreadyExistsException<CoreP>(c.Key, "Unable to add " + nameof(Counts) + "[" + c.Key.A().Key.A.EnumValueExplained + "] = " + c.Value + " because of existing property '" + ((existing as JSONProperty0)?.GetValueShortened() ?? ("[OF_UNKNOWN_TYPE: " + existing.GetType())) + "'. Details: " + ToString());
-        //    //        }
-        //    //        retval.Properties[key] = new JSONProperty0 { Value = c.Value.ToString() };
-        //    //    });
-        //    //}
-        //    return retval;
-        //}
+        }        
     }
 
     /// <summary>
@@ -167,55 +102,6 @@ namespace AgoRapide {
             AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
         Total,
-
-        //// ================================================
-        //// TODO: DELETE ALL PROPERTIES BELOW:
-        //// ================================================
-
-        //[PropertyKey(
-        //    Description = "New properties created.",
-        //    Type = typeof(long))]
-        //PCreatedCount,
-
-        //[PropertyKey(
-        //    Description = "New entities created.",
-        //    Type = typeof(long))]
-        //ECreatedCount,
-
-        //[PropertyKey(
-        //    Description = "Properties removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
-        //    Type = typeof(long))]
-        //PSetInvalidCount,
-
-        //[PropertyKey(
-        //    Description = "Entities removed by -" + nameof(PropertyOperation.SetInvalid) + "-.",
-        //    Type = typeof(long))]
-        //ESetInvalidCount,
-
-        //[PropertyKey(
-        //    Description = "Count of all properties considered.",
-        //    Type = typeof(long))]
-        //PTotalCount,
-
-        //[PropertyKey(
-        //    Description = "Count of all entities considered.",
-        //    Type = typeof(long))]
-        //ETotalCount,
-
-        //[PropertyKey(
-        //    Description = "Properties affected (as result of some database operation like INSERT, DELETE or UPDATE).",
-        //    Type = typeof(long))]
-        //PAffectedCount,
-
-        //[PropertyKey(
-        //    Description = "Changed properties.",
-        //    Type = typeof(long))]
-        //PChangedCount,
-
-        //[PropertyKey(
-        //    Description = "Unchanged properties.",
-        //    Type = typeof(long))]
-        //PUnchangedCount,
     }
 
     public static class ExtensionsCountP {
