@@ -9,7 +9,7 @@ using AgoRapide.Database;
 
 namespace AgoRapide.Core {
 
-    [Class(Description = "Describes a foreign key. Is able to lazy-load the foreign entity from database")]
+    [Class(Description = "Describes a foreign key. See also -"+ nameof(GetForeignEntity) + "-.")]
     public class ForeignKey : ITypeDescriber {
 
         public long Id { get; private set; }

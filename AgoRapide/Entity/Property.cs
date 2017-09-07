@@ -447,7 +447,11 @@ namespace AgoRapide {
                     return true;
                 }
             } else {
-                if (typeof(string).Equals(t)) {
+                if (typeof(HTML).Equals(t)) {
+                    value = (T)(object)"";
+                    throw new NotImplementedException();
+                    return true;
+                } if (typeof(string).Equals(t)) {
                     if (_stringValue == null) {
                         switch (_value) {
                             case StringBuilder stringBuilder: /// HACK: Usually because we are a <see cref="PropertyLogger"/>
@@ -766,6 +770,24 @@ namespace AgoRapide {
                 return retval;
                 // }
             }
+        }
+
+        /// <summary>
+        /// TODO: MOVE THIS CLASS OUT OF Property.
+        /// 
+        /// Practical class that has almost no functionality but which enables calling 
+        /// <see cref="BaseEntity.PV{T}(PropertyKey)"/> or
+        /// <see cref="Property.V{T}"/> with T as HTML 
+        /// in addition to calling  
+        /// <see cref="ValueHTML"/>
+        /// </summary>
+        public class HTML {
+            public string HTMLString { get; private set; }
+            /// <summary>
+            /// </summary>
+            /// <param name="_string">This should NOT be HTML encoded</param>
+            public HTML(string _string) => HTMLString = _string?.HTMLEncode() ?? throw new ArgumentNullException(nameof(_string));
+            public override string ToString() => HTMLString;
         }
     }
 

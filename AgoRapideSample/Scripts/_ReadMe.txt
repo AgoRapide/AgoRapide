@@ -9,7 +9,7 @@ You may also download these files from GitHub as follows:
 and from jquery.com as
   https://code.jquery.com/jquery-3.1.1.min.js
 
-AgoRapide should work with all JQuery versions >= 1.8.2 
+AgoRapide should work with all JQuery versions >= 1.8.2. The default version used is 3.1.1.
 
 If you want to use a different JQuery version than 3.1.1 then remember to change the configuration value for ScriptRelativePaths. This is done when initializing AgoRapide.Core.Configuration in Startup.cs:
 

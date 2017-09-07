@@ -23,9 +23,9 @@ namespace AgoRapideSample {
         [APIMethod(
             Description = "Generates mock-data for -" + nameof(Person) + "- and -" + nameof(Car) + "-. Will generate 100*(percentilevalue^2) cars",
             S1 = nameof(GenerateMockData), S2 = SynchronizerP.SynchronizerMockSize)]
-        public object GenerateMockData(string MockSize) {
+        public object GenerateMockData(string SynchronizerMockSize) {
             try {
-                if (!TryGetRequest(MockSize, out var request, out var completeErrorResponse)) return completeErrorResponse;
+                if (!TryGetRequest(SynchronizerMockSize, out var request, out var completeErrorResponse)) return completeErrorResponse;
                 var percentileValue = request.Parameters.PV<Percentile>(SynchronizerP.SynchronizerMockSize.A()).Value;
                 var maxCars = percentileValue * percentileValue * 100; // Note _VERY_ primitive use of Percentile-concept here, assuming 100P sizes are 4x 50P sizes.
                 var maxN = new Dictionary<Type, int> {
