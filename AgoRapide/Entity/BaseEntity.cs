@@ -578,7 +578,7 @@ namespace AgoRapide {
                 e.Properties = new Dictionary<CoreP, Property>();
                 // };
                 properties.ForEach(p => {
-                    e.AddProperty(p.Key.GetSampleProperty<T>(n, maxN), null);
+                    e.AddProperty(p.Key.GetSampleProperty(type, n, maxN), null);
                 });
                 retval.Add(e);
             }

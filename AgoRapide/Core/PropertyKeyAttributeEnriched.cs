@@ -437,7 +437,7 @@ namespace AgoRapide.Core {
         /// Helps with deciding value when <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
         /// </typeparam>
         /// <returns></returns>
-        public Property GetSampleProperty<TParent>(int n, Dictionary<Type, int> maxN) {
+        public Property GetSampleProperty(Type parentType, int n, Dictionary<Type, int> maxN) {
             var value = new Func<string>(() => {
                 var intKeyToStringKeyConverter = new Func<int, string>(v => {
                     if (typeof(long).Equals(A.Type)) {
@@ -454,7 +454,7 @@ namespace AgoRapide.Core {
                 });
 
                 if (A.ExternalPrimaryKeyOf != null) { /// This is the primary key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
-                    InvalidTypeException.AssertEquals(A.ExternalPrimaryKeyOf, typeof(TParent), () => nameof(A.ExternalPrimaryKeyOf) + " does not correspond to " + nameof(TParent));                    
+                    InvalidTypeException.AssertEquals(A.ExternalPrimaryKeyOf, parentType, () => nameof(A.ExternalPrimaryKeyOf) + " does not correspond to " + parentType);                    
                     return intKeyToStringKeyConverter(n); /// Assign id's starting from 1
                 }
                 if (A.ExternalForeignKeyOf != null) { /// This is the foreign key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
