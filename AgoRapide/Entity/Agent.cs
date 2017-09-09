@@ -29,20 +29,24 @@ namespace AgoRapide {
             db.UpdateProperty(Id, this, key, value, null); // Keep result itself out of this operation
         }
 
+        /// <summary>
+        /// <see cref="IStaticProperties.GetStaticProperties"/>
+        /// </summary>
+        /// <returns></returns>
         public abstract Dictionary<CoreP, Property> GetStaticProperties();
     }
 
     /// <summary>
+    /// By implementing this interface, a <see cref="BaseEntity"/>-class like <see cref="Agent"/> can describe static properties that are always present for that class. 
+    /// A typical example would be <see cref="SynchronizerP.SynchronizerExternalType"/>
     /// TODO: Move to separate file
     /// 
-    /// TODO: Consider other implementations than an interface, since this is really a static concept. 
+    /// TODO: Consider other implementations than <see cref="IStaticProperties"/> since this is really a static concept. 
+    /// TODO: Note also that it is inefficient to store these values for each and every instance of <see cref="Agent"/>
+    /// TODO: (but we are helped by the fact the very few instances of <see cref="Agent"/> are thought to be created though)
     /// </summary>
     public interface IStaticProperties {
-        /// <summary>
-        /// TODO: Considering storing these in database (although storing for each and every instance may of course be considered inefficient). 
-        /// </summary>
-        /// <returns></returns>
-        [ClassMember(Description = "Usually added by -" + nameof(BaseDatabase.GetEntityById) + "-.")]
+        [ClassMember(Description = "Usually added by -" + nameof(BaseDatabase.TryGetEntityById) + "-.")]
         Dictionary<CoreP, Property> GetStaticProperties();
     }
 }

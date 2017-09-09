@@ -10,10 +10,10 @@ namespace AgoRapide.Core {
     public class QueryIdContext : QueryId {
 
         [ClassMember(Description = "See corresponding code in -" + nameof(QueryId.TryParse) + "-.")]
-
         public const string AS_STRING = "CurrentContext";
         public const string AS_STRING_ToLower = "currentcontext";
 
+        public override bool IsMatch(BaseEntity entity) => throw new NotImplementedException("Not relevant for " + GetType());
         public override string ToString() => AS_STRING;
     }
 }

@@ -169,13 +169,17 @@ namespace AgoRapide.Core {
             _allCoreP = allCoreP.Values.ToList();
         }
 
-        /// <summary>
-        /// Preferred method when <paramref name="_enum"/> is known in the C# code
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="_enum"></param>
-        /// <returns></returns>
-        public static PropertyKey GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+        public static void MapEnumAssert(Action<string> noticeLogger) {
+
+        }
+
+            /// <summary>
+            /// Preferred method when <paramref name="_enum"/> is known in the C# code
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="_enum"></param>
+            /// <returns></returns>
+            public static PropertyKey GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
             TryGetA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
 
         /// <summary>

@@ -106,7 +106,7 @@ namespace AgoRapide.Core {
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
         /// <param name="predicate"></param>
-        /// <param name="predicateDescriber">May be null (but in that case you may as well use inbuilt LINQ's method)</param>
+        /// <param name="predicateDescriber">May be null (but in that case you may as well use the inbuilt in .NET LINQ method)</param>
         /// <returns></returns>
         public static T Single<T>(this IEnumerable<T> source, Func<T, bool> predicate, Func<string> predicateDescriber) {
             try {
@@ -699,7 +699,6 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static ClassMemberAttribute GetClassMemberAttribute(this System.Reflection.MemberInfo memberInfo) => GetClassMemberAttributeNonStrict(memberInfo) ?? throw new NullReferenceException(System.Reflection.MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetClassMemberAttributeNonStrict) + " instead");
 
-
         /// <summary>
         /// TODO: Most probably not needed. Consider deleting.
         /// 
@@ -740,27 +739,6 @@ namespace AgoRapide.Core {
                 GetOrAdd(type, dummy => new ConcurrentDictionary<string, EnumValueAttribute>()).
                 GetOrAdd(_enum.ToString(), dummy => EnumValueAttribute.GetAttribute(_enum));
         }
-
-        //private static ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>> _propertyKeyAttributeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, PropertyKeyAttribute>>();
-        ///// <summary>
-        ///// Only used by <see cref="Property.ValueA"/>
-        ///// 
-        ///// Returns <see cref="PropertyKeyAttribute"/> for <paramref name="_enum"/>.
-        ///// 
-        ///// Note that this method gets ONLY the <see cref="PropertyKeyAttribute"/> (instead of the enriched <see cref="PropertyKeyAttributeEnriched"/>)
-        ///// for an individual <paramref name="_enum"/>. 
-        ///// In other words, normally do not use this method but use the more sophisticated method <see cref="Extensions.GetPropertyKeyAttributeT"/> whenever possible.
-        ///// (since that method again returns a much more sophisticated object back)
-        ///// </summary>
-        ///// <param name="_enum"></param>
-        ///// <returns></returns>
-        //public static PropertyKeyAttribute GetPropertyKeyAttribute(this object _enum) {
-        //    var type = _enum.GetType();
-        //    NotOfTypeEnumException.AssertEnum(type);
-        //    return _propertyKeyAttributeCache.
-        //        GetOrAdd(type, dummy => new ConcurrentDictionary<string, PropertyKeyAttribute>()).
-        //        GetOrAdd(_enum.ToString(), dummy => PropertyKeyAttribute.GetAttribute(_enum));
-        //}
 
         public static PropertyKey A(this CoreP coreP) => PropertyKeyMapper.GetA(coreP);
         public static PropertyKey A(this DBField dbField) => PropertyKeyMapper.GetA(dbField);

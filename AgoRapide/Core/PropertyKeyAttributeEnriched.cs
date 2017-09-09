@@ -159,7 +159,16 @@ namespace AgoRapide.Core {
             if (_coreP != null && A.InheritFrom == null && !A.EnumValue.GetType().Equals(typeof(CoreP))) {
                 A.SetEnumValueExplained(A.EnumValueExplained + " (" + nameof(CoreP) + ": " + _coreP.ToString() + ")");
             }
-            if (A.ExternalPrimaryKeyOf != null) AddParent(A.ExternalPrimaryKeyOf);
+
+            if (A.ExternalPrimaryKeyOf != null) {
+                AddParent(A.ExternalPrimaryKeyOf);
+                A.IsExternal = true;
+            }
+
+            if (A.ExternalForeignKeyOf != null) {
+                // AddParent(A.ExternalForeignKeyOf) is of course not relevant now
+                A.IsExternal = true;
+            }
 
             /// Enrichment 1, explicit given
             /// -----------------------------------------
@@ -234,14 +243,21 @@ namespace AgoRapide.Core {
             /// (deduced from already known information)
             /// -----------------------------------------
             if (A.ValidValues == null && A.TypeIsSet) {
-                if (A.Type.IsEnum) {
-                    A.ValidValues = Util.EnumGetNames(A.Type).ToArray();
+                var asserter = new Action(() => {
                     if (A.SampleValues != null) {
                         throw new BaseAttribute.AttributeException( // TODO: Check validity of this
-                            "It is illegal (unnecessary) to combine " + nameof(A.SampleValues) + " with Type.IsEnum (" + A.Type.ToStringShort() + ") " +
-                            "because " + nameof(A.ValidValues) + " can be used instead.\r\n" +
+                            "It is illegal (unnecessary) to combine " + nameof(A.SampleValues) + " with type (" + A.Type.ToStringShort() + ") " +
+                            "because " + nameof(A.ValidValues) + " can (and will be) used instead.\r\n" +
                             "Details:\r\n" + A.ToString());
                     }
+                });
+                if (A.Type.IsEnum) {
+                    asserter();
+                    A.ValidValues = Util.EnumGetNames(A.Type).ToArray();
+                    A.SampleValues = A.ValidValues;
+                } else if (typeof(bool).Equals(A.Type)) {
+                    asserter();
+                    A.ValidValues = new string[] { true.ToString(), false.ToString() };
                     A.SampleValues = A.ValidValues;
                 } else {
                     // Difficult to think of something here
@@ -249,17 +265,28 @@ namespace AgoRapide.Core {
             }
 
             if (A.ForeignKeyOf != null) {
-                A.Description += (string.IsNullOrEmpty(A.Description) ? "" : "\r\n") + "Foreign key of " + A.ForeignKeyOf.ToStringShort();
+                A.Description += (string.IsNullOrEmpty(A.Description) ? "" : "\r\n") + "-" + nameof(A.ForeignKeyOf) + "- -" + A.ForeignKeyOf.ToStringShort() + "-.";
+            }
+
+            if (A.ExternalForeignKeyOf != null) {
+                A.Description += (string.IsNullOrEmpty(A.Description) ? "" : "\r\n") + "-" + nameof(A.ExternalForeignKeyOf) + "- -" + A.ExternalForeignKeyOf.ToStringShort() + "-.";
             }
 
             if (!A.TypeIsSet) {
                 if (A.ForeignKeyOf != null) {
                     A.Type = typeof(long);
+                } else if (A.ExternalForeignKeyOf != null) {
+                    A.Type = typeof(long);
                 } else {
                     A.Type = typeof(string);
                 }
             } else {
-                if (A.ForeignKeyOf != null) InvalidTypeException.AssertEquals(A.Type, typeof(long), () => "Only long allowed when " + nameof(A.ForeignKeyOf) + " is set.\r\nDetails: " + A.ToString());
+                if (A.ForeignKeyOf != null) {
+                    InvalidTypeException.AssertEquals(A.Type, typeof(long), () => "Only typeof(long) allowed when " + nameof(A.ForeignKeyOf) + " is set.\r\nDetails: " + A.ToString());
+                }
+                if (A.ExternalForeignKeyOf != null) {
+                    // OK, any type of external foreign key is accepted. 
+                }
             }
 
             if (A.AggregationTypes == null) A.AggregationTypes = new AggregationType[0];
@@ -412,36 +439,30 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public Property GetSampleProperty<TParent>(int n, Dictionary<Type, int> maxN) {
             var value = new Func<string>(() => {
-                if (A.ExternalPrimaryKeyOf != null) {
-
-                    var keyGenerator = new Func<int, string>(v => {
-                        if (typeof(long).Equals(A.Type)) {
-                            return v.ToString();
-                        } else {
-                            throw new NotImplementedException(
-                                "Foreign key generator for " + A.Type + " not implemented.\r\n" +
-                                "For instance, for sources like Salesforce the keys are strings, not integer. " +
-                                "Solution: We will have to implement a string generator based on " + nameof(v) + ". This should not be too difficult. " +
-                                "We could create a MD5 hash based on the long-value for instance, and use that. " +
-                                "(of course we could quite possible just return " + nameof(v) + ".ToString() itself). "
-                            );
-                        }
-                    });
-
-                    if (typeof(TParent).Equals(A.ExternalPrimaryKeyOf)) {
-                        /// This is the primary key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
-                        /// Just assign id's starting from 1
-                        return keyGenerator(n);
+                var intKeyToStringKeyConverter = new Func<int, string>(v => {
+                    if (typeof(long).Equals(A.Type)) {
+                        return v.ToString();
                     } else {
-                        /// This is the foreign key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
-                        /// Assign a deterministic pseudo-random value within maxN for this type. 
-                        return keyGenerator(new Random(n).Next(1, maxN.GetValue(A.ExternalPrimaryKeyOf) + 1));
+                        throw new NotImplementedException(
+                            "Foreign key generator for type " + A.Type + " is not implemented.\r\n" +
+                            "(Some sources will use keys that are strings for instance, not integers.) " +
+                            "Solution: We will have to implement a string generator based on " + nameof(v) + ". This should not be too difficult. " +
+                            "We could create a MD5 hash based on the long-value for instance, and use that. " +
+                            "(of course we could quite possible just return " + nameof(v) + ".ToString() itself). "
+                        );
                     }
+                });
+
+                if (A.ExternalPrimaryKeyOf != null) { /// This is the primary key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
+                    InvalidTypeException.AssertEquals(A.ExternalPrimaryKeyOf, typeof(TParent), () => nameof(A.ExternalPrimaryKeyOf) + " does not correspond to " + nameof(TParent));                    
+                    return intKeyToStringKeyConverter(n); /// Assign id's starting from 1
                 }
-                if (A.SampleValues != null && A.SampleValues.Length > 0) {
-                    return A.SampleValues[new Random(n).Next(0, A.SampleValues.Length)];
+                if (A.ExternalForeignKeyOf != null) { /// This is the foreign key from the <see cref="PropertyKeyAttribute.IsExternal"/>-system
+                    if (!maxN.TryGetValue(A.ExternalForeignKeyOf, out var max)) throw new InvalidTypeException(A.ExternalForeignKeyOf, "Not key in " + nameof(maxN) + " (" + maxN.KeysAsString() + "). Unable to assign a value.");
+                    return intKeyToStringKeyConverter(new Random(n).Next(1, max + 1)); /// Assign a deterministic pseudo-random value within maxN for this type. 
                 }
-                throw new SampleGenerationException(this, "No " + nameof(PropertyKeyAttribute.SampleValues) + " available");
+                if (A.SampleValues == null || A.SampleValues.Length == 0) throw new SampleGenerationException(this, "No " + nameof(PropertyKeyAttribute.SampleValues) + " available");
+                return A.SampleValues[new Random(n).Next(0, A.SampleValues.Length)];
             })();
             if (!TryValidateAndParse(value, out var result)) throw new SampleGenerationException(this, result.ErrorResponse);
             var key = CoreP.A();

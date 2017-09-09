@@ -506,14 +506,14 @@ namespace AgoRapide.Core {
         public static BaseEntity GetNewPropertiesParent() => new PropertyT<string>(CoreP.Value.A().PropertyKeyWithIndex, "");
 
         /// <summary>
-        /// Exists in order to facilitate placement of breakpoints in expressions in addition to statements
+        /// Practical property that facilitates placement of breakpoints in expressions in addition to statements
         /// 
         /// Insert this wherever you throw an exception in expressions, especially when using the ? operator
         ///   {boolean expression} ? {some return value} : throw SomeException(Util.BreakpointEnabler + {Your original exception message} 
         /// 
         /// At regular intervals you can remove all uses of this method in the code.
         /// </summary>
-        public static string BreakpointEnabler => "";
+        public static string BreakpointEnabler => ""; // <--- Place breakpoint here <---
     }
 
     public class InvalidPasswordException : Exception {

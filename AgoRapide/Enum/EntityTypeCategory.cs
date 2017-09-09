@@ -21,7 +21,7 @@ namespace AgoRapide {
 
         None,
 
-        [EnumValue(Description = "Value used when more precise description is not possible. ")]
+        [EnumValue(Description = "Value used when more precise description (like for instance -" + nameof(APIDataObject) + "-) is not possible. ")]
         BaseEntity,
 
         [EnumValue(Description =

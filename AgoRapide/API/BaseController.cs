@@ -221,7 +221,7 @@ namespace AgoRapide.API {
             /// Note relatively expensive reading of whole <see cref="TPerson"/> entities now
             if (!DB.TryGetEntities(
                 request.CurrentUser.RepresentedByEntity ?? request.CurrentUser, /// Note how search will always be done viewed from <see cref="BaseEntity.RepresentedByEntity"/>
-                    queryId,
+                queryId,
                 AccessType.Read,
                 entities: out List<TPerson> tpersons,
                 errorResponse: out var tplErrorResponse)) return request.GetErrorResponse(tplErrorResponse);
@@ -233,7 +233,7 @@ namespace AgoRapide.API {
                 request.API.CreateAPIUrl(
                     CoreAPIMethod.UpdateProperty,
                     typeof(TPerson),  /// Note important point here, do NOT set <see cref="CoreP.EntityToRepresent"/> for <see cref="CoreP.EntityToRepresent"/>!
-                            new QueryIdInteger(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
+                    new QueryIdInteger(request.CurrentUser.RepresentedByEntity?.Id ?? request.CurrentUser.Id), CoreP.EntityToRepresent, p.Id.ToString()
                 ),
                 p.IdFriendly
            )).ToList());
@@ -297,19 +297,22 @@ namespace AgoRapide.API {
             /// TODO: always read from cache for corresponding <see cref="APIMethod.EntityType"/>
             /// TODO: (use <see cref="InMemoryCache"/> for this)
             if (typeof(ApplicationPart).IsAssignableFrom(request.Method.EntityType)) { // Fetch from cache if possible
-                if (queryId.IsAll) {
-                    return request.GetOKResponseAsMultipleEntities(ApplicationPart.AllApplicationParts.Values.Where(
-                        p => request.Method.EntityType.IsAssignableFrom(p.GetType())).Select(a => (BaseEntity)a).ToList());
-                } else {
-                    switch (queryId) {
-                        case QueryIdString q:
-                            /// Improve on use of <see cref="QueryId.ToString"/>
-                            if (ApplicationPart.AllApplicationParts.TryGetValue(q.ToString(), out var retval) && request.Method.EntityType.IsAssignableFrom(retval.GetType())) {
-                                return request.GetOKResponseAsSingleEntity(retval);
-                            }
-                            break;
-                    }
+
+                //if (queryId.IsAll) {
+                //    return request.GetOKResponseAsMultipleEntities(ApplicationPart.AllApplicationParts.Values.Where(
+                //        p => request.Method.EntityType.IsAssignableFrom(p.GetType())).Select(a => (BaseEntity)a).ToList());
+                //} else {
+                switch (queryId) {
+                    case QueryIdAll q:
+                        return request.GetOKResponseAsMultipleEntities(ApplicationPart.AllApplicationParts.Values.Select(a => (BaseEntity)a).ToList()); ;
+                    case QueryIdString q:
+                        /// Improve on use of <see cref="QueryId.ToString"/>
+                        if (ApplicationPart.AllApplicationParts.TryGetValue(q.ToString(), out var retval) && request.Method.EntityType.IsAssignableFrom(retval.GetType())) {
+                            return request.GetOKResponseAsSingleEntity(retval);
+                        }
+                        break;
                 }
+                // }
             }
 
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, requiredType: request.Method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
@@ -376,7 +379,7 @@ namespace AgoRapide.API {
                         request.CurrentUser.GetType(),
                         new QueryIdInteger(request.CurrentUser.Id),
                         CoreP.Context.A(),
-                        new Context(SetOperator.Intersect, type, new QueryIdKeyOperatorValue()).ToString() // Query "All"
+                        new Context(SetOperator.Intersect, type, new QueryIdAll()).ToString()
                     ),
                     "Set context to " + type.ToStringVeryShort()
                 )).ToList());
@@ -388,7 +391,7 @@ namespace AgoRapide.API {
             if (!Context.TryExecuteContextsQueries(request.CurrentUser, context, DB, request.Result, out var retval, out var errorResponse)) return request.GetErrorResponse(errorResponse);
 
             retval.ForEach(type => { /// For each type add links to all entities of this type All entities of this type (also repeated, see below)
-                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult( 
+                request.Result.MultipleEntitiesResult.Add(new GeneralQueryResult(
                     request.API.CreateAPIUrl(
                         CoreAPIMethod.EntityIndex,
                         type.Key,

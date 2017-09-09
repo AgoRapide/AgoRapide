@@ -101,12 +101,6 @@ namespace AgoRapide {
             PriorityOrder = PriorityOrder.Important)]
         Username,
 
-        ///// <summary>
-        ///// Note deliberate use of blank string for <see cref="PropertyKeyAttribute.SampleValues"/>. 
-        ///// We do not want for instance <see cref="RouteSegmentClass"/> to produce 
-        ///// a default value being used over and over again in installations worldwide.
-        ///// </summary>
-
         [PropertyKey(IsObligatory = true, IsPassword = true, Type = typeof(string))] // Do NOT give any SampleValue here, as it would most probably be used over and over again in installations worldwide.
         Password,
 

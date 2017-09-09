@@ -12,7 +12,10 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: Consider whether this class is really needed.
     /// 
-    /// Contains union of multiple <see cref="QueryId"/>. 
+    /// TODO: Most probably this class should be replaced with the Context-concept instead
+    /// 
+    /// Contains UNION of multiple <see cref="QueryId"/>. 
+    /// 
     /// </summary>
     public class QueryIdMultiple : QueryId {
         public List<QueryId> Ids;
@@ -21,16 +24,21 @@ namespace AgoRapide.Core {
             /// TODO: Because of the use of <see cref="CoreP.IdString"/> 
             /// TODO: <see cref="QueryId.TryParse"/> will most probably never return FALSE. 
             /// TODO: Therefore, change the method's signature into void Parse.
-            QueryId.TryParse(id, out var retval) ?
-                (!(retval is QueryIdMultiple) ? retval : throw new InvalidObjectTypeException(retval)) :
-                throw new NotImplementedException()
+            TryParse(id, out var retval) ?
+                (!(retval is QueryIdMultiple) ? retval : throw new InvalidObjectTypeException(retval, nameof(id) + ": " + id)) :
+                throw new NotImplementedException("TryParse failed for " + nameof(id) + " '" + id + "'")
         ).ToList();
 
+        /// <summary>
+        /// TODO: Add a LIMIT parameter to <see cref="QueryIdMultiple"/>.
+        /// </summary>
+        /// <param name="ids"></param>
         public QueryIdMultiple(List<QueryId> ids) {
             if (ids.Count <= 1) throw new InvalidCountException(nameof(ids) + ".Count: " + ids.Count + ". Meaningless / unneccessary complex. Therefore not allowed");
             Ids = ids;
 
             IsMultiple = true;
+            IsSingle = false;
 
             /// TODO: This does not work, we will get something like
             /// TODO: (key = 'IdString' AND strv = :strv1) OR
@@ -45,6 +53,9 @@ namespace AgoRapide.Core {
             /// TODO: and add from <see cref="QueryId.SQLWhereStatementParameters"/> for each 
             /// ---------------------------------------------------------
         }
+
+        public override bool IsMatch(BaseEntity entity) => Ids.Any(i => i.IsMatch(entity));
+        
         private string _toString;
         public override string ToString() => _toString ?? (_toString = string.Join(", ", Ids.Select(id => id.ToString())));
     }

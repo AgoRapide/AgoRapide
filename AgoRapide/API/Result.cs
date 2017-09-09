@@ -300,7 +300,7 @@ namespace AgoRapide.API {
                 >();
 
                 Util.EnumGetValues<Operator>().ForEach(o => {
-                    if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.ToPredicate(BaseEntity)"/>
+                    if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.IsMatch(BaseEntity)"/>
                     if (!key.Key.A.OperatorsAsHashSet.Contains(o)) return;
                     if (o == Operator.EQ && !key.Key.A.HasLimitedRange) return;
 
@@ -310,7 +310,7 @@ namespace AgoRapide.API {
                     >();
                     objStrValues.ForEach(t => {
                         var query = new QueryIdKeyOperatorValue(key.Key, o, t.Item1); // Now how it is "random" which object value (out of several with identical string-representation) is chosen now. But we assume that all of them have the same predicate effect
-                        var count = entities.Where(query.ToPredicate).Count();
+                        var count = entities.Where(query.IsMatch).Count();
 
                         if (count > 0 && count != totalCount) { // Note how we do not offer drill down if all entities match
                             r2.AddValue(

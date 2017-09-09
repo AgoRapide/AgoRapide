@@ -35,6 +35,7 @@ namespace AgoRapide.Core {
             "-" + nameof(QueryIdInteger) + "-\r\n" +
             "-" + nameof(QueryIdKeyOperatorValue) + "-\r\n" +
             "-" + nameof(QueryIdString) + "-\r\n" +
+            "-" + nameof(QueryIdAll)+ "-\r\n" +
             "-" + nameof(QueryIdMultiple) + "-",
         SampleValues = new string[] {
             "All",
@@ -47,26 +48,30 @@ namespace AgoRapide.Core {
     public abstract class QueryId : ITypeDescriber, IEquatable<QueryId> {
 
         /// <summary>
-        /// Note that a <see cref="QueryIdKeyOperatorValue"/> may also be <see cref="IsSingle"/> (for <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/>)
+        /// Note that a <see cref="QueryIdKeyOperatorValue"/> may also be <see cref="IsSingle"/> 
+        /// (for <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> and <see cref="AgoRapide.Operator.EQ"/>)
+        /// 
+        /// TODO: Dec 2017: <see cref="IsSingle"/> and <see cref="IsMultiple"/> has minimal value. 
+        /// TODO: They mostly restrict the querying system by enforcing a (maybe) more meaningful approach to queries. 
+        /// TODO: It looks like it would be more relevant to rely on the actual type of <see cref="QueryId"/> instead but it is difficult to
+        /// TODO: create new QueryIdSingle / QueryIdMultiple classes because in the existing hierarchy <see cref="QueryIdKeyOperatorValue"/> can be both.
+        /// TOOD: (according to comment above)
         /// </summary>
         public bool IsSingle { get; protected set; }
-        public void AssertIsSingle() {
-            if (!IsSingle) throw new InvalidCountException("!" + nameof(IsSingle) + " for " + ToString());
-        }
-        public void AssertIsSingle(Func<string> detailer) {
+        public void AssertIsSingle(Func<string> detailer = null) {
             if (!IsSingle) throw new InvalidCountException("!" + nameof(IsSingle) + " for " + ToString() + detailer.Result("\r\nDetails: "));
         }
 
+        /// <summary>
+        /// TODO: See TODO for <see cref="IsSingle"/>
+        /// </summary>
         public bool IsMultiple { get; protected set; }
-        public void AssertIsMultiple() {
-            if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString());
-        }
-        public void AssertIsMultiple(Func<string> detailer) {
+        public void AssertIsMultiple(Func<string> detailer = null) {
             if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString() + detailer.Result("\r\nDetails: "));
         }
 
-        [ClassMember(Description = "Corresponds to -" + nameof(ToString) + "- returning \"All\"")]
-        public bool IsAll { get; protected set; }
+        //[ClassMember(Description = "Corresponds to -" + nameof(ToString) + "- returning \"All\"")]
+        //public bool IsAll { get; protected set; }
 
         protected string _SQLWhereStatement;
         [ClassMember(
@@ -112,7 +117,12 @@ namespace AgoRapide.Core {
         public abstract override string ToString();
         public string ToStringDebug() => (_SQLWhereStatement ?? ("No " + nameof(_SQLWhereStatement) + " defined. Ordinary ToString-result is " + ToString())) + (SQLWhereStatementParameters.Count == 0 ? "" : "\r\nParameter: ") + string.Join("\r\nParameter: ", SQLWhereStatementParameters.Select(p => p.ToString()));
 
-        // public abstract string ToAPIQuery(); /// Unnecessary, equivalent to ToString()
+        /// <summary>
+        /// Returns true if <paramref name="entity"/> satisfies this query. 
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public abstract bool IsMatch(BaseEntity entity);
 
         public static QueryId Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidQueryIdException(nameof(value) + ": " + value + ", " + nameof(errorResponse) + ": " + errorResponse);
         public static bool TryParse(string value, out QueryId id) => TryParse(value, out id, out var dummy);
@@ -134,7 +144,7 @@ namespace AgoRapide.Core {
 
             var valueToLower = value.ToLower();
             if (valueToLower.Equals("all")) {
-                id = new QueryIdKeyOperatorValue();
+                id = new QueryIdAll();
                 errorResponse = null;
                 return true;
             }

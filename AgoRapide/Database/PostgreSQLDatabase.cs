@@ -70,7 +70,7 @@ namespace AgoRapide.Database {
             if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out var entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
             return entities;
         }
-    
+
         public override T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) => TryGetEntity<T>(currentUser, id, accessTypeRequired, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
         public override bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out T entity, out ErrorResponse errorResponse) {
             id.AssertIsSingle();
@@ -106,7 +106,8 @@ namespace AgoRapide.Database {
 
         public override bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
             Log(nameof(currentUser) + ": " + (currentUser?.IdFriendly ?? "[NULL]") + ", " + nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
-            switch (id) {
+
+            switch (id) { /// First, check for <see cref="QueryIdContext"/> and <see cref="QueryIdInteger"/>, these can be treated directly.
                 case QueryIdContext context: // TOOD: Move this code into BaseDatabase
                     if (currentUser == null) {
                         entities = null;
@@ -116,7 +117,7 @@ namespace AgoRapide.Database {
                         return false;
                     }
                     var result = new Result();
-                    if (!Context.TryExecuteContextsQueries(currentUser, currentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>()), this, result, out var contextEntities, out errorResponse)) {
+                    if (!Context.TryExecuteContextsQueries(currentUser, currentUser.PV(CoreP.Context.A(), new List<Context>()), this, result, out var contextEntities, out errorResponse)) {
                         entities = null;
                         return false;
                     }
@@ -152,40 +153,37 @@ namespace AgoRapide.Database {
                 case CacheUse.All:
                     switch (id) {
                         case QueryIdKeyOperatorValue keyOperatorValue: /// TODO: Move code into <see cref="InMemoryCache"/>
-                            allEntities = InMemoryCache.EntityCache.Values.Where(e => {
+                            allEntities = InMemoryCache.EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
                                 if (requiredType != null && !requiredType.IsAssignableFrom(e.GetType())) return false;
-                                return keyOperatorValue.ToPredicate(e);
+                                return keyOperatorValue.IsMatch(e);
                             }).ToList(); break;
                         default:
                             throw new InvalidObjectTypeException(id);
                     }
                     break;
-                default: // Lookup in database 
+                default: /// Lookup in database, first step is to find all ids, then calling <see cref="GetEntityById"/> for each id
                     Npgsql.NpgsqlCommand cmd;
-                    if (id.IsAll) {
-                        cmd = new Npgsql.NpgsqlCommand(
-                            "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "' AND\r\n" +
-                            DBField.invalid + " IS NULL "
-                            // + "ORDER BY " + DBField.id
-                            , _cn1
-                        );
-                    } else {
-                        cmd = new Npgsql.NpgsqlCommand(
-                            "SELECT DISTINCT(pid) FROM " + _tableName + " WHERE\r\n" +
-                    /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all known sub-classes.
-                    DBField.pid + " IN\r\n" +
-                            "(SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
-                            (id.IsAll ? "" : (id.SQLWhereStatement + " AND\r\n")) +
-                            DBField.invalid + " IS NULL "
-                            // + "ORDER BY " + DBField.id
-                            , _cn1
-                        );
-                        AddIdParameters(id, cmd);
+                    switch (id) {
+                        case QueryIdAll q: /// Use a simpler SQL query (note that calling <see cref="QueryId.SQLWhereStatement"/> would most probably result in an exception anyway)
+                            cmd = new Npgsql.NpgsqlCommand(
+                                "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "' AND\r\n" +
+                                DBField.invalid + " IS NULL "
+                                , _cn1
+                            ); break;
+                        default:
+                            cmd = new Npgsql.NpgsqlCommand(
+                                "SELECT DISTINCT(" + nameof(DBField.pid) + ") FROM " + _tableName + " WHERE\r\n" +
+                                /// TODO: Turn <param name="requiredType"/> into ... WHERE IN ( ... ) for all known sub-classes.
+                                DBField.pid + " IN\r\n" +
+                                "(SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty + "' AND " + DBField.strv + " = '" + requiredType.ToStringDB() + "') AND\r\n" +
+                                id.SQLWhereStatement + " AND\r\n" +
+                                DBField.invalid + " IS NULL "
+                                , _cn1
+                            );
+                            AddIdParameters(id, cmd); break;
                     }
 
                     if (requiredType.Equals(typeof(BaseEntity))) throw new InvalidTypeException(requiredType, "Meaningless value because the query\r\n\r\n" + cmd.CommandText + "\r\n\r\nwill never return anything");
-
-                    // Log(cmd.CommandText);
 
                     /// TODO: This has room for improvement. 
                     /// TODO: Note that at least two separate queries will be executed for each and every entity in <see cref="GetEntityById"/>
@@ -287,7 +285,7 @@ namespace AgoRapide.Database {
 
         public override bool TryGetEntityById(long id, Type requiredType, out BaseEntity entity) {
             Log(nameof(id) + ": " + id + ", " + nameof(requiredType) + ": " + requiredType?.ToStringShort() ?? "[NULL]");
-            if (id <= 0) throw new Exception("id <= 0 (" + id + ")");
+            if (id <= 0) throw new Exception(nameof(id) + " <= 0 (" + id + ")");
 
             var useCacheDynamically = false;
             switch (requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None) {
@@ -435,7 +433,6 @@ namespace AgoRapide.Database {
                     property.ValidatorId = operatorId ?? 0;
                     break;
                 case PropertyOperation.SetInvalid:
-
                     if (property.ParentId > 0) {
                         // Remove whole of parent from cache since its initialization result may no longer be correct
                         // (It would be naive to assume that we can only remove the property itself)

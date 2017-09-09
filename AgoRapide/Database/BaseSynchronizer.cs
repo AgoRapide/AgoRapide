@@ -11,11 +11,6 @@ using System.Reflection;
 
 namespace AgoRapide.Database {
 
-    /// <summary>
-    /// 
-    /// 
-    /// 
-    /// </summary>
     [Class(
         Description =
             "Synchronizes data from an external data source, usually with the goal of using AgoRapide to easily browse the data.",
@@ -55,25 +50,26 @@ namespace AgoRapide.Database {
 
         /// <summary>
         /// Reconciles data found from external data source with what we already have stored in database. 
+        /// 
         /// Primary keys are stored in database. 
-        /// Entities in database with primary keys which are no longer found are <see cref="PropertyOperation.SetInvalid"/>. 
+        /// <paramref name="externalEntities"/> is enriched with information from the database. 
+        /// 
+        /// For entities in database for which the primary keys are no longer found, <see cref="PropertyOperation.SetInvalid"/> is performed. 
         /// 
         /// "Callback" from the implementation of <see cref="Synchronize{T}"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="externalEntities">
         /// This must be the complete list of all entities from external data source. 
+        /// After the call is complete this list will have been enriched with information from database. 
         /// </param>
         /// <param name="db"></param>
-        /// <param name="result">
-        /// TODO: Change this parameter to <see cref="Request"/>. 
-        /// TODO: Aug 2017. Why?
-        /// </param>
+        /// <param name="result"></param>
         protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
             var type = typeof(T);
             /// Note how we cannot just do 
             ///   SetAndStoreCount(CountP.Total, externalEntities.Count, result, db);
-            /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as old value would just be overridden)
+            /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as we are called for different types, meaning value stored for last type would just be overridden)
             SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.Total.A()), externalEntities.Count, result, db);
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
@@ -116,6 +112,10 @@ namespace AgoRapide.Database {
             });
             SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
 
+            // TODO: Map external foreign keys to internal ones.
+            // TODO: Decide where and when to do. Inside this method would be difficult for instance because as of Sep 2017 we do not have access to all entities.
+
+            // TODO: Most probably better to NOT store anything inside this method. 
             FileCache.Instance.StoreToDisk(this, externalEntities);
         }
     }
@@ -145,6 +145,9 @@ namespace AgoRapide.Database {
         )]
         SynchronizerMockSize,
 
+        /// <summary>
+        /// Note how this is usually communicated through <see cref="IStaticProperties"/>.
+        /// </summary>
         [PropertyKey(
             Description = "-" + nameof(BaseEntity) + "--derived types that this synchronizer supports.",
             Type = typeof(Type),
@@ -156,7 +159,7 @@ namespace AgoRapide.Database {
 
         [PropertyKey(
             Description = "Last update against source.",
-            Type = typeof(DateTime), DateTimeFormat =DateTimeFormat.DateHourMin,
+            Type = typeof(DateTime), DateTimeFormat = DateTimeFormat.DateHourMin,
             Parents = new Type[] { typeof(BaseSynchronizer) },
             AccessLevelRead = AccessLevel.Relation
         )]

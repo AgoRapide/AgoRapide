@@ -14,11 +14,14 @@ namespace AgoRapide.Core {
         Description =
             "Building block for drill down functionality and AgoRapide query language. " +
             "Consists of -" + nameof(AgoRapide.SetOperator) + "-, Type and a -" + nameof(AgoRapide.Core.QueryId) + "-. " +
-            "Typical value: \"Intersect;Person;WHERE Department = 'East'\"."
+            "Typical value: \"Intersect;Person;WHERE Department = 'Manufacturing'\"."
     )]
     public class Context : ITypeDescriber, IEquatable<Context> {
 
         public SetOperator SetOperator { get; private set; }
+        [ClassMember(
+            Description = "The type of entity that is involved.",
+            LongDescription = "Note that -" + nameof(Core.QueryId) + "--class does NOT contain information about what type of entity it queries (hence this property).")]
         public Type Type { get; private set; }
         public QueryId QueryId { get; private set; }
 
@@ -34,7 +37,12 @@ namespace AgoRapide.Core {
         public override int GetHashCode() => (int)(_hashcode ?? (_hashcode = (SetOperator + "_" + Type + "_" + QueryId.ToString()).GetHashCode()));
 
         /// <summary>
-        /// TODO: Clarify what is meant below:
+        /// Hints about optiomal ordering of context querying. 
+        /// 
+        /// For multiple <see cref="SetOperator.Intersect"/> for instance the optiomal ordering is to start with the smallest set.
+        /// 
+        /// TODO: Turn into an ordinary injected property through a (not yet implemented) generic tagging mechanism.
+        /// 
         /// TODO: Implement <see cref="Context.Size"/>
         /// TODO: Analyze whole database / all results given from <see cref="BaseSynchronizer"/>, store in <see cref="PropertyKeyAttributeEnriched"/>
         /// TODO: Use that again against <see cref="Context.QueryId"/>
@@ -76,57 +84,65 @@ namespace AgoRapide.Core {
         public override string ToString() => SetOperator + ";" + Type.ToStringVeryShort() + ";" + QueryId.ToString();
 
         /// <summary>
-        /// TODO: Reconsider necessity (value) of this method
+        /// TODO: Reconsider necessity (value) of this method (or give better name)
+        /// 
+        /// See also <see cref="SpecifiesEntityAsPart"/>
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
         [ClassMember(
-            Description = "Returns TRUE if given entity is exactly specified within this -" + nameof(Context) + "-.",
-            LongDescription = "May return false negatives")]
+            Description = "Returns TRUE if given entity is exactly specified within this -" + nameof(Context) + "- (that is, if the entity will be the only result).",
+            // TODO: 9 Sep 2017: Is the disclaimer about false negatives still valid?
+            LongDescription = "May return false negatives.\r\nUsed for giving suggestions in the user interface.")]
         public bool SpecifiesEntityExact(BaseEntity entity) {
             if (!Type.IsAssignableFrom(entity.GetType())) return false;
-            switch (QueryId) {
-                case QueryIdInteger queryIdInteger: if (queryIdInteger.Id.Equals(entity.Id)) return true; break;
-                case QueryIdString queryIdString: if (entity.IdString.Equals(queryIdString.ToString())) return true; break; // TODO: Test this variant
-
-                    /// See also <see cref="SpecifiesEntityAsPart"/>
-            }
-            return false;
+            return QueryId.IsSingle && QueryId.IsMatch(entity); // Returning IsMatch directly from 9 Sep 2017. 
+            //switch (QueryId) {
+            //    case QueryIdInteger queryIdInteger: return queryIdInteger.Id.Equals(entity.Id);
+            //    case QueryIdString queryIdString: return entity.IdString.Equals(queryIdString.ToString()); // TODO: Test this variant
+            //    default: return false; 
+            //}
         }
 
         /// <summary>
-        /// TODO: Reconsider necessity (value) of this method
+        /// TODO: Reconsider necessity (value) of this method (or give better name)
+        /// 
+        /// See also <see cref="SpecifiesEntityExact(BaseEntity)"/>
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
         [ClassMember(
             Description = "Returns TRUE if given entity is part of this -" + nameof(Context) + "- (but does not constitue the whole of it).",
-            LongDescription = "May return false negatives")]
+            // TODO: 9 Sep 2017: Is the disclaimer about false negatives still valid?
+            LongDescription = "May return false negatives.\r\nUsed for giving suggestions in the user interface.")]
         public bool SpecifiesEntityAsPart(BaseEntity entity) {
             if (!Type.IsAssignableFrom(entity.GetType())) return false;
-            switch (QueryId) {
-                case QueryIdKeyOperatorValue queryIdKeyOperatorValue: if (queryIdKeyOperatorValue.IsAll) return true; break;
-
-                    /// See also <see cref="SpecifiesEntityExact(BaseEntity)"/>
-            }
-            return false;
+            return QueryId.IsMultiple && QueryId.IsMatch(entity); // Returning IsMatch directly from 9 Sep 2017. 
+            //switch (QueryId) {
+            //    case QueryIdInteger id: return id.IsMatch(entity);
+            //    case QueryIdKeyOperatorValue id: return id.IsMatch(entity);
+            //    case QueryIdAll id: return id.IsMatch(entity);
+            //    default: return false;
+            //}
         }
 
         /// <summary>
-        /// Note how this returns both <see cref="CoreAPIMethod.UpdateProperty"/> and <see cref="CoreAPIMethod.PropertyOperation"/> (<see cref="PropertyOperation.SetInvalid"/>)
-        /// TODO: Try to split up logic into two levels, with a core-method returning something more basic and not dependening on a <see cref="ValidRequest"/>
+        /// Note how this returns both 
+        /// <see cref="CoreAPIMethod.UpdateProperty"/> and 
+        /// <see cref="CoreAPIMethod.PropertyOperation"/> (<see cref="PropertyOperation.SetInvalid"/>)
+        /// TODO: Try to split up logic into two levels, with a core-method returning something more basic and not depending on a <see cref="Request"/>
         /// </summary>
         /// <param name="request"></param>
         /// <param name="entity">Id may be null (in which case empty list will be returned)</param>
         /// <param name="strict">If FALSE then will always return both <see cref="SetOperator.Remove"/> and <see cref="SetOperator.Union"/></param>
         /// <returns></returns>
-        [ClassMember(Description = "Note that returned result may have omissions or contain superfluous items")]
+        [ClassMember(Description = "Does a best effort attempt at returning correct data. Note that the returned result may have omissions or contain superfluous items")]
         public static List<GeneralQueryResult> GetPossibleContextOperationsForCurrentUserAndEntity(Request request, BaseEntity entity, bool strict) {
             var retval = new List<GeneralQueryResult>();
             if (entity is Property) return retval; // This most probably only creates confusion in the API HTML administrative interface.
             if (request.CurrentUser == null) return retval;
             if (entity.Id == 0) return retval;
-            var contexts = request.CurrentUser.PV<List<Context>>(CoreP.Context.A(), new List<Context>());
+            var contexts = request.CurrentUser.PV(CoreP.Context.A(), new List<Context>());
 
             var adder = new Action<SetOperator>(setOperator =>
                 retval.Add(new GeneralQueryResult(
@@ -184,7 +200,7 @@ namespace AgoRapide.Core {
         }).Distinct().ToList();
 
         /// <summary>
-        /// Returns all entities found for the given context, by type.
+        /// Returns all entities found for the given context collection, ordered by type.
         /// 
         /// Returns false in the following cases:
         /// 1) A necessary <see cref="BaseSynchronizer"/> is missing from <paramref name="allContexts"/> related to <see cref="PropertyKeyAttribute.IsExternal"/>
@@ -192,9 +208,10 @@ namespace AgoRapide.Core {
         /// <param name="currentUser"></param>
         /// <param name="allContexts">TODO: Consider removal of this parameter</param>
         /// <param name="db"></param>
-        /// <param name="result">Will be populated with statistics only if <see cref="BaseSynchronizer.Synchronize{T}"/> was called</param>
+        /// <param name="result">Will be populated with statistics only if <see cref="BaseSynchronizer.Synchronize{T}"/> had to be called</param>
         /// <returns></returns>
         public static bool TryExecuteContextsQueries(BaseEntity currentUser, List<Context> allContexts, BaseDatabase db, Result result, out Dictionary<Type, Dictionary<long, BaseEntity>> entitiesByType, out ErrorResponse errorResponse) {
+            // Fortsatt herfra.
 
             var synchronizers = allContexts.Where(c => typeof(BaseSynchronizer).IsAssignableFrom(c.Type)).ToList();
             synchronizers.ForEach(s => {
@@ -202,6 +219,8 @@ namespace AgoRapide.Core {
                 /// var synchronizer = db.TryGetEntity<BaseSynchronizer>(currentUser, s.QueryId, AccessType.Read, out BaseSynchronizer synchronizer, out var errorResponse);
                 /// (we could consider removing the new()-restriction for calls to <see cref="BaseDatabase"/>)
                 var synchronizer = (BaseSynchronizer)db.GetEntity(currentUser, s.QueryId, AccessType.Read, typeof(BaseSynchronizer));
+                /// TODO: We assume that <see cref="CacheUse.All"/> results in only once instance beeing generated, but threading issues means that 
+                /// TODO: is not necessarily true. The validity of this check is therefore in doubt:
                 if (!synchronizer.PV<bool>(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A())) {
                     // This logging helps explain the resulting long response time of this query.
                     result.LogInternal("Calling " + nameof(synchronizer.Synchronize) + " for " + synchronizer.IdFriendly, typeof(Context));
@@ -459,7 +478,7 @@ namespace AgoRapide.Core {
 
             [EnumValue(
                 Description = "From the many-side of the relation towards the one-side",
-                LongDescription = "Query will look like Entity/WHERE Id = value")]
+                LongDescription = "Query will look like Entity/WHERE {Id} = value")]
             FromForeignKey,
 
             [EnumValue(

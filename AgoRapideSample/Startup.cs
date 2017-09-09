@@ -92,7 +92,7 @@ namespace AgoRapideSample {
                 AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize(s => Log("MapEnums", nameof(AgoRapide.Core.PropertyKeyMapper.MapEnumFinalize) + ": " + s));
 
                 Log("MapEnums", "\r\n\r\n" +
-                    "Asserting mapping towards " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
+                    "Asserting mapping of all -" + AgoRapide.EnumType.PropertyKey + "- enums towards " + typeof(AgoRapide.CoreP) + " in order to expose any issues at once\r\n" +
                     "(note mapping to " + (((int)(object)AgoRapide.Core.Util.EnumGetValues<AgoRapide.CoreP>().Max()) + 1) + " and onwards)");
                 void mapper2<T>() where T : struct, IFormattable, IConvertible, IComparable // What we really would want is "where T : Enum"
                 {
@@ -101,9 +101,11 @@ namespace AgoRapideSample {
                         string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<T>().Select(p => nameof(T) + "." + p + " => " + AgoRapide.Core.PropertyKeyMapper.GetA(p).Key.CoreP)) + "\r\n");
                 }
                 mapper2<AgoRapide.Core.ConfigurationAttribute.ConfigurationP>(); /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
-                mapper2<AgoRapide.API.ResultP>();           /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
-                mapper2<AgoRapide.API.APIMethodP>();        /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
-                mapper2<P>();
+                mapper2<AgoRapide.API.ResultP>();                                /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
+                mapper2<AgoRapide.API.APIMethodP>();                             /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
+                mapper2<AgoRapide.PersonP>();                                    /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
+                mapper2<P>();                                                    /// TODO: Automate this somehow by using information in current assembly           
+                mapper2<CarP>();                                                 /// TODO: Automate this somehow by using information in current assembly
 
                 Log(null, "Miscellaneous testing");
                 AgoRapide.ExtensionsPersonP.A(AgoRapide.PersonP.Password).Key.A.AssertIsPassword(null);

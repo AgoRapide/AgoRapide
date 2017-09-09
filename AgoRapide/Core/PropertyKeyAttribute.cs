@@ -135,6 +135,7 @@ namespace AgoRapide.Core {
         private bool _isMany;
         /// <summary>
         /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// 
         /// Stored in memory in the <see cref="BaseEntity.Properties"/>-collection under
         /// one parent whose own <see cref="BaseEntity.Properties"/>-collection again 
@@ -183,6 +184,7 @@ namespace AgoRapide.Core {
         private bool _isExternal;
         /// <summary>
         /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// </summary>
         [ClassMember(
             Description =
@@ -207,6 +209,7 @@ namespace AgoRapide.Core {
         private bool _hasLimitedRange;
         /// <summary>
         /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// 
         /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically for boolean and enum. 
         /// </summary>
@@ -233,12 +236,13 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// TODO: Implement as <see cref="CoreP"/> (maybe as <see cref="PropertyKeyAttribute.IsMany"/>?) and move documentation there.
+        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// 
         /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically (if not already set) 
         /// for known types like long, double, boolean, enum and DateTime,
         /// (and also set it to <see cref="Operator.EQ"/> for <see cref="HasLimitedRange"/>)
         /// </summary>
-        [ClassMember(Description = "Operators suitable for use against this property")]
+        [ClassMember(Description = "Operators suitable for use against this property.")]
         public Operator[] Operators;
 
         private HashSet<Operator> _operatorsAsHashSet;
@@ -250,33 +254,46 @@ namespace AgoRapide.Core {
         })());
 
         /// <summary>
-        /// Implies that the type given also belongs in <see cref="Parents"/> (in other words, you do not have to specify in <see cref="Parents"/> also)
+        /// Implies both
+        /// 1) That the type given also belongs in <see cref="Parents"/> and
+        /// 2) <see cref="IsExternal"/> 
+        /// (in other words, you do not have to specify neither <see cref="Parents"/> nor <see cref="IsExternal"/>).
+        /// See <see cref="PropertyKeyAttributeEnriched.Initialize"/> for details. 
         /// </summary>
         [ClassMember(
-            Description =
-                "Only relevant when -" + nameof(IsExternal) + "-." +
-                "(In other words, separate from -" + nameof(CoreP.DBId) + "-). " +
-                "Used to link together data from external sources. "
+            Description = "External id (in contrast to AgoRapide internal id -" + nameof(CoreP.DBId) + "-). ",
+            LongDescription = "Used to link together data from external sources."
         )]
         public Type ExternalPrimaryKeyOf;
 
         /// <summary>
-        /// <see cref="Type"/> will automatically be set to <see cref="long"/> (long) by <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+        /// If <see cref="Type"/> is not given then it will automatically be set to <see cref="long"/> (long) by <see cref="PropertyKeyAttributeEnriched.Initialize"/>.
         /// </summary>
         [ClassMember(
-            Description = "Indicates that value points to related entity.")]
+            Description = "Indicates that value (as AgoRapide -" + nameof(DBField.id) + "-) points to related entity.")]
         public Type ForeignKeyOf;
+
+        /// <summary>
+        /// Implies <see cref="IsExternal"/> (in other words, you do not have to specify <see cref="IsExternal"/>).
+        /// If <see cref="Type"/> is not given then it will automatically be set to <see cref="long"/> (long) by <see cref="PropertyKeyAttributeEnriched.Initialize"/>.
+        /// </summary>
+        [ClassMember(
+            Description = "Indicates that value (as some external system id) points to related entity.",
+            LongDescription = "Basis for generating -" + nameof(ForeignKeyOf) + "- when linking together data from external sources.")]
+        public Type ExternalForeignKeyOf;
 
         private bool _isDocumentation;
         /// <summary>
         /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
+        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// </summary>
         [ClassMember(
             Description =
                 "Signifies that value may contain keys on the form -xxx- " +
                 "which should be replaced with respective links by -" + nameof(Documentator.ReplaceKeys) + "-.",
             LongDescription =
-                "This actual description is for instance marked as " + nameof(IsDocumentation) + " (see " + nameof(CoreP.LongDescription) + ")"
+                "This actual description is for instance marked as " + nameof(IsDocumentation) + " (see " + nameof(CoreP.LongDescription) + ").\r\n" +
+                "Especially useful when making HTML representations of properties (see -" + nameof(Property.ValueHTML) + "-)."
         )]
         public bool IsDocumentation { get => _isDocumentation; set { _isDocumentation = value; _isDocumentationIsSet = true; } }
         private bool _isDocumentationIsSet = false;
