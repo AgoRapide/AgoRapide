@@ -353,7 +353,7 @@ namespace AgoRapide.Database {
             /// TODO: 
 
             if (rootType.IsAbstract) throw new InvalidTypeException(rootType, nameof(rootType) + " (as found in database as " + root.V<string>() + ")");
-            Log("System.Activator.CreateInstance(requiredType) (" + rootType.ToStringShort() + ")");
+            Log("Activator.CreateInstance(requiredType) (" + rootType.ToStringShort() + ")");
             // Note how "where T: new()" constraint helps to ensure that we have a parameter less constructor now
             // We could of course also check with rootType.GetConstructor first.
             var retval = Activator.CreateInstance(rootType) as BaseEntity ?? throw new InvalidTypeException(rootType, "Very unexpected since was just asserted OK");
@@ -480,8 +480,15 @@ namespace AgoRapide.Database {
         }
 
         public override List<T> GetAllEntities<T>() {
-            Log(typeof(T).ToStringShort());
+            Log(nameof(T) + ": " +  typeof(T).ToStringShort());
             var retval = GetRootPropertyIds(typeof(T)).Select(id => GetEntityById<T>(id)).ToList();
+            Log(nameof(retval) + ".Count: " + retval.Count);
+            return retval;
+        }
+
+        public override List<BaseEntity> GetAllEntities(Type type) {
+            Log(nameof(type) + ": " +  type.ToStringShort());
+            var retval = GetRootPropertyIds(type).Select(id => GetEntityById(id, type)).ToList();
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
         }

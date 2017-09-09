@@ -557,7 +557,6 @@ namespace AgoRapide {
         /// <summary>
         /// Returns a list with <paramref name="maxN"/> mock-entities based on <see cref="PropertyKeyAttributeEnriched.GetSampleProperty{TParent}"/>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="propertyPredicate">
         /// Select which properties returned from <see cref="Extensions.GetChildProperties(Type)"/> to include.  
         /// Would typically be  "p => p.Key.A.IsExternal" when used by <see cref="Agent"/></param>
@@ -567,15 +566,17 @@ namespace AgoRapide {
         /// determine range of foreign keys (<see cref="PropertyKeyAttribute.ForeignKeyOf"/>)
         /// </param>
         /// <returns></returns>
-        public static List<T> GetMockEntities<T>(Func<PropertyKey, bool> propertyPredicate, Dictionary<Type, int> maxN) where T : BaseEntity, new() {
-            var retval = new List<T>();
-            var type = typeof(T);
+        public static List<BaseEntity> GetMockEntities(Type type, Func<PropertyKey, bool> propertyPredicate, Dictionary<Type, int> maxN) { // where T : BaseEntity, new() {
+            InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
+            var retval = new List<BaseEntity>();
+            // var type = typeof(T);
             var properties = type.GetChildProperties().Values.Where(propertyPredicate).ToList(); // Turning into list improves performance since accessed many times. 
             var maxT = maxN.GetValue(type);
             for (var n = 1; n <= maxT; n++) {
-                var e = new T() {
-                    Properties = new Dictionary<CoreP, Property>()
-                };
+                var e = Activator.CreateInstance(type) as BaseEntity ?? throw new InvalidTypeException(type, "Very unexpected since was just asserted OK");
+                // var e = new T() {
+                e.Properties = new Dictionary<CoreP, Property>();
+                // };
                 properties.ForEach(p => {
                     e.AddProperty(p.Key.GetSampleProperty<T>(n, maxN), null);
                 });

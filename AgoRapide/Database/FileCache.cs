@@ -65,9 +65,9 @@ namespace AgoRapide.Database {
         public static string GetFingerprint(Type type) => _fingerprintCache.GetOrAdd(type, t =>
             string.Join("\r\n", GetProperties(t).Select(p => p.Key.PToString)));
 
-        public void StoreToDisk<T>(BaseSynchronizer synchronizer, List<T> entities) where T : BaseEntity, new() {
-            var type = typeof(T);
-            Log(nameof(T) + ": " + type);
+        public void StoreToDisk(BaseSynchronizer synchronizer, Type type, List<BaseEntity> entities) { // where T : BaseEntity, new() {
+            InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
+            Log(nameof(type) + ": " + type);
             var filepath = GetFilePath(synchronizer, type);
             Log(nameof(filepath) + ": " + filepath);
             var propertiesOrder = GetProperties(type);
@@ -81,7 +81,7 @@ namespace AgoRapide.Database {
                 GetFingerprint(type) + RECORD_SEPARATOR +
                 string.Join(RECORD_SEPARATOR, entities.Select(e =>
                     string.Join(FIELD_SEPARATOR, propertiesOrder.Select(p =>
-                        e.PV<string>(p, "")
+                        e.PV(p, "")
                     ))
                 )),
                 Encoding.Default

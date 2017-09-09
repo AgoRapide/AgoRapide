@@ -207,6 +207,14 @@ namespace AgoRapide.Database {
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public abstract List<T> GetAllEntities<T>() where T : BaseEntity, new();
+        /// <summary>
+        /// Gets all entities of type <paramref name="type"/>
+        /// TODO: Add overload which can be limited to source / workspace or similar. 
+        /// TODO: Or use <see cref="TryGetEntities"/> for that purpose. 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public abstract List<BaseEntity> GetAllEntities(Type type); // Added 9 Sep 2017
 
         public long CreateEntity<T>(long cid, Result result) => CreateEntity(cid, typeof(T), properties: (IEnumerable<(PropertyKeyWithIndex key, object value)>)null, result: result);
         public long CreateEntity(long cid, Type entityType, Result result) => CreateEntity(cid, entityType, properties: (IEnumerable<(PropertyKeyWithIndex key, object value)>)null, result: result);

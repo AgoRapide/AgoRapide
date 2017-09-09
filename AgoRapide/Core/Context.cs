@@ -41,7 +41,9 @@ namespace AgoRapide.Core {
         /// 
         /// For multiple <see cref="SetOperator.Intersect"/> for instance the optiomal ordering is to start with the smallest set.
         /// 
+        /// TODO: IMPORTANT!
         /// TODO: Turn into an ordinary injected property through a (not yet implemented) generic tagging mechanism.
+        /// TODO: IMPORTANT!
         /// 
         /// TODO: Implement <see cref="Context.Size"/>
         /// TODO: Analyze whole database / all results given from <see cref="BaseSynchronizer"/>, store in <see cref="PropertyKeyAttributeEnriched"/>
@@ -211,46 +213,47 @@ namespace AgoRapide.Core {
         /// <param name="result">Will be populated with statistics only if <see cref="BaseSynchronizer.Synchronize{T}"/> had to be called</param>
         /// <returns></returns>
         public static bool TryExecuteContextsQueries(BaseEntity currentUser, List<Context> allContexts, BaseDatabase db, Result result, out Dictionary<Type, Dictionary<long, BaseEntity>> entitiesByType, out ErrorResponse errorResponse) {
-            // Fortsatt herfra.
+            
+            // Removed code the depends on Synchronizers
+            //var synchronizers = allContexts.Where(c => typeof(BaseSynchronizer).IsAssignableFrom(c.Type)).ToList();
+            //synchronizers.ForEach(s => {
+            //    /// Note how this does not work because <see cref="BaseSynchronizer"/> is abstract.
+            //    /// var synchronizer = db.TryGetEntity<BaseSynchronizer>(currentUser, s.QueryId, AccessType.Read, out BaseSynchronizer synchronizer, out var errorResponse);
+            //    /// (we could consider removing the new()-restriction for calls to <see cref="BaseDatabase"/>)
+            //    var synchronizer = (BaseSynchronizer)db.GetEntity(currentUser, s.QueryId, AccessType.Read, typeof(BaseSynchronizer));
+            //    /// TODO: We assume that <see cref="CacheUse.All"/> results in only once instance beeing generated, but threading issues means that 
+            //    /// TODO: is not necessarily true. The validity of this check is therefore in doubt:
+            //    if (!synchronizer.PV<bool>(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A())) {
+            //        // This logging helps explain the resulting long response time of this query.
+            //        result.LogInternal("Calling " + nameof(synchronizer.Synchronize) + " for " + synchronizer.IdFriendly, typeof(Context));
+            //        // TODO: ONLY READ FROM FILE HERE!!!! 
+            //        // TODO: FOR THIS SPECIFIC SYNCHRONIZER
+            //        synchronizer.Synchronize<BaseEntity>(db, result); // This will take some time
+            //    }
+            //});
+            //var contexts = allContexts.Where(c => !typeof(BaseSynchronizer).IsAssignableFrom(c.Type));
+            //foreach (var c in contexts) {
+            //    switch (c.QueryId) {
+            //        case QueryIdKeyOperatorValue keyOperatorValue:
+            //            if (keyOperatorValue.Key.A.IsExternal) {
+            //                if (!synchronizers.Any(s => true)) {
+            //                    entitiesByType = null;
+            //                    errorResponse = new ErrorResponse(ResultCode.client_error, /// TODO: This error message should most probably be radically improved.
+            //                        "Query " + keyOperatorValue + " specifies an " + nameof(PropertyKeyAttribute.IsExternal) + " property " +
+            //                        "but none of the " + nameof(BaseSynchronizer) + " specified " +
+            //                        "(" + (synchronizers.Count == 0 ? "[NONE SPECIFIED]" : string.Join(", ", synchronizers.Select(s => s.ToString()))) + ") " +
+            //                        "read the corresponding type " + c.Type + ".\r\n" +
+            //                        "Unable the ensure " + SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache + ".\r\n" +
+            //                        "Possible resolution: Add in 'context' a " + nameof(BaseSynchronizer) + " that reads " + c.Type + ".");
+            //                    return false;
+            //                }
+            //            }
+            //            break;
+            //        default: throw new InvalidObjectTypeException(c.QueryId);
+            //    }
+            //}
 
-            var synchronizers = allContexts.Where(c => typeof(BaseSynchronizer).IsAssignableFrom(c.Type)).ToList();
-            synchronizers.ForEach(s => {
-                /// Note how this does not work because <see cref="BaseSynchronizer"/> is abstract.
-                /// var synchronizer = db.TryGetEntity<BaseSynchronizer>(currentUser, s.QueryId, AccessType.Read, out BaseSynchronizer synchronizer, out var errorResponse);
-                /// (we could consider removing the new()-restriction for calls to <see cref="BaseDatabase"/>)
-                var synchronizer = (BaseSynchronizer)db.GetEntity(currentUser, s.QueryId, AccessType.Read, typeof(BaseSynchronizer));
-                /// TODO: We assume that <see cref="CacheUse.All"/> results in only once instance beeing generated, but threading issues means that 
-                /// TODO: is not necessarily true. The validity of this check is therefore in doubt:
-                if (!synchronizer.PV<bool>(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A())) {
-                    // This logging helps explain the resulting long response time of this query.
-                    result.LogInternal("Calling " + nameof(synchronizer.Synchronize) + " for " + synchronizer.IdFriendly, typeof(Context));
-                    // TODO: ONLY READ FROM FILE HERE!!!! 
-                    // TODO: FOR THIS SPECIFIC SYNCHRONIZER
-                    synchronizer.Synchronize<BaseEntity>(db, result); // This will take some time
-                }
-            });
-
-            var contexts = allContexts.Where(c => !typeof(BaseSynchronizer).IsAssignableFrom(c.Type));
-            foreach (var c in contexts) {
-                switch (c.QueryId) {
-                    case QueryIdKeyOperatorValue keyOperatorValue:
-                        if (keyOperatorValue.Key.A.IsExternal) {
-                            if (!synchronizers.Any(s => true)) {
-                                entitiesByType = null;
-                                errorResponse = new ErrorResponse(ResultCode.client_error, /// TODO: This error message should most probably be radically improved.
-                                    "Query " + keyOperatorValue + " specifies an " + nameof(PropertyKeyAttribute.IsExternal) + " property " +
-                                    "but none of the " + nameof(BaseSynchronizer) + " specified " +
-                                    "(" + (synchronizers.Count == 0 ? "[NONE SPECIFIED]" : string.Join(", ", synchronizers.Select(s => s.ToString()))) + ") " +
-                                    "read the corresponding type " + c.Type + ".\r\n" +
-                                    "Unable the ensure " + SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache + ".\r\n" +
-                                    "Possible resolution: Add in 'context' a " + nameof(BaseSynchronizer) + " that reads " + c.Type + ".");
-                                return false;
-                            }
-                        }
-                        break;
-                    default: throw new InvalidObjectTypeException(c.QueryId);
-                }
-            }
+            var contexts = allContexts;
             var types = contexts.Select(c => c.Type).Distinct();
 
             /// Built up dictionary for each type based on <see cref="AgoRapide.SetOperator.Intersect"/> and <see cref="AgoRapide.SetOperator.Union"/>. 
@@ -357,7 +360,6 @@ namespace AgoRapide.Core {
                                 });
                             }); break;
                     }
-
                     traversedValues.Add(traversals.Key, toValues);
                 });
             });

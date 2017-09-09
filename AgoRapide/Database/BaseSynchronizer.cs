@@ -13,7 +13,7 @@ namespace AgoRapide.Database {
 
     [Class(
         Description =
-            "Synchronizes data from an external data source, usually with the goal of using AgoRapide to easily browse the data.",
+            "Synchronizes data from an external data source, usually with the goal of using AgoRapide to easily browse the data and generate reports.",
         LongDescription =
             "The data found is stored within -" + nameof(FileCache) + "-, " +
             "only identifiers (-" + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "-) are stored within -" + nameof(BaseDatabase) + "-."
@@ -27,29 +27,51 @@ namespace AgoRapide.Database {
         /// <param name="request"></param>
         [APIMethod(
             Description = "Synchronizes from source",
-            S1 = nameof(Synchronize), S2 = "DUMMY")]
+            S1 = nameof(Synchronize), S2 = "DUMMY")] // TODO: REMOVE "DUMMY"
         public object Synchronize(BaseDatabase db, ValidRequest request) {
-            Synchronize<BaseEntity>(db, request.Result);
+            var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
+            var entities = new Func<Dictionary<Type, List<BaseEntity>>>(() => {
+                if (PV(SynchronizerP.SynchronizerUseMockData.A(), defaultValue: false)) { // Create mock-data.
+                    // Note how this process is reproducable, the same result should be returned each time (given the same percentileValue)                    
+
+                    // TOOD: ---------
+                    // TODO: Add some functionality for configuring number of, and distribution of entities here.
+                    var percentileValue = PV(SynchronizerP.SynchronizerMockSize.A(), defaultValue: new Percentile(3)).Value;
+                    var defaultCount = percentileValue * percentileValue * percentileValue; // Default will be 27 entities. 
+                    var maxN = types.ToDictionary(key => key, key => defaultCount);
+                    // TOOD: ---------
+
+                    return types.ToDictionary(t => t, t => GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+                }
+                var retval = SynchronizeInternal(db, request.Result);
+                if (retval.Count != types.Count) throw new InvalidCountException(retval.Count, types.Count,
+                    "Found " + retval.KeysAsString() + ", expected " + string.Join(", ", types.Select(t => t.ToStringVeryShort())) + ".\r\n" +
+                    "Resolution: Ensure that " + GetType() + "." + nameof(SynchronizeInternal) + " really returns data for all the types given in " + SynchronizerP.SynchronizerExternalType + ".");
+                return retval;
+            })();
+            entities.ForEach(e => Reconcile(e.Key, e.Value, db, request.Result));
+            // TODO: Add reconciling of all foreign keys here. 
+            entities.ForEach(e => FileCache.Instance.StoreToDisk(this, e.Key, e.Value));
+
+            AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
+
             request.Result.ResultCode = ResultCode.ok; /// It is difficult for sub class to set  <see cref="Result.ResultCode"/> because it does not know if it generated a complete result or was just called as part of something
             request.Result.AddProperty(CoreP.SuggestedUrl.A(), new Uri(request.API.CreateAPIUrl(this)));
             return request.GetResponse();
         }
 
-        /// <summary>
-        /// Synchronizes with source. 
-        /// </summary>
-        /// <typeparam name="T">
-        /// This is mostly a hint about what needs to be synchronized. 
-        /// {BaseEntity} may be used, meaning implementator should synchronize all data. 
-        /// It is up to the synchronizer to do a fuller synchronization as deemed necessary or practical. 
-        /// </typeparam>
-        /// <param name="db"></param>
-        /// <param name="fileCache"></param>
-        [ClassMember(Description = "Synchronizes between local database / local file storage and external source")]
-        public abstract void Synchronize<T>(BaseDatabase db, Result result) where T : BaseEntity, new();
+        // TODO: REMOVE COMMENTED OUT CODE
+        ///// <typeparam name="T">
+        ///// This is mostly a hint about what needs to be synchronized. 
+        ///// {BaseEntity} may be used, meaning implementator should synchronize all data. 
+        ///// It is up to the synchronizer to do a fuller synchronization as deemed necessary or practical. 
+        ///// </typeparam>
+
+        public abstract Dictionary<Type, List<BaseEntity>> SynchronizeInternal(BaseDatabase db, Result result);
 
         /// <summary>
-        /// Reconciles data found from external data source with what we already have stored in database. 
+        /// Reconciles <paramref name="externalEntities"/> of type <paramref name="type"/> 
+        /// found from external data source with what we already have stored in database. 
         /// 
         /// Primary keys are stored in database. 
         /// <paramref name="externalEntities"/> is enriched with information from the database. 
@@ -58,19 +80,21 @@ namespace AgoRapide.Database {
         /// 
         /// "Callback" from the implementation of <see cref="Synchronize{T}"/>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="type"></param>
         /// <param name="externalEntities">
         /// This must be the complete list of all entities from external data source. 
         /// After the call is complete this list will have been enriched with information from database. 
         /// </param>
         /// <param name="db"></param>
         /// <param name="result"></param>
-        protected void Reconcile<T>(List<T> externalEntities, BaseDatabase db, Result result) where T : BaseEntity, new() {
-            var type = typeof(T);
+        private void Reconcile(Type type, List<BaseEntity> externalEntities, BaseDatabase db, Result result) { //  where T : BaseEntity, new() {
+            InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
+            // var type = typeof(T);
+
             /// Note how we cannot just do 
             ///   SetAndStoreCount(CountP.Total, externalEntities.Count, result, db);
             /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as we are called for different types, meaning value stored for last type would just be overridden)
-            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.Total.A()), externalEntities.Count, result, db);
+            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, type, CountP.Total.A()), externalEntities.Count, result, db);
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             /// TODO: Add some identificator here for "workspace" or similar.
@@ -78,17 +102,17 @@ namespace AgoRapide.Database {
             /// TOOD: WHERE workspace = {workspaceId}
             /// TODO: We could have workSpaceId as a property of ourselves. The id could be the same as 
             /// TODO: the <see cref="DBField.id"/> of a root administrative <see cref="Person"/> for our customer.
-            var internalEntities = db.GetAllEntities<T>();
+            var internalEntities = db.GetAllEntities(type);
             var internalEntitiesByPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(primaryKey), e => e);
             var newCount = 0;
             externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
                 if (internalEntitiesByPrimaryKey.TryGetValue(e.PV<long>(primaryKey), out var internalEntity)) {
                     internalEntitiesByPrimaryKey.Remove(e.PV<long>(primaryKey)); // Remove in order to check at end for any left
                 } else {
-                    internalEntity = db.GetEntityById<T>(db.CreateEntity<T>(Id,
+                    internalEntity = db.GetEntityById(db.CreateEntity(Id, type,
                         new List<(PropertyKeyWithIndex key, object value)> {
                             (primaryKey.PropertyKeyWithIndex, e.PV<long>(primaryKey))
-                        }, result));
+                        }, result), type);
                     newCount++;
                 }
 
@@ -105,18 +129,18 @@ namespace AgoRapide.Database {
                 });
                 InMemoryCache.EntityCache[e.Id] = e; // Put into cache
             });
-            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.Created.A()), newCount, result, db);
+            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, type, CountP.Created.A()), newCount, result, db);
             internalEntitiesByPrimaryKey.ForEach(e => { // Remove any internal entities left.
                 db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid, result);
                 if (InMemoryCache.EntityCache.ContainsKey(e.Value.Id)) InMemoryCache.EntityCache.TryRemove(e.Value.Id, out _);
             });
-            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, typeof(T), CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
+            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, type, CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
 
-            // TODO: Map external foreign keys to internal ones.
-            // TODO: Decide where and when to do. Inside this method would be difficult for instance because as of Sep 2017 we do not have access to all entities.
-
-            // TODO: Most probably better to NOT store anything inside this method. 
-            FileCache.Instance.StoreToDisk(this, externalEntities);
+            // REMOVE COMMENTED OUT CODE. ForeignKey and storing is not done here.
+            //// TODO: Map external foreign keys to internal ones.
+            //// TODO: Decide where and when to do. Inside this method would be difficult for instance because as of Sep 2017 we do not have access to all entities.
+            //// TODO: Most probably better to NOT store anything inside this method. 
+            //// FileCache.Instance.StoreToDisk(this, externalEntities);
         }
     }
 
@@ -135,10 +159,11 @@ namespace AgoRapide.Database {
 
         [PropertyKey(
             Description =
-                "Size of data set to be used for -" + nameof(SynchronizerUseMockData) + "-. " +
-                "It is up to the implementation to interpret the value, typically as a -" + nameof(Percentile.Tertile) + "-",
+                "Size of data set to be used for -" + nameof(SynchronizerUseMockData) + "-.",
+            LongDescription =
+                "-" + nameof(BaseSynchronizer) + "- will use this value's third power for default count of mock-entities of each type.",
             Type = typeof(Percentile),
-            SampleValues = new string[] { "1P", "5P", "25P", "50P", "75P", "100P" },
+            SampleValues = new string[] { "1P", "3P", "5P", "7P", "10P", "25P", "50P", "75P", "100P" },
             Parents = new Type[] { typeof(BaseSynchronizer) },
             AccessLevelRead = AccessLevel.Relation,
             AccessLevelWrite = AccessLevel.Relation
@@ -165,6 +190,9 @@ namespace AgoRapide.Database {
         )]
         SynchronizerLastUpdateAgainstSource,
 
+        /// <summary>
+        /// TODO: Do we need this value? 
+        /// </summary>
         [PropertyKey(
             Description = "TRUE if actual data has been read into -" + nameof(InMemoryCache) + "- after application startup.",
             Type = typeof(bool),

@@ -3,7 +3,7 @@ Lightweight pragmatic integrated library for creation of .NET REST APIs offering
 
 &#x1F53A; PLEASE NOTE: AgoRapide is currently in the alpha-stage of development. Do not use it for any production purposes yet. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document! 
 
-&#9650; Branch v0.1 is the stable one (as of March 2017) to use if you want something that easily compiles and runs locally.
+&#9650; Branch v0.1 is the stable one (as of March 2017) to use if you want something that easily compiles and runs locally. The model in use by this branch is a bit outdated however. Feel free to contact author for information about the current (Master) branch.
 
 # What is AgoRapide?
 (Note: For code examples please scroll further down)

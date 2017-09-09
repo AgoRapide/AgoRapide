@@ -484,7 +484,7 @@ namespace AgoRapide.Core {
             var retval = Property.CreateIsManyParent(key);
             foreach (var v in (System.Collections.IList)list) {
                 var id = retval.GetNextIsManyId();
-                var property = (Property)System.Activator.CreateInstance(
+                var property = (Property)Activator.CreateInstance(
                     typeof(PropertyT<>).MakeGenericType(new Type[] { key.Key.A.Type }),
                     id,
                     v
@@ -637,7 +637,7 @@ namespace AgoRapide.Core {
         /// May be null
         /// Used to give details in case of an exception being thrown
         /// </param>
-        public static void AssertAssignable(Type foundType, Type expectedType, Func<string> detailer) {
+        public static void AssertAssignable(Type foundType, Type expectedType, Func<string> detailer = null) {
             if (foundType == null) throw new NullReferenceException(nameof(foundType) + ". (" + nameof(expectedType) + ": " + expectedType + ")" + detailer.Result("\r\nDetails: "));
             if (!expectedType.IsAssignableFrom(foundType)) throw new InvalidTypeException(foundType, expectedType, detailer.Result(""));
         }

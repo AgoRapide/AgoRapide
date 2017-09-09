@@ -124,12 +124,12 @@ namespace AgoRapide.Core {
             if (string.IsNullOrEmpty(Description)) {
                 Description = other.Description;
             } else {
-                Description += (Description.EndsWith(".") ? "" : ".") + "\r\nSuper class " + nameof(other.Description) + ": " + other.Description;
+                Description += (Description.EndsWith(".") ? "" : ".") + "\r\nSuper class -" + other.ClassType.ToStringVeryShort() + "- " + nameof(other.Description) + ": " + other.Description;
             }
             if (string.IsNullOrEmpty(LongDescription)) {
                 LongDescription = other.LongDescription;
             } else {
-                LongDescription += (LongDescription.EndsWith(".") ? "" : ".") + "\r\nSuper class " + nameof(other.LongDescription) + ": " + other.LongDescription;
+                LongDescription += (LongDescription.EndsWith(".") ? "" : ".") + "\r\nSuper class -" + other.ClassType.ToStringVeryShort() + "- " + nameof(other.LongDescription) + ": " + other.LongDescription;
             }
 
             if (CacheUse == CacheUse.None) CacheUse = other.CacheUse;
