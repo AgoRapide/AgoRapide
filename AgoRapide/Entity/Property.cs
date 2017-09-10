@@ -365,7 +365,7 @@ namespace AgoRapide {
                 return (bool)_showValueHTMLSeparate;
             }
         }
-        private string _valueHTML;
+        private HTML _valueHTML;
         /// <summary>
         /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
         /// 
@@ -375,7 +375,7 @@ namespace AgoRapide {
         /// since the process of inserting links is quite performance heavy.
         /// </summary>
         /// <returns></returns>
-        public string ValueHTML => _valueHTML ?? (_valueHTML = new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
+        private HTML ValueHTML => _valueHTML ?? (_valueHTML = new HTML(new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
             _showValueHTMLSeparate = true;
             switch (Key.Key.CoreP) {
                 case CoreP.QueryId: {
@@ -408,7 +408,7 @@ namespace AgoRapide {
                         }
                     }
             }
-        })());
+        })()));
 
         public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + _stringValue + "' to " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
         /// <summary>
@@ -448,8 +448,7 @@ namespace AgoRapide {
                 }
             } else {
                 if (typeof(HTML).Equals(t)) {
-                    value = (T)(object)"";
-                    throw new NotImplementedException();
+                    value = (T)(object)ValueHTML;
                     return true;
                 } if (typeof(string).Equals(t)) {
                     if (_stringValue == null) {
@@ -573,7 +572,7 @@ namespace AgoRapide {
                 // --------------------
                 ((!IsChangeableByCurrentUser || a.ValidValues != null) ?
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
-                    (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML)) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
+                    (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML.ToString())) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
                         (IsTemplateOnly || !ShowValueHTMLSeparate ? "" : (ValueHTML + "&nbsp;")) + /// Added <see cref="ValueHTML"/> 21 Jun 2017
                         "<input " + // TODO: Vary size according to attribute.
@@ -773,20 +772,19 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// TODO: MOVE THIS CLASS OUT OF Property.
+        /// TODO: Consider moving this class out of Property (???)
         /// 
         /// Practical class that has almost no functionality but which enables calling 
         /// <see cref="BaseEntity.PV{T}(PropertyKey)"/> or
         /// <see cref="Property.V{T}"/> with T as HTML 
-        /// in addition to calling  
-        /// <see cref="ValueHTML"/>
+        /// facilitating hiding of <see cref="ValueHTML"/> (making it private)
         /// </summary>
         public class HTML {
             public string HTMLString { get; private set; }
             /// <summary>
             /// </summary>
-            /// <param name="_string">This should NOT be HTML encoded</param>
-            public HTML(string _string) => HTMLString = _string?.HTMLEncode() ?? throw new ArgumentNullException(nameof(_string));
+            /// <param name="_html">NOTE: This should already have been HTML encoded</param>
+            public HTML(string _html) => HTMLString = _html ?? throw new ArgumentNullException(nameof(_html));
             public override string ToString() => HTMLString;
         }
     }

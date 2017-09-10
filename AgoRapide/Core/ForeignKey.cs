@@ -9,6 +9,9 @@ using AgoRapide.Database;
 
 namespace AgoRapide.Core {
 
+    /// <summary>
+    /// TODO: Not used as of Sep 2017. Recollect original intention and implement usage. 
+    /// </summary>
     [Class(Description = "Describes a foreign key. See also -"+ nameof(GetForeignEntity) + "-.")]
     public class ForeignKey : ITypeDescriber {
 

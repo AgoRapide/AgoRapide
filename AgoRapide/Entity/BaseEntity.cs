@@ -324,7 +324,7 @@ namespace AgoRapide {
             }
         }
 
-        public void AddProperty(Property p, Func<string> detailer) {
+        public void AddProperty(Property p, Func<string> detailer = null) {
             p.ParentId = Id;
             p.Parent = this;
             Properties.AddValue2(p.Key.Key.CoreP, p, detailer);
@@ -360,7 +360,7 @@ namespace AgoRapide {
         /// <returns></returns>
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "&nbsp;") + "</td><td>" +
+            (Properties.TryGetValue(CoreP.Description, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;") + "</td><td>" +
             (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
 
         /// <summary>
@@ -578,7 +578,7 @@ namespace AgoRapide {
                 e.Properties = new Dictionary<CoreP, Property>();
                 // };
                 properties.ForEach(p => {
-                    e.AddProperty(p.Key.GetSampleProperty(type, n, maxN), null);
+                    e.AddProperty(p.Key.GetSampleProperty(type, n, maxN));
                 });
                 retval.Add(e);
             }

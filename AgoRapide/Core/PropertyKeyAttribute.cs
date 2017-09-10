@@ -293,7 +293,7 @@ namespace AgoRapide.Core {
                 "which should be replaced with respective links by -" + nameof(Documentator.ReplaceKeys) + "-.",
             LongDescription =
                 "This actual description is for instance marked as " + nameof(IsDocumentation) + " (see " + nameof(CoreP.LongDescription) + ").\r\n" +
-                "Especially useful when making HTML representations of properties (see -" + nameof(Property.ValueHTML) + "-)."
+                "Especially useful when making HTML representations of properties (see -" + nameof(Property.HTML) + "-)."
         )]
         public bool IsDocumentation { get => _isDocumentation; set { _isDocumentation = value; _isDocumentationIsSet = true; } }
         private bool _isDocumentationIsSet = false;

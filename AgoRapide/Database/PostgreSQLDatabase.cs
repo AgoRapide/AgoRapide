@@ -125,7 +125,7 @@ namespace AgoRapide.Database {
                     // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
                     if (!contextEntities.TryGetValue(requiredType, out var thisType) || thisType.Count == 0) {
                         entities = null;
-                        errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + requiredType + " contained within current context for " + currentUser.IdFriendly);
+                        errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + requiredType + " contained within current context for " + currentUser.GetType().ToStringVeryShort() + " " + currentUser.IdFriendly);
                         return false;
                     }
                     entities = thisType.Values.ToList();
@@ -152,9 +152,11 @@ namespace AgoRapide.Database {
             switch (requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None) {
                 case CacheUse.All:
                     switch (id) {
+                        case QueryIdAll q:
+                            allEntities = InMemoryCache.EntityCache.Values.Where(e => requiredType.IsAssignableFrom(e.GetType())).ToList(); break; // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
                         case QueryIdKeyOperatorValue keyOperatorValue: /// TODO: Move code into <see cref="InMemoryCache"/>
                             allEntities = InMemoryCache.EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
-                                if (requiredType != null && !requiredType.IsAssignableFrom(e.GetType())) return false;
+                                if (!requiredType.IsAssignableFrom(e.GetType())) return false;
                                 return keyOperatorValue.IsMatch(e);
                             }).ToList(); break;
                         default:

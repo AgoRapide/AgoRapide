@@ -35,6 +35,10 @@ namespace AgoRapide.Core {
         public CoreP IndexAsCoreP => (CoreP)(object)(int.MaxValue - (_index > 0 ? _index : throw new InvalidPropertyKeyException(nameof(Index) + " not set. Details: " + Key.ToString())));
 
         public PropertyKeyWithIndex(PropertyKeyAttributeEnriched key) : this(key, 0) { }
+        /// <summary>
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="index">1-based</param>
         public PropertyKeyWithIndex(PropertyKeyAttributeEnriched key, int index) : base(key) {
             Index = index;
             if (index == IS_MANY_PARENT_OR_TEMPLATE_INDEX) {

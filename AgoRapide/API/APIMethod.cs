@@ -947,7 +947,7 @@ namespace AgoRapide.API {
             PV(APIMethodP.CoreAPIMethod.A(), CoreAPIMethod.None).Use(c => c == CoreAPIMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
             (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
             PV<AccessLevel>(CoreP.AccessLevelUse.A()) + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.ValueHTML : "&nbsp;") + "</td></tr>\r\n";
+            (Properties.TryGetValue(CoreP.Description, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;") + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {
             public MethodAttributeInitialisationException(string message) : base(message) { }

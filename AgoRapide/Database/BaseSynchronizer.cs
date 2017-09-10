@@ -29,35 +29,35 @@ namespace AgoRapide.Database {
             Description = "Synchronizes from source",
             S1 = nameof(Synchronize), S2 = "DUMMY")] // TODO: REMOVE "DUMMY"
         public object Synchronize(BaseDatabase db, ValidRequest request) {
-            var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
-            var entities = new Func<Dictionary<Type, List<BaseEntity>>>(() => {
-                if (PV(SynchronizerP.SynchronizerUseMockData.A(), defaultValue: false)) { // Create mock-data.
-                    // Note how this process is reproducable, the same result should be returned each time (given the same percentileValue)                    
-
-                    // TOOD: ---------
-                    // TODO: Add some functionality for configuring number of, and distribution of entities here.
-                    var percentileValue = PV(SynchronizerP.SynchronizerMockSize.A(), defaultValue: new Percentile(3)).Value;
-                    var defaultCount = percentileValue * percentileValue * percentileValue; // Default will be 27 entities. 
-                    var maxN = types.ToDictionary(key => key, key => defaultCount);
-                    // TOOD: ---------
-
-                    return types.ToDictionary(t => t, t => GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
-                }
-                var retval = SynchronizeInternal(db, request.Result);
-                if (retval.Count != types.Count) throw new InvalidCountException(retval.Count, types.Count,
-                    "Found " + retval.KeysAsString() + ", expected " + string.Join(", ", types.Select(t => t.ToStringVeryShort())) + ".\r\n" +
-                    "Resolution: Ensure that " + GetType() + "." + nameof(SynchronizeInternal) + " really returns data for all the types given in " + SynchronizerP.SynchronizerExternalType + ".");
-                return retval;
-            })();
-            entities.ForEach(e => Reconcile(e.Key, e.Value, db, request.Result));
-            // TODO: Add reconciling of all foreign keys here. 
+            var entities = SynchronizeGetEntities(db, request);
+            entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, request.Result));
+            SynchronizeMapForeignKeys(entities);
             entities.ForEach(e => FileCache.Instance.StoreToDisk(this, e.Key, e.Value));
-
             AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
-
-            request.Result.ResultCode = ResultCode.ok; /// It is difficult for sub class to set  <see cref="Result.ResultCode"/> because it does not know if it generated a complete result or was just called as part of something
+            request.Result.ResultCode = ResultCode.ok;
             request.Result.AddProperty(CoreP.SuggestedUrl.A(), new Uri(request.API.CreateAPIUrl(this)));
             return request.GetResponse();
+        }
+
+        private Dictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, ValidRequest request) {
+            var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
+            if (PV(SynchronizerP.SynchronizerUseMockData.A(), defaultValue: false)) { // Create mock-data.
+                                                                                      // Note how this process is reproducable, the same result should be returned each time (given the same percentileValue)                    
+
+                // TOOD: ---------
+                // TODO: Add some functionality for configuring number of, and distribution of entities here.
+                var percentileValue = PV(SynchronizerP.SynchronizerMockSize.A(), defaultValue: new Percentile(3)).Value;
+                var defaultCount = percentileValue * percentileValue * percentileValue; // Default will be 27 entities. 
+                var maxN = types.ToDictionary(key => key, key => defaultCount);
+                // TOOD: ---------
+
+                return types.ToDictionary(t => t, t => GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+            }
+            var retval = SynchronizeInternal(db, request.Result);
+            if (retval.Count != types.Count) throw new InvalidCountException(retval.Count, types.Count,
+                "Found " + retval.KeysAsString() + ", expected " + string.Join(", ", types.Select(t => t.ToStringVeryShort())) + ".\r\n" +
+                "Resolution: Ensure that " + GetType() + "." + nameof(SynchronizeInternal) + " really returns data for all the types given in " + SynchronizerP.SynchronizerExternalType + ".");
+            return retval;
         }
 
         // TODO: REMOVE COMMENTED OUT CODE
@@ -87,7 +87,7 @@ namespace AgoRapide.Database {
         /// </param>
         /// <param name="db"></param>
         /// <param name="result"></param>
-        private void Reconcile(Type type, List<BaseEntity> externalEntities, BaseDatabase db, Result result) { //  where T : BaseEntity, new() {
+        private void SynchronizeReconcileWithDatabase(Type type, List<BaseEntity> externalEntities, BaseDatabase db, Result result) { //  where T : BaseEntity, new() {
             InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
             // var type = typeof(T);
 
@@ -141,6 +141,37 @@ namespace AgoRapide.Database {
             //// TODO: Decide where and when to do. Inside this method would be difficult for instance because as of Sep 2017 we do not have access to all entities.
             //// TODO: Most probably better to NOT store anything inside this method. 
             //// FileCache.Instance.StoreToDisk(this, externalEntities);
+        }
+
+        /// <summary>
+        /// Adds corresponding properties for <see cref="DBField.id"/> values of foreign keys
+        /// 
+        /// (Necessary for instance for <see cref="Context"/> to be able to traverse relations).
+        /// 
+        /// Depends on every <see cref="PropertyKeyAttribute.ExternalForeignKeyOf"/> having a corresponding <see cref="PropertyKeyAttribute.ForeignKey"/>
+        /// </summary>
+        /// <param name="entities"></param>
+        public void SynchronizeMapForeignKeys(Dictionary<Type, List<BaseEntity>> entities) {
+            var foreignPrimaryKeyToPrimaryKeyIndexes = new Dictionary<Type, Dictionary<object, long>>();
+            entities.ForEach(e => {
+                e.Key.GetChildProperties().Values.Where(p => p.Key.A.ExternalForeignKeyOf != null).ForEach(p => {
+                    var foreignType = p.Key.A.ExternalForeignKeyOf;
+                    Dictionary<object, long> indexesThisForeignKeyType = null;
+                    e.Value.ForEach(entity => {
+                        if (!entity.Properties.TryGetValue(p.Key.CoreP, out var fk)) return;
+                        if (indexesThisForeignKeyType == null) {
+                            if (!foreignPrimaryKeyToPrimaryKeyIndexes.TryGetValue(foreignType, out indexesThisForeignKeyType)) { // Note how we ensure that we build index for a specific foreignType only when needed and only once, even if referred from different properties.
+                                indexesThisForeignKeyType = (foreignPrimaryKeyToPrimaryKeyIndexes[foreignType] =
+                                    entities.GetValue(foreignType, () => "Possible resolution: Add " + foreignType + " to " + SynchronizerP.SynchronizerExternalType).ToDictionary(
+                                        entityOfForeignType => entityOfForeignType.Properties.GetValue(p.Key.CoreP, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " not found for " + entityOfForeignType.ToString()).Value,
+                                        entityOfForeignType => entityOfForeignType.Id
+                                    ));
+                            }
+                        }
+                        entity.Properties.AddValue(p.Key.CoreP, new PropertyT<long>(p.PropertyKeyWithIndex, indexesThisForeignKeyType.GetValue(fk.Value, () => p.Key.PToString + " -" + fk.Value + "- for " + entity.ToString() + " not found")));
+                    });
+                });
+            });
         }
     }
 

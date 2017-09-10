@@ -34,32 +34,28 @@ namespace AgoRapideSample {
                     // { typeof(Dealers), maxCars / 50 },
                 };
                 var allIds = new Dictionary<Type, List<long>>();
-                void reconciler<T>() where T : BaseEntity, new()
-                {
+                void reconciler(Type type) {  // where T : BaseEntity, new()                
                     var retval = new List<long>();
-                    var type = typeof(T);
+                    // var type = typeof(T);
                     Log("Creating " + type.ToString());
-                    var entities = BaseEntity.GetMockEntities<T>(
+                    var entities = BaseEntity.GetMockEntities(
+                        type,
                         propertyPredicate: new Func<PropertyKey, bool>(p => {
-                            if (p.Key.PToString.Equals(CarP.Colour.ToString())) {
-                                var a = 1;
-                            }
                             if (p.Key.A.ExternalPrimaryKeyOf != null) return false; // TOOD: Maybe throw an exception here
                             if (p.Key.A.ForeignKeyOf != null) return false; // These will be added later
                             if (p.Key.A.SampleValues == null || p.Key.A.SampleValues.Length == 0) return false;
-                            // if (p.Key.A.AccessLevelWrite > AccessLevel.Relation) return false;
                             return true;
                         }),
                         maxN: maxN
                     );
                     Log(type + ", Count: " + entities.Count, request.Result); /// TODO: Use <see cref="BaseEntityWithLogAndCount.Count"/> instead. 
-                    entities.ForEach(e => retval.Add(DB.CreateEntity<T>(request.CurrentUser.Id, e.Properties, request.Result)));
-                    allIds.Add(typeof(T), retval);
+                    entities.ForEach(e => retval.Add(DB.CreateEntity(request.CurrentUser.Id, type, e.Properties, request.Result)));
+                    allIds.Add(type, retval);
 
-                    request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, typeof(T), new QueryIdKeyOperatorValue()));
+                    request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, new QueryIdAll()));
                 }
-                reconciler<Person>();
-                reconciler<Car>();
+                reconciler(typeof(Person));
+                reconciler(typeof(Car));
 
                 var r = new Random(maxCars); // Initialize with value giving predictable results every time
                 allIds.ForEach(e => {
@@ -122,11 +118,11 @@ namespace AgoRapideSample {
             try {
                 if (!TryGetRequest(GeneralQueryId, out var request, out var completeErrorResponse)) return completeErrorResponse;
                 if (!GeneralQueryId.EndsWith("%")) GeneralQueryId += "%"; /// TODO: PostgreSQL specific? Where do we want to add this? /// TODO: Should we add a WILDCARD-parameter to <see cref="QueryIdKeyOperatorValue"/>. 
-                return GeneralQuery<Person>(request, new QueryIdKeyOperatorValue(new List<PropertyKeyAttributeEnriched> {
-                    PersonP.FirstName.A().Key,  // Add all keys that you consider
-                    PersonP.LastName.A().Key,   // relevant for a general query here
-                    PersonP.Email.A().Key       // (remember to optimize database correspondingly, like using partial indexes in PostgreSQL)
-                }, Operator.ILIKE, GeneralQueryId)); /// TODO: Add a LIMIT parameter to <see cref="QueryIdKeyOperatorValue"/>.
+                return GeneralQuery<Person>(request, new QueryIdMultiple(new List<QueryId> {
+                    new QueryIdKeyOperatorValue(PersonP.FirstName.A().Key, Operator.ILIKE, GeneralQueryId),  // Add all keys that you consider
+                    new QueryIdKeyOperatorValue(PersonP.LastName.A().Key, Operator.ILIKE, GeneralQueryId),   // relevant for a general query here
+                    new QueryIdKeyOperatorValue(PersonP.Email.A().Key, Operator.ILIKE, GeneralQueryId)       // (remember to optimize database correspondingly, like using partial indexes in PostgreSQL)
+                })); /// TODO: Add a LIMIT parameter to <see cref="QueryIdMultiple"/>.
             } catch (Exception ex) {
                 return HandleExceptionAndGenerateResponse(ex);
             } finally {
