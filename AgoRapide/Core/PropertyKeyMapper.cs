@@ -116,12 +116,24 @@ namespace AgoRapide.Core {
                         existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
                 }
                 _fromStringMaps[e.ToString()] = a;
-                if (a.Key.A.InheritFrom != null && !a.Key.A.InheritFrom.ToString().Equals(e.ToString())) {
+                if (a.Key.A.InheritFrom != null && !a.Key.A.InheritFrom.ToString().Equals(e.ToString())) { // Replace value already stored for "inherited" key
                     if (_fromStringMaps.TryGetValue(a.Key.A.InheritFrom.ToString(), out existing)) {
                         overriddenAttributes.GetValue(existing.Key.A.EnumValue.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
                             existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
                     }
                     _fromStringMaps[a.Key.A.InheritFrom.ToString()] = a;
+                }
+                if (a.Key.A.ExternalForeignKeyOf != null) { // Add corresponding internal key 
+                    /// TODO: Consider using <see cref="PropertyKeyAttributeEnrichedT{T}"/> instead. This will require creating new <typeparam name="T"/> in the
+                    /// TODO: same manner as <see cref="GetNextCorePId"/> is used for <see cref="CoreP"/>
+                    var correspondingInternalKey = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute(
+                        e + "CorrespondingInternalKey", "Corresponding internal key of " + e, longDescription: null, isMany: false) {
+                        ForeignKeyOf = a.Key.A.ExternalForeignKeyOf,
+                        AccessLevelRead = a.Key.A.AccessLevelRead, /// No need for setting <see cref="PropertyKeyAttribute.AccessLevelWrite"/>
+                        Parents = a.Key.A.Parents
+                    }, (CoreP)GetNextCorePId()));
+                    correspondingInternalKey.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); // HACK
+                    _fromStringMaps[e + "CorrespondingInternalKey"] = correspondingInternalKey;
                 }
 
                 if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later in <see cref="AddA"/>)
@@ -173,14 +185,14 @@ namespace AgoRapide.Core {
 
         }
 
-            /// <summary>
-            /// Preferred method when <paramref name="_enum"/> is known in the C# code
-            /// </summary>
-            /// <typeparam name="T"></typeparam>
-            /// <param name="_enum"></param>
-            /// <returns></returns>
-            public static PropertyKey GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
-            TryGetA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
+        /// <summary>
+        /// Preferred method when <paramref name="_enum"/> is known in the C# code
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="_enum"></param>
+        /// <returns></returns>
+        public static PropertyKey GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
+        TryGetA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
 
         /// <summary>
         /// Note how <see cref="InvalidMappingException{T}"/> is being thrown if no corresponding call was made to <see cref="MapEnum"/>.

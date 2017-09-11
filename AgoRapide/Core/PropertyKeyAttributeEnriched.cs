@@ -170,6 +170,13 @@ namespace AgoRapide.Core {
                 A.IsExternal = true;
             }
 
+            if (A.ForeignKeyOf !=null && A.IsExternal) {
+                throw new BaseAttribute.AttributeException( // TODO: We expect to have to improve on this exception message
+                    "It is invalid to combine " + nameof(A.ForeignKeyOf) + " (" + A.ForeignKeyOf + ") with " + nameof(A.IsExternal) + " (" + A.IsExternal + ").\r\n" +
+                    nameof(Database.BaseSynchronizer) + "." + nameof(Database.BaseSynchronizer.SynchronizeMapForeignKeys) + " will create these properties automatically.\r\n" +
+                    "Details: " + A.ToString());
+            }
+
             /// Enrichment 1, explicit given
             /// -----------------------------------------
             if (A.InheritFrom != null) {

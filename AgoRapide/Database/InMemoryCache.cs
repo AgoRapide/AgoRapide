@@ -52,4 +52,9 @@ namespace AgoRapide.Database {
         /// </summary>
         public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
     }
+
+    public class InMemoryCacheException : ApplicationException {
+        public InMemoryCacheException(string message) : base(message) { }
+        public InMemoryCacheException(string message, Exception inner) : base(message, inner) { }
+    }
 }

@@ -156,19 +156,21 @@ namespace AgoRapide.Database {
             entities.ForEach(e => {
                 e.Key.GetChildProperties().Values.Where(p => p.Key.A.ExternalForeignKeyOf != null).ForEach(p => {
                     var foreignType = p.Key.A.ExternalForeignKeyOf;
-                    Dictionary<object, long> indexesThisForeignKeyType = null;
+                    var correspondingInternalKey = e.Key.GetChildProperties().Values.Single(p2 => p2.Key.PToString == p.Key.PToString + "CorrespondingInternalKey", () => p.Key.PToString + "CorrespondingInternalKey for " + e.Key.ToStringVeryShort());
+                    Dictionary <object, long> indexesThisForeignKeyType = null;
                     e.Value.ForEach(entity => {
                         if (!entity.Properties.TryGetValue(p.Key.CoreP, out var fk)) return;
-                        if (indexesThisForeignKeyType == null) {
+                        if (indexesThisForeignKeyType == null) { 
                             if (!foreignPrimaryKeyToPrimaryKeyIndexes.TryGetValue(foreignType, out indexesThisForeignKeyType)) { // Note how we ensure that we build index for a specific foreignType only when needed and only once, even if referred from different properties.
-                                indexesThisForeignKeyType = (foreignPrimaryKeyToPrimaryKeyIndexes[foreignType] =
+                                var externalPrimaryKeyOfForeignType = foreignType.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " of " + foreignType);
+                                indexesThisForeignKeyType = (foreignPrimaryKeyToPrimaryKeyIndexes[foreignType] = // Construct index                                    
                                     entities.GetValue(foreignType, () => "Possible resolution: Add " + foreignType + " to " + SynchronizerP.SynchronizerExternalType).ToDictionary(
-                                        entityOfForeignType => entityOfForeignType.Properties.GetValue(p.Key.CoreP, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " not found for " + entityOfForeignType.ToString()).Value,
+                                        entityOfForeignType => entityOfForeignType.Properties.GetValue(externalPrimaryKeyOfForeignType.Key.CoreP, () => externalPrimaryKeyOfForeignType.ToString() + " not found for " + entityOfForeignType.ToString()).Value,
                                         entityOfForeignType => entityOfForeignType.Id
                                     ));
                             }
                         }
-                        entity.Properties.AddValue(p.Key.CoreP, new PropertyT<long>(p.PropertyKeyWithIndex, indexesThisForeignKeyType.GetValue(fk.Value, () => p.Key.PToString + " -" + fk.Value + "- for " + entity.ToString() + " not found")));
+                        entity.Properties.AddValue(correspondingInternalKey.Key.CoreP, new PropertyT<long>(correspondingInternalKey.PropertyKeyWithIndex, indexesThisForeignKeyType.GetValue(fk.Value, () => p.Key.PToString + " -" + fk.Value + "- for " + entity.ToString())));
                     });
                 });
             });

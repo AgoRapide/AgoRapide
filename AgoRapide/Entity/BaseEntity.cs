@@ -484,29 +484,33 @@ namespace AgoRapide {
                 } else if ("AgoRapide".Equals(GetType().Assembly.GetName().Name)) {
                     /// Developers of AgoRapide library itself are expected to understand this issue
                 } else {
-
-                    /// In all other cases, give hint about access
-                    var a = GetType().GetClassAttribute();
                     var childProperties = GetType().GetChildProperties();
+                    if (childProperties.Any(c => c.Value.Key.A.ExternalPrimaryKeyOf != null)) {
+                        /// Looks like originates from external source through <see cref="BaseSynchronizer"/>. For those it is quite normal if nothing can be added. 
+                    } else {
+                        /// In all other cases, give hint about access
+                        var a = GetType().GetClassAttribute();
 
-                    // TODO: Create general mechanism for adding links to HTML text like this (links are indicated with starting -'s and trailing -'s.)
-                    // TODO: And of course cache result, expect for request.CurrentUser.Name which will change. 
-                    retval.AppendLine("<p>HINT: " +
-                        "There are no " + nameof(addableProperties) + " for this entity for " + request.CurrentUser.IdFriendly.HTMLEncode() + " (" + nameof(request.CurrentUser.AccessLevelGiven) + " = " + request.CurrentUser.AccessLevelGiven + ")." +
-                        "<br><br>\r\n" +
-                        (a.IsDefault || a.IsInherited ?
-                            ("Most probably because there are no -" + nameof(ClassAttribute) + "- (with -" + nameof(ClassAttribute.AccessLevelWrite) + "-) defined for -" + GetType().ToString() + "- meaning -" + nameof(ClassAttribute.AccessLevelWrite) + "- defaults to -" + a.AccessLevelWrite + "-.") :
-                            ("[" + nameof(ClassAttribute) + "(" + nameof(ClassAttribute.AccessLevelWrite) + " = " + a.AccessLevelWrite + "...)] for -" + GetType().ToStringShort() + "-.")
-                        ) +
-                        "<br><br>\r\n" +
-                        "In order to have any " + nameof(addableProperties) + " you must in general (for all the relevant enum values of -" + typeof(CoreP) + "-) " +
-                        "add typeof(" + GetType().ToStringShort() + ") to -" + nameof(PropertyKeyAttribute.Parents) + "- and also set " + nameof(PropertyKeyAttribute.AccessLevelWrite) + ". " +
-                        "<br><br>\r\n" +
-                        "(currently -" + typeof(CoreP) + "- has -" + nameof(PropertyKeyAttribute.Parents) + "- set to typeof(" + GetType().ToStringShort() + ") for " +
-                        (childProperties.Count == 0 ? "no values at all" :
-                            ("the following values:<br>\r\n" + string.Join("<br>\r\n", childProperties.Values.Select(v => v.Key.PToString + " (" + v.Key.A.AccessLevelWrite + ")"))) + "<br>\r\n") +
-                        "). " +
-                        "</p>");
+
+                        // TODO: Create general mechanism for adding links to HTML text like this (links are indicated with starting -'s and trailing -'s.)
+                        // TODO: And of course cache result, expect for request.CurrentUser.Name which will change. 
+                        retval.AppendLine("<p>HINT: " +
+                            "There are no " + nameof(addableProperties) + " for this entity for " + request.CurrentUser.IdFriendly.HTMLEncode() + " (" + nameof(request.CurrentUser.AccessLevelGiven) + " = " + request.CurrentUser.AccessLevelGiven + ")." +
+                            "<br><br>\r\n" +
+                            (a.IsDefault || a.IsInherited ?
+                                ("Most probably because there are no -" + nameof(ClassAttribute) + "- (with -" + nameof(ClassAttribute.AccessLevelWrite) + "-) defined for -" + GetType().ToString() + "- meaning -" + nameof(ClassAttribute.AccessLevelWrite) + "- defaults to -" + a.AccessLevelWrite + "-.") :
+                                ("[" + nameof(ClassAttribute) + "(" + nameof(ClassAttribute.AccessLevelWrite) + " = " + a.AccessLevelWrite + "...)] for -" + GetType().ToStringShort() + "-.")
+                            ) +
+                            "<br><br>\r\n" +
+                            "In order to have any " + nameof(addableProperties) + " you must in general (for all the relevant enum values of -" + typeof(CoreP) + "-) " +
+                            "add typeof(" + GetType().ToStringShort() + ") to -" + nameof(PropertyKeyAttribute.Parents) + "- and also set " + nameof(PropertyKeyAttribute.AccessLevelWrite) + ". " +
+                            "<br><br>\r\n" +
+                            "(currently -" + typeof(CoreP) + "- has -" + nameof(PropertyKeyAttribute.Parents) + "- set to typeof(" + GetType().ToStringShort() + ") for " +
+                            (childProperties.Count == 0 ? "no values at all" :
+                                ("the following values:<br>\r\n" + string.Join("<br>\r\n", childProperties.Values.Select(v => v.Key.PToString + " (" + v.Key.A.AccessLevelWrite + ")"))) + "<br>\r\n") +
+                            "). " +
+                            "</p>");
+                    }
                 }
             } else {
                 var notExisting = addableProperties.Where(p => p.Value.Key.A.IsMany || !Properties.ContainsKey(p.Key)).ToList();

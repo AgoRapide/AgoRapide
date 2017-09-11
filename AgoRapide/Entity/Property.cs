@@ -786,6 +786,8 @@ namespace AgoRapide {
             /// <param name="_html">NOTE: This should already have been HTML encoded</param>
             public HTML(string _html) => HTMLString = _html ?? throw new ArgumentNullException(nameof(_html));
             public override string ToString() => HTMLString;
+
+            public static HTML Default = new HTML("");
         }
     }
 

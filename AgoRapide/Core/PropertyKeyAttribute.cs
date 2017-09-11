@@ -28,13 +28,17 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Constructor for <see cref="AggregationKey"/> or when originates from database (See <see cref="PropertyKeyMapper.TryAddA"/>)
         /// </summary>
+        /// <param name="property"></param>
+        /// <param name="description">May be null</param>
+        /// <param name="longDescription">May be null</param>
+        /// <param name="isMany"></param>
         public PropertyKeyAttribute(
             string property,
             string description,
             string longDescription,
             bool isMany) {
 
-            _enumValue = property;
+            _enumValue = property ?? throw new ArgumentNullException(nameof(property));
             Description = description;
             LongDescription = longDescription;
             IsMany = isMany;

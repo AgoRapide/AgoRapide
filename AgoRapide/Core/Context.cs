@@ -213,7 +213,7 @@ namespace AgoRapide.Core {
         /// <param name="result">Will be populated with statistics only if <see cref="BaseSynchronizer.Synchronize{T}"/> had to be called</param>
         /// <returns></returns>
         public static bool TryExecuteContextsQueries(BaseEntity currentUser, List<Context> allContexts, BaseDatabase db, Result result, out Dictionary<Type, Dictionary<long, BaseEntity>> entitiesByType, out ErrorResponse errorResponse) {
-            
+
             // Removed code the depends on Synchronizers
             //var synchronizers = allContexts.Where(c => typeof(BaseSynchronizer).IsAssignableFrom(c.Type)).ToList();
             //synchronizers.ForEach(s => {
@@ -254,7 +254,9 @@ namespace AgoRapide.Core {
             //}
 
             var contexts = allContexts;
-            var types = contexts.Select(c => c.Type).Distinct();
+            var types = contexts.
+                Where(c => c.SetOperator != SetOperator.Remove). // NOTE: Important point of waiting with Remove (because that may be the only one for a given type, meaning that nothing will result)
+                Select(c => c.Type).Distinct().ToList();
 
             /// Built up dictionary for each type based on <see cref="AgoRapide.SetOperator.Intersect"/> and <see cref="AgoRapide.SetOperator.Union"/>. 
             var retval = types.Select(t => {
@@ -262,11 +264,11 @@ namespace AgoRapide.Core {
                 /// Start with smallest sized set. TODO: <see cref="Context.Size"/> is not implemented as of June 2017.
                 contexts.Where(c => c.Type.Equals(t) && c.SetOperator == SetOperator.Intersect).OrderBy(c => c.Size.Value).Reverse().ToList().ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Intersect"/>
                     if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out _)) return;
-                    var tempDict = temp.ToDictionary(e => e.Id);
+                    var foundNowDict = temp.ToDictionary(e => e.Id);
                     if (retvalThisType == null) {
-                        retvalThisType = tempDict;
-                    } else {
-                        retvalThisType.Where(e => !tempDict.ContainsKey(e.Key)).ToList().ForEach(e => retvalThisType.Remove(e.Key));
+                        retvalThisType = foundNowDict; // Initial set
+                    } else { // Remove everything not found now.
+                        retvalThisType.Where(e => !foundNowDict.ContainsKey(e.Key)).ToList().ForEach(e => retvalThisType.Remove(e.Key));
                     }
                 });
                 if (retvalThisType == null) retvalThisType = new Dictionary<long, BaseEntity>();
@@ -276,6 +278,23 @@ namespace AgoRapide.Core {
                 });
                 return (Type: t, Dictiomary: retvalThisType);
             }).ToDictionary(tuple => tuple.Type, tuple => tuple.Dictiomary);
+
+            var removes = new Dictionary<Type, Dictionary<long, BaseEntity>>();
+            contexts.Where(c => c.SetOperator == SetOperator.Remove).ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Remove"/>
+                if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, c.Type, out var temp, out _)) return;
+                if (!removes.TryGetValue(c.Type, out var removesThisType)) removesThisType = (removes[c.Type] = new Dictionary<long, BaseEntity>());
+                temp.ForEach(e => {
+                    // Save for cascade removal later
+                    removesThisType[e.Id] = e; /// Note how may be set multiple times, if QueryId is duplicated, therefore do not use <see cref="Extensions.AddValue"/>
+                });
+                if (!retval.TryGetValue(c.Type, out var entities)) return; // Not yet "discovered", not in initial Intersect / Union collection.
+                temp.ForEach(e => {
+                    /// Remove all hits for <see cref="AgoRapide.SetOperator.Remove"/>
+                    /// We do not have to do this now, because at the end we cascade-remove everything with <see cref="SetOperator.Remove"/> but
+                    /// performance is assumed to increase if done now 
+                    if (entities.ContainsKey(e.Id)) entities.Remove(e.Id);
+                });
+            });
 
             // Take intersects of all these collections through automatic traversal
             types.ForEach(fromType => {
@@ -307,37 +326,51 @@ namespace AgoRapide.Core {
                 });
             });
 
-            /// Remove all hits for <see cref="AgoRapide.SetOperator.Remove"/>
-            types.ForEach(t => {
-                var entities = retval.GetValue(t, () => nameof(t));
-                if (entities.Count == 0) return; // Nothing to remove
-                contexts.Where(c => c.Type.Equals(t) && c.SetOperator == SetOperator.Remove).ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Remove"/>
-                    if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out _)) return;
-                    temp.ForEach(e => {
-                        if (entities.ContainsKey(e.Id)) entities.Remove(e.Id);
+            // Note how some values for retval now may very well be empty
+
+            // Traverse foreign keys
+            /// Add entity types connected with the types that we have, but which are not included in contexts given.            
+            TraverseToAllEntities(currentUser, retval, db).ForEach(t => retval.AddValue(t.Key, t.Value));
+
+            // Remove removes, first step, before cascade removal
+            removes.ForEach(t => {
+                if (!retval.TryGetValue(t.Key, out var dict)) return;
+                t.Value.ForEach(e => {
+                    if (dict.ContainsKey(e.Value.Id)) dict.Remove(e.Value.Id);
+                });
+            });
+
+            // Remove removes, second step, cascade removal
+            // var removesAsBaseEntityDictionary = removes.ToDictionary(e => e.Key, e => e.Value.SelectMany(l => l.Value).ToDictionary(baseEntity => baseEntity.Id, baseEntity => baseEntity));
+            removes.ForEach(r => { /// Feed value by value into <see cref="TraverseToAllEntities"/>
+                TraverseToAllEntities(currentUser, new Dictionary<Type, Dictionary<long, BaseEntity>> { { r.Key, r.Value } }, db).ForEach(t => {
+                    if (!retval.TryGetValue(t.Key, out var dict)) return;
+                    t.Value.ForEach(e => {
+                        if (dict.ContainsKey(e.Value.Id)) dict.Remove(e.Value.Id);
                     });
                 });
             });
 
-            // Note how some values for retval now may very well be empty
+            entitiesByType = retval;
+            errorResponse = null;
+            return true;
+        }
 
-            var traversedValues = new Dictionary<Type, Dictionary<long, BaseEntity>>();
-
-            /// Add entity types connected with the types that we have, but which are not included in contexts given.            
-            types.ForEach(fromType => {
+        public static Dictionary<Type, Dictionary<long, BaseEntity>> TraverseToAllEntities(BaseEntity currentUser, Dictionary<Type, Dictionary<long, BaseEntity>> fromEntities, BaseDatabase db) {
+            var retval = new Dictionary<Type, Dictionary<long, BaseEntity>>();
+            fromEntities.Keys.ForEach(fromType => {
                 GetPossibleTraversalsFromType(fromType).ForEach(traversals => {
-                    // TODO: Inefficient use of Contains since types is just an IEnumerable. Turn types into HashSet or similar.
-                    if (types.Contains(traversals.Key)) {
+                    if (fromEntities.ContainsKey(traversals.Key)) {
                         // This is quite normal because if we can go from type A to type B we can also go the other way. Just ignore.
                         return;
                         // throw new NotImplementedException("Traversal from " + fromType + " to already known type " + traversals.Key + " not yet implemented"); // TODO. Decide how to handle this, maybe just ignore
                     }
-                    if (traversedValues.ContainsKey(traversals.Key)) throw new NotImplementedException("Multiple traversals to " + traversals.Key + " (one of them from " + fromType + ") not yet implemented"); // TODO. Decide how to handle this, maybe just add from what already found
+                    if (retval.ContainsKey(traversals.Key)) throw new NotImplementedException("Multiple traversals to " + traversals.Key + " (one of them from " + fromType + ") not yet implemented"); // TODO. Decide how to handle this, maybe just add from what already found
                     if (traversals.Value.Count > 1) throw new NotImplementedException("Traversals over multiple levels not supported (from " + fromType + " to " + traversals.Key + " via " + string.Join(",", traversals.Value.Select(t => t.ToString())));
 
                     var traversal = traversals.Value[0];
 
-                    var fromValues = retval.GetValue(fromType).Values;
+                    var fromValues = fromEntities.GetValue(fromType).Values;
                     var toValues = new Dictionary<long, BaseEntity>();
 
                     switch (traversal.Direction) {
@@ -360,15 +393,10 @@ namespace AgoRapide.Core {
                                 });
                             }); break;
                     }
-                    traversedValues.Add(traversals.Key, toValues);
+                    retval.Add(traversals.Key, toValues);
                 });
             });
-
-            traversedValues.ForEach(t => retval.AddValue(t.Key, t.Value));
-
-            entitiesByType = retval;
-            errorResponse = null;
-            return true;
+            return retval;
         }
 
         public static List<Traversal> GetTraversal(Type fromType, Type toType) => TryGetTraversal(fromType, toType, out var retval) ? retval : throw new InvalidTraversalException(fromType, toType, "No possible traversals found.\r\nPossible resolution: Ensure that " + nameof(PropertyKeyAttribute.ForeignKeyOf) + " = typeof(" + toType.ToStringVeryShort() + ") has been specified for a property of " + fromType.ToStringVeryShort() + ".");

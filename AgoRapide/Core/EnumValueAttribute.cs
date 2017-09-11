@@ -55,7 +55,7 @@ namespace AgoRapide.Core {
             return retval;
         }
 
-        public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
+        public override string ToString() => nameof(EnumValue) + ": " + ((_enumValue?.GetType().ToStringVeryShort() + ".") ?? "") + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
         protected override Id GetId() => new Id(
             idString: new QueryIdString(
                 GetType().ToStringShort().Replace("Attribute", "") + "_" +

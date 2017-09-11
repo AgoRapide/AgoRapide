@@ -290,7 +290,8 @@ namespace AgoRapide.Database {
             if (id <= 0) throw new Exception(nameof(id) + " <= 0 (" + id + ")");
 
             var useCacheDynamically = false;
-            switch (requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None) {
+            var cacheUse = requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None;
+            switch (cacheUse) {
                 case CacheUse.None:
                     /// TODO: 
                     /// TODO: Decide how to use <see cref="InMemoryCache"/> if <param name="requiredType"/> was null
@@ -300,12 +301,13 @@ namespace AgoRapide.Database {
                     useCacheDynamically = true; // Se code below
                     break;
                 case CacheUse.All:
+                    // Note exception being thrown below if not found.
+                    useCacheDynamically = true; 
                     break;
-                    // TODO: ADD CODE HERE!!!!
-                    throw new InvalidEnumException(CacheUse.All, "Not implemented. " + nameof(requiredType) + ": " + requiredType); /// Call <see cref="InMemoryCache"/> now.
             }
 
             if (requiredType != null && typeof(Property).IsAssignableFrom(requiredType)) {
+                if (cacheUse == CacheUse.All) throw new InvalidEnumException(cacheUse, "Invalid to combine with Property");
                 // TODO: Should we also cache single properties?
                 var retvalTemp = TryGetPropertyById(id, out var propertyTemp);
                 if (retvalTemp) InvalidTypeException.AssertAssignable(propertyTemp.GetType(), requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match Property type as found in database (" + propertyTemp.GetType() + ")");
@@ -316,11 +318,13 @@ namespace AgoRapide.Database {
 
             if (useCacheDynamically && InMemoryCache.EntityCache.TryGetValue(id, out var entityTemp)) {
                 entity = entityTemp;
-                if (entity == null) {
-                    return false;
-                }
+                if (entity == null) return false;
                 if (requiredType != null && !requiredType.IsAssignableFrom(entity.GetType())) throw new InvalidTypeException(entity.GetType(), requiredType, "Entity found in cache does not match required type");
                 return true;
+            }
+            if (cacheUse == CacheUse.All) {
+                // TODO: What to do here?
+                // throw new InMemoryCacheException("Not found in cache");
             }
 
             if (!TryGetPropertyById(id, out var root)) {
@@ -482,14 +486,14 @@ namespace AgoRapide.Database {
         }
 
         public override List<T> GetAllEntities<T>() {
-            Log(nameof(T) + ": " +  typeof(T).ToStringShort());
+            Log(nameof(T) + ": " + typeof(T).ToStringShort());
             var retval = GetRootPropertyIds(typeof(T)).Select(id => GetEntityById<T>(id)).ToList();
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
         }
 
         public override List<BaseEntity> GetAllEntities(Type type) {
-            Log(nameof(type) + ": " +  type.ToStringShort());
+            Log(nameof(type) + ": " + type.ToStringShort());
             var retval = GetRootPropertyIds(type).Select(id => GetEntityById(id, type)).ToList();
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
