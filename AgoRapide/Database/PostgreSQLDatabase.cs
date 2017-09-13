@@ -108,11 +108,11 @@ namespace AgoRapide.Database {
             Log(nameof(currentUser) + ": " + (currentUser?.IdFriendly ?? "[NULL]") + ", " + nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
 
             switch (id) { /// First, check for <see cref="QueryIdContext"/> and <see cref="QueryIdInteger"/>, these can be treated directly.
-                case QueryIdContext context: // TOOD: Move this code into BaseDatabase
+                case QueryIdContext q: // TOOD: Move this code into BaseDatabase
                     if (currentUser == null) {
                         entities = null;
                         errorResponse = new ErrorResponse(ResultCode.client_error,
-                            "Unable to execute " + nameof(QueryIdContext) + " (" + context.ToString() + ") because no " + nameof(currentUser) + ". " +
+                            "Unable to execute " + nameof(QueryIdContext) + " (" + q.ToString() + ") because no " + nameof(currentUser) + ". " +
                             "Possible cause: " + nameof(APIMethod.RequiresAuthorization) + " = FALSE for current method"); // TODO: Known weakness in AgoRapide as of June 2017
                         return false;
                     }
@@ -131,8 +131,8 @@ namespace AgoRapide.Database {
                     entities = thisType.Values.ToList();
                     errorResponse = null;
                     return true;
-                case QueryIdInteger integerId: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
-                    if (!TryGetEntityById(integerId.Id, requiredType, out BaseEntity temp)) { // TOOD: Move this code into BaseDatabase
+                case QueryIdInteger q: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
+                    if (!TryGetEntityById(q.Id, requiredType, out BaseEntity temp)) { // TOOD: Move this code into BaseDatabase
                         entities = null;
                         errorResponse = new ErrorResponse(ResultCode.data_error, requiredType.ToStringVeryShort() + " with " + nameof(id) + " " + id + " not found");
                         return false;
@@ -151,17 +151,7 @@ namespace AgoRapide.Database {
 
             switch (requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None) {
                 case CacheUse.All:
-                    switch (id) {
-                        case QueryIdAll q:
-                            allEntities = InMemoryCache.EntityCache.Values.Where(e => requiredType.IsAssignableFrom(e.GetType())).ToList(); break; // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
-                        case QueryIdKeyOperatorValue keyOperatorValue: /// TODO: Move code into <see cref="InMemoryCache"/>
-                            allEntities = InMemoryCache.EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
-                                if (!requiredType.IsAssignableFrom(e.GetType())) return false;
-                                return keyOperatorValue.IsMatch(e);
-                            }).ToList(); break;
-                        default:
-                            throw new InvalidObjectTypeException(id);
-                    }
+                    allEntities = InMemoryCache.GetMatchingEntities(requiredType, id, this); // This may do a time-consuming
                     break;
                 default: /// Lookup in database, first step is to find all ids, then calling <see cref="GetEntityById"/> for each id
                     Npgsql.NpgsqlCommand cmd;

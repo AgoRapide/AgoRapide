@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -228,6 +229,10 @@ namespace AgoRapide {
         /// <summary>
         /// Returns FALSE if p does not exist at all
         /// Else returns result of <see cref="Property.TryGetV{T}"/>
+        /// 
+        /// NOTE: We could theoretically make an overload with only <see cref="CoreP"/> instead of <see cref="PropertyKey"/>
+        /// NOTE: That would some lookups a little bit more efficient. BUT, based on the assumption that the great majority of lookups will
+        /// NOTE: be based on something other than <see cref="CoreP"/> anyway there is little need for such an overload as of Sep 2017.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
@@ -342,26 +347,34 @@ namespace AgoRapide {
                     "Details: " + details) { }
         }
 
+        private static ConcurrentDictionary<string, string> _tableRowHeadingCache = new ConcurrentDictionary<string, string>();
         /// <summary>
-        /// Note: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// May be overridden if you need finer control about how to present your entities.
         /// 
-        /// TODO: Try to generate heading and row automatically based on enum-information. 
+        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
         /// </summary>
-        /// <param name="request"></param>
         /// <returns></returns>
-        public virtual string ToHTMLTableRowHeading(Request request) => "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreP.Description) + "</th><th>" + nameof(Created) + "</th></tr>";
+        public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k =>
+            "<tr><th>" + nameof(IdFriendly) + "</th>" + 
+            string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<th>" + key.Key.PToString + "</th>")) +
+            // "<th>" + nameof(Created) + "</th>" +
+            "</tr>");
 
         /// <summary>
-        /// Note: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// May be overridden if you need finer control about how to present your entities.
         /// 
-        /// TODO: Try to generate heading and row automatically based on enum-information. 
+        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
-            (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;") + "</td><td>" +
-            (RootProperty?.Created.ToString(DateTimeFormat.DateHourMin) ?? "&nbsp;") + "</td></tr>\r\n";
+            (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td>" +
+            string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<td>" + (
+                Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;" 
+            ) + "</td>")) + 
+            //"<td>" + 
+            //Created.ToString(DateTimeFormat.DateHourMin) + "</td>" +
+            "</tr>\r\n";
 
         /// <summary>
         /// For example of override see <see cref="BaseEntityWithLogAndCount.ToHTMLDetailed"/>
@@ -455,7 +468,7 @@ namespace AgoRapide {
                     // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                     retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.Key.A.PriorityOrder).Select(p => {
                         p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
-                        return p.ToHTMLTableRow(request);
+                        return p.ToHTMLTableRow(request); 
                     })));
                     retval.AppendLine("</table>");
                 }

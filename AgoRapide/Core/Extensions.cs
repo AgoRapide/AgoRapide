@@ -585,6 +585,8 @@ namespace AgoRapide.Core {
         /// 
         /// Implements <see cref="AccessLocation.Type"/> and <see cref = "AccessLocation.Property"/> 
         /// For consideration of <see cref="AccessLocation.Entity"/> see <see cref="GetChildPropertiesForUser"/>. 
+        /// 
+        /// NOTE: Methods like <see cref="GetChildPropertiesByPriority"/> do not take into account access rights.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="accessType"></param>
@@ -630,10 +632,36 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static Dictionary<CoreP, PropertyKeyWithIndex> GetObligatoryChildProperties(this Type type) => _obligatoryChildPropertiesCache.GetOrAdd(type, t => GetChildProperties(type).Where(e => e.Value.Key.A.IsObligatory).ToDictionary(e => e.Key, e => e.Value.Key.A.IsMany ? new PropertyKeyWithIndex(e.Value.Key, 1) : e.Value.PropertyKeyWithIndex));
 
+        private static ConcurrentDictionary<
+            string,  // Key is type + "_" + priorityOrder
+            List<PropertyKey>> _childPropertiesByPriorityCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        /// <summary>
+        /// See <see cref="GetChildProperties"/> for details.
+        /// 
+        /// Returns list sorted by <see cref="PropertyKeyAttribute.PriorityOrder"/>. 
+        /// 
+        /// Restricts to <paramref name="withinThisPriority"/>. 
+        /// NOTE: Does not take into account any access rights. TODO: Improve on this situation (see methods like <see cref="GetChildPropertiesForAccessLevel"/>)
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="withinThisPriority">
+        /// All properties with <see cref="PropertyKeyAttribute.PriorityOrder"/> less than or equal to this value will be returned. 
+        /// 
+        /// Since result is cached, the values used for this parameter should have a limited range.
+        /// Use <see cref="int.MaxValue"/> if you want absolutely all properties (note that the <see cref="PriorityOrder"/>-enum is actually an int, so any int-value can be stored)
+        /// </param>
+        /// <returns></returns>
+        public static List<PropertyKey> GetChildPropertiesByPriority(this Type type, PriorityOrder withinThisPriority) => _childPropertiesByPriorityCache.GetOrAdd(type + "_" + withinThisPriority, key => {
+            var retval = GetChildProperties(type).Where(e => e.Value.Key.A.PriorityOrder <= withinThisPriority).Select(e => e.Value).ToList();
+            retval.Sort(new Comparison<PropertyKey>((key1, key2) => key1.Key.A.PriorityOrder.CompareTo(key2.Key.A.PriorityOrder)));
+            return retval;
+        });
+
         private static ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>> _childPropertiesCache = new ConcurrentDictionary<Type, Dictionary<CoreP, PropertyKey>>();
         /// <summary>
         /// Returns all <see cref="CoreP"/> for which <paramref name="type"/> is in <see cref="PropertyKeyAttribute.Parents"/>. 
         /// Note how result is cached.
+        /// 
         /// TODO: Add reset of cache (because of <see cref="PropertyKeyMapper.GetA(string, BaseDatabase)"/> which will add new mappings after application startup)
         /// TODO: OR EVEN BETTER, MOVE INTO <see cref="PropertyKeyMapper"/> INSTEAD
         /// 
@@ -642,7 +670,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) => _childPropertiesCache.GetOrAdd(type, t => 
+        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) => _childPropertiesCache.GetOrAdd(type, t =>
             PropertyKeyMapper.AllCoreP.Where(key => key.Key.IsParentFor(type)).ToDictionary(key => key.Key.CoreP, key => key));
 
         private static ConcurrentDictionary<Type, ClassAttribute> _classAttributeCache = new ConcurrentDictionary<Type, ClassAttribute>();

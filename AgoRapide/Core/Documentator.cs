@@ -26,11 +26,6 @@ namespace AgoRapide.Core {
             List<EntityAndAttribute>   // 
         > Keys = new Dictionary<string, List<EntityAndAttribute>>();
 
-        //private static Dictionary<
-        //    string,                   // Key is key like -xxx- but without -, that is like xxx
-        //    string
-        //> Links = new Dictionary<string, string>();
-
         /// <summary>
         /// Note that method is performance intensive and result should therefore be cached
         /// 
@@ -84,14 +79,6 @@ namespace AgoRapide.Core {
         public static Dictionary<string, string> IndexFinalize() {
             KeyReplacementsHTML = new Dictionary<string, string>();
             Keys.ForEach(k => KeyReplacementsHTML["-" + k.Key + "-"] = GetSingleReplacement(k.Key, k.Value));
-            //    var list = k.Value;
-            //    var types = list.Select(l => l.Entity.GetType()).Distinct().ToList();
-            //    switch (types.Count) {
-            //        case 0: throw new InvalidCountException(nameof(list) + ". Expected at least 1 item in list");
-            //        case 1: KeyReplacementsHTML["-" + k.Key + "-"] = GetSingleReplacement(k.Key, list);
-            //        default: KeyReplacementsHTML["-" + k.Key+ "-"] = api.CreateAPILink(CoreAPIMethod.EntityIndex, k.Key, typeof(BaseEntity), k.Key); break; // Use generic api-method like api/Entity since result will have different types
-            //    }
-            //});
             return KeyReplacementsHTML;
         }
 
@@ -114,9 +101,5 @@ namespace AgoRapide.Core {
             public BaseEntity Entity;
             public BaseAttribute Attribute;
         }
-
-        //public class ListEntityAndAttributPlusTypeInfo {
-
-        //}
     }
 }

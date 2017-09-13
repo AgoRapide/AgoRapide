@@ -944,10 +944,10 @@ namespace AgoRapide.API {
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
-            PV(APIMethodP.CoreAPIMethod.A(), CoreAPIMethod.None).Use(c => c == CoreAPIMethod.None ? "&nbsp;" : c.ToString()) + "</td><td>" +
-            (EntityType?.ToStringVeryShort() ?? "&nbsp;") + "</td><td>" +
-            PV<AccessLevel>(CoreP.AccessLevelUse.A()) + "</td><td>" +
-            (Properties.TryGetValue(CoreP.Description, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;") + "</td></tr>\r\n";
+            PV(APIMethodP.CoreAPIMethod.A(), Property.HTML.Default) + "</td><td>" +
+            PV(CoreP.EntityType.A(), Property.HTML.Default) + "</td><td>" +
+            PV<Property.HTML>(CoreP.AccessLevelUse.A()) + "</td><td>" + // Always present, therefore no default value
+            PV(CoreP.Description.A(), Property.HTML.Default) + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {
             public MethodAttributeInitialisationException(string message) : base(message) { }

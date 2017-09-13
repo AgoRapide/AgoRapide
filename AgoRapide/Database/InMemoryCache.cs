@@ -42,7 +42,7 @@ namespace AgoRapide.Database {
         /// ===============================
         /// 
         /// Note subtle point about the entity being stored in the cache, not the root-property 
-        /// (in other words, entity root properties (<see cref="CoreP.RootProperty"/>) are not found in cache itself)
+        /// (in other words, entity root properties (<see cref="CoreP.RootProperty"/>) are not found in cache itself (but as <see cref="BaseEntity.RootProperty"/>))
         /// </summary>
         [ClassMember(Description = "Cache as relevant for -" + nameof(CacheUse.Dynamic) + "- and -" + nameof(CacheUse.All) + "-.")]
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
@@ -51,6 +51,109 @@ namespace AgoRapide.Database {
         /// Usually reset is done as a precaution when exceptions occur. 
         /// </summary>
         public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
+
+        private static List<Type> _synchronizerTypes = new List<Type>();
+        /// <summary>
+        /// Call this method for every <see cref="BaseSynchronizer"/>-type that your application uses. 
+        /// Not thread-safe. Only to be used by single thread at application initialization. 
+        /// </summary>
+        /// <param name="synchronizer"></param>
+        public static void AddSynchronizerType(Type synchronizer) {
+            InvalidTypeException.AssertAssignable(synchronizer, typeof(BaseSynchronizer));
+            _synchronizerTypes.Add(synchronizer);
+        }
+        private static Dictionary<Type, BaseSynchronizer> _synchronizersByType;
+        /// <summary>
+        /// Returns (cached) information about which <see cref="BaseSynchronizer"/> to use for which type.
+        /// 
+        /// TODO: Note some unresolved issues here. 
+        /// TODO: Should for instance a given type be restricted to only one <see cref="BaseSynchronizer"/> reading that type?
+        /// TODO: (see note in exceptioin message below)
+        /// TODO: Note that improvements are assumed to be possible to solve internally within <see cref="InMemoryCache"/>, that is without changing the external interface. 
+        /// </summary>
+        /// <param name="db">
+        /// Only used at first call. Ignored for subsequent calls.
+        /// </param>
+        /// <returns></returns>
+        private static Dictionary<Type, BaseSynchronizer> GetSyncronizers(BaseDatabase db) => _synchronizersByType ?? (_synchronizersByType = new Func<Dictionary<Type, BaseSynchronizer>>(() => {
+            var retval = new Dictionary<Type, BaseSynchronizer>();
+            if (_synchronizerTypes.Count == 0) throw new InMemoryCacheException("No calls made to -" + nameof(AddSynchronizerType) + "-. Should have been done at application startup.");
+            _synchronizerTypes.ForEach(t => {
+                db.GetAllEntities(t).ForEach(s => {
+                    s.PV(SynchronizerP.SynchronizerExternalType.A(), new List<Type>()).ForEach(et => {
+                        if (retval.TryGetValue(et, out var duplicate)) { /// Note how this problem is only caught at initial call to <see cref="GetSyncronizers"/>
+                            throw new InMemoryCacheException("More than one " + nameof(BaseSynchronizer) + " found for type " + et + ", both\r\n" +
+                                "1) " + s + "\r\n" +
+                                "and\r\n" +
+                                "2) " + duplicate + "\r\n" +
+                                "Possible resolution:\r\n" +
+                                API.APICommandCreator.JSONInstance.CreateAPIUrl(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(s.Id), PropertyOperation.SetInvalid) + "\r\n" +
+                                "or\r\n" +
+                                API.APICommandCreator.JSONInstance.CreateAPIUrl(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(duplicate.Id), PropertyOperation.SetInvalid) +
+                                (s.GetType().Equals(duplicate.GetType()) ? "" :
+                                    ("\r\n(The types are not equal. Possible TODO in AgoRapide is to actually allow multiple " + nameof(BaseSynchronizer) + " as long as they are of different types)"))
+                            );
+                        }
+                        retval.AddValue(et, (BaseSynchronizer)s);
+                    });
+                });
+            });
+            return retval;
+        })());
+
+        public static ConcurrentDictionary<
+            Type,
+            /// TRUE means <see cref="BaseSynchronizer"/> exists, FALSE means no <see cref="BaseSynchronizer"/> exists.
+            /// TODO: Note how this is (as of Sep 2017) decided only once in application lifetime
+            /// TODO: Fix so that can add <see cref="BaseSynchronizer"/> later within application lifetime.
+            bool
+        > _synchronizedTypes = new ConcurrentDictionary<Type, bool>();
+
+        /// <summary>
+        /// Returns all entities of <paramref name="type"/> matching <paramref name="id"/>
+        /// 
+        /// Use this for <see cref="CacheUse.All"/>
+        /// 
+        /// Calls <see cref="FileCache.TryEnrichFromDisk"/> and also <see cref="BaseSynchronizer.Synchronize"/> as needed.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static List<BaseEntity> GetMatchingEntities(Type type, QueryId id, BaseDatabase db) {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+            if (id == null) throw new ArgumentNullException(nameof(id));
+            _synchronizedTypes.GetOrAdd(type, t => { // Note how actual return value, TRUE / FALSE, is ignored.
+                if (!GetSyncronizers(db).TryGetValue(t, out var s)) {
+                    // This is either because 
+                    // 1) Synchronizing is not relevant for this type, or
+                    // 2) No synchronizers has been created in the database yet.
+                    // TODO: Note how this is (as of Sep 2017) decided only once in application lifetime. For case 2) above this is not good enough.
+                    return false; 
+                }
+                if (!FileCache.Instance.TryEnrichFromDisk(s, t, db, out _)) { 
+                    /// This call can be very time-consuming
+                    /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
+                    s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+                }
+                return true; // Indicates that synchronizing has been done
+            });
+            switch (id) {
+                case QueryIdAll q:
+                    return EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(); // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                case QueryIdKeyOperatorValue q:
+                    return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                        if (!type.IsAssignableFrom(e.GetType())) return false;
+                        return q.IsMatch(e);
+                    }).ToList();
+                case QueryIdMultiple q:
+                    return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                        if (!type.IsAssignableFrom(e.GetType())) return false;
+                        return q.Ids.Any(i => i.IsMatch(e));
+                    }).ToList();
+                default:
+                    throw new InvalidObjectTypeException(id);
+            }
+        }
     }
 
     public class InMemoryCacheException : ApplicationException {

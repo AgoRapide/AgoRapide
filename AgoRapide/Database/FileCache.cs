@@ -25,8 +25,9 @@ namespace AgoRapide.Database {
             "A direct filebased storage system is then much more quicker and efficient, " +
             "and that is exactly what this class (-" + nameof(FileCache) + "-) provides. " +
             "\r\n" +
-            "Note that usually -" + nameof(BaseSynchronizer) + "- will store the foreign entity id within -" + nameof(BaseDatabase) + "- though, " +
+            "Note that usually -" + nameof(BaseSynchronizer) + "- will store -" + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "--properties within -" + nameof(BaseDatabase) + "- though, " +
             "in order to link it with -" + nameof(DBField.id) + "- for use by -" + nameof(BaseSynchronizer) + "-. " +
+            "\r\n" +
             "In addition data generated from within the AgoRapide based application " +
             "(properties not -" + nameof(PropertyKeyAttribute.IsExternal) + "-) " +
             "will also usually be stored in -" + nameof(BaseDatabase) + "-."
@@ -52,7 +53,10 @@ namespace AgoRapide.Database {
             )]
         public static List<PropertyKey> GetProperties(Type type) => _propertyKeyCache.GetOrAdd(type, t => {
             var retval = new List<PropertyKey> { PropertyKeyMapper.GetA(CoreP.DBId) };
-            retval.AddRange(type.GetChildProperties().Where(p => p.Value.Key.A.IsExternal).Select(p => p.Value).ToList());
+            retval.AddRange(type.GetChildProperties().Where(p => 
+                p.Value.Key.A.IsExternal || // This is the normal criteria.
+                p.Value.Key.PToString.EndsWith("CorrespondingInternalKey") /// This is a special case, we must either store this on disk (as done now (Sep 2017)), OR, recalculate the value when reading. The former is considered much more efficient. See <see cref="PropertyKeyMapper.MapEnum{T}"/> for more information. 
+            ).Select(p => p.Value).ToList());
             return retval;
         });
 
@@ -89,64 +93,60 @@ namespace AgoRapide.Database {
         }
 
         /// <summary>
-        /// Return value false means that <see cref="BaseSynchronizer.Synchronize{T}"/> has to be called. 
+        /// Return value false means that <see cref="BaseSynchronizer.Synchronize"/> has to be called for <paramref name="synchronizer"/>. 
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="synchronizer"></param>
+        /// <param name="type"></param>
         /// <param name="db"></param>
         /// <param name="errorResponse"></param>
-        [ClassMember(Description =
-            "Called at application startup. " +
-            "Enriches the entities with -" + nameof(PropertyKeyAttribute.IsExternal) + "- as found on disk")]
-        public bool TryEnrichFromDisk<T>(BaseSynchronizer synchronizer, BaseDatabase db, out string errorResponse) where T : BaseEntity, new() {
-            var type = typeof(T);
-            Log(nameof(T) + ": " + type);
+        [ClassMember(Description = "Reads from disk -" + nameof(PropertyKeyAttribute.IsExternal) + "--entities earlier found by a -" + nameof(BaseSynchronizer) + "-.")]
+        public bool TryEnrichFromDisk(BaseSynchronizer synchronizer, Type type, BaseDatabase db, out string errorResponse) { 
+            Log(nameof(type) + ": " + type);
+            var returnFalseAdditionalInformation = "\r\nNote that the calling method will now most probably do a (very) time-consuming call against " + nameof(BaseSynchronizer.Synchronize);
             var filepath = GetFilePath(synchronizer, type);
             Log(nameof(filepath) + ": " + filepath);
             if (!System.IO.File.Exists(filepath)) {
-                Log("!System.IO.File.Exists");
+                Log("!System.IO.File.Exists" + returnFalseAdditionalInformation);
                 errorResponse = "File " + filepath + " not found";
                 return false;
             }
             var recordsFromDisk = System.IO.File.ReadAllText(filepath, Encoding.Default).Split(RECORD_SEPARATOR);
             var first = true;
             var propertiesOrder = GetProperties(type);
-            var resolution = "\r\n\r\nPossible resolution: Delete file " + filepath;
+            var resolution = "\r\n\r\nPossible resolution: Delete file\r\n" + filepath;
             var recordNo = -1;
-            Dictionary<long, T> entitiesFromDatabase = null;
+            Dictionary<long, BaseEntity> entitiesFromDatabase = null;
             foreach (var r in recordsFromDisk) {
                 if (((recordNo++) % 100) == 0) Log(nameof(recordNo) + ": " + recordNo + " of " + recordsFromDisk.Count);
-
                 if (first) {
                     if (!r.Equals(GetFingerprint(type))) {
                         var msg = "Fingerprint mismatch, incorrect fingerprint found\r\n\r\n" +
                             r + "\r\n\r\n" +
                             "instead of\r\n\r\n" +
                             GetFingerprint(type);
-                        Log(msg);
+                        Log(msg + returnFalseAdditionalInformation);
                         errorResponse = msg;
                         return false;
                     }
-                    /// TODO: Limit this to only entities belonging to the given <see cref="BaseSynchronizer"/>
-                    entitiesFromDatabase = db.GetAllEntities<T>().ToDictionary(e => e.Id, e => e);
+                    entitiesFromDatabase = db.GetAllEntities(type).ToDictionary(e => e.Id, e => e);
                     first = false;
                     continue;
                 }
                 var properties = r.Split(FIELD_SEPARATOR);
                 if (properties.Count != propertiesOrder.Count) throw new InvalidCountException(properties.Count, propertiesOrder.Count, r + resolution);
-                T entity = null;
+                BaseEntity entity = null;
                 var i = 0; propertiesOrder.ForEach(o => {
                     if (i > 0 && string.Empty.Equals(properties[i])) {
                         // This property just does not exist
-                        return;
+                        i++; return;
                     }
                     if (!o.Key.TryValidateAndParse(properties[i], out var result)) throw new InvalidFileException(filepath, r, o, properties[i], result.ErrorResponse);
-                    if (i == 0) {
+                    if (i == 0) { /// The primary key (<see cref="DBField.id"/>) is stored as first property
                         if (!entitiesFromDatabase.TryGetValue(result.Result.V<long>(), out entity)) throw new InvalidFileException(filepath, r, o, properties[i], "Not found in " + nameof(entitiesFromDatabase));
-                        return;
+                        i++;  return;
                     }
                     entity.Properties[o.Key.CoreP] = result.Result;
-                    i++;
+                    i++; return;
                 });
             }
             errorResponse = null;
@@ -162,7 +162,7 @@ namespace AgoRapide.Database {
             public InvalidFileException(string filename, string record, PropertyKey key, string valueFound, string details) : base(
                 "Invalid " + nameof(valueFound) + " '" + valueFound + "' as " + key.Key.PToString + " found in " + nameof(record) + "\r\n" + record + "\r\n" +
                 nameof(details) + " : " + details + "\r\n" +
-                "Possible resolution: Delete file " + filename + " and restart application") { }
+                "Possible resolution: Delete file\r\n" + filename + "\r\nand restart application") { }
             public InvalidFileException(string message) : base(message) { }
             public InvalidFileException(string message, Exception inner) : base(message, inner) { }
         }

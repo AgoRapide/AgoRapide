@@ -127,10 +127,18 @@ namespace AgoRapide.Core {
                     /// TODO: Consider using <see cref="PropertyKeyAttributeEnrichedT{T}"/> instead. This will require creating new <typeparam name="T"/> in the
                     /// TODO: same manner as <see cref="GetNextCorePId"/> is used for <see cref="CoreP"/>
                     var correspondingInternalKey = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute(
+                        /// Note corresponding code in <see cref="FileCache.GetProperties"/>
                         e + "CorrespondingInternalKey", "Corresponding internal key of " + e, longDescription: null, isMany: false) {
+
+                        /// IsExternal = true, Not relevant, will be stopped by <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+
+                        // TODO: REMOVED COMMENTED OUT COMMENT!
+                        ///// NOTE: CAREFUL! Setting IsExternal may look dubious, but <see cref="FileCache.GetProperties"/> depends on it. 
+
                         ForeignKeyOf = a.Key.A.ExternalForeignKeyOf,
                         AccessLevelRead = a.Key.A.AccessLevelRead, /// No need for setting <see cref="PropertyKeyAttribute.AccessLevelWrite"/>
-                        Parents = a.Key.A.Parents
+                        Parents = a.Key.A.Parents,
+                        PriorityOrder = PriorityOrder.NotImportant
                     }, (CoreP)GetNextCorePId()));
                     correspondingInternalKey.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); // HACK
                     _fromStringMaps[e + "CorrespondingInternalKey"] = correspondingInternalKey;

@@ -60,7 +60,11 @@ namespace AgoRapide {
         /// </summary>
         [PropertyKey(
             Description = "The root property of a -" + nameof(BaseEntity) + "-",
-            Type = typeof(Type), Parents = new Type[] { typeof(BaseEntity) }, CanHaveChildren = true)]
+            Type = typeof(Type), 
+            Parents = new Type[] { typeof(BaseEntity) }, 
+            CanHaveChildren = true,
+            PriorityOrder = PriorityOrder.NotImportant
+        )]
         RootProperty,
 
         [PropertyKey(
@@ -193,9 +197,10 @@ namespace AgoRapide {
                 "See accompanying -" + nameof(IdFriendly) + "- which is the more readable form.\r\n",
             Type = typeof(QueryId),
             IsUniqueInDatabase = true, /// This is relevant for <see cref="BaseDatabase.CreateProperty"/> but does not necessarily hold for other uses.
-            PriorityOrder = PriorityOrder.Important,
             AccessLevelRead = AccessLevel.Anonymous,
-            Parents = new Type[] { typeof(ApplicationPart) })]
+            Parents = new Type[] { typeof(ApplicationPart) },
+            PriorityOrder = PriorityOrder.Important
+        )]
         QueryId,
 
         [PropertyKey(
@@ -280,7 +285,9 @@ namespace AgoRapide {
                 "Used in " + nameof(APIMethod) + " for giving samples. " +
                 "Also useful for suggesting follow-up API-calls. ",
             IsMany = true, /// TODO: For use within <see cref="GeneralQueryResult"/> we only use a single property.
-            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult), typeof(APIMethod) }, AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important)]
+            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult), typeof(APIMethod) }, 
+            AccessLevelRead = AccessLevel.Anonymous, 
+            PriorityOrder = PriorityOrder.Important)]
         SuggestedUrl,
 
         /// <summary>
@@ -305,9 +312,6 @@ namespace AgoRapide {
         [PropertyKey(Type = typeof(Environment))]
         Environment,
 
-        /// <summary>
-        /// See <see cref="APIMethodAttribute.Description"/>. 
-        /// </summary>
         [PropertyKey(
             Parents = new Type[] { typeof(APIMethod), typeof(GeneralQueryResult) },
             Type = typeof(string),
@@ -317,9 +321,6 @@ namespace AgoRapide {
         )]
         Description,
 
-        /// <summary>
-        /// See <see cref="APIMethodAttribute.LongDescription"/>
-        /// </summary>
         [PropertyKey(
             Parents = new Type[] { typeof(APIMethod) },
             Type = typeof(string),
@@ -341,21 +342,5 @@ namespace AgoRapide {
             AccessLevelWrite = AccessLevel.Relation
         )]
         Context,
-
-        ///// <summary>
-        ///// TODO: Is this needed here?
-        ///// </summary>
-        //[PropertyKey(
-        //    Type = typeof(Operator)
-        //)]
-        //ComparisionOperator,
-
-        ///// <summary>
-        ///// TODO: Is this needed here?
-        ///// </summary>
-        //[PropertyKey(
-        //    Type = typeof(SetOperator)
-        //)]
-        //SetOperator,
     }
 }

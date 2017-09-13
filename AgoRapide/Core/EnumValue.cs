@@ -33,20 +33,6 @@ namespace AgoRapide.Core {
             ConnectWithDatabase(db);
         }
 
-
-        ///// <summary>
-        ///// TODO: This overload may be removed by a general relation mechanism for parent-child
-        ///// TODO: (marking with attributes what the parent is)
-        ///// </summary>
-        ///// <param name="request"></param>
-        ///// <returns></returns>
-        //public override string ToHTMLDetailed(Request request) {
-        //    var retval = new StringBuilder();
-        //    var ea = EVA.EnumValue.GetType().GetEnumAttribute();
-        //    retval.Append("<p>" + request.API.CreateAPILink(CoreAPIMethod.EntityIndex, "Enum " + ea.EnumType.ToStringVeryShort(), typeof(Enum), ea.Id.IdString) + "</p>");
-        //    return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
-        //}
-
         protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
     }
 }

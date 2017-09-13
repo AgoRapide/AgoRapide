@@ -10,12 +10,14 @@ using AgoRapide.Database;
 namespace AgoRapide.Core {
 
     /// <summary>
+    /// See <see cref="EnumType.PropertyKey"/> for more documentation. 
+    /// 
     /// TODO: Use more concept like <see cref="IsManyIsSet"/> in order for <see cref="EnrichFrom"/> to know
     /// TODO: which values to enrich.
     /// <see cref="PropertyKeyAttributeEnriched"/>
     /// </summary>
     [Enum(Description =
-        "Specialized version of -" + nameof(EnumValueAttribute) + "- which describes an enum value of type -" + nameof(EnumType.PropertyKey) + "-. " +
+        "Specialized version of -" + nameof(EnumValueAttribute) + "- which describes an enum value of type -" + nameof(EnumType.PropertyKey) + "- (see that one for documentation). " +
         "Member of -" + nameof(PropertyKey) + "-. (through -" + nameof(PropertyKeyAttributeEnriched) + "-). " +
         "Super class -" + nameof(EnumValueAttribute) + "- describes \"ordinary\" enum values (that is, those NOT of type -" + nameof(EnumType.PropertyKey) + "-)")]
     public class PropertyKeyAttribute : EnumValueAttribute {
@@ -43,6 +45,29 @@ namespace AgoRapide.Core {
             LongDescription = longDescription;
             IsMany = isMany;
         }
+
+        private Type _type;
+        [ClassMember(
+            Description =
+                "The type of this Property. Defaults to -" + nameof(String) + "-",
+            LongDescription =
+                "Typical examples are\r\n" +
+                "1) typeof(string), typeof(long), typeof(DateTime),\r\n" +
+                "2) typeof(CoreMethod) / typeof([AnyEnum]),\r\n" +
+                "3) Can also be a type assignable to -" + nameof(ITypeDescriber) + ",\r\n" +
+                "4) or any type understood by " + nameof(PropertyKeyAttributeEnriched) + "\r\n" +
+                "\r\n" +
+                "Will be set to -" + nameof(String) + "- by " + nameof(PropertyKeyAttributeEnriched.Initialize) + " if not given."
+            )]
+        public Type Type { get => _type ?? throw new NullReferenceException(nameof(Type) + ". Supposed to always be set from " + nameof(PropertyKeyAttributeEnriched) + ".\r\nDetails: " + ToString()); set => _type = value; }
+        /// <summary>
+        /// Has little purpose since <see cref="Type"/> will be set anyway by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given."
+        /// </summary>
+        public bool TypeIsSet => _type != null;
+
+        private Type _genericListType;
+        [ClassMember(Description = "Returns the corresponding generic List<> type. Only allowed to call when -" + nameof(IsMany) + "-")]
+        public Type GenericListType => IsMany ? (_genericListType ?? (_genericListType = typeof(List<>).MakeGenericType(Type))) : throw new IsManyException(Util.BreakpointEnabler + "!" + nameof(IsMany) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// TODO: Is this relevant? Is not <see cref="EnumValue.EnumValue"/> always set for this class?
@@ -97,7 +122,7 @@ namespace AgoRapide.Core {
                 "Note that -" + nameof(IsMany) + "- combined with -" + nameof(IsObligatory) + "- will result in -" + nameof(PropertyKeyWithIndex.Index) + "-#1 being used")]
         public bool IsObligatory { get; set; }
 
-        [ClassMember(Description = "Instructs -" + nameof(AgoRapide.Property.Create) + "- to generate a -" + nameof(PropertyT<string>) + "- object if -" + nameof(PropertyKeyAttributeEnriched.TryValidateAndParse) + "- fails")]
+        [ClassMember(Description = "Instructs -" + nameof(Property.Create) + "- to generate a -" + nameof(PropertyT<string>) + "- object if -" + nameof(PropertyKeyAttributeEnriched.TryValidateAndParse) + "- fails")]
         public bool IsNotStrict { get; set; }
 
         /// <summary>
@@ -112,7 +137,7 @@ namespace AgoRapide.Core {
         public AccessLevel AccessLevelWrite { get; set; } = AccessLevel.System;
 
         /// <summary>
-        /// The current <see cref="Environment"/> has to be equivalent or lower in order for the property to be shown / accepted.
+        /// The current <see cref="ConfigurationAttribute.Environment"/> has to be equivalent or lower in order for the property to be shown / accepted.
         /// </summary>
         public Environment Environment { get; set; } = Environment.Production;
 
@@ -191,8 +216,7 @@ namespace AgoRapide.Core {
         /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// </summary>
         [ClassMember(
-            Description =
-                "Denotes properties that originates from external systems through -" + nameof(BaseSynchronizer) + "-"
+            Description = "Denotes properties that originates from external systems through -" + nameof(BaseSynchronizer) + "-."
         )]
         public bool IsExternal { get => _isExternal; set { _isExternal = value; _isExternalIsSet = true; } }
         private bool _isExternalIsSet = false;
@@ -220,7 +244,7 @@ namespace AgoRapide.Core {
         [ClassMember(
             Description =
                 "Denotes that there is a limited range (limited in the practical sense) for values of this property, " +
-                "making this property useful for drill down suggestions"
+                "making this property relevant for drill down suggestions"
         )]
         public bool HasLimitedRange { get => _hasLimitedRange; set { _hasLimitedRange = value; _hasLimitedRangeIsSet = true; } }
         private bool _hasLimitedRangeIsSet = false;
@@ -296,7 +320,7 @@ namespace AgoRapide.Core {
                 "Signifies that value may contain keys on the form -xxx- " +
                 "which should be replaced with respective links by -" + nameof(Documentator.ReplaceKeys) + "-.",
             LongDescription =
-                "This actual description is for instance marked as " + nameof(IsDocumentation) + " (see " + nameof(CoreP.LongDescription) + ").\r\n" +
+                "This actual description (that you read now) is for instance marked as " + nameof(IsDocumentation) + " (see " + nameof(CoreP.LongDescription) + ").\r\n" +
                 "Especially useful when making HTML representations of properties (see -" + nameof(Property.HTML) + "-)."
         )]
         public bool IsDocumentation { get => _isDocumentation; set { _isDocumentation = value; _isDocumentationIsSet = true; } }
@@ -310,29 +334,6 @@ namespace AgoRapide.Core {
         /// </summary>
         [ClassMember(Description = "Practical mechanism for describing properties with common properties through -" + nameof(IGroupDescriber) + "-")]
         public Type Group { get; set; }
-
-        private Type _type;
-        [ClassMember(
-            Description =
-                "The type of this Property. Defaults to -" + nameof(String) + "-",
-            LongDescription =
-                "Typical examples are\r\n" +
-                "1) typeof(string), typeof(long), typeof(DateTime),\r\n" +
-                "2) typeof(CoreMethod) / typeof(AnyEnum),\r\n" +
-                "3) Can also be a type assignable to -" + nameof(ITypeDescriber) + ",\r\n" +
-                "4) or any type understood by " + nameof(PropertyKeyAttributeEnriched) + "\r\n" +
-                "\r\n" +
-                "Will be set to -" + nameof(String) + "- by " + nameof(PropertyKeyAttributeEnriched.Initialize) + " if not given."
-            )]
-        public Type Type { get => _type ?? throw new NullReferenceException(nameof(Type) + ". Supposed to always be set from " + nameof(PropertyKeyAttributeEnriched) + ".\r\nDetails: " + ToString()); set => _type = value; }
-        /// <summary>
-        /// Has little purpose since <see cref="Type"/> will be set anyway by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given."
-        /// </summary>
-        public bool TypeIsSet => _type != null;
-
-        private Type _genericListType;
-        [ClassMember(Description = "Returns the corresponding generic List<> type. Only allowed to call when -" + nameof(IsMany) + "-")]
-        public Type GenericListType => IsMany ? (_genericListType ?? (_genericListType = typeof(List<>).MakeGenericType(Type))) : throw new IsManyException(Util.BreakpointEnabler + "!" + nameof(IsMany) + ".\r\nDetails: " + ToString());
 
         /// <summary>
         /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.

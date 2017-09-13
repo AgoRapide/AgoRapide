@@ -400,7 +400,9 @@ namespace AgoRapide {
                         }
                         if (Key.Key.A.IsDocumentation) {
                             return Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>");
-                        } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
+                            // TODO: REMOVE COMMENTED OUT CODE. 12 Sep 2017: Removed check for !ValueA.IsDefault
+                            // } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
+                        } else if (Documentator.Keys.TryGetValue(v, out var list)) {
                             return Documentator.GetSingleReplacement(v, list);
                         } else {
                             _showValueHTMLSeparate = false;
@@ -423,7 +425,10 @@ namespace AgoRapide {
             var t = typeof(T);
 
             if (IsIsManyParent) {
-                if (typeof(string).Equals(t)) {
+                if (typeof(HTML).Equals(t)) {
+                    value = (T)(_value = new HTML(string.Join(", ", Properties.Select(p => p.Value.V<HTML>())))); // Note caching in _value
+                    return true;
+                } else if (typeof(string).Equals(t)) {
                     value = (T)(_value = string.Join(", ", Properties.Select(p => p.Value.V<string>()))); // Note caching in _value
                     return true;
                 }
@@ -477,26 +482,19 @@ namespace AgoRapide {
         /// <summary>
         /// Returns attributes for <see cref="Value"/>. 
         /// Should only be used for giving helptext for the value. 
+        /// 
+        /// TODO: Document better, give examples
+        /// 
+        /// TODO: Most probably incomplete as of Sep 2017.
         /// </summary>
         public BaseAttribute ValueA => _valueA ?? (_valueA = new Func<BaseAttribute>(() => {
             if (_value == null) throw new NullReferenceException(nameof(_value) + ". Details. " + ToString());
             switch (_value) {
-                case ApplicationPart applicationPart: return applicationPart.A;
+                case ApplicationPart v: return v.A;
             }
             var type = _value.GetType();
             if (type.IsEnum) return _value.GetEnumValueAttribute();
-
-            // NOT RELEVANT
-            // if (type.IsClass) return type.GetClassAttribute(); // TODO: Check validity of this
-
-            // TOOD: Add some more code here!
-
-            // TODO: Remove comment. Old attempt.
-            //if (typeof(ITypeDescriber).IsAssignableFrom(type)) {
-            //    /// TODO: Add check for <see cref="ClassAttribute"/> here? 
-            //    /// Especially for <see cref="ITypeDescriber"/>
-            //    throw new NotImplementedException();
-            //}
+            
             return DefaultAgoRapideAttribute;
         })());
 
@@ -544,6 +542,7 @@ namespace AgoRapide {
         /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>
         /// </summary>
         /// <param name="request"></param>
+        /// <param name="withinThisPriority">Ignored as of Sep 2017</param>
         /// <returns></returns>
         public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
         public const string HTMLTableHeading = "<tr><th>Key</th><th>Value</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
@@ -552,6 +551,7 @@ namespace AgoRapide {
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
         /// </summary>
         /// <param name="request"></param>
+        /// <param name="withinThisPriority">Ignored as of Sep 2017</param>
         /// <returns></returns>
         public override string ToHTMLTableRow(Request request) {
             if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => {
@@ -710,20 +710,6 @@ namespace AgoRapide {
                 retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
             });
 
-            /// This is no longer needed after introduction of <see cref="Extensions.GetBaseEntityMethods(Type)"/>
-            //var cmds = new List<string>();
-            //request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
-            //    retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
-            //    cmds.Add(cmd);
-            //});
-            //Util.EnumGetValues<PropertyOperation>().ForEach(o => {
-            //    request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, GetType(), new QueryIdInteger(Id), o).Use(cmd => {
-            //        retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, o.ToString()) + "</p>");
-            //        cmds.Add(cmd);
-            //    });
-            //});
-            // request.Result.AddProperty(CoreP.SuggestedUrl.A(), string.Join("\r\n", cmds.Select(cmd => request.API.CreateAPIUrl(cmd))));
-
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>
@@ -791,9 +777,6 @@ namespace AgoRapide {
         }
     }
 
-    /// <summary>
-    /// JSONProperty0/1/2/3/4 contains gradually more and more information
-    /// </summary>
     public class JSONProperty0 : JSONEntity0 {
         public string Value { get; set; }
 
@@ -803,6 +786,7 @@ namespace AgoRapide {
         /// <returns></returns>
         public string GetValueShortened() => (Value?.Substring(0, Math.Min(255, Value.Length)) ?? "") + ((Value?.Length ?? int.MaxValue) < 255 ? "..." : "");
     }
+
     public class JSONProperty1 : JSONProperty0 {
         /// <summary>
         /// <see cref="BaseEntity.Id"/>
@@ -837,11 +821,5 @@ namespace AgoRapide {
         public JSONProperty1() {
         }
     }
-    //public class JSONProperty2 : JSONProperty1 {
-    //}
-    //public class JSONProperty3 : JSONProperty2 {
-    //}
-    //public class JSONProperty4 : JSONProperty3 {
-    //}
 }
 

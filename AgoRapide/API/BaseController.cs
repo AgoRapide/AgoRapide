@@ -316,6 +316,8 @@ namespace AgoRapide.API {
             }
 
             if (!DB.TryGetEntities(request.CurrentUser, queryId, AccessType.Read, requiredType: request.Method.EntityType, entities: out var entities, errorResponse: out var objErrorResponse)) return request.GetErrorResponse(objErrorResponse);
+            // HACK: Try to find a better way to initialize this value, and a better place to store this value. 
+            if (queryId is QueryIdContext) request.PriorityOrderLimit = PriorityOrder.Neutral; /// Include more data since default is only <see cref="PriorityOrder.Important"/>
             return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
         }
 

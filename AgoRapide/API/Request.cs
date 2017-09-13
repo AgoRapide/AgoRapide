@@ -10,6 +10,9 @@ using AgoRapide;
 
 namespace AgoRapide.API {
 
+    /// <summary>
+    /// See also sub-class <see cref="ValidRequest"/>
+    /// </summary>
     [Class(
         Description =
             "Container class with information about a given REST API request.\r\n" +
@@ -27,7 +30,49 @@ namespace AgoRapide.API {
         /// </summary>
         public BaseEntity CurrentUser { get; set; }
 
+        /// <summary>
+        /// HACK: Try to find a better way to initialize this value, and a better place to store this value. 
+        /// HACK: Now it is set by <see cref="BaseController.HandleCoreMethodEntityIndex"/>
+        /// </summary>
+        [ClassMember(
+            Description =
+                "Used to adjust detail of information returned by -" + nameof(BaseEntity.ToHTMLTableRowHeading) + "- and -" + nameof(BaseEntity.ToHTMLTableRow) + "-.",
+            LongDescription =
+                "Only relevant for -" + nameof(CoreAPIMethod.EntityIndex) + "- when distinguishing between browsing like\r\n" +
+                "   api/Person/CurrentContext/HTML (see -" + nameof(QueryIdContext) + "-)\r\n" +
+                "and\r\n" +
+                "   api/Person/WHERE department = 'Manufacturing'\r\n" +
+                "The former is considered a report request where detailed information is desired while " +
+                "the latter is considered more like a search query where only -" + nameof(PriorityOrder.Important) + "-information is needed."
+        )]
+        public PriorityOrder PriorityOrderLimit { get; set; } = PriorityOrder.Important;
+
         public Result Result { get; } = new Result();
+
+        /// <summary>
+        /// Initializes minimum version of Request. Will be marked <see cref="Request.IsIncomplete"/>. 
+        /// </summary>
+        /// <param name="httpRequestMessage"></param>
+        /// <param name="method"></param>
+        /// <param name="currentUser">May be null</param>
+        /// <param name="exceptionHasOccurred">
+        /// <see cref="ExceptionHasOccurred"/>
+        /// </param>
+        public Request(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntity currentUser, bool exceptionHasOccurred) {
+            HttpRequestMessage = httpRequestMessage ?? throw new ArgumentNullException(nameof(httpRequestMessage));
+            Method = method ?? throw new ArgumentNullException(nameof(method));
+            CurrentUser = currentUser;
+            ExceptionHasOccurred = exceptionHasOccurred;
+
+            URL = httpRequestMessage.RequestUri.ToString();
+            ResponseFormat = GetResponseFormatFromURL(URL);
+
+            if (ExceptionHasOccurred) {
+                // Do not bother which check below. Will most probably fail anyway.
+            } else {
+                if (Method != null && Method.RequiresAuthorization != (currentUser != null)) throw new InvalidRequestInitializationException(nameof(Method) + "." + nameof(Method.RequiresAuthorization) + " (" + Method.RequiresAuthorization + ") != (" + nameof(currentUser) + " != null) (" + (currentUser != null) + "). " + nameof(httpRequestMessage) + ": " + httpRequestMessage.RequestUri.ToString() + ", " + nameof(method) + ": " + method.ToString());
+            }
+        }
 
         public object GetOKResponseAsEntityId(Type entityType, long id) => GetOKResponseAsEntityId(entityType, id, message: null);
         /// <summary>
@@ -101,8 +146,6 @@ namespace AgoRapide.API {
                 case ResultCode.access_error: throw new InvalidEnumException(resultCode, "Use method " + nameof(GetAccessDeniedResponse) + " instead");
                 default: break; // OK;
             }
-            //message += nameof(AgoRapideAttribute.Description) + ": " + resultCode.GetAgoRapideAttribute().A.Description;
-
             Result.ResultCode = resultCode;
             if (!string.IsNullOrEmpty(caller)) Result.AddProperty(CoreP.Caller.A(), caller);
             if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreP.Message.A(), message);
@@ -150,30 +193,6 @@ namespace AgoRapide.API {
         public override string ToString() => "Url: " + URL + ", Method: " + (Method?.ToString() ?? "[NULL]") + ", CurrentUser: " + (CurrentUser?.ToString() ?? "[NULL]");
 
         /// <summary>
-        /// Initializes minimum version of Request. Will be marked <see cref="Request.IsIncomplete"/>. 
-        /// </summary>
-        /// <param name="httpRequestMessage"></param>
-        /// <param name="method"></param>
-        /// <param name="currentUser">May be null</param>
-        /// <param name="exceptionHasOccurred">
-        /// <see cref="ExceptionHasOccurred"/>
-        /// </param>
-        public Request(System.Net.Http.HttpRequestMessage httpRequestMessage, APIMethod method, BaseEntity currentUser, bool exceptionHasOccurred) {
-            HttpRequestMessage = httpRequestMessage ?? throw new ArgumentNullException(nameof(httpRequestMessage));
-            Method = method ?? throw new ArgumentNullException(nameof(method));
-            CurrentUser = currentUser;
-            ExceptionHasOccurred = exceptionHasOccurred;
-
-            URL = httpRequestMessage.RequestUri.ToString();
-            ResponseFormat = GetResponseFormatFromURL(URL);
-
-            if (ExceptionHasOccurred) {
-                // Do not bother which check below. Will most probably fail anyway.
-            } else {
-                if (Method != null && Method.RequiresAuthorization != (currentUser != null)) throw new InvalidRequestInitializationException(nameof(Method) + "." + nameof(Method.RequiresAuthorization) + " (" + Method.RequiresAuthorization + ") != (" + nameof(currentUser) + " != null) (" + (currentUser != null) + "). " + nameof(httpRequestMessage) + ": " + httpRequestMessage.RequestUri.ToString() + ", " + nameof(method) + ": " + method.ToString());
-            }
-        }
-
         public class InvalidRequestInitializationException : ApplicationException {
             public InvalidRequestInitializationException(string message) : base(message) { }
             public InvalidRequestInitializationException(string message, Exception inner) : base(message, inner) { }
@@ -439,9 +458,8 @@ namespace AgoRapide.API {
     }
 
     [Class(Description =
-        "Container class with information about a given REST API request.\r\n" +
-        "Populated by -" + nameof(BaseController.TryGetRequest) + "-\r\n" +
-        "See also super class -" + nameof(Request) + "-"
+        "Contains actual -" + nameof(Parameters) + "- of request.\r\n" +
+        "See super class -" + nameof(Request) + "- for documentation."
     )]
     public class ValidRequest : Request {
 

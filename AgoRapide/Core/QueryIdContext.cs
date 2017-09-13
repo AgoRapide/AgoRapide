@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace AgoRapide.Core {
 
-    [Class(Description = "Signifies that " + nameof(CoreP.Context) + " (" + nameof(Context) + ") for the current user is to be queried")]
+    [Class(
+        Description = 
+            "Signifies that " + nameof(CoreP.Context) + " (" + nameof(Context) + ") for the current user is to be queried",
+        LongDescription = 
+            "Query will be considered more of a report request than a search query (meaning more detailed information will be returned).\r\n" +
+            "Confer with setting of -" + nameof(API.Request.PriorityOrderLimit) + "-."
+    )]
     public class QueryIdContext : QueryId {
 
         [ClassMember(Description = "See corresponding code in -" + nameof(QueryId.TryParse) + "-.")]

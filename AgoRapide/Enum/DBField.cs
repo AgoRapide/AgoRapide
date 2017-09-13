@@ -31,7 +31,7 @@ namespace AgoRapide {
         /// Note how does not contain None (<see cref="Util.EnumGetValues{T}"/> should therefore be used with caution)
         /// </summary>
         [PropertyKey(
-            Description = "Primary key in database",
+            Description = "Primary key in database. Corresponds to -" + nameof(CoreP.DBId) + "-.",
             Type = typeof(long))]
         id = 0, // Note that this would usually be the "None" value in a typical AgoRapide enum.
 
