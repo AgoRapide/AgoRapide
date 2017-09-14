@@ -55,7 +55,7 @@ namespace AgoRapide.Database {
 
                 // TOOD: ---------
                 // TODO: Add some functionality for configuring number of, and distribution of entities here.
-                var percentileValue = PV(SynchronizerP.SynchronizerMockSize.A(), defaultValue: new Percentile(3)).Value;
+                var percentileValue = PV(SynchronizerP.SynchronizerMockSize.A(), defaultValue: Percentile.Get(3)).Value;
                 var defaultCount = percentileValue * percentileValue * percentileValue; // Default will be 27 entities. 
                 var maxN = types.ToDictionary(key => key, key => defaultCount);
                 // TOOD: ---------
@@ -95,7 +95,7 @@ namespace AgoRapide.Database {
             /// Note how we cannot just do 
             ///   SetAndStoreCount(CountP.Total, externalEntities.Count, result, db);
             /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as we are called for different types, meaning value stored for last type would just be overridden)
-            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, type, CountP.Total.A()), externalEntities.Count, result, db);
+            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.Total.A()), externalEntities.Count, result, db);
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             var internalEntities = db.GetAllEntities(type);
@@ -125,12 +125,12 @@ namespace AgoRapide.Database {
                 });
                 InMemoryCache.EntityCache[e.Id] = e; // Put into cache
             });
-            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, type, CountP.Created.A()), newCount, result, db);
+            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.Created.A()), newCount, result, db);
             internalEntitiesByPrimaryKey.ForEach(e => { // Remove any internal entities left.
                 db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid, result);
                 if (InMemoryCache.EntityCache.ContainsKey(e.Value.Id)) InMemoryCache.EntityCache.TryRemove(e.Value.Id, out _);
             });
-            SetAndStoreCount(AggregationKey.GetAggregationKey(AggregationType.Count, type, CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
+            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
         }
 
         /// <summary>

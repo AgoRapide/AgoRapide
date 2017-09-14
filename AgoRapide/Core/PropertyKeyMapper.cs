@@ -13,8 +13,8 @@ using AgoRapide;
 namespace AgoRapide.Core {
 
     [Class(
-        Description = "Helper class matching -" + nameof(EnumType.PropertyKey) + "- (like P) used in your project to -" + nameof(CoreP) + "-",
-        LongDescription = "Note especially -" + nameof(GetA) + "- which is able to store in database any new string values found"
+        Description = "Helper class matching -" + nameof(EnumType.PropertyKey) + "- (like P) used in your project to -" + nameof(CoreP) + "-.",
+        LongDescription = "Note especially -" + nameof(GetA) + "- which is able to store in database any new string values found."
     )]
     public static class PropertyKeyMapper {
 
@@ -147,7 +147,7 @@ namespace AgoRapide.Core {
                 if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later in <see cref="AddA"/>)
                     a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
                         a.Key.A.Parents.ToList().ForEach(parent => {
-                            var dummy = AggregationKey.GetAggregationKey(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
+                            var dummy = AggregationKey.Get(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
                         });
                     });
                 }
@@ -173,6 +173,7 @@ namespace AgoRapide.Core {
                 _cache[o] = dict;
             });
             var enumMapForCoreP = _cache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
+
             var allCoreP = new Dictionary<CoreP, PropertyKey>();
             _fromStringMaps.ForEach(e => {
                 if (!allCoreP.TryGetValue(e.Value.Key.CoreP, out var existing)) {
@@ -186,6 +187,16 @@ namespace AgoRapide.Core {
                 }
                 if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out PropertyKeyAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
+
+            /// Add aggregation keys over foreign keys for automatic injection by <see cref="BaseInjector"/>
+            /// Note that we do not bother with putting these in <see cref="_fromStringMaps"/> because they will not be stored in database, only
+            /// calculated dynamically. 
+            /// We do however store them with <see cref="_allCoreP"/> because we want <see cref="Extensions.GetChildProperties"/> to catch them. 
+            BaseInjector.GetForeignKeyAggregates(allCoreP.Values.ToList()).ForEach(key => {
+                noticeLogger(key.GetType().ToStringVeryShort() + ": " + key.Key.A.Description);
+                allCoreP[key.Key.CoreP] = key;
+            });
+
             _allCoreP = allCoreP.Values.ToList();
         }
 
@@ -269,18 +280,18 @@ namespace AgoRapide.Core {
             if (!_fromStringMaps.TryAdd(key.Key.PToString, key)) {
                 switch (key) {
                     case AggregationKey aggregationKey:
-                        /// We are been called from <see cref="AggregationKey.GetAggregationKey"/>, but key already exists. 
+                        /// We are been called from <see cref="AggregationKey.Get"/>, but key already exists. 
                         /// This would typically happen if all possible combinations of aggregations are not registered at application startup
                         /// resulting in <see cref="TryAddA"/> having already been called when unknown string was found in database, and then later (that is now), 
-                        /// we get a name collision when <see cref="AggregationKey.GetAggregationKey"/> is being called. 
-                        throw new PropertyKeyWithIndex.InvalidPropertyKeyException(
+                        /// we get a name collision when <see cref="AggregationKey.Get"/> is being called. 
+                        throw new PropertyKey.InvalidPropertyKeyException(
                             nameof(key.Key.PToString) + " already exists for " + key.Key.ToString() + ".\r\n" +
                             "Possible cause: Aggregation combination was not registered at application startup and there are properties already stored in database.");
                     default:
                         // This could just be a thread issue. In other words we could choose to just ignore this exception. 
                         // or we could instead just do 
                         //   _fromStringMaps[key.Key.PToString] = key;
-                        throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + key.Key.ToString());
+                        throw new PropertyKey.InvalidPropertyKeyException(nameof(key.Key.PToString) + " already exists for " + key.Key.ToString());
                 }
             }
 

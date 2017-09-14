@@ -122,18 +122,23 @@ namespace AgoRapide.Database {
         public static List<BaseEntity> GetMatchingEntities(Type type, QueryId id, BaseDatabase db) {
             if (type == null) throw new ArgumentNullException(nameof(type));
             if (id == null) throw new ArgumentNullException(nameof(id));
+            if (db == null) throw new ArgumentNullException(nameof(db));
             _synchronizedTypes.GetOrAdd(type, t => { // Note how actual return value, TRUE / FALSE, is ignored.
                 if (!GetSyncronizers(db).TryGetValue(t, out var s)) {
                     // This is either because 
                     // 1) Synchronizing is not relevant for this type, or
                     // 2) No synchronizers has been created in the database yet.
-                    // TODO: Note how this is (as of Sep 2017) decided only once in application lifetime. For case 2) above this is not good enough.
+                    // TODO: Note how this is (as of Sep 2017) decided permanently for the rest of the application lifetime. 
+                    // TODO: But for case 2) above this is of course not good enough.
                     return false; 
                 }
                 if (!FileCache.Instance.TryEnrichFromDisk(s, t, db, out _)) { 
                     /// This call can be very time-consuming
                     /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
                     s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+
+                    /// TOOD: Important fact, now ALL ENTITIES in this synchronizer-"universe" have been read into memory. 
+                    /// TODO: In other words, we can now set ALL the relevant keys in <see cref="_synchronizedTypes"/>...
                 }
                 return true; // Indicates that synchronizing has been done
             });

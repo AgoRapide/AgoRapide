@@ -639,6 +639,7 @@ namespace AgoRapide.Core {
         /// </param>
         public static void AssertAssignable(Type foundType, Type expectedType, Func<string> detailer = null) {
             if (foundType == null) throw new NullReferenceException(nameof(foundType) + ". (" + nameof(expectedType) + ": " + expectedType + ")" + detailer.Result("\r\nDetails: "));
+            if (expectedType == null) throw new NullReferenceException(nameof(expectedType) + ". (" + nameof(foundType) + ": " + foundType + ")" + detailer.Result("\r\nDetails: "));
             if (!expectedType.IsAssignableFrom(foundType)) throw new InvalidTypeException(foundType, expectedType, detailer.Result(""));
         }
 
@@ -654,6 +655,7 @@ namespace AgoRapide.Core {
         /// </param>
         public static void AssertEquals(Type foundType, Type expectedType, Func<string> detailer) {
             if (foundType == null) throw new NullReferenceException(nameof(foundType) + ". (" + nameof(expectedType) + ": " + expectedType + ")" + detailer.Result("\r\nDetails: "));
+            if (expectedType == null) throw new NullReferenceException(nameof(expectedType) + ". (" + nameof(foundType) + ": " + foundType + ")" + detailer.Result("\r\nDetails: "));
             if (!expectedType.Equals(foundType)) throw new InvalidTypeException(foundType, expectedType, detailer.Result(""));
         }
 
@@ -664,11 +666,11 @@ namespace AgoRapide.Core {
         /// <param name="type"></param>
         /// <param name="key"></param>
         public static void AssertList(Type type, PropertyKey key, Func<string> detailer) {
-            if (type == null) throw new NullReferenceException(nameof(type));
-            if (key == null) throw new NullReferenceException(nameof(key));
+            if (type == null) throw new NullReferenceException(nameof(type) + detailer.Result("\r\nDetails: "));
+            if (key == null) throw new NullReferenceException(nameof(key) + detailer.Result("\r\nDetails: "));
             if (!type.GetGenericTypeDefinition().Equals(typeof(List<>))) throw new InvalidTypeException(type, "Only GetGenericTypeDefinition List is allowed for IsGenericType" + detailer.Result("\r\nDetails: "));
             if (type.GenericTypeArguments.Length != 1) throw new InvalidTypeException(type, "Only 1 GenericTypeArguments allowed, not " + type.GenericTypeArguments.Length + detailer.Result("\r\nDetails: "));
-            InvalidTypeException.AssertAssignable(type.GenericTypeArguments[0], key.Key.A.Type, () => "Generic type requested was " + type + detailer.Result("\r\nDetails: "));
+            AssertAssignable(type.GenericTypeArguments[0], key.Key.A.Type, () => "Generic type requested was " + type + detailer.Result("\r\nDetails: "));
         }
 
         public InvalidTypeException(string typeFound) : this(typeFound, null) { }

@@ -137,6 +137,7 @@
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Database\BaseDatabase.cs" />
     <Compile Include="Database\FileCache.cs" />
+    <Compile Include="Database\BaseInjector.cs" />
     <Compile Include="Database\InMemoryCache.cs" />
     <Compile Include="Database\PostgreSQLDatabase.cs" />
     <Compile Include="Database\BaseSynchronizer.cs" />

@@ -10,6 +10,9 @@ using AgoRapide.Core;
 using AgoRapide.API;
 using AgoRapide.Database;
 
+/// <summary>
+/// Note: <see cref="AgoRapide.AggregationKey"/> also resides in this file for the time being (see below). 
+/// </summary>
 namespace AgoRapide {
 
     /// <summary>
@@ -42,7 +45,7 @@ namespace AgoRapide {
             }
         }
 
-        public void Count(Type type, CountP id) => Count(AggregationKey.GetAggregationKey(AggregationType.Count, type, id.A()));
+        public void Count(Type type, CountP id) => Count(AggregationKey.Get(AggregationType.Count, type, id.A()));
         public void Count(PropertyKey id) => Count(id.Key.CoreP, 1);
         public void Count(CoreP id, long increment) {
             if (!Properties.TryGetValue(id, out var p)) {
@@ -111,20 +114,42 @@ namespace AgoRapide {
     /// <summary>
     /// TODO: Move to separate file
     /// 
-    /// Two examples of aggregation:
-    /// 1) <see cref="AggregationType.Sum"/>, <see cref="Person"/>, Salary. 
-    ///    Used for instance for a given <see cref="Context"/>, giving statistics about the data seen.
-    /// 2) <see cref="AggregationType.Count"/>, <see cref="Person"/>, <see cref="CountP.Created"/>
+    /// Some examples of aggregation:
+    /// (work on this just started summer 2017)
+    /// 
+    /// 1) <see cref="AggregationType.Count"/>, <see cref="Person"/>, <see cref="CountP.Created"/>
     ///    Typically used for communicating result of API call to client. 
+    ///    
+    /// 2) <see cref="AggregationType.Sum"/>, <see cref="Person"/>, PersonP.Salary. 
+    ///    Used for instance for a given <see cref="Context"/>, giving statistics about the data seen.
+    ///    TODO: NOT IMPLEMENTED AS OF SEP 2017!
+    /// 
+    /// NOTE: <see cref="AggregationKey"/> is not to be confused with <see cref="ForeignKeyAggregateKey"/>
     /// </summary>
     public class AggregationKey : PropertyKey {
-        public AggregationKey(PropertyKeyAttributeEnriched key) : base(key) { }
+
+        public AggregationType AggregationType { get; private set; }
+        public Type EntityType { get; private set; }
+
+        /// <summary>
+        /// Private in order to limit number of possible objects created (by going through cache with <see cref="Get"/>. 
+        /// </summary>
+        /// <param name="key"></param>
+        private AggregationKey(AggregationType aggregationType, Type entityType, PropertyKeyAttributeEnriched key) : base(key) {
+            AggregationType = aggregationType;
+            EntityType = entityType;
+        }
 
         private static ConcurrentDictionary<string, AggregationKey> _aggregations = new ConcurrentDictionary<string, AggregationKey>();
-
-        public static AggregationKey GetAggregationKey(AggregationType aggregationType, Type entityType, PropertyKey property) => _aggregations.GetOrAdd(
+        public static AggregationKey Get(AggregationType aggregationType, Type entityType, PropertyKey property) => _aggregations.GetOrAdd(
             aggregationType + "_" + entityType.ToStringVeryShort() + "_" + property.Key.PToString, key => {
+
+                // Added 14 Sep 2017. May have to relax a bit here though. 
+                InvalidTypeException.AssertEquals(property.Key.A.Type, typeof(long), () => "Details: " + property.ToString());
+
                 var retval = new AggregationKey( /// Note that ideally this should only happen at application startup (<see cref="PropertyKeyMapper.MapEnum{T}"/> / <see cref="Startup.Initialize{TPerson}"/>)
+                    aggregationType,
+                    entityType, 
                     new PropertyKeyAttributeEnrichedDyn(
                         new PropertyKeyAttribute(
                             property: key,
@@ -132,12 +157,16 @@ namespace AgoRapide {
                             longDescription: "",
                             isMany: false
                         ) {
+                            /// Note how <see cref="PropertyKeyAttribute.Parents"/> is not relevant here, as there is no defined place for which
+                            /// this <see cref="AggregationKey"/> is to be stored. Most probably it just exists temporarily within a
+                            /// <see cref="BaseEntityWithLogAndCount"/>-instance. 
+                            
                             Type = typeof(long) /// TODO: Maybe allow double also for aggregations?
                         },
                         (CoreP)PropertyKeyMapper.GetNextCorePId()
                     )
                 );
-                PropertyKeyMapper.AddA(retval);
+                PropertyKeyMapper.AddA(retval); // Add because we want to recognize these when later read from database
                 return retval;
             });
     }

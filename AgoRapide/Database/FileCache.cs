@@ -35,7 +35,13 @@ namespace AgoRapide.Database {
     public class FileCache : BaseCore {
 
         private FileCache() { }
-        public static readonly FileCache Instance = new FileCache(); /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. Apart from this need for logging the class could have just been made static instead.
+        /// <summary>
+        /// Singleton makes for easy inheriting of log-methods from <see cref="BaseCore"/>. 
+        /// Apart from this need for logging the class could have just been made static instead.
+        /// 
+        /// TODO: Most probably logging is not "caught" at any external point anyway (see <see cref="BaseCore.LogEvent"/> and <see cref="BaseCore.Log"/> for explanation)
+        /// </summary>
+        public static readonly FileCache Instance = new FileCache();
 
         private const string RECORD_SEPARATOR = "\r\n-!-\r\n";
         /// <summary>
@@ -53,7 +59,7 @@ namespace AgoRapide.Database {
             )]
         public static List<PropertyKey> GetProperties(Type type) => _propertyKeyCache.GetOrAdd(type, t => {
             var retval = new List<PropertyKey> { PropertyKeyMapper.GetA(CoreP.DBId) };
-            retval.AddRange(type.GetChildProperties().Where(p => 
+            retval.AddRange(type.GetChildProperties().Where(p =>
                 p.Value.Key.A.IsExternal || // This is the normal criteria.
                 p.Value.Key.PToString.EndsWith("CorrespondingInternalKey") /// This is a special case, we must either store this on disk (as done now (Sep 2017)), OR, recalculate the value when reading. The former is considered much more efficient. See <see cref="PropertyKeyMapper.MapEnum{T}"/> for more information. 
             ).Select(p => p.Value).ToList());
@@ -69,6 +75,7 @@ namespace AgoRapide.Database {
         public static string GetFingerprint(Type type) => _fingerprintCache.GetOrAdd(type, t =>
             string.Join("\r\n", GetProperties(t).Select(p => p.Key.PToString)));
 
+        [ClassMember(Description = "Stores all -" + nameof(PropertyKeyAttribute.IsExternal) + "--properties for the given entities to disk.")]
         public void StoreToDisk(BaseSynchronizer synchronizer, Type type, List<BaseEntity> entities) { // where T : BaseEntity, new() {
             InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
             Log(nameof(type) + ": " + type);
@@ -93,6 +100,9 @@ namespace AgoRapide.Database {
         }
 
         /// <summary>
+        /// TODO: Find a better name for this method.
+        /// TODO: TrySynchronizeFromDisk for instance (compared with synchronize from source). Or just TryReadFromDisk.
+        /// 
         /// Return value false means that <see cref="BaseSynchronizer.Synchronize"/> has to be called for <paramref name="synchronizer"/>. 
         /// </summary>
         /// <param name="synchronizer"></param>
@@ -100,7 +110,7 @@ namespace AgoRapide.Database {
         /// <param name="db"></param>
         /// <param name="errorResponse"></param>
         [ClassMember(Description = "Reads from disk -" + nameof(PropertyKeyAttribute.IsExternal) + "--entities earlier found by a -" + nameof(BaseSynchronizer) + "-.")]
-        public bool TryEnrichFromDisk(BaseSynchronizer synchronizer, Type type, BaseDatabase db, out string errorResponse) { 
+        public bool TryEnrichFromDisk(BaseSynchronizer synchronizer, Type type, BaseDatabase db, out string errorResponse) {
             Log(nameof(type) + ": " + type);
             var returnFalseAdditionalInformation = "\r\nNote that the calling method will now most probably do a (very) time-consuming call against " + nameof(BaseSynchronizer.Synchronize);
             var filepath = GetFilePath(synchronizer, type);
@@ -143,7 +153,7 @@ namespace AgoRapide.Database {
                     if (!o.Key.TryValidateAndParse(properties[i], out var result)) throw new InvalidFileException(filepath, r, o, properties[i], result.ErrorResponse);
                     if (i == 0) { /// The primary key (<see cref="DBField.id"/>) is stored as first property
                         if (!entitiesFromDatabase.TryGetValue(result.Result.V<long>(), out entity)) throw new InvalidFileException(filepath, r, o, properties[i], "Not found in " + nameof(entitiesFromDatabase));
-                        i++;  return;
+                        i++; return;
                     }
                     entity.Properties[o.Key.CoreP] = result.Result;
                     i++; return;

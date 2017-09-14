@@ -349,7 +349,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Describes entities for which this property is used.
         /// 
-        /// Typical example for a  enum like P would be:
+        /// Typical example for an enum like P would be:
         /// public enum P {
         ///   ...
         ///   [AgoRapide(Parents = new Type[] { typeof(Person) }, Type = typeof(DateTime))]

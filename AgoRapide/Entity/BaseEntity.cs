@@ -354,11 +354,21 @@ namespace AgoRapide {
         /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
         /// </summary>
         /// <returns></returns>
-        public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k =>
-            "<tr><th>" + nameof(IdFriendly) + "</th>" + 
-            string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<th>" + key.Key.PToString + "</th>")) +
+        public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
+            var thisType = GetType().ToStringVeryShort();
+            return "<tr><th>" + nameof(IdFriendly) + "</th>" +
+            string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<th>" + new Func<string>(() => {                
+                var retval = key.Key.PToString;
+                if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                    // TODO: Add mouseover for showing complete name here.
+                    retval = retval.Substring(thisType.Length);
+                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.ForeignKeyAggregateKey"/>
+                }
+                return retval;
+            })() + "</th>")) +
             // "<th>" + nameof(Created) + "</th>" +
-            "</tr>");
+            "</tr>";
+        });
 
         /// <summary>
         /// May be overridden if you need finer control about how to present your entities.
@@ -370,8 +380,8 @@ namespace AgoRapide {
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td>" +
             string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<td>" + (
-                Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;" 
-            ) + "</td>")) + 
+                Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;"
+            ) + "</td>")) +
             //"<td>" + 
             //Created.ToString(DateTimeFormat.DateHourMin) + "</td>" +
             "</tr>\r\n";
@@ -468,7 +478,7 @@ namespace AgoRapide {
                     // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                     retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.Key.A.PriorityOrder).Select(p => {
                         p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
-                        return p.ToHTMLTableRow(request); 
+                        return p.ToHTMLTableRow(request);
                     })));
                     retval.AppendLine("</table>");
                 }

@@ -49,7 +49,7 @@ namespace AgoRapide.Core {
         /// TODO: Analyze whole database / all results given from <see cref="BaseSynchronizer"/>, store in <see cref="PropertyKeyAttributeEnriched"/>
         /// TODO: Use that again against <see cref="Context.QueryId"/>
         /// </summary>
-        public Percentile Size = new Percentile(50); // Return median size
+        public Percentile Size = Percentile.Get(50); // Return median size
 
         public Context(SetOperator setOperator, Type type, QueryId queryId) {
             SetOperator = setOperator; InvalidEnumException.AssertDefined(SetOperator);

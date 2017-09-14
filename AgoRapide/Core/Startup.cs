@@ -151,7 +151,7 @@ namespace AgoRapide.Core {
                     var attribute = c.A();
                     APIMethod.AllEntityTypes.ForEach(t => {
                         attribute.Key.A.AggregationTypes.ForEach(a => {
-                            aggregations.AppendLine(AggregationKey.GetAggregationKey(a, t, attribute).Key.PToString);
+                            aggregations.AppendLine(AggregationKey.Get(a, t, attribute).Key.PToString);
                         });
                     });
                 });

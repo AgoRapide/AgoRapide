@@ -9,9 +9,11 @@ using System.Threading.Tasks;
 namespace AgoRapide.Core {
 
     /// <summary>
-    /// TODO: <see cref="IGroupDescriber"/> could be replaced by enum-"class" level attributes now that we (Mar 2017) map
-    /// TODO: TO <see cref="CoreP"/> instead of FROM <see cref="CoreP"/> and can have multiple enums in each project.
-    /// TODO: (the enums again can be placed inside each entity class that we want to use)
+    /// TODO: Sep 2017: <see cref="IGroupDescriber"/> could be replaced by <see cref="EnumAttribute"/>-attributes for the relevant
+    /// TOOD: <see cref="EnumType.PropertyKey"/> enum-"classes". 
+    /// TODO: Typical would be setting of <see cref="PropertyKeyAttribute.Parents"/> and <see cref="PropertyKeyAttribute.AccessLevelRead"/> / <see cref="PropertyKeyAttribute.AccessLevelWrite"/>
+    /// TODO: The values stored with the <see cref="EnumAttribute"/> can be considered default values, and still possible to override in <see cref="EnumValueAttribute"/>. 
+    /// TODO: (this could also be deduced automatically).
     /// 
     /// Practical mechanism for describing properties with common properties. 
     /// Specified through <see cref="PropertyKeyAttribute.Group"/>. 
