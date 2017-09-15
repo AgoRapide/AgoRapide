@@ -36,6 +36,9 @@ namespace AgoRapide.Database {
 
         /// <summary>
         /// Split out from <see cref="Synchronize"/> in order to be able to call directly from <see cref="InMemoryCache"/>
+        /// 
+        /// TODO: Missing resetting of <see cref="InMemoryCache._synchronizedTypes"/> / <see cref="InMemoryCache._synchronizedTypesInternal"/>.
+        /// TODO: E
         /// </summary>
         /// <param name="db"></param>
         /// <param name="result"></param>
@@ -89,7 +92,7 @@ namespace AgoRapide.Database {
         /// </param>
         /// <param name="db"></param>
         /// <param name="result"></param>
-        private void SynchronizeReconcileWithDatabase(Type type, List<BaseEntity> externalEntities, BaseDatabase db, Result result) { 
+        private void SynchronizeReconcileWithDatabase(Type type, List<BaseEntity> externalEntities, BaseDatabase db, Result result) {
             InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
 
             /// Note how we cannot just do 
@@ -147,10 +150,10 @@ namespace AgoRapide.Database {
                 e.Key.GetChildProperties().Values.Where(p => p.Key.A.ExternalForeignKeyOf != null).ForEach(p => {
                     var foreignType = p.Key.A.ExternalForeignKeyOf;
                     var correspondingInternalKey = e.Key.GetChildProperties().Values.Single(p2 => p2.Key.PToString == p.Key.PToString + "CorrespondingInternalKey", () => p.Key.PToString + "CorrespondingInternalKey for " + e.Key.ToStringVeryShort());
-                    Dictionary <object, long> indexesThisForeignKeyType = null;
+                    Dictionary<object, long> indexesThisForeignKeyType = null;
                     e.Value.ForEach(entity => {
                         if (!entity.Properties.TryGetValue(p.Key.CoreP, out var fk)) return;
-                        if (indexesThisForeignKeyType == null) { 
+                        if (indexesThisForeignKeyType == null) {
                             if (!foreignPrimaryKeyToPrimaryKeyIndexes.TryGetValue(foreignType, out indexesThisForeignKeyType)) { // Note how we ensure that we build index for a specific foreignType only when needed and only once, even if referred from different properties.
                                 var externalPrimaryKeyOfForeignType = foreignType.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " of " + foreignType);
                                 indexesThisForeignKeyType = (foreignPrimaryKeyToPrimaryKeyIndexes[foreignType] = // Construct index                                    
@@ -165,6 +168,9 @@ namespace AgoRapide.Database {
                 });
             });
         }
+
+        [ClassMember(Description = "Injects additional data based on C# logic.")]
+        public abstract void Inject(BaseDatabase db);
     }
 
     [Enum(AgoRapideEnumType = EnumType.PropertyKey)]

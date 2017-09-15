@@ -13,6 +13,11 @@ using AgoRapide.API;
 /// </summary>
 namespace AgoRapide.Database {
 
+    /// <summary>
+    /// Note <see cref="BaseInjector"/> assumes <see cref="CacheUse.All"/> for all entities involved and therefore always queries <see cref="InMemoryCache"/> directly.
+    /// 
+    /// TODO: Class should probably be renamed into ForeignKeyAggregatesInjecter if all other injectors are stored within <see cref="BaseSynchronizer"/>. 
+    /// </summary>
     [Class(
         Description =
             "Responsible for injecting values that are only to be stored dynamically in RAM.\r\n" +
@@ -23,24 +28,52 @@ namespace AgoRapide.Database {
             "Inherited classes inject additional values based on their own C# logic")]
     public class BaseInjector {
 
-        public static void GenerateAggregates(Type type, List<BaseEntity> entities) {
-            type.GetChildProperties().Values.Select(key => key as ForeignKeyAggregateKey).Where(key => key != null).ForEach(key => {
+        /// <summary>
+        /// Note that will also set <see cref="PropertyKeyAttribute.HasLimitedRange"/> as appropriate. 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="entities"></param>
+        /// <param name="db"></param>
+        [ClassMember(Description = "Calculates the actual aggregates based on keys returned by -" + nameof(GetForeignKeyAggregateKeys) + "-.")]
+        public static void CalculateForeignKeyAggregates(Type type, List<BaseEntity> entities, BaseDatabase db) => type.GetChildProperties().Values.Select(key => key as ForeignKeyAggregateKey).Where(key => key != null).ForEach(key => {
+            var hasLimitedRange = true; var valuesFound = new HashSet<long>();
+            entities.ForEach(e => {
+                InvalidObjectTypeException.AssertAssignable(e, type);
+                // TODO: Note potential repeated calculations of sourceEntities here. We could have used LINQ GroupBy, but would then have to
+                // TODO: take into account that the ForeignKeyProperty may actually also vary, not only the SourceEntityType
+                var sourceEntities = InMemoryCache.GetMatchingEntities(key.SourceEntityType, new QueryIdKeyOperatorValue(key.ForeignKeyProperty.Key, Operator.EQ, e.Id), db);
+                if (key.ForeignKeyProperty.Key.CoreP == key.SourceProperty.Key.CoreP) {
+                    if (key.AggregationType != AggregationType.Count) throw new InvalidEnumException(key.AggregationType, "Because " + nameof(key.ForeignKeyProperty));
 
+                    var av = (long)sourceEntities.Count;
+                    e.AddProperty(key, av); // Note cast since long is the preferred type for aggregations. 
+
+                    if (!valuesFound.Contains(av)) {
+                        if (valuesFound.Count >= 20) { // Note how we allow up to 20 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
+                            hasLimitedRange = false;
+                        } else {
+                            valuesFound.Add(av);
+                        }
+                    }
+                } else {
+                    throw new NotImplementedException(key.SourceProperty.Key.PToString);
+                }
             });
-        }
+            key.Key.A.HasLimitedRange = hasLimitedRange; /// If TRUE then important discovery making it possible for <see cref="Result.CreateDrillDownUrls"/> to make more suggestions.
+        });
 
         /// <summary>
-        /// TODO: 
+        /// To be be done single threaded at application startup. 
         /// </summary>
         /// <param name="keys"></param>
         /// <param name="corePGetter"></param>
         /// <returns></returns>
         [ClassMember(Description =
-            "Generates all aggregates that can automatically be deduced from standard AgoRapide information.\r\n" +
+            "Generates -" + nameof(ForeignKeyAggregateKey) + "- for all aggregates that can automatically be deduced from standard AgoRapide information.\r\n" +
             "Will generate -" + nameof(AggregationType.Count) + "- directly against foreign keys, and also aggregates for all properties " +
             "foreign entity which have -" + nameof(PropertyKeyAttribute.AggregationTypes) + "- set.\r\n" +
             "Called from -" + nameof(PropertyKeyMapper.MapEnumFinalize) + "-.")]
-        public static List<ForeignKeyAggregateKey> GetForeignKeyAggregates(List<PropertyKey> keys) {
+        public static List<ForeignKeyAggregateKey> GetForeignKeyAggregateKeys(List<PropertyKey> keys) {
             var retval = new List<ForeignKeyAggregateKey>();
 
             keys.Where(k => k.Key.A.ForeignKeyOf != null).ForEach(k => {
@@ -56,9 +89,10 @@ namespace AgoRapide.Database {
                             var aggregationTypes = k.Key.A.AggregationTypes.ToList();
                             if (fp.Key.CoreP == k.Key.CoreP && !aggregationTypes.Contains(AggregationType.Count)) aggregationTypes.Add(AggregationType.Count); // Always count number of foreign entities
                             aggregationTypes.ForEach(a => {
-                                retval.Add(new ForeignKeyAggregateKey(
+                                var foreignKeyAggregateKey = new ForeignKeyAggregateKey(
                                     a,
                                     p,
+                                    k,
                                     fp,
                                     new PropertyKeyAttributeEnrichedDyn(
                                         new PropertyKeyAttribute(
@@ -76,11 +110,19 @@ namespace AgoRapide.Database {
                                                 isMany: false
                                             ) {
                                             Parents = new Type[] { k.Key.A.ForeignKeyOf },
-                                            Type = typeof(long) /// TODO: Maybe allow double also for aggregations?
+                                            Type = typeof(long), /// TODO: Maybe allow double also for aggregations?
+
+                                            /// TODO: Note how <see cref="BaseEntity.ToHTMLTableRowHeading"/> / <see cref="BaseEntity.ToHTMLTableRow"/> uses
+                                            /// TODO: <see cref="Extensions.GetChildPropertiesByPriority(Type, PriorityOrder)"/> which as of Sep 2017
+                                            /// TODO: will not take into count access level as set here.
+                                            /// TOOD: (while <see cref="BaseEntity.ToHTMLDetailed"/> uses <see cref="Extensions.GetChildPropertiesForUser"/>
+                                            AccessLevelRead = AccessLevel.Relation // Important, make visible to user
                                         },
-                                            (CoreP)PropertyKeyMapper.GetNextCorePId()
-                                        )
-                                    ));
+                                        (CoreP)PropertyKeyMapper.GetNextCorePId()
+                                    )
+                                );
+                                foreignKeyAggregateKey.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); // HACK!    
+                                retval.Add(foreignKeyAggregateKey);
                             });
                         });
                 });
@@ -92,15 +134,17 @@ namespace AgoRapide.Database {
     /// <summary>
     /// TODO: Move to separate file.
     /// 
+    /// Represents aggregations sourced from all entities connected to a given entity and stored as <see cref="PropertyKey.Key"/> for the given entity. 
+    /// 
     /// Created by <see cref="BaseInjector"/> (called from <see cref="PropertyKeyMapper.MapEnumFinalize"/>), and by classes inheriting <see cref="BaseInjector"/>. 
     ///
     /// Some examples of aggregations:
     /// 
-    /// 1) <see cref="AggregationType.Count"/>, <see cref="Person"/>, PersonP.ProjectCount (based on foreignKey in Projects)
-    ///    Counting number of foreign entities. 
+    /// 1) <see cref="AggregationType.Count"/>, <see cref="Person"/>, PersonP.Count_Project_LeaderId (based on foreignKey LeaderId in Projects)
+    ///    Counting number of projects that a person is the leader of.
     ///
-    /// 2) <see cref="AggregationType.Count"/>, <see cref="Person"/>, PersonP.ProjectCount (based on foreignKey in Projects)
-    ///    Counting number of foreign entities. Dynamically created by <see cref="PropertyKeyMapper.MapEnum"/>
+    /// 2) <see cref="AggregationType.Sum"/>, <see cref="Person"/>, PersonP.Sum_ProjectSumBudget (based on foreignKey in Projects and Property.Budget-property)
+    ///    Sum of all projects related to this person.
     ///    
     /// NOTE: <see cref="AggregationKey"/> is not to be confused with <see cref="ForeignKeyAggregateKey"/>
     /// </summary>
@@ -108,10 +152,19 @@ namespace AgoRapide.Database {
 
         public AggregationType AggregationType { get; private set; }
         /// <summary>
-        /// Must be specified since <see cref="ForeignProperty"/> may have multiple values in <see cref="PropertyKeyAttribute.Parents"/>
+        /// Must be specified since <see cref="SourceProperty"/> may have multiple values in <see cref="PropertyKeyAttribute.Parents"/>
         /// </summary>
-        public Type ForeignEntity { get; private set; }
-        public PropertyKey ForeignProperty { get; private set; }
+        public Type SourceEntityType { get; private set; }
+
+        /// <summary>
+        /// The <see cref="PropertyKeyAttribute.ForeignKeyOf"/>-property of the aggregation source entity (linking the given entity and the source entity together)
+        /// </summary>
+        public PropertyKey ForeignKeyProperty { get; private set; }
+
+        /// <summary>
+        /// This is either identical to <see cref="ForeignKeyProperty"/> or it can be any other property that can be aggregated. 
+        /// </summary>
+        public PropertyKey SourceProperty { get; private set; }
 
         ///// <summary>
         ///// Private in order to limit number of possible objects created (by going through cache with <see cref="Get"/>. 
@@ -122,36 +175,14 @@ namespace AgoRapide.Database {
         /// Should only be called at application startup through <see cref="PropertyKeyMapper"/>
         /// </summary>
         /// <param name="aggregationType"></param>
-        /// <param name="foreignEntity"></param>
-        /// <param name="foreignProperty"></param>
+        /// <param name="sourceEntityType"></param>
+        /// <param name="sourceProperty"></param>
         /// <param name="key"></param>
-        public ForeignKeyAggregateKey(AggregationType aggregationType, Type foreignEntity, PropertyKey foreignProperty, PropertyKeyAttributeEnriched key) : base(key) {
+        public ForeignKeyAggregateKey(AggregationType aggregationType, Type sourceEntityType, PropertyKey foreignKeyProperty, PropertyKey sourceProperty, PropertyKeyAttributeEnriched key) : base(key) {
             AggregationType = aggregationType;
-            ForeignEntity = foreignEntity;
-            ForeignProperty = foreignProperty;
+            SourceEntityType = sourceEntityType;
+            ForeignKeyProperty = foreignKeyProperty;
+            SourceProperty = sourceProperty;
         }
-
-        //private static ConcurrentDictionary<string, AggregationKey> _aggregations = new ConcurrentDictionary<string, AggregationKey>();
-        //public static AggregationKey Get(AggregationType aggregationType, PropertyKey foreignKey) => _aggregations.GetOrAdd(
-        //    aggregationType + "_" + foreignKey.Key.PToString, key => {
-
-        //        var retval = new AggregationKey( /// Note that ideally this should only happen at application startup (<see cref="PropertyKeyMapper.MapEnum{T}"/> / <see cref="Startup.Initialize{TPerson}"/>)
-        //            aggregationType,
-        //            foreignKey,
-        //            new PropertyKeyAttributeEnrichedDyn(
-        //                new PropertyKeyAttribute(
-        //                    property: key,
-        //                    description: foreignKey.Key.A.Parents.Single(() => k "-" + aggregationType + "- for -" + foreignKey.Key.PToString + "-",
-        //                    longDescription: "",
-        //                    isMany: false
-        //                ) {
-        //                    Type = typeof(long) /// TODO: Maybe allow double also for aggregations?
-        //                },
-        //                (CoreP)PropertyKeyMapper.GetNextCorePId()
-        //            )
-        //        );
-        //        PropertyKeyMapper.AddA(retval); // Add because we want to recognize these when later read from database
-        //        return retval;
-        //    });
     }
 }

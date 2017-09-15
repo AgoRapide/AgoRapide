@@ -110,6 +110,11 @@ namespace AgoRapide.Database {
         > _synchronizedTypes = new ConcurrentDictionary<Type, bool>();
 
         /// <summary>
+        /// Used inside GetOrAdd for <see cref="_synchronizedTypes"/>
+        /// </summary>
+        public static ConcurrentDictionary<Type, bool> _synchronizedTypesInternal = new ConcurrentDictionary<Type, bool>();
+
+        /// <summary>
         /// Returns all entities of <paramref name="type"/> matching <paramref name="id"/>
         /// 
         /// Use this for <see cref="CacheUse.All"/>
@@ -132,15 +137,43 @@ namespace AgoRapide.Database {
                     // TODO: But for case 2) above this is of course not good enough.
                     return false; 
                 }
-                if (!FileCache.Instance.TryEnrichFromDisk(s, t, db, out _)) { 
-                    /// This call can be very time-consuming
-                    /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
-                    s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+                lock (_synchronizedTypesInternal) { // Ensure that this "univeres" completes first
+                    if (_synchronizedTypesInternal.TryGetValue(t, out _)) return true; // Already done by other call (possible on other thread) within same universe
 
-                    /// TOOD: Important fact, now ALL ENTITIES in this synchronizer-"universe" have been read into memory. 
-                    /// TODO: In other words, we can now set ALL the relevant keys in <see cref="_synchronizedTypes"/>...
-                }
-                return true; // Indicates that synchronizing has been done
+                    var types = s.PV<List<Type>>(SynchronizerP.SynchronizerExternalType.A());
+                    foreach (var st in types) { 
+                        if (!FileCache.Instance.TryEnrichFromDisk(s, st, db, out _)) {
+                            /// This call can be very time-consuming
+                            /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
+                            s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+
+                            /// Now ALL ENTITIES in this synchronizer-"universe" have been place into memory. 
+                            /// In other words there is no more work that has to be done in this loop.
+                            break;
+                        }
+                    }
+
+                    // Now all keys have been read. Before injection, mark as read (this will stop recursivity)
+                    foreach (var st in types) {
+                        _synchronizedTypesInternal.AddValue(st, true, () => "Expected all keys " + string.Join(", ", types.Select(temp => temp.ToStringVeryShort()) + " to be set at once, not " + st.ToStringVeryShort() + " to be set separately"));
+                    }
+
+                    /// Note how the injection process will make recursive calls to this method 
+                    /// therefore we have now through <see cref="_synchronizedTypesInternal"/> opened up for these recursive calls to return immediately, 
+                    /// while we are still locking out other threads until we are completely finished)
+
+                    foreach (var st in types) { // TODO: Add some more indexing within entityCache.
+                        /// This will make recursive calls against this method (<see cref="GetMatchingEntities"/>)
+                        BaseInjector.CalculateForeignKeyAggregates(st, EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(), db);
+                    }
+
+                    /// TODO: Call all other Injector-classes relevant for this universe.
+                    /// TODO: To be decided how to organise this. 
+                    /// TODO: Store the types in Synchronizer maybe?
+                    s.Inject(db);
+
+                    return true; // Indicates that synchronizing has been done
+                } // Release lock, other threads will now see a "complete" picture.
             });
             switch (id) {
                 case QueryIdAll q:

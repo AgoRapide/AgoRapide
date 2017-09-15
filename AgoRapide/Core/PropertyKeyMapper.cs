@@ -189,12 +189,15 @@ namespace AgoRapide.Core {
             });
 
             /// Add aggregation keys over foreign keys for automatic injection by <see cref="BaseInjector"/>
-            /// Note that we do not bother with putting these in <see cref="_fromStringMaps"/> because they will not be stored in database, only
-            /// calculated dynamically. 
-            /// We do however store them with <see cref="_allCoreP"/> because we want <see cref="Extensions.GetChildProperties"/> to catch them. 
-            BaseInjector.GetForeignKeyAggregates(allCoreP.Values.ToList()).ForEach(key => {
+            BaseInjector.GetForeignKeyAggregateKeys(allCoreP.Values.ToList()).ForEach(key => {
                 noticeLogger(key.GetType().ToStringVeryShort() + ": " + key.Key.A.Description);
-                allCoreP[key.Key.CoreP] = key;
+                allCoreP.AddValue(key.Key.CoreP, key); /// Store with <see cref="_allCoreP"/> in order for <see cref= "Extensions.GetChildProperties"/> for instance to catch these
+                _cache[typeof(CoreP)].AddValue((int)key.Key.CoreP, key); /// Important, for instance in order for <see cref="TryGetA{T}"/> to work.
+                _fromStringMaps.AddValue(key.Key.PToString, key); /// Important, for instance in order for parsing of API requests to work
+
+                // TOOD: REMOVE COMMENTED OUT COMMENT
+                ///// Note that we do not bother with putting these in <see cref="_fromStringMaps"/> because they will not be stored in database, only
+                ///// calculated dynamically. 
             });
 
             _allCoreP = allCoreP.Values.ToList();
@@ -211,7 +214,7 @@ namespace AgoRapide.Core {
         /// <param name="_enum"></param>
         /// <returns></returns>
         public static PropertyKey GetA<T>(T _enum) where T : struct, IFormattable, IConvertible, IComparable =>  // What we really would want is "where T : Enum"
-        TryGetA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
+            TryGetA(_enum, out var retval) ? retval : throw new InvalidMappingException<T>(_enum, "Most probably because " + _enum + " is not a valid member of " + typeof(T));
 
         /// <summary>
         /// Note how <see cref="InvalidMappingException{T}"/> is being thrown if no corresponding call was made to <see cref="MapEnum"/>.

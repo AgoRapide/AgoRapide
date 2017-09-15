@@ -594,6 +594,38 @@ namespace AgoRapide.Core {
     }
 
     public class InvalidObjectTypeException : ApplicationException {
+        /// <summary>
+        /// Asserts that expectedType.IsAssignableFrom(foundObject.GetType())
+        /// TODO: Move this to somewhere else maybe?
+        /// </summary>
+        /// <param name="foundObject"></param>
+        /// <param name="expectedType"></param>
+        /// <param name="detailer">
+        /// May be null
+        /// Used to give details in case of an exception being thrown
+        /// </param>
+        public static void AssertAssignable(object foundObject, Type expectedType, Func<string> detailer = null) {
+            if (foundObject == null) throw new NullReferenceException(nameof(foundObject) + ". (" + nameof(expectedType) + ": " + expectedType + ")" + detailer.Result("\r\nDetails: "));
+            if (expectedType == null) throw new NullReferenceException(nameof(expectedType) + ". (" + nameof(foundObject) + ": " + foundObject + ")" + detailer.Result("\r\nDetails: "));
+            if (!expectedType.IsAssignableFrom(foundObject.GetType())) throw new InvalidObjectTypeException(foundObject, expectedType, detailer.Result(""));
+        }
+
+        /// <summary>
+        /// Asserts that expectedType.Equals(foundObject.GetType())
+        /// TODO: Move this to somewhere else maybe?
+        /// </summary>
+        /// <param name="foundObject"></param>
+        /// <param name="expectedType"></param>
+        /// <param name="detailer">
+        /// May be null
+        /// Used to give details in case of an exception being thrown
+        /// </param>
+        public static void AssertEquals(object foundObject, Type expectedType, Func<string> detailer) {
+            if (foundObject == null) throw new NullReferenceException(nameof(foundObject) + ". (" + nameof(expectedType) + ": " + expectedType + ")" + detailer.Result("\r\nDetails: "));
+            if (expectedType == null) throw new NullReferenceException(nameof(expectedType) + ". (" + nameof(foundObject) + ": " + foundObject + ")" + detailer.Result("\r\nDetails: "));
+            if (!expectedType.Equals(foundObject.GetType())) throw new InvalidObjectTypeException(foundObject, expectedType, detailer.Result(""));
+        }
+
         private static string GetMessage(object _object, string message) => "Invalid / unknown type of object (" + _object.GetType().ToString() + "). Object: '" + _object.ToString() + "'." + (string.IsNullOrEmpty(message) ? "" : ("\r\nDetails: " + message));
         public InvalidObjectTypeException(object _object) : base(GetMessage(_object, null)) { }
         public InvalidObjectTypeException(object _object, Type typeExpected) : base(GetMessage(_object, "Expected object of type " + typeExpected + " but got object of type " + _object.GetType() + " instead")) { }

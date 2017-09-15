@@ -240,13 +240,18 @@ namespace AgoRapide.Core {
         /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// 
         /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically for boolean and enum. 
+        /// 
+        /// Note how <see cref="BaseInjector.CalculateForeignKeyAggregates"/> actually sets this dynamically also.
         /// </summary>
         [ClassMember(
             Description =
                 "Denotes that there is a limited range (limited in the practical sense) for values of this property, " +
-                "making this property relevant for drill down suggestions"
+                "making this property relevant for drill down suggestions",
+            LongDescription =
+                "Typical cut-off could be 20 for instance (since it is still practical to suggest 20 different drill-down suggestions).\r\n" +
+                "For wider ranges the concept of -" + nameof(Percentile) + "- should be used"
         )]
-        public bool HasLimitedRange { get => _hasLimitedRange; set { _hasLimitedRange = value; _hasLimitedRangeIsSet = true; } }
+        public bool HasLimitedRange { get => _hasLimitedRange; set { _hasLimitedRange = value; _hasLimitedRangeIsSet = true; } } // Note that allowed to set multiple times.
         private bool _hasLimitedRangeIsSet = false;
         public bool HasLimitedRangeIsSet => _hasLimitedRangeIsSet;
 
