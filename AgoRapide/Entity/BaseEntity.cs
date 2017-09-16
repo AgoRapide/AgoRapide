@@ -388,6 +388,15 @@ namespace AgoRapide {
 
         /// <summary>
         /// For example of override see <see cref="BaseEntityWithLogAndCount.ToHTMLDetailed"/>
+        /// 
+        /// There are three levels of packaging HTML information:
+        /// <see cref="HTMLView.GenerateResult"/>
+        ///   <see cref="HTMLView.GetHTMLStart"/>
+        ///   <see cref="Result.ToHTMLDetailed"/>
+        ///     <see cref="BaseEntity.ToHTMLDetailed"/> (called from <see cref="Result.ToHTMLDetailed"/>)
+        ///     <see cref="Result.ToHTMLDetailed"/> (actual result, inserts itself at "!--DELIMITER--" left by <see cref="BaseEntity.ToHTMLDetailed"/>). 
+        ///     <see cref="BaseEntity.ToHTMLDetailed"/> (called from <see cref="Result.ToHTMLDetailed"/>)
+        ///   <see cref="HTMLView.GetHTMLEnd"/>
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -554,7 +563,7 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// For example of override see <see cref="BaseEntityWithLogAndCount.ToJSONEntity"/> or <see cref="Property.ToJSONEntity"/>
+        /// For example of override see <see cref="Property.ToJSONEntity"/>
         /// </summary>
         /// <returns></returns>
         public virtual JSONEntity0 ToJSONEntity(Request request) {

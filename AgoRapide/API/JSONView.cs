@@ -9,9 +9,7 @@ using AgoRapide.Core;
 
 namespace AgoRapide.API {
 
-    /// <summary>
-    /// Generates <see cref="ResponseFormat.JSON"/>-view of results.
-    /// </summary>
+    [Class(Description = "Generates -" + nameof(ResponseFormat.JSON) + "--view of results.")]
     public class JSONView : BaseView {
         public JSONView(Request request) : base(request) { }
 
@@ -40,14 +38,14 @@ namespace AgoRapide.API {
         /// <returns></returns>
         public override object GenerateResult() {
             try {
-                if (Request.Result == null) {
-                    dynamic json = new System.Web.Helpers.DynamicJsonObject(new Dictionary<string, object>());
-                    json[nameof(ResultCode)] = ResultCode.exception_error.ToString();
-                    json[nameof(CoreP.Message)] = "ERROR: No result-object available, very unexpected";
-                    return new System.Web.Mvc.JsonResult { Data = json };
-                } else {
-                    return Request.Result.ToJSONDetailed(Request);
-                }
+                if (Request.Result == null) return GenerateEmergencyResult(ResultCode.exception_error, "ERROR: No result-object available, very unexpected");
+                //    dynamic json = new System.Web.Helpers.DynamicJsonObject(new Dictionary<string, object>());
+                //    json[nameof(ResultCode)] = ResultCode.exception_error.ToString();
+                //    json[nameof(CoreP.Message)] = "ERROR: No result-object available, very unexpected";
+                //    return new System.Web.Mvc.JsonResult { Data = json };
+                //} else {
+                return Request.Result.ToJSONDetailed(Request);
+                // }
             } catch (Exception ex) {
                 Util.LogException(ex);
                 return GenerateEmergencyResult(ResultCode.exception_error, "An exception of type " + ex.GetType() + " occurred in " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name + ". See logfile on server for details"); // Details: " + Util.GetExeptionDetails(ex)); // Careful, do not give out details now

@@ -10,14 +10,22 @@ using AgoRapide.Core;
 
 namespace AgoRapide.API {
 
-    /// <summary>
-    /// Generates <see cref="ResponseFormat.HTML"/>-view of results. 
-    /// </summary>
+    [Class(Description = "Generates -" + nameof(ResponseFormat.HTML) + "--view of results.")]
     public class HTMLView : BaseView {
         public HTMLView(Request request) : base(request) { }
         /// <summary>
         /// Note use of <see cref="JSONView.GenerateEmergencyResult"/> in case of an exception occurring.
         /// (In other words this method tries to always return some useful information)
+        /// 
+        /// There are three levels of packaging HTML information:
+        /// <see cref="HTMLView.GenerateResult"/>
+        ///   <see cref="HTMLView.GetHTMLStart"/>
+        ///   <see cref="Result.ToHTMLDetailed"/>
+        ///     <see cref="BaseEntity.ToHTMLDetailed"/> (called from <see cref="Result.ToHTMLDetailed"/>)
+        ///     <see cref="Result.ToHTMLDetailed"/> (actual result, inserts itself at "!--DELIMITER--" left by <see cref="BaseEntity.ToHTMLDetailed"/>). 
+        ///     <see cref="BaseEntity.ToHTMLDetailed"/> (called from <see cref="Result.ToHTMLDetailed"/>)
+        ///   <see cref="HTMLView.GetHTMLEnd"/>
+        /// 
         /// </summary>
         /// <returns></returns>
         public override object GenerateResult() {
@@ -167,14 +175,14 @@ namespace AgoRapide.API {
                     CoreAPIMethod.Context, CoreAPIMethod.Context.ToString(), (Type)null
                 ) +
                 (Request.CurrentUser == null ? "" : // Suggest Context for all entities
-                    string.Join("", Context.GetAllRelatedTypes(Request .CurrentUser.PV(CoreP.Context.A(), new List<Context>())).Select(t =>
-                        "&nbsp;" +
-                        Request.API.CreateAPILink(
-                        CoreAPIMethod.EntityIndex,
-                        t.ToStringVeryShort(), /// TODO: Consider using <see cref="Extensions.ToStringDB"/> instead
+                    string.Join("", Context.GetAllRelatedTypes(Request.CurrentUser.PV(CoreP.Context.A(), new List<Context>())).Select(t =>
+                       "&nbsp;" +
+                       Request.API.CreateAPILink(
+                       CoreAPIMethod.EntityIndex,
+                       t.ToStringVeryShort(), /// TODO: Consider using <see cref="Extensions.ToStringDB"/> instead
                         t,
-                        new QueryIdContext()
-                    )))
+                       new QueryIdContext()
+                   )))
                 ) +
             "</p>"
             ;

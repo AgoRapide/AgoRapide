@@ -268,20 +268,29 @@ namespace AgoRapide.Core {
 
         public List<string> ScriptRelativePaths { get; set; } = new List<string> { "Scripts/AgoRapide-0.1.js", "Scripts/jquery-3.1.1.min.js" };
 
-        /// <summary>
-        /// Indicator at end of API request URL which indicates that HTML format is desired 
-        /// (instead of JSON)
-        /// </summary>
+        [ClassMember(Description= "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.HTML) + "- is desired by client.")]
         public string HTMLPostfixIndicator { get; set; } = "/HTML";
 
         private string _HTMLPostfixIndicatorToLower;
         public string HTMLPostfixIndicatorToLower => _HTMLPostfixIndicatorToLower ?? (_HTMLPostfixIndicatorToLower = HTMLPostfixIndicator.ToLower());
 
         private string _HTMLPostfixIndicatorWithoutLeadingSlash;
-        public string HTMLPostfixIndicatorWithoutLeadingSlash => _HTMLPostfixIndicatorWithoutLeadingSlash ?? (_HTMLPostfixIndicatorWithoutLeadingSlash = (!(string.IsNullOrEmpty(HTMLPostfixIndicator) && HTMLPostfixIndicator.Length > 1) && HTMLPostfixIndicator.StartsWith("/")) ? HTMLPostfixIndicator.Substring(1) : throw new Exception("Invalid " + nameof(HTMLPostfixIndicator) + " (" + HTMLPostfixIndicator + "), unable to generate " + nameof(HTMLPostfixIndicatorWithoutLeadingSlash)));
+        public string HTMLPostfixIndicatorWithoutLeadingSlash => _HTMLPostfixIndicatorWithoutLeadingSlash ?? (_HTMLPostfixIndicatorWithoutLeadingSlash = (!(string.IsNullOrEmpty(HTMLPostfixIndicator) && HTMLPostfixIndicator.Length > 1) && HTMLPostfixIndicator.StartsWith("/")) ? HTMLPostfixIndicator.Substring(1) : throw new Exception("Invalid " + nameof(HTMLPostfixIndicator) + " (" + HTMLPostfixIndicator + "), unable to generate " + nameof(HTMLPostfixIndicatorWithoutLeadingSlash) + "."));
 
         private string _HTMLPostfixIndicatorWithoutLeadingSlashToLower;
         public string HTMLPostfixIndicatorWithoutLeadingSlashToLower => _HTMLPostfixIndicatorWithoutLeadingSlashToLower ?? (_HTMLPostfixIndicatorWithoutLeadingSlashToLower = HTMLPostfixIndicatorWithoutLeadingSlash.ToLower());
+
+        [ClassMember(Description = "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.CSV) + "- is desired by client.")]
+        public string CSVPostfixIndicator { get; set; } = "/CSV";
+
+        private string _CSVPostfixIndicatorToLower;
+        public string CSVPostfixIndicatorToLower => _CSVPostfixIndicatorToLower ?? (_CSVPostfixIndicatorToLower = CSVPostfixIndicator.ToLower());
+
+        private string _CSVPostfixIndicatorWithoutLeadingSlash;
+        public string CSVPostfixIndicatorWithoutLeadingSlash => _CSVPostfixIndicatorWithoutLeadingSlash ?? (_CSVPostfixIndicatorWithoutLeadingSlash = (!(string.IsNullOrEmpty(CSVPostfixIndicator) && CSVPostfixIndicator.Length > 1) && CSVPostfixIndicator.StartsWith("/")) ? CSVPostfixIndicator.Substring(1) : throw new Exception("Invalid " + nameof(CSVPostfixIndicator) + " (" + CSVPostfixIndicator + "), unable to generate " + nameof(CSVPostfixIndicatorWithoutLeadingSlash) + "."));
+
+        private string _CSVPostfixIndicatorWithoutLeadingSlashToLower;
+        public string CSVPostfixIndicatorWithoutLeadingSlashToLower => _CSVPostfixIndicatorWithoutLeadingSlashToLower ?? (_CSVPostfixIndicatorWithoutLeadingSlashToLower = CSVPostfixIndicatorWithoutLeadingSlash.ToLower());
 
         public string GenericMethodRouteTemplate = "{*url}";
 

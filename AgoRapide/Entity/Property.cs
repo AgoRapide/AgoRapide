@@ -713,8 +713,6 @@ namespace AgoRapide {
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
         /// <summary>
-        /// For example of override see <see cref="BaseEntityWithLogAndCount.ToJSONEntity"/> or <see cref="Property.ToJSONEntity"/>
-        /// 
         /// Do not use this method, use more strongly typed <see cref="ToJSONProperty"/> instead.
         /// </summary>
         /// <returns></returns>

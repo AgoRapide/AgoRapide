@@ -17,9 +17,11 @@ namespace AgoRapide {
     ///    httpConfiguration.Formatters.JsonFormatter.MediaTypeMappings.Add(new System.Net.Http.Formatting.QueryStringMapping("json", "true", "application/json"));
     /// </summary>
     [Enum(
-        Description = 
+        Description =
             "The response format requested by the client. " +
-            "JSON is default, HTML will be returned when request URL ends with -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "- (\"HTML\")",
+            "JSON is default, " +
+            "HTML will be returned when request URL ends with -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "- (\"HTML\"), " +
+            "CSV will be returned when request URL ends with -" + nameof(ConfigurationAttribute.CSVPostfixIndicator) + "- (\"CSV\").",
         AgoRapideEnumType = EnumType.EnumValue)]
     public enum ResponseFormat {
         None,
@@ -27,13 +29,25 @@ namespace AgoRapide {
         /// <summary>
         /// See also <see cref="JSONView"/>, <see cref="BaseEntity.ToJSONEntity"/>
         /// </summary>
-        [EnumValue(Description = "Will be used when the request URL does not end with -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "-. / HTML")]
+        [EnumValue(Description = 
+            "For machine consumption, typical by a smartphone app.\r\n" +
+            "Will be used when the request URL does not end with neither -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "- (\"HTML\") nor -" + nameof(ConfigurationAttribute.CSVPostfixIndicator) + "- (\"CSV\").")]
         JSON,
 
         /// <summary>
         /// See also <see cref="HTMLView"/>, <see cref="BaseEntity.ToHTMLTableRowHeading"/>, <see cref="BaseEntity.ToHTMLTableRow"/>, <see cref="BaseEntity.ToHTMLDetailed"/>
         /// </summary>
-        [EnumValue(Description = "Will be used when the request URL ends with -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "-. / HTML")]
+        [EnumValue(Description = 
+            "For human consumption, note how -" + nameof(HTMLView) + "- inserts lots of useful links and documentation in the returned data.\r\n" +
+            "Will be used when the request URL ends with -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "-. (\"HTML\").")]
         HTML,
+
+        /// <summary>
+        /// See also <see cref="CSVView"/>
+        /// </summary>
+        [EnumValue(Description = 
+            "For export into other systems, typical a spreadsheet program like Libre Office Calc or Microsoft Excel.\r\n" +
+            "Will be used when the request URL ends with -" + nameof(ConfigurationAttribute.CSVPostfixIndicator) + "-. (\"CSV\").")]
+        CSV,
     }
 }

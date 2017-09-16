@@ -535,25 +535,28 @@ namespace AgoRapide.API {
                 }
             }
 
-            { // Check if request is attempted HTML-format request misunderstood as JSON request with last parameter like /HTML
-              // This would be due to ASP .NET not being informed of the HTML overload with one less parameter.
-              // Call AgoRapideGenericMethod if that is the case. 
+            { /// Check if request is attempted <see cref="ResponseFormat.HTML"/> / <see cref="ResponseFormat.CSV"/>-request 
+              /// misunderstood as <see cref="ResponseFormat.JSON"/>-request with last parameter like /HTML or /CSV
+              /// This would be due to ASP .NET not being informed of the HTML / CSV overload with one less parameter.
+              /// Call AgoRapideGenericMethod if that is the case. 
                 var lastParameter = new Func<string>(() => {
-                    if (p9 != null) return p9;
-                    if (p8 != null) return p8;
-                    if (p7 != null) return p7;
-                    if (p6 != null) return p6;
-                    if (p5 != null) return p5;
-                    if (p4 != null) return p4;
-                    if (p3 != null) return p3;
-                    if (p2 != null) return p2;
-                    if (p1 != null) return p1;
+                    if (p9 != null) return p9.ToLower();
+                    if (p8 != null) return p8.ToLower();
+                    if (p7 != null) return p7.ToLower();
+                    if (p6 != null) return p6.ToLower();
+                    if (p5 != null) return p5.ToLower();
+                    if (p4 != null) return p4.ToLower();
+                    if (p3 != null) return p3.ToLower();
+                    if (p2 != null) return p2.ToLower();
+                    if (p1 != null) return p1.ToLower();
                     return null;
                 })();
-                if (lastParameter != null && lastParameter.ToLower().Equals(Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlashToLower)) {
-                    // This check does not hold. We could check URL direct for /HTML/HTML though...
+                if (lastParameter != null && 
+                    lastParameter.Equals(Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlashToLower) ||
+                    lastParameter.Equals(Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlashToLower)) {
+                    // This check does not hold. We could check URL direct for /HTML/HTML or /CSV/CSV though...
                     //var tempRequest = new Request(Request, method, currentUser, exceptionHasOccurred: false);
-                    //if (tempRequest.ResponseFormat == ResponseFormat.HTML) {
+                    //if (tempRequest.ResponseFormat == ResponseFormat.HTML) { (OR CSV)
                     //    // Looks like we have something like /HTML/HTML in the URL, in other words, accept the request as is
                     //} else {
                     request = null; // Return as ResultCode.missing_parameter_error response.

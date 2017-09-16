@@ -50,6 +50,20 @@ namespace AgoRapide.API {
         // public override string Name => "Result summary of API call: " + ResultCode;
         public override string IdFriendly => ResultCode.ToString();
 
+        /// <summary>
+        /// There are three levels of packaging HTML information:
+        /// <see cref="HTMLView.GenerateResult"/>
+        ///   <see cref="HTMLView.GetHTMLStart"/>
+        ///   <see cref="Result.ToHTMLDetailed"/>
+        ///     <see cref="BaseEntity.ToHTMLDetailed"/> (called from <see cref="Result.ToHTMLDetailed"/>)
+        ///     <see cref="Result.ToHTMLDetailed"/> (actual result, inserts itself at "!--DELIMITER--" left by <see cref="BaseEntity.ToHTMLDetailed"/>). 
+        ///     <see cref="BaseEntity.ToHTMLDetailed"/> (called from <see cref="Result.ToHTMLDetailed"/>)
+        ///   <see cref="HTMLView.GetHTMLEnd"/>
+        ///   
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [ClassMember(Description = "Uses the base method -" + nameof(BaseEntity.ToHTMLDetailed) + "- for actual \"packaging\" of information")]       
         public override string ToHTMLDetailed(Request request) {
             AdjustAccordingToResultCodeAndMethod(request);
             var retval = new StringBuilder();
@@ -85,8 +99,8 @@ namespace AgoRapide.API {
                                         // Only suggest general query
                                         retval.Append("<a href=\"" + suggestion.Value.Url + "\">" + suggestion.Value.Text.HTMLEncode() + "<a>&nbsp;");
                                     } else {
-                                        // Suggest both adding to context
-
+                                        // Suggest both 
+                                        // 1) adding to context
                                         new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
                                         retval.Append("&nbsp;" + request.API.CreateAPILink(
                                             CoreAPIMethod.UpdateProperty,
@@ -96,7 +110,8 @@ namespace AgoRapide.API {
                                             CoreP.Context.A(),
                                             new Context(s, t, suggestion.Value.QueryId).ToString()
                                         )));
-                                        // and showing all with this value (general query)
+                                        // and 
+                                        // 2) Showing all with this value (general query)
                                         retval.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>&nbsp;");
                                     }
                                 });
@@ -106,11 +121,11 @@ namespace AgoRapide.API {
                     });
                 }
             } else if (ResultCode == ResultCode.ok) {
-                // Do not bother with explaining. 
-                // ToHTMLDetailed will return the actual result
+                /// Do not bother with explaining. 
+                /// Our base method <see cref="BaseEntity.ToHTMLDetailed"/> will return the actual result (see below).
             } else {
                 retval.AppendLine("<p>No result from your query</p>");
-                // ToHTMLDetailed will return details needed. 
+                /// Our base method <see cref="BaseEntity.ToHTMLDetailed"/> will return details needed (see below).
             }
 
             /// Note how <see cref="BaseEntity.ToHTMLDetailed"/> contains special code for <see cref="Result"/> hiding type and name
@@ -176,7 +191,11 @@ namespace AgoRapide.API {
         }
 
         /// <summary>
-        /// Handles problem with case-sensitive .NET dictionary keys being incompatible with case-insensitive JSON 
+        /// Handles problem with case-sensitive .NET dictionary keys being incompatible with case-insensitive JSON
+        /// 
+        /// TODO: IRRELEVANT AS TOJSONDETAILED IS UNNECESSARY COMPLEX!
+        /// TODO: REMOVE THIS METHOD (SEP 2017)
+        /// 
         /// </summary>
         public class JsonDecodeArgumentException : ApplicationException {
             public JsonDecodeArgumentException(IEnumerable<BaseEntity> entities, ArgumentException ex) : base(new Func<string>(() => {
@@ -206,22 +225,6 @@ namespace AgoRapide.API {
                 return "Unable to understand why " + ex.GetType() + " occurred";
             })(), ex) { }
         }
-
-        ///// <summary>
-        ///// TODO: Not in use as of June 2017
-        ///// </summary>
-        ///// <param name="other"></param>
-        //public void Include(Result other) {
-        //    if (other.SingleEntityResult != null) throw new NotNullReferenceException(nameof(other.SingleEntityResult) + ". (" + other.SingleEntityResult.ToString() + ")");
-        //    if (other.MultipleEntitiesResult != null) throw new NotNullReferenceException(nameof(other.MultipleEntitiesResult) + ". Count: " + other.MultipleEntitiesResult.Count);
-        //    if (other.ResultCode > ResultCode) ResultCode = other.ResultCode;
-        //    other.Properties.ForEach(o => {
-        //        switch (o.Value) {
-        //            case PropertyCounter otherCount: Count(o.Key, otherCount.V<long>()); break;
-        //            case PropertyLogger logger: Log(logger.V<string>()); break;
-        //        }
-        //    });
-        //}
 
         /// <summary>
         /// Extracts all distinct values 

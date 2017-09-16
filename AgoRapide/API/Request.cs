@@ -184,8 +184,9 @@ namespace AgoRapide.API {
         public object GetResponse() {
             if (Result == null) throw new NullReferenceException(nameof(Result) + "\r\nDetails: " + ToString());
             switch (ResponseFormat) {
-                case ResponseFormat.HTML: return new HTMLView(this).GenerateResult();
                 case ResponseFormat.JSON: return new JSONView(this).GenerateResult();
+                case ResponseFormat.HTML: return new HTMLView(this).GenerateResult();
+                case ResponseFormat.CSV: return new CSVView(this).GenerateResult();
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         }
@@ -200,7 +201,7 @@ namespace AgoRapide.API {
 
         public ResponseFormat ResponseFormat { get; private set; }
         /// <summary>
-        /// Usually used for <see cref="CoreAPIMethod.RootIndex"/> when JSON is most probably not needed.
+        /// Usually used for <see cref="CoreAPIMethod.RootIndex"/> when JSON / CSV is most probably not needed.
         /// </summary>
         public void ForceHTMLResponse() => ResponseFormat = ResponseFormat.HTML;
 
@@ -222,6 +223,7 @@ namespace AgoRapide.API {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return URL;
                 case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.C.HTMLPostfixIndicator.Length);
+                case ResponseFormat.CSV: return URL.Substring(0, URL.Length - Util.Configuration.C.CSVPostfixIndicator.Length);
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
@@ -231,6 +233,7 @@ namespace AgoRapide.API {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return APICommandCreator.JSONInstance;
                 case ResponseFormat.HTML: return APICommandCreator.HTMLInstance;
+                case ResponseFormat.CSV: return APICommandCreator.CSVInstance;
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
@@ -279,7 +282,9 @@ namespace AgoRapide.API {
             var url = request.RequestUri.ToString();
             var urlSegments = url.Split('/').ToList();
             if (responseFormat == ResponseFormat.HTML) {
-                urlSegments.RemoveAt(urlSegments.Count - 1); // Corresponds to Util.Configuration.HTMLPostfixIndicator
+                urlSegments.RemoveAt(urlSegments.Count - 1); /// Corresponds to <see cref="Configuration.HTMLPostfixIndicator"/>.
+            } else if (responseFormat == ResponseFormat.CSV) {
+                urlSegments.RemoveAt(urlSegments.Count - 1); /// Corresponds to <see cref="Configuration.CSVPostfixIndicator"/>.
             }
 
             if (!string.IsNullOrEmpty(Util.Configuration.C.APIPrefix) && Util.Configuration.C.APIPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
@@ -454,7 +459,12 @@ namespace AgoRapide.API {
             public MethodMatchingException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public static ResponseFormat GetResponseFormatFromURL(string url) => url.ToLower().EndsWith(Util.Configuration.C.HTMLPostfixIndicatorToLower) ? ResponseFormat.HTML : ResponseFormat.JSON;
+        public static ResponseFormat GetResponseFormatFromURL(string url) {
+            var urlToLower = url.ToLower();
+            if (urlToLower.EndsWith(Util.Configuration.C.HTMLPostfixIndicatorToLower)) return ResponseFormat.HTML;
+            if (urlToLower.EndsWith(Util.Configuration.C.CSVPostfixIndicatorToLower)) return ResponseFormat.CSV;
+            return ResponseFormat.JSON;
+        }
     }
 
     [Class(Description =
