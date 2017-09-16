@@ -47,6 +47,13 @@ namespace AgoRapide.API {
         )]
         public PriorityOrder PriorityOrderLimit { get; set; } = PriorityOrder.Important;
 
+        /// <summary>   
+        /// TODO: This is just a preparation for a more dynamic approach.
+        /// 
+        /// TODO: Implement this through a setting, either in <see cref="Configuration"/> or for <see cref="CurrentUser"/>
+        /// </summary>
+        public string CSVFieldSeparator = ";";
+
         public Result Result { get; } = new Result();
 
         /// <summary>
@@ -224,6 +231,32 @@ namespace AgoRapide.API {
                 case ResponseFormat.JSON: return URL;
                 case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.C.HTMLPostfixIndicator.Length);
                 case ResponseFormat.CSV: return URL.Substring(0, URL.Length - Util.Configuration.C.CSVPostfixIndicator.Length);
+                default: throw new InvalidEnumException(ResponseFormat);
+            }
+        })());
+
+        private string _HTMLUrl;
+        /// <summary>
+        /// Gives corresponding URL for <see cref="ResponseFormat.CSV"/>
+        /// </summary>
+        public string HTMLUrl => _HTMLUrl ?? (_HTMLUrl = new Func<string>(() => {
+            switch (ResponseFormat) {
+                case ResponseFormat.JSON: return URL + Util.Configuration.C.HTMLPostfixIndicator;
+                case ResponseFormat.HTML: return URL;
+                case ResponseFormat.CSV: return URL.Substring(0, URL.Length - Util.Configuration.C.CSVPostfixIndicator.Length) + Util.Configuration.C.HTMLPostfixIndicator;
+                default: throw new InvalidEnumException(ResponseFormat);
+            }
+        })());
+
+        private string _CSVUrl;
+        /// <summary>
+        /// Gives corresponding URL for <see cref="ResponseFormat.CSV"/>
+        /// </summary>
+        public string CSVUrl => _CSVUrl ?? (_CSVUrl = new Func<string>(() => {
+            switch (ResponseFormat) {
+                case ResponseFormat.JSON: return URL + Util.Configuration.C.CSVPostfixIndicator;
+                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.C.HTMLPostfixIndicator.Length) + Util.Configuration.C.CSVPostfixIndicator;
+                case ResponseFormat.CSV: return URL;
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());

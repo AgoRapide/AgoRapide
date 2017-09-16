@@ -455,7 +455,8 @@ namespace AgoRapide {
                 if (typeof(HTML).Equals(t)) {
                     value = (T)(object)ValueHTML;
                     return true;
-                } if (typeof(string).Equals(t)) {
+                }
+                if (typeof(string).Equals(t)) {
                     if (_stringValue == null) {
                         switch (_value) {
                             case StringBuilder stringBuilder: /// HACK: Usually because we are a <see cref="PropertyLogger"/>
@@ -494,7 +495,7 @@ namespace AgoRapide {
             }
             var type = _value.GetType();
             if (type.IsEnum) return _value.GetEnumValueAttribute();
-            
+
             return DefaultAgoRapideAttribute;
         })());
 
@@ -545,7 +546,7 @@ namespace AgoRapide {
         /// <param name="withinThisPriority">Ignored as of Sep 2017</param>
         /// <returns></returns>
         public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
-        public const string HTMLTableHeading = "<tr><th>Key</th><th>Value</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
+        public const string HTMLTableHeading = "<tr><th>" + nameof(Key) + "</th><th>" + nameof(Value) + "</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -555,7 +556,7 @@ namespace AgoRapide {
         /// <returns></returns>
         public override string ToHTMLTableRow(Request request) {
             if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => {
-                p.Value.IsChangeableByCurrentUser = IsChangeableByCurrentUser;
+                p.Value.IsChangeableByCurrentUser = IsChangeableByCurrentUser; /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                 return p.Value.ToHTMLTableRow(request);
             }));
             var a = Key.Key.A;
@@ -660,8 +661,8 @@ namespace AgoRapide {
             var adder = new Action<DBField, string>((field, value) => {
                 var includeDescription = new Func<string>(() => {
                     switch (field) {
-                        case DBField.key: if (!string.IsNullOrEmpty(Key.Key.A.WholeDescription)) return (Key.Key.A.WholeDescription).HTMLEncode(); return null;
-                        case DBField.strv: if (!string.IsNullOrEmpty(ValueA.WholeDescription)) return (ValueA.WholeDescription).HTMLEncode(); return null;
+                        case DBField.key: if (!string.IsNullOrEmpty(Key.Key.A.WholeDescription)) return Key.Key.A.WholeDescription.HTMLEncode(); return null;
+                        case DBField.strv: if (!string.IsNullOrEmpty(ValueA.WholeDescription)) return ValueA.WholeDescription.HTMLEncode(); return null;
                         default: return null;
                     }
                 })();
@@ -696,8 +697,8 @@ namespace AgoRapide {
             retval.AppendLine("<tr><td>Index</td><td>" + (Key.Key.A.IsMany ? Key.Index.ToString() : "&nbsp;") + "</td></tr>\r\n");
 
             /// TODO: Maybe keep information about from which <see cref="DBField"/> <see cref="_stringValue"/> originated?
-            retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? Value : "[NULL[]") + "</td></tr>\r\n");
-            if (_percentile != null) retval.AppendLine("<tr><td>Percentile</td><td>" + _percentile + "</td></tr>\r\n");
+            retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? Value : "[NULL]") + "</td></tr>\r\n");
+            if (_percentile != null) retval.AppendLine("<tr><td>" + nameof(Percentile) + "</td><td>" + _percentile + "</td></tr>\r\n");
 
             adder(DBField.valid, Valid?.ToString(DateTimeFormat.DateHourMinSec));
             adderWithLink(DBField.vid, ValidatorId);
@@ -712,6 +713,102 @@ namespace AgoRapide {
 
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
+
+        public override string ToCSVTableRowHeading(Request request) => ToCSVTableRowHeadingStatic(request);
+        public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + "ValueDescription" + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "Url";
+
+        /// <summary>
+        /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="withinThisPriority">Ignored as of Sep 2017</param>
+        /// <returns></returns>
+        public override string ToCSVTableRow(Request request) {
+            if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => {
+                return p.Value.ToHTMLTableRow(request);
+            }));
+            var a = Key.Key.A;
+            return /// TODO: Use StringBuilder. Makes for more efficient code and also code that is easier to debug.
+
+                // --------------------
+                // Column 1, Key
+                // --------------------
+                Id + request.CSVFieldSeparator +
+
+                // --------------------
+                // Column 2, Value
+                // --------------------
+                (a.IsPassword ? "[SET]" : V<string>()) + request.CSVFieldSeparator +
+
+                // --------------------
+                // Column 3, Created
+                // --------------------
+                (Created.Equals(default(DateTime)) ? "" : Created.ToString(DateTimeFormat.DateHourMin)) + request.CSVFieldSeparator +
+
+                // --------------------
+                // Column 4, Invalid
+                // --------------------
+                (Invalid == null ? "" : ((DateTime)Invalid).ToString(DateTimeFormat.DateHourMin)) +
+                "\r\n";
+        }
+
+        public override string ToCSVDetailed(Request request) {
+            var retval = new StringBuilder();
+            retval.AppendLine("Field" + request.CSVFieldSeparator + "Value");
+            var adder = new Action<DBField, string>((field, value) => {
+                var includeDescription = new Func<string>(() => {
+                    switch (field) {
+                        case DBField.key: if (!string.IsNullOrEmpty(Key.Key.A.WholeDescription)) return Key.Key.A.WholeDescription.Replace(request.CSVFieldSeparator, ":"); return null;
+                        case DBField.strv: if (!string.IsNullOrEmpty(ValueA.WholeDescription)) return ValueA.WholeDescription.Replace(request.CSVFieldSeparator, ":"); return null;
+                        default: return null;
+                    }
+                })();
+
+                retval.AppendLine(
+                    field + request.CSVFieldSeparator + field.A().Key.A.WholeDescription + request.CSVFieldSeparator +
+                    (value ?? "") + request.CSVFieldSeparator + includeDescription);
+
+            });
+            var adderWithLink = new Action<DBField, long?>((field, value) => {
+                retval.AppendLine(
+                    field + request.CSVFieldSeparator + field.A().Key.A.WholeDescription + request.CSVFieldSeparator +
+                    value + request.CSVFieldSeparator +
+                    (value != null && value != 0 ?
+                        (InMemoryCache.EntityCache.TryGetValue((long)value, out var entity) ?
+                            request.API.CreateAPIUrl(entity) : /// Preferred variant, link to known entity
+                            request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, typeof(BaseEntity), new QueryIdInteger((long)value))) : /// Secondary variant, link to <see cref="BaseEntity"/> since we do not know type of entity
+                        "" // No value available
+                    )
+                );
+            });
+
+            adderWithLink(DBField.id, Id);
+            adder(DBField.created, Created.ToString(DateTimeFormat.DateHourMinSec));
+            adderWithLink(DBField.cid, CreatorId);
+            adderWithLink(DBField.pid, ParentId);
+            adderWithLink(DBField.fid, ForeignId);
+            adder(DBField.key, KeyDB);
+
+            // TODO: Add helptext for this (or remove it).
+            retval.AppendLine("Index" + request.CSVFieldSeparator + (Key.Key.A.IsMany ? Key.Index.ToString() : ""));
+
+            /// TODO: Maybe keep information about from which <see cref="DBField"/> <see cref="_stringValue"/> originated?
+            retval.AppendLine("Value" + request.CSVFieldSeparator + (_stringValue != null ? Value : "[NULL]"));
+            if (_percentile != null) retval.AppendLine(nameof(Percentile) + request.CSVFieldSeparator + _percentile);
+
+            adder(DBField.valid, Valid?.ToString(DateTimeFormat.DateHourMinSec));
+            adderWithLink(DBField.vid, ValidatorId);
+            adder(DBField.invalid, Invalid?.ToString(DateTimeFormat.DateHourMinSec));
+            adderWithLink(DBField.iid, InvalidatorId);
+
+            request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
+                request.Result.AddProperty(CoreP.SuggestedUrl.A(), cmd);
+                retval.AppendLine("History" + request.CSVFieldSeparator + cmd);
+            });
+
+            return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
+        }
+
         /// <summary>
         /// Do not use this method, use more strongly typed <see cref="ToJSONProperty"/> instead.
         /// </summary>

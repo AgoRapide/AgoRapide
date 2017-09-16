@@ -69,14 +69,13 @@ namespace AgoRapide.API {
             var retval = new StringBuilder();
             if (SingleEntityResult != null) {
                 if (SingleEntityResult is Result) throw new InvalidObjectTypeException(SingleEntityResult, "Would have resulted in recursive call in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " if allowed");
-                // retval.Append("<p>Single entity</p>");
                 retval.Append(SingleEntityResult.ToHTMLDetailed(request));
             } else if (MultipleEntitiesResult != null) {
                 if (MultipleEntitiesResult.Count == 0) {
                     retval.AppendLine("<p>No entities resulted from your query</p>");
                 } else {
                     var types = MultipleEntitiesResult.Select(e => e.GetType()).Distinct().ToList();
-                    if (types.Count > 1) retval.AppendLine("<p>" + MultipleEntitiesResult.Count + " entities in total</p>"); // of type " + MultipleEntitiesResult.First().GetType().ToStringShort() + "</p>");
+                    if (types.Count > 1) retval.AppendLine("<p>" + MultipleEntitiesResult.Count + " entities in total</p>"); 
                     types.ForEach(t => { /// Split up separate tables for each type because <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/> are not compatible between different types
                         // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                         var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
@@ -133,6 +132,53 @@ namespace AgoRapide.API {
         }
 
         /// <summary>
+        /// There are three levels of packaging CSV information.
+        /// <see cref="CSVView.GenerateResult"/>
+        ///   <see cref="CSVView.GetCSVStart"/>
+        ///   <see cref="Result.ToCSVDetailed"/>
+        ///     <see cref="BaseEntity.ToCSVDetailed"/> (called from <see cref="Result.ToCSVDetailed"/>)
+        ///     <see cref="Result.ToCSVDetailed"/> (actual result, inserts itself at "!--DELIMITER--" left by <see cref="BaseEntity.ToCSVDetailed"/>). 
+        ///     <see cref="BaseEntity.ToCSVDetailed"/> (called from <see cref="Result.ToCSVDetailed"/>)
+        ///   <see cref="CSVView.GetCSVEnd"/>
+        /// 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [ClassMember(Description = "Uses the base method -" + nameof(BaseEntity.ToCSVDetailed) + "- for actual \"packaging\" of information")]
+        public override string ToCSVDetailed(Request request) {
+            AdjustAccordingToResultCodeAndMethod(request);
+            var retval = new StringBuilder();
+            if (SingleEntityResult != null) {
+                if (SingleEntityResult is Result) throw new InvalidObjectTypeException(SingleEntityResult, "Would have resulted in recursive call in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " if allowed");
+                retval.Append(SingleEntityResult.ToCSVDetailed(request));
+            } else if (MultipleEntitiesResult != null) {
+                if (MultipleEntitiesResult.Count == 0) {
+                    retval.AppendLine("No entities resulted from your query");
+                } else {
+                    var types = MultipleEntitiesResult.Select(e => e.GetType()).Distinct().ToList();
+                    if (types.Count > 1) retval.AppendLine("Total entities" + request.CSVFieldSeparator + MultipleEntitiesResult.Count);
+                    types.ForEach(t => { /// Split up separate tables for each type because <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/> are not compatible between different types
+                        // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
+                        var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
+                        retval.AppendLine();
+                        retval.AppendLine("Entities of type " + t.ToStringVeryShort() + request.CSVFieldSeparator + thisTypeSorted.Count);
+                        retval.AppendLine(thisTypeSorted[0].ToCSVTableRowHeading(request));
+                        retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToCSVTableRow(request))));
+                    });
+                }
+            } else if (ResultCode == ResultCode.ok) {
+                /// Do not bother with explaining. 
+                /// Our base method <see cref="BaseEntity.ToCSVDetailed"/> will return the actual result (see below).
+            } else {
+                retval.AppendLine("<p>No result from your query</p>");
+                /// Our base method <see cref="BaseEntity.ToCSVDetailed"/> will return details needed (see below).
+            }
+
+            /// Note how <see cref="BaseEntity.ToCSVDetailed"/> contains special code for <see cref="Result"/> hiding type and name
+            return base.ToCSVDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
+        }
+
+        /// <summary>
         /// Note how <see cref="Result"/> is the only <see cref="BaseEntity"/>-class (as of June 2017) having a method called <see cref="ToJSONDetailed"/>. 
         /// (while all <see cref="BaseEntity"/>-classes implement <see cref="BaseEntity.ToJSONEntity"/>)
         /// </summary>
@@ -182,7 +228,7 @@ namespace AgoRapide.API {
             {
                 var encoded = System.Web.Helpers.Json.Encode(ToJSONEntity(request));
                 try {
-                    json["details"] = System.Web.Helpers.Json.Decode(encoded);
+                    json["Details"] = System.Web.Helpers.Json.Decode(encoded);
                 } catch (ArgumentException ex) {
                     throw new JsonDecodeArgumentException(new List<BaseEntity> { this }, ex);
                 }

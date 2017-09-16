@@ -13,15 +13,16 @@ namespace AgoRapide.API {
     public class JSONView : BaseView {
         public JSONView(Request request) : base(request) { }
 
+        public static object GenerateEmergencyResult(ErrorResponse errorResponse) => GenerateEmergencyResult(errorResponse.ResultCode, errorResponse.Message);
         /// <summary>
         /// Only to be used in emergencies. Last resort for getting some useful information back to client in situations where
         /// unable to generate a standard AgoRapide-response through the <see cref="Request.GetResponse"/>-mechanism.
+        /// 
+        /// Used by all <see cref="BaseView"/>, that is <see cref="JSONView"/>, <see cref="HTMLView"/> and <see cref="CSVView"/>.
         /// </summary>
         /// <param name="resultCode"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public static object GenerateEmergencyResult(ErrorResponse errorResponse) => GenerateEmergencyResult(errorResponse.ResultCode, errorResponse.Message);
-
         public static object GenerateEmergencyResult(ResultCode resultCode, string message) =>
             new System.Web.Mvc.JsonResult { // Without method we can not construct a Request object. Send emergency response as JSON only.
                 Data = new {

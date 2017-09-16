@@ -551,9 +551,9 @@ namespace AgoRapide.API {
                     if (p1 != null) return p1.ToLower();
                     return null;
                 })();
-                if (lastParameter != null && 
+                if (lastParameter != null && (
                     lastParameter.Equals(Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlashToLower) ||
-                    lastParameter.Equals(Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlashToLower)) {
+                    lastParameter.Equals(Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlashToLower))) {
                     // This check does not hold. We could check URL direct for /HTML/HTML or /CSV/CSV though...
                     //var tempRequest = new Request(Request, method, currentUser, exceptionHasOccurred: false);
                     //if (tempRequest.ResponseFormat == ResponseFormat.HTML) { (OR CSV)

@@ -347,9 +347,11 @@ namespace AgoRapide {
                     "Details: " + details) { }
         }
 
-        private static ConcurrentDictionary<string, string> _tableRowHeadingCache = new ConcurrentDictionary<string, string>();
+        private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrder
+            string> _tableRowHeadingCache = new ConcurrentDictionary<string, string>();
         /// <summary>
-        /// May be overridden if you need finer control about how to present your entities.
+        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToHTMLTableRowHeading"/>). 
         /// 
         /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
         /// </summary>
@@ -357,21 +359,21 @@ namespace AgoRapide {
         public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
             return "<tr><th>" + nameof(IdFriendly) + "</th>" +
-            string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<th>" + new Func<string>(() => {                
-                var retval = key.Key.PToString;
-                if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
-                    // TODO: Add mouseover for showing complete name here.
-                    retval = retval.Substring(thisType.Length);
-                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.ForeignKeyAggregateKey"/>
-                }
-                return retval;
-            })() + "</th>")) +
-            // "<th>" + nameof(Created) + "</th>" +
-            "</tr>";
+                string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<th>" + new Func<string>(() => {
+                    var retval = key.Key.PToString;
+                    if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                        // TODO: Add mouseover for showing complete name here.
+                        retval = retval.Substring(thisType.Length);
+                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.ForeignKeyAggregateKey"/>
+                    }
+                    return retval;
+                })() + "</th>")) +
+                // "<th>" + nameof(Created) + "</th>" +
+                "</tr>";
         });
 
         /// <summary>
-        /// May be overridden if you need finer control about how to present your entities.
+        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToHTMLTableRow"/>).
         /// 
         /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
         /// </summary>
@@ -387,9 +389,9 @@ namespace AgoRapide {
             "</tr>\r\n";
 
         /// <summary>
-        /// For example of override see <see cref="BaseEntityWithLogAndCount.ToHTMLDetailed"/>
+        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToHTMLDetailed"/> and <see cref="Result.ToHTMLDetailed"/>). 
         /// 
-        /// There are three levels of packaging HTML information:
+        /// There are three levels of packaging HTML information.
         /// <see cref="HTMLView.GenerateResult"/>
         ///   <see cref="HTMLView.GetHTMLStart"/>
         ///   <see cref="Result.ToHTMLDetailed"/>
@@ -412,7 +414,7 @@ namespace AgoRapide {
             } else {
                 var description = GetType().GetClassAttribute().Description;
                 retval.AppendLine("<h1>Type: " +
-                    (string.IsNullOrEmpty(description) ? "" : "<span title=\"" + description.HTMLEncode() + "\">") +
+                    (string.IsNullOrEmpty(description) ? "" : ("<span title=\"" + description.HTMLEncode() + "\">")) +
                     GetType().ToStringVeryShort().HTMLEncode() +
                     (string.IsNullOrEmpty(description) ? "" : " (+)</span>") +
                     "<br>Name: " + IdFriendly.HTMLEncode() + "</h1>");
@@ -484,7 +486,6 @@ namespace AgoRapide {
                     // This would be the normal approach but we can use the const-value instead:
                     // retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableHeading(request));
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
-                    // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                     retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.Key.A.PriorityOrder).Select(p => {
                         p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                         return p.ToHTMLTableRow(request);
@@ -557,6 +558,137 @@ namespace AgoRapide {
                         return property.ToHTMLTableRow(request);
                     })));
                     retval.AppendLine("</table>");
+                }
+            }
+            return retval.ToString();
+        }
+
+        private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrder
+            string> _CSVTableRowHeadingCache = new ConcurrentDictionary<string, string>();
+        /// <summary>
+        /// May be overridden if you need finer control about how to present your entities.
+        /// 
+        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToCSVTableRowHeading"/> and <see cref="BaseEntity.ToCSVTableRow"/>
+        /// </summary>
+        /// <returns></returns>
+        public virtual string ToCSVTableRowHeading(Request request) => _CSVTableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
+            var thisType = GetType().ToStringVeryShort();
+            return nameof(Id) + request.CSVFieldSeparator +
+            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => new Func<string>(() => {
+                var retval = key.Key.PToString;
+                if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                    retval = retval.Substring(thisType.Length);
+                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.ForeignKeyAggregateKey"/>
+                }
+                return retval;
+            })()));
+            // CSVFieldSeparator + nameof(Created)            
+        });
+
+        /// <summary>
+        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToCSVTableRow"/>).
+        /// 
+        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToCSVTableRowHeading"/> and <see cref="BaseEntity.ToCSVTableRow"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual string ToCSVTableRow(Request request) => (Id <= 0 ? "" : Id.ToString()) + request.CSVFieldSeparator +
+            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ? 
+                p.V<string>().Replace(request.CSVFieldSeparator, ":") :  // Note replacement here with colon. TODO: Document better / create alternatives
+                "")
+            ) +
+            // CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) +
+            "\r\n";
+
+        /// <summary>
+        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToCSVDetailed"/> and <see cref="Result.ToCSVDetailed"/>). 
+        /// 
+        /// There are three levels of packaging CSV information.
+        /// <see cref="CSVView.GenerateResult"/>
+        ///   <see cref="CSVView.GetCSVStart"/>
+        ///   <see cref="Result.ToCSVDetailed"/>
+        ///     <see cref="BaseEntity.ToCSVDetailed"/> (called from <see cref="Result.ToCSVDetailed"/>)
+        ///     <see cref="Result.ToCSVDetailed"/> (actual result, inserts itself at "!--DELIMITER--" left by <see cref="BaseEntity.ToCSVDetailed"/>). 
+        ///     <see cref="BaseEntity.ToCSVDetailed"/> (called from <see cref="Result.ToCSVDetailed"/>)
+        ///   <see cref="CSVView.GetCSVEnd"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual string ToCSVDetailed(Request request) {
+            var retval = new StringBuilder();
+            if (new Func<bool>(() => { // Convoluted code due do erroneous suggestion by compiler to use Pattern matching (version as of March 2017)
+                switch (this) {
+                    case Result result: return result.ResultCode == ResultCode.ok;
+                    default: return false;
+                }
+            })()) {
+                // Do not show type or name because it will only be confusing
+            } else {
+                var description = GetType().GetClassAttribute().Description;
+                retval.AppendLine(
+                    "Type" + request.CSVFieldSeparator + GetType().ToStringVeryShort() + (string.IsNullOrEmpty(description) ? "" : (request.CSVFieldSeparator + description)) + "\r\n" +
+                    "Name" + request.CSVFieldSeparator + IdFriendly);
+            }
+            var a = GetType().GetClassAttribute();
+
+            /// NOTE: Sep 2017: Code below (parent, children, related entities, operations, suggested URLs) was copied form <see cref="ToHTMLDetailed"/>. 
+            /// NOTE: Something of it might not be needed for CSV-format
+            
+            /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
+            /// TOOD: Consider removing this. 
+            if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) { // Link from child to parent
+                queryIdParent.AssertIsSingle(() => ToString());
+                retval.AppendLine("Parent" + request.CSVFieldSeparator +
+                    queryIdParent + request.CSVFieldSeparator +
+                    a.ParentType.ToStringVeryShort() + request.CSVFieldSeparator +
+                    request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString()))
+                );
+            }
+            /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
+            if (a.ChildrenType != null) { // Link from parent to children
+                retval.AppendLine("Children" + request.CSVFieldSeparator + 
+                    request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString()))
+                );
+            }
+
+            var whereForeignKey = GetType().GetTypesWhereIsForeignKey();
+            if (whereForeignKey.Count > 0) retval.AppendLine("Related entities:" + request.CSVFieldSeparator + "\r\n" + string.Join("\r\n", whereForeignKey.Select(t =>
+                t.type.ToStringVeryShort() + request.CSVFieldSeparator + request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id))))
+            );
+
+            // TODO: Add heading here?
+            Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
+                // TODO: Maybe switch positions for these two
+                retval.AppendLine(c.PV<string>(CoreP.SuggestedUrl.A()) + request.CSVFieldSeparator + c.PV<string>(CoreP.Description.A()));
+            });
+
+            // TODO: Add heading here?
+            // Suggested URLs for this specific entity
+            if (Id > 0) retval.AppendLine(string.Join("\r\n", BaseEntityUrls));
+
+            retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
+            retval.AppendLine(CreateCSVForExistingProperties(request));
+            // retval.AppendLine(CreateCSVForAddingProperties(request)); This is considered unnecessary. Eventually add as desired later.
+            return retval.ToString();
+        }
+
+        /// <summary>
+        /// Creates a CSV representation of the existing properties for this entity. 
+        /// Copied from <see cref="CreateHTMLForExistingProperties(Request)"/>. 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual string CreateCSVForExistingProperties(Request request) {
+            var retval = new StringBuilder();
+            if (Properties != null) {
+                var existing = GetExistingProperties(request.CurrentUser, AccessType.Read);
+                if (existing.Count > 0) {
+                    retval.AppendLine("Properties:");
+                    retval.AppendLine(Property.ToCSVTableRowHeadingStatic(request));
+                    retval.AppendLine(string.Join("\r\n", existing.Values.OrderBy(p => p.Key.Key.A.PriorityOrder).Select(p => {
+                        return p.ToCSVTableRow(request);
+                    })));
                 }
             }
             return retval.ToString();

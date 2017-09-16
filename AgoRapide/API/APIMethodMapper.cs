@@ -64,7 +64,11 @@ namespace AgoRapide.API {
                         //default: throw new InvalidEnumException(r.A.A.CoreMethod);
                 }
             });
+            /// <see cref="ResponseFormat.HTML"/>
             nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t + "_" + Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, (Util.Configuration.C.APIPrefix + t + Util.Configuration.C.HTMLPostfixIndicator).Replace("//", "/"), r.Defaults)));
+            /// <see cref="ResponseFormat.CSV"/>
+            nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t + "_" + Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlash, (Util.Configuration.C.APIPrefix + t + Util.Configuration.C.CSVPostfixIndicator).Replace("//", "/"), r.Defaults)));
+            /// <see cref="ResponseFormat.JSON"/>
             nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t, Util.Configuration.C.APIPrefix + t, r.Defaults)));
 
             var singleFinder = new Func<CoreAPIMethod, APIMethod>(coreMethod => {
@@ -78,8 +82,9 @@ namespace AgoRapide.API {
             var rootIndex = singleFinder(CoreAPIMethod.RootIndex);
             tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex, "", rootIndex.Defaults);
             tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex + "_" + Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, rootIndex.Defaults);
+            tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex + "_" + Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlash, Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlash, rootIndex.Defaults);
 
-            var genericMethod = singleFinder(CoreAPIMethod.GenericMethod);
+            var genericMethod = singleFinder(CoreAPIMethod.GenericMethod); /// See <see cref="BaseController.AgoRapideGenericMethod"/>
             if (genericMethod.RouteTemplates != null && string.Join(",", genericMethod.RouteTemplates) != Util.Configuration.C.GenericMethodRouteTemplate) {
                 throw new APIMethod.MethodInitialisationException(typeof(CoreAPIMethod) + "." + genericMethod.MA.CoreMethod + "'s " + nameof(APIMethod.RouteTemplates) + " should have been set to " + nameof(ConfigurationAttribute) + "." + nameof(ConfigurationAttribute.GenericMethodRouteTemplate) + " (" + Util.Configuration.C.GenericMethodRouteTemplate + "), not " + string.Join(",", genericMethod.RouteTemplates) + ". This is most probably a bug in AgoRapide framework");
             }

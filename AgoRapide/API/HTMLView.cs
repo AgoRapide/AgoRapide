@@ -39,16 +39,14 @@ namespace AgoRapide.API {
                 }
                 html.Append(GetHTMLEnd());
 
-                // TODO: Add support for headers and location
-                var statusCode = System.Net.HttpStatusCode.OK;
+                /// TODO: Add support for headers and location (see both <see cref="HTMLView.GenerateResult"/> and <see cref="CSVView.GenerateResult"/>)
                 string location = null;
                 Dictionary<string, string> headers = null;
                 if (!string.IsNullOrEmpty(location)) {
                     if (headers == null) headers = new Dictionary<string, string>();
                     headers.AddValue("Location", location, () => "You may not combine parameter " + nameof(location) + " together with key 'Location' in " + nameof(headers));
                 }
-
-                var retval = new System.Net.Http.HttpResponseMessage() { StatusCode = statusCode, Content = new System.Net.Http.StringContent(html.ToString(), Encoding.UTF8, "text/html") };
+                var retval = new System.Net.Http.HttpResponseMessage() { StatusCode = System.Net.HttpStatusCode.OK, Content = new System.Net.Http.StringContent(html.ToString(), Encoding.UTF8, "text/html") };
                 if (headers != null) headers.ForEach(e => retval.Headers.Add(e.Key, e.Value));
                 return retval;
             } catch (Exception ex) {
@@ -136,13 +134,12 @@ namespace AgoRapide.API {
             // TODO: Make ALL ABOVE static
 
             (Request.CurrentUser == null ? "" :
-                /// Show which user is logged in
                 /// TODO: Create better HTML-layout. Move to upper right corner for instance
-                "<p>" + Request.API.CreateAPILink(
-                    CoreAPIMethod.EntityIndex,
-                    nameof(Request.CurrentUser) + ": " + Request.CurrentUser.IdFriendly,
-                    Request.CurrentUser.GetType(),
-                    new QueryIdInteger(Request.CurrentUser.Id)
+                "<p>" + Request.API.CreateAPILink(Request.CurrentUser
+                    //CoreAPIMethod.EntityIndex,
+                    //nameof(Request.CurrentUser) + ": " + Request.CurrentUser.IdFriendly,
+                    //Request.CurrentUser.GetType(),
+                    //new QueryIdInteger(Request.CurrentUser.Id)
                     ) +
                 "</p>"
             ) +
@@ -192,11 +189,13 @@ namespace AgoRapide.API {
         /// </summary>
         /// <returns></returns>
         public virtual string GetHTMLEnd() =>
+            Request.Method.MA.CoreMethod == CoreAPIMethod.RootIndex ? "" : ( /// <see cref="CoreAPIMethod.RootIndex"/> is only presented as <see cref="ResponseFormat.HTML"/>
             "<br>\r\n" +
-            "<p><a href=\"" + Request.JSONUrl + "\">JSON format for this request</a></p>\r\n<p>" +
+            "<p><a href=\"" + Request.JSONUrl + "\">" + ResponseFormat.JSON + " format for this request</a></p>\r\n<p>" +
+            "<p><a href=\"" + Request.CSVUrl + "\">" + ResponseFormat.CSV + " format for this request</a></p>\r\n<p>" +
             (Request.CurrentUser != null ? "" : NotLoggedInExplanation) +
             "</body>\r\n" +
-            "</html>\r\n";
+            "</html>\r\n");
 
         private static string _notLoggedInExplanation;
         private static string NotLoggedInExplanation => _notLoggedInExplanation ?? (_notLoggedInExplanation =
