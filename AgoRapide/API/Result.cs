@@ -162,6 +162,7 @@ namespace AgoRapide.API {
                         var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
                         retval.AppendLine();
                         retval.AppendLine("Entities of type " + t.ToStringVeryShort() + request.CSVFieldSeparator + thisTypeSorted.Count);
+                        retval.AppendLine();
                         retval.AppendLine(thisTypeSorted[0].ToCSVTableRowHeading(request));
                         retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToCSVTableRow(request))));
                     });
