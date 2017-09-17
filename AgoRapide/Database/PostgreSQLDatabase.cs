@@ -13,6 +13,10 @@ using AgoRapide.API;
 namespace AgoRapide.Database {
 
     /// <summary>
+    /// TODO: Check <see cref="OpenConnection"/> and use of locking. Most probably there are issues here (Sep 2017)
+    /// TODO: For all SQL-queries, use common method for construction them and add thread-id plus calling method's name as comment at end of SQL-code
+    /// TOOD: (makes for dramatically easier debugging in some cases)
+    /// 
     /// TOOD: Move functionality from <see cref="PostgreSQLDatabase"/> into <see cref="BaseDatabase"/>
     /// TODO: Abstract the basic <see cref="Npgsql.NpgsqlCommand"/> and similar, in order to support multiple databases
     /// TODO: without implementing full sub classes of <see cref="BaseDatabase"/>.
