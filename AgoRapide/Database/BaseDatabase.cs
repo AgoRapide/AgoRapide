@@ -57,7 +57,8 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract bool TryVerifyCredentials(string username, string password, out BaseEntity currentUser);
 
-        public abstract BaseEntity GetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType);
+        public BaseEntity GetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType) => TryGetEntity(currentUser, id, accessTypeRequired, requiredType, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
+
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities"/>
         /// 
@@ -70,9 +71,18 @@ namespace AgoRapide.Database {
         /// <param name="entity"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public abstract bool TryGetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out BaseEntity entity, out ErrorResponse errorResponse);
+        public bool TryGetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out BaseEntity entity, out ErrorResponse errorResponse) {
+            id.AssertIsSingle();
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out List<BaseEntity> temp, out errorResponse)) {
+                entity = null;
+                return false;
+            }
+            temp.AssertExactOne(() => nameof(id) + ": " + id.ToString());
+            entity = temp[0];
+            return true;
+        }
 
-        public abstract T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new();
+        public T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired)  where T: BaseEntity, new() => TryGetEntity<T>(currentUser, id, accessTypeRequired, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
         /// 
@@ -84,7 +94,17 @@ namespace AgoRapide.Database {
         /// <param name="accessTypeRequired"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public abstract bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out T entity, out ErrorResponse errorResponse) where T : BaseEntity, new();
+        public bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out T entity, out ErrorResponse errorResponse) where T : BaseEntity, new() {
+            id.AssertIsSingle();
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, out List<T> temp, out errorResponse)) {
+                entity = null;
+                return false;
+            }
+            temp.AssertExactOne(() => nameof(id) + ": " + id.ToString());
+            entity = temp[0];
+            return true;
+        }
+
 
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
@@ -96,9 +116,17 @@ namespace AgoRapide.Database {
         /// <param name="id"></param>
         /// <param name="accessTypeRequired"></param>
         /// <returns></returns>
-        public abstract List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new();
+        public List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new() { 
+            id.AssertIsMultiple();
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, out List<T> entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
+            return entities;
+        }
 
-        public abstract List<BaseEntity> GetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType);
+        public List<BaseEntity> GetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType) {
+            id.AssertIsMultiple();
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out var entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
+            return entities;
+        }
 
         /// <summary>
         /// Generic alternative to <see cref="TryGetEntities"/>
@@ -110,7 +138,15 @@ namespace AgoRapide.Database {
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public abstract bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new();
+        public bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new() { 
+            if (!TryGetEntities(currentUser, id, accessTypeRequired, typeof(T), out var temp, out errorResponse)) {
+                entities = null;
+                return false;
+            }
+            entities = temp.Select(e => (T)e).ToList();
+            return true;
+        }
+
 
         /// <summary>
         /// TODO: We could consider having the whole <see cref="AgoRapide.API.Request"/> object as parameter here but
@@ -150,6 +186,10 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract List<Property> GetEntityHistory(BaseEntity entity);
 
+        protected void AssertAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired) {
+            if (!TryVerifyAccess(currentUser, entity, accessTypeRequired, out var errorResponse)) throw new AccessViolationException(nameof(currentUser) + " " + currentUser.Id + " " + nameof(currentUser.AccessLevelGiven) + " " + currentUser.AccessLevelGiven + " insufficent for " + entity.Id + " (" + nameof(accessTypeRequired) + ": " + accessTypeRequired + "). Details: " + errorResponse);
+        }
+
         /// <summary>
         /// TODO: NOT YET IMPLEMENTED IN IMPLEMENTATION
         /// </summary>
@@ -160,15 +200,24 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract bool TryVerifyAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired, out string errorResponse);
 
-        public abstract T GetEntityById<T>(long id) where T : BaseEntity, new();
+        public T GetEntityById<T>(long id) where T : BaseEntity, new() => TryGetEntityById(id, typeof(T), out var retval) ? (T)(object)retval : throw new ExactOneEntityNotFoundException(id);
         /// <summary>
         /// 
         /// </summary>
         /// <param name="id"></param>
         /// <param name="requiredType">May be null</param>
         /// <returns></returns>
-        public abstract BaseEntity GetEntityById(long id, Type requiredType);
-        public abstract bool TryGetEntityById<T>(long id, out T entity) where T : BaseEntity, new();
+        public BaseEntity GetEntityById(long id, Type requiredType) => TryGetEntityById(id, requiredType, out var retval) ? retval : throw new ExactOneEntityNotFoundException(id);
+
+        public bool TryGetEntityById<T>(long id, out T entity) where T : BaseEntity, new() { 
+            if (!TryGetEntityById(id, typeof(T), out var retval)) {
+                entity = null;
+                return false;
+            }
+            entity = (T)retval;
+            return true;
+        }
+
         /// <summary>
         /// TODO: Rename into TryGetEntityDirect? 
         /// 
@@ -189,17 +238,23 @@ namespace AgoRapide.Database {
 
         public abstract Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
 
-        public abstract Property GetPropertyById(long id);
+        public Property GetPropertyById(long id) => TryGetPropertyById(id, out var retval) ? retval : throw new PropertyNotFoundException(id);
         public abstract bool TryGetPropertyById(long id, out Property property);
 
         /// <summary>
-        /// Gets all root properties of a given type. Result should be in increasing order.
+        /// Gets all root properties of a given type. 
+        /// The implementation must return result in increasing order.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
         public abstract List<long> GetRootPropertyIds(Type type);
 
+        public abstract List<Property> GetRootProperties(Type type);
+
         /// <summary>
+        /// TODO: NOT IN USE AS OF SEP 2017.
+        /// TODO: If we are going to use this it has to be made as efficient as <see cref="GetAllEntities(Type)"/>
+        /// 
         /// Gets all entities of type <typeparamref name="T"/>. 
         /// TODO: Add overload which can be limited to source / workspace or similar. 
         /// TODO: Or use <see cref="TryGetEntities"/> for that purpose. 
@@ -209,8 +264,13 @@ namespace AgoRapide.Database {
         public abstract List<T> GetAllEntities<T>() where T : BaseEntity, new();
         /// <summary>
         /// Gets all entities of type <paramref name="type"/>
+        /// 
         /// TODO: Add overload which can be limited to source / workspace or similar. 
         /// TODO: Or use <see cref="TryGetEntities"/> for that purpose. 
+        /// 
+        /// NOTE: Implementation is expected to do something more efficient than just 
+        /// NOTE:   GetRootPropertyIds(type).Select(id => GetEntityById(id, type)).ToList();
+        /// NOTE: because that will result in too many queries against the database. 
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
@@ -223,7 +283,6 @@ namespace AgoRapide.Database {
         public long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) => CreateEntity(cid, typeof(T), properties, result);
         public long CreateEntity<T>(long cid, Dictionary<CoreP, Property> properties, Result result) => CreateEntity(cid, typeof(T), properties.Values.Select(p => (p.Key, p.Value)), result);
         public long CreateEntity(long cid, Type entityType, Dictionary<CoreP, Property> properties, Result result) => CreateEntity(cid, entityType, properties.Values.Select(p => (p.Key, p.Value)), result);
-
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>
@@ -232,11 +291,22 @@ namespace AgoRapide.Database {
         /// <param name="properties">May be null or empty. Turn this into an Properties collection? Or just a BaseEntity template or similar?</param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        public abstract long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result);
+        public long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) {
+            Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
+            InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntity), detailer: null);
+            var retval = new Result();
+            var pid = CreateProperty(cid, null, null, CoreP.RootProperty.A().PropertyKeyWithIndex, entityType, result);
+            if (properties != null) {
+                foreach (var v in properties) {
+                    CreateProperty(cid, pid, null, v.key, v.value, result);
+                }
+            }
+            return pid;
+        }
 
-        // public abstract void SwitchIfHasEntityToRepresent(ref BaseEntity entity);
-
-        public abstract void AssertUniqueness(PropertyKeyWithIndex key, object value);
+        public void AssertUniqueness(PropertyKeyWithIndex key, object value) {
+            if (!TryAssertUniqueness(key, value, out var existing, out var errorResponse)) throw new UniquenessException(errorResponse + "\r\nDetails: " + existing.ToString());
+        }
         /// <summary>
         /// Only relevant for <paramref name="key"/> <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> 
         /// </summary>
@@ -286,6 +356,104 @@ namespace AgoRapide.Database {
         public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
 
         public abstract void Dispose();
+
+        /// <summary>
+        /// <see cref="BaseEntity.Properties"/>
+        /// </summary>
+        /// <param name="properties"></param>
+        /// <param name="noLongerCurrent">
+        /// Will always be set. 
+        /// <see cref="OperateOnProperty"/> should be called with <see cref="PropertyOperation.SetInvalid"/> for these by calling method. 
+        /// </param>
+        /// <returns></returns>
+        protected Dictionary<CoreP, Property> OrderIntoIntoBaseEntityPropertiesCollection(List<Property> properties, out List<Property> noLongerCurrent) {
+            noLongerCurrent = new List<Property>();
+            var retval = new Dictionary<CoreP, Property>();
+            foreach (var p in properties) {
+                var test = p.Key; /// Check that <see cref="Property.KeyDB"/> parses correctly. 
+                if (p.Key.Key.A.IsMany) {
+                    var isManyParent = retval.GetOrAddIsManyParent(p.Key);
+                    if (isManyParent.Properties.TryGetValue(p.Key.IndexAsCoreP, out var toBeOverwritten)) {
+                        noLongerCurrent.Add(toBeOverwritten);
+                    }
+                    isManyParent.Properties[p.Key.IndexAsCoreP] = p;
+                } else {
+                    if (retval.TryGetValue(p.Key.Key.CoreP, out var toBeOverwritten)) {
+                        noLongerCurrent.Add(toBeOverwritten);
+                    }
+                    retval[p.Key.Key.CoreP] = p;
+                }
+            };
+            return retval;
+        }
+
+        protected void SetNoLongerCurrent(List<Property> noLongerCurrent) {
+            if (noLongerCurrent.Count > 0) {
+                Log("Calling " + nameof(OperateOnProperty) + " for " + noLongerCurrent.Count + " properties");
+                var id = GetIdNonStrict(MethodBase.GetCurrentMethod());
+                noLongerCurrent.ForEach(p => { /// Note use of <see cref="GetIdNonStrict"/> because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
+                    OperateOnProperty(operatorId: id, property: p, operation: PropertyOperation.SetInvalid, result: null);
+                });
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="requiredType"></param>
+        /// <param name="root"></param>
+        /// <param name="properties">May be null (typical for <paramref name="requiredType"/> = <see cref="Property"/></param>
+        /// <returns></returns>
+        protected BaseEntity CreateEntityInMemory(Type requiredType, Property root, Dictionary<CoreP, Property> properties) {
+            if (!root.Key.Key.CoreP.Equals(CoreP.RootProperty)) {
+                if (requiredType != null && requiredType.Equals(typeof(BaseEntity))) {
+                    // OK, return what we have got. 
+                    return root;
+                }
+                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + PropertyKeyMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+                    (requiredType == null ?
+                        ("Possible cause: Method " + MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
+                        ("Possible cause: " + nameof(root.Id) + " does not point to an 'entity root property' (" + nameof(CoreP.RootProperty) + ")")
+                    )
+                );
+            }
+
+            var rootType = root.V<Type>();
+            if (requiredType != null) {
+                InvalidTypeException.AssertAssignable(requiredType, typeof(BaseEntity), () => "Regards parameter " + nameof(requiredType));
+                InvalidTypeException.AssertAssignable(rootType, requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match " + nameof(rootType) + " (" + rootType + " (as found in database as " + root.V<string>() + "))");
+            }
+
+            /// TODO: 
+            /// TODO: Decide how to use <see cref="InMemoryCache"/> if <param name="requiredType"/> was null
+            /// TODO: 
+
+            if (rootType.IsAbstract) throw new InvalidTypeException(rootType, nameof(rootType) + " (as found in database as " + root.V<string>() + ")");
+            // Log("Activator.CreateInstance(requiredType) (" + rootType.ToStringShort() + ")");
+            // Note how "where T: new()" constraint helps to ensure that we have a parameter less constructor now
+            // We could of course also check with rootType.GetConstructor first.
+            var retval = Activator.CreateInstance(rootType) as BaseEntity ?? throw new InvalidTypeException(rootType, "Very unexpected since was just asserted OK");
+
+            retval.Id = root.Id;
+            retval.RootProperty = root;
+            retval.Created = root.Created;
+            retval.Properties = properties; // 
+
+            retval.Properties.Values.ForEach(p => {
+                p.Parent = retval;
+                if (p.Properties != null) { /// Typical case for <see cref="Property.IsIsManyParent"/>
+                    p.Properties.Values.ForEach(p2 => {
+                        p2.Parent = retval;
+                    });
+                }
+            });
+            retval.Properties.AddValue(CoreP.RootProperty, root);
+            retval.AddProperty(CoreP.DBId.A(), root.Id);
+            switch (retval) {
+                case IStaticProperties s: s.GetStaticProperties().ForEach(p => retval.Properties.AddValue(p.Key, p.Value)); break;
+            }
+            return retval;
+        }
 
         /// <summary>
         /// See <see cref="CoreAPIMethod.UpdateProperty"/>

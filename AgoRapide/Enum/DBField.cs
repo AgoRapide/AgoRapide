@@ -57,7 +57,7 @@ namespace AgoRapide {
             LongDescription =
                 "Only relevant if this property is a relation. " +
                 "For relations, one entity is designated by " + nameof(pid) + " and the other by " + nameof(fid) + ". " +
-                "Not used as of June 2017. It would be logical that the value corresponds to " + nameof(lngv) + ".",
+                "Not used as of June 2017. It would be logical that the corresponding value is stored in " + nameof(lngv) + ".",
             Type = typeof(long))]
         fid = 4,
 

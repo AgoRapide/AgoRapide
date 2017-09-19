@@ -138,12 +138,17 @@ namespace AgoRapide.Database {
                         errorResponse = msg;
                         return false;
                     }
+                    /// TODO: <see cref="BaseDatabase.GetAllEntities"/> is very slow as of Sep 2017. 
+                    /// TODO: Improve by reading all properties in one go 
                     entitiesFromDatabase = db.GetAllEntities(type).ToDictionary(e => e.Id, e => e);
                     first = false;
                     continue;
                 }
                 var properties = r.Split(FIELD_SEPARATOR);
-                if (properties.Count != propertiesOrder.Count) throw new InvalidCountException(properties.Count, propertiesOrder.Count, r + resolution);
+                if (properties.Count != propertiesOrder.Count) {
+                    if ("".Equals(r)) continue; // Blank line (typical result if no entities exist at all)
+                    throw new InvalidCountException(properties.Count, propertiesOrder.Count, r + resolution);
+                }
                 BaseEntity entity = null;
                 var i = 0; propertiesOrder.ForEach(o => {
                     if (i > 0 && string.Empty.Equals(properties[i])) {

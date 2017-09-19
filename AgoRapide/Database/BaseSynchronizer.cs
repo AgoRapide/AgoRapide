@@ -31,6 +31,7 @@ namespace AgoRapide.Database {
         public object Synchronize(BaseDatabase db, ValidRequest request) {
             Synchronize2(db, request.Result);
             request.Result.AddProperty(CoreP.SuggestedUrl.A(), new Uri(request.API.CreateAPIUrl(this)));
+            request.Result.LogInternal("Finished", GetType());
             return request.GetResponse();
         }
 
@@ -45,16 +46,19 @@ namespace AgoRapide.Database {
         public void Synchronize2(BaseDatabase db, Result result) {
             var entities = SynchronizeGetEntities(db, result);
             entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, result));
-            SynchronizeMapForeignKeys(entities);
+            SynchronizeMapForeignKeys(entities,result);
             entities.ForEach(e => FileCache.Instance.StoreToDisk(this, e.Key, e.Value));
             AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
             result.ResultCode = ResultCode.ok;
+            result.LogInternal("Finished", GetType());
         }
 
         private Dictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {
+            result.LogInternal("", GetType());
             var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
             if (PV(SynchronizerP.SynchronizerUseMockData.A(), defaultValue: false)) { // Create mock-data.
-                                                                                      // Note how this process is reproducable, the same result should be returned each time (given the same percentileValue)                    
+
+                // Note how this process is reproducable, the same result should be returned each time (given the same percentileValue)                    
 
                 // TOOD: ---------
                 // TODO: Add some functionality for configuring number of, and distribution of entities here.
@@ -93,6 +97,7 @@ namespace AgoRapide.Database {
         /// <param name="db"></param>
         /// <param name="result"></param>
         private void SynchronizeReconcileWithDatabase(Type type, List<BaseEntity> externalEntities, BaseDatabase db, Result result) {
+            result.LogInternal("", GetType());
             InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
 
             /// Note how we cannot just do 
@@ -144,7 +149,9 @@ namespace AgoRapide.Database {
         /// Depends on every <see cref="PropertyKeyAttribute.ExternalForeignKeyOf"/> having a corresponding <see cref="PropertyKeyAttribute.ForeignKey"/>
         /// </summary>
         /// <param name="entities"></param>
-        public void SynchronizeMapForeignKeys(Dictionary<Type, List<BaseEntity>> entities) {
+        /// <param name="result"></param>
+        public void SynchronizeMapForeignKeys(Dictionary<Type, List<BaseEntity>> entities, Result result) {
+            result.LogInternal("", GetType());
             var foreignPrimaryKeyToPrimaryKeyIndexes = new Dictionary<Type, Dictionary<object, long>>();
             entities.ForEach(e => {
                 e.Key.GetChildProperties().Values.Where(p => p.Key.A.ExternalForeignKeyOf != null).ForEach(p => {

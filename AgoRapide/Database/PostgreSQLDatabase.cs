@@ -14,12 +14,14 @@ namespace AgoRapide.Database {
 
     /// <summary>
     /// TODO: Check <see cref="OpenConnection"/> and use of locking. Most probably there are issues here (Sep 2017)
+    /// 
     /// TODO: For all SQL-queries, use common method for construction them and add thread-id plus calling method's name as comment at end of SQL-code
     /// TOOD: (makes for dramatically easier debugging in some cases)
     /// 
     /// TOOD: Move functionality from <see cref="PostgreSQLDatabase"/> into <see cref="BaseDatabase"/>
     /// TODO: Abstract the basic <see cref="Npgsql.NpgsqlCommand"/> and similar, in order to support multiple databases
     /// TODO: without implementing full sub classes of <see cref="BaseDatabase"/>.
+    /// TOOD: (note how little implementator specific functionality is actually used, the abstraction will in other words be very easy to implement).
     /// 
     /// TODO: Add TryGetEntityIds and GetEntityIds with <see cref="QueryId"/> as parameter just like done with 
     /// <see cref="GetEntities{T}"/> and <see cref="TryGetEntities{T}"/>
@@ -61,51 +63,6 @@ namespace AgoRapide.Database {
                 _connectionString = connectionString;
                 OpenConnection(out _cn1, "_cn1");
             }
-        }
-
-        public override List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) {
-            id.AssertIsMultiple();
-            if (!TryGetEntities(currentUser, id, accessTypeRequired, out List<T> entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
-            return entities;
-        }
-
-        public override List<BaseEntity> GetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType) {
-            id.AssertIsMultiple();
-            if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out var entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
-            return entities;
-        }
-
-        public override T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) => TryGetEntity<T>(currentUser, id, accessTypeRequired, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
-        public override bool TryGetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out T entity, out ErrorResponse errorResponse) {
-            id.AssertIsSingle();
-            if (!TryGetEntities(currentUser, id, accessTypeRequired, out List<T> temp, out errorResponse)) {
-                entity = null;
-                return false;
-            }
-            temp.AssertExactOne(() => nameof(id) + ": " + id.ToString());
-            entity = temp[0];
-            return true;
-        }
-
-        public override BaseEntity GetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType) => TryGetEntity(currentUser, id, accessTypeRequired, requiredType, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
-        public override bool TryGetEntity(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out BaseEntity entity, out ErrorResponse errorResponse) {
-            id.AssertIsSingle();
-            if (!TryGetEntities(currentUser, id, accessTypeRequired, requiredType, out List<BaseEntity> temp, out errorResponse)) {
-                entity = null;
-                return false;
-            }
-            temp.AssertExactOne(() => nameof(id) + ": " + id.ToString());
-            entity = temp[0];
-            return true;
-        }
-
-        public override bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) {
-            if (!TryGetEntities(currentUser, id, accessTypeRequired, typeof(T), out var temp, out errorResponse)) {
-                entities = null;
-                return false;
-            }
-            entities = temp.Select(e => (T)e).ToList();
-            return true;
         }
 
         public override bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
@@ -155,6 +112,10 @@ namespace AgoRapide.Database {
 
             switch (requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None) {
                 case CacheUse.All:
+                    if (id.ToString().StartsWith("WHERE BPAPICustomerIdCorrespondingInternalKey")) {
+                        var a = 1;
+                        a++;
+                    }
                     allEntities = InMemoryCache.GetMatchingEntities(requiredType, id, this); // This may do a time-consuming
                     break;
                 default: /// Lookup in database, first step is to find all ids, then calling <see cref="GetEntityById"/> for each id
@@ -184,7 +145,10 @@ namespace AgoRapide.Database {
                     /// TODO: This has room for improvement. 
                     /// TODO: Note that at least two separate queries will be executed for each and every entity in <see cref="GetEntityById"/>
                     /// TODO: Improve by reading all properties in one go, and populating entities based on this.
+                    /// 
+                    /// TODO: See <see cref="GetAllEntities(Type)"/> for how this was solved 19 Sep 2017
                     allEntities = ReadAllIds(cmd).Select(pid => GetEntityById(pid, requiredType)).ToList();
+                    /// TODO: See <see cref="GetAllEntities(Type)"/> for how this was solved 19 Sep 2017
                     break;
             }
 
@@ -192,7 +156,7 @@ namespace AgoRapide.Database {
             id.AssertCountFound(allEntities.Count);
             var lastAccessErrorResponse = "";
             entities = allEntities.Where(e => TryVerifyAccess(currentUser, e, accessTypeRequired, out lastAccessErrorResponse)).ToList();
-            Log(nameof(entities) + ".Count: " + entities.Count + " (after call to " + nameof(TryVerifyAccess) + ")");
+            if (allEntities.Count > 0) Log(nameof(entities) + ".Count: " + entities.Count + " (after call to " + nameof(TryVerifyAccess) + ")");
             if (id.IsSingle) { /// Relevant for <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/>
                 if (allEntities.Count == 0) {
                     entities = null;
@@ -228,16 +192,6 @@ namespace AgoRapide.Database {
         }
 
         /// <summary>
-        /// TODO: Move into <see cref="BaseDatabase"/>
-        /// </summary>
-        /// <param name="currentUser"></param>
-        /// <param name="entity"></param>
-        /// <param name="accessTypeRequired"></param>
-        private void AssertAccess(BaseEntity currentUser, BaseEntity entity, AccessType accessTypeRequired) {
-            if (!TryVerifyAccess(currentUser, entity, accessTypeRequired, out var errorResponse)) throw new AccessViolationException(nameof(currentUser) + " " + currentUser.Id + " " + nameof(currentUser.AccessLevelGiven) + " " + currentUser.AccessLevelGiven + " insufficent for " + entity.Id + " (" + nameof(accessTypeRequired) + ": " + accessTypeRequired + "). Details: " + errorResponse);
-        }
-
-        /// <summary>
         /// TODO: NOT YET IMPLEMENTED
         /// 
         /// Idea for implementation:
@@ -267,21 +221,10 @@ namespace AgoRapide.Database {
                 })()) { Value = p.value });
             });
 
-        public override T GetEntityById<T>(long id) => TryGetEntityById(id, typeof(T), out var retval) ? (T)(object)retval : throw new ExactOneEntityNotFoundException(id);
-        public override BaseEntity GetEntityById(long id, Type requiredType) => TryGetEntityById(id, requiredType, out var retval) ? retval : throw new ExactOneEntityNotFoundException(id);
-
-        public override bool TryGetEntityById<T>(long id, out T entity) {
-            if (!TryGetEntityById(id, typeof(T), out var retval)) {
-                entity = null;
-                return false;
-            }
-            entity = (T)retval;
-            return true;
-        }
-
         public override bool TryGetEntityById(long id, Type requiredType, out BaseEntity entity) {
-            Log(nameof(id) + ": " + id + ", " + nameof(requiredType) + ": " + requiredType?.ToStringShort() ?? "[NULL]");
-            if (id <= 0) throw new Exception(nameof(id) + " <= 0 (" + id + ")");
+            /// Wait with logging. For <see cref="CacheUse.All"/> it is not wanted (it just fills up the log).
+            var logText = new Func<string>(() => nameof(id) + ": " + id + ", " + nameof(requiredType) + ": " + requiredType?.ToStringShort() ?? "[NULL]");
+            if (id <= 0) throw new Exception(nameof(id) + " <= 0 (" + id + "). Details: " + logText());
 
             var useCacheDynamically = false;
             var cacheUse = requiredType?.GetClassAttribute().CacheUse ?? CacheUse.None;
@@ -296,9 +239,10 @@ namespace AgoRapide.Database {
                     break;
                 case CacheUse.All:
                     // Note exception being thrown below if not found.
-                    useCacheDynamically = true; 
+                    useCacheDynamically = true;
                     break;
             }
+            if (cacheUse != CacheUse.All) Log(logText());
 
             if (requiredType != null && typeof(Property).IsAssignableFrom(requiredType)) {
                 if (cacheUse == CacheUse.All) throw new InvalidEnumException(cacheUse, "Invalid to combine with Property");
@@ -319,6 +263,7 @@ namespace AgoRapide.Database {
             if (cacheUse == CacheUse.All) {
                 // TODO: What to do here?
                 // throw new InMemoryCacheException("Not found in cache");
+                Log("Not found in cache: " + logText());  // At least log, since was not logged above.
             }
 
             if (!TryGetPropertyById(id, out var root)) {
@@ -326,84 +271,33 @@ namespace AgoRapide.Database {
                 entity = null;
                 return false;
             }
-            if (!root.Key.Key.CoreP.Equals(CoreP.RootProperty)) {
-                if (requiredType.Equals(typeof(BaseEntity))) {
-                    // OK, return what we have got. 
 
-                    // TODO: Should we also cache single properties?
-                    entity = root;
-                    return true;
-                }
-                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + PropertyKeyMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
-                    (requiredType == null ?
-                        ("Possible cause: Method " + MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
-                        ("Possible cause: " + nameof(id) + " does not point to an 'entity root property' (" + nameof(CoreP.RootProperty) + ")")
-                    )
-                );
-            }
-
-            var rootType = root.V<Type>();
-            if (requiredType != null) {
-                InvalidTypeException.AssertAssignable(requiredType, typeof(BaseEntity), () => "Regards parameter " + nameof(requiredType));
-                InvalidTypeException.AssertAssignable(rootType, requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match " + nameof(rootType) + " (" + rootType + " (as found in database as " + root.V<string>() + "))");
-            }
-
-            /// TODO: 
-            /// TODO: Decide how to use <see cref="InMemoryCache"/> if <param name="requiredType"/> was null
-            /// TODO: 
-
-            if (rootType.IsAbstract) throw new InvalidTypeException(rootType, nameof(rootType) + " (as found in database as " + root.V<string>() + ")");
-            Log("Activator.CreateInstance(requiredType) (" + rootType.ToStringShort() + ")");
-            // Note how "where T: new()" constraint helps to ensure that we have a parameter less constructor now
-            // We could of course also check with rootType.GetConstructor first.
-            var retval = Activator.CreateInstance(rootType) as BaseEntity ?? throw new InvalidTypeException(rootType, "Very unexpected since was just asserted OK");
-
-            retval.Id = id;
-            retval.RootProperty = root;
-            retval.Created = root.Created;
-            retval.Properties = GetChildProperties(root);
-
-            retval.Properties.Values.ForEach(p => {
-                p.Parent = retval;
-                if (p.Properties != null) { /// Typical case for <see cref="Property.IsIsManyParent"/>
-                    p.Properties.Values.ForEach(p2 => {
-                        p2.Parent = retval;
-                    });
-                }
-            });
-            retval.Properties.AddValue(CoreP.RootProperty, root);
-            retval.AddProperty(CoreP.DBId.A(), id);
-            switch (retval) {
-                case IStaticProperties s: s.GetStaticProperties().ForEach(p => retval.Properties.AddValue(p.Key, p.Value)); break;
-            }
-
-            if (useCacheDynamically) InMemoryCache.EntityCache[id] = retval; // Note how entity itself is stored in cache, not root-property
-            entity = retval;
+            entity = CreateEntityInMemory(requiredType, root, GetChildProperties(root));
+            if (useCacheDynamically) InMemoryCache.EntityCache[id] = entity; // Note how entity itself is stored in cache, not root-property
             return true;
         }
 
-        public override Property GetPropertyById(long id) => TryGetPropertyById(id, out var retval) ? retval : throw new PropertyNotFoundException(id);
         public override bool TryGetPropertyById(long id, out Property property) {
             Log(nameof(id) + ": " + id);
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.id + " = " + id, _cn1);
-            lock (GetLock(cmd)) {
-                Npgsql.NpgsqlDataReader r;
-                try {
-                    r = cmd.ExecuteReader();
-                } catch (Exception ex) {
-                    throw new PostgreSQLDatabaseException(cmd, ex);
+            try {
+                lock (GetLock(cmd)) {
+                    var isManyCorrections = new List<string>();
+                    using (var r = cmd.ExecuteReader()) {
+                        if (!r.Read()) {
+                            property = null;
+                            r.Close();
+                            return false;
+                        }
+                        property = ReadOneProperty(r, isManyCorrections);
+                        if (r.Read()) throw new ExactOnePropertyNotFoundException("Multiple properties found for id " + id);
+                        r.Close();
+                    }
+                    ExecuteNonQuerySQLStatements(isManyCorrections);
+                    return true;
                 }
-                if (!r.Read()) {
-                    property = null;
-                    r.Close();
-                    return false;
-                }
-                var isManyCorrections = new List<string>();
-                property = ReadOneProperty(r, isManyCorrections);
-                if (r.Read()) throw new ExactOnePropertyNotFoundException("Multiple properties found for id " + id);
-                r.Close();
-                ExecuteNonQuerySQLStatements(isManyCorrections);
-                return true;
+            } catch (Exception ex) {
+                throw new PostgreSQLDatabaseException(cmd, ex);
             }
         }
 
@@ -465,54 +359,151 @@ namespace AgoRapide.Database {
                 DBField.invalid + " IS NULL " +
                 "ORDER BY " + DBField.id + " ASC", _cn1);
             var retval = new List<long>();
-            lock (GetLock(cmd)) {
-                Npgsql.NpgsqlDataReader r;
-                try {
-                    r = cmd.ExecuteReader();
-                } catch (Exception ex) {
-                    throw new PostgreSQLDatabaseException(cmd, ex);
+            try {
+                lock (GetLock(cmd)) {
+                    using (var r = cmd.ExecuteReader()) {
+                        while (r.Read()) retval.Add(r.GetInt64(0));
+                        r.Close();
+                    }
                 }
-                while (r.Read()) retval.Add(r.GetInt64(0));
-                r.Close();
+            } catch (Exception ex) {
+                throw new PostgreSQLDatabaseException(cmd, ex);
             }
+            Log(nameof(retval) + ".Count: " + retval.Count);
+            return retval;
+        }
+
+        public override List<Property> GetRootProperties(Type type) {
+            Log(nameof(type) + ": " + type.ToStringShort()); /// Note how this code does not use <see cref="InMemoryCache"/> in any manner
+            var cmd = new Npgsql.NpgsqlCommand(
+                PropertySelect + "WHERE " +
+                DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
+                DBField.strv + " = '" + type.ToStringDB() + "' AND " +
+                DBField.invalid + " IS NULL " +
+                "ORDER BY " + DBField.id + " ASC", _cn1);
+            var retval = new List<Property>();
+            var isManyCorrections = new List<string>();
+            try {
+                lock (GetLock(cmd)) {
+                    using (var r = cmd.ExecuteReader()) {
+                        while (r.Read()) retval.Add(ReadOneProperty(r, isManyCorrections));
+                        r.Close();
+                    }
+                }
+            } catch (Exception ex) {
+                throw new PostgreSQLDatabaseException(cmd, ex);
+            }
+            if (isManyCorrections.Count > 0) throw new InvalidCountException(isManyCorrections.Count, 0, nameof(isManyCorrections));
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
         }
 
         public override List<T> GetAllEntities<T>() {
             Log(nameof(T) + ": " + typeof(T).ToStringShort());
-            var retval = GetRootPropertyIds(typeof(T)).Select(id => GetEntityById<T>(id)).ToList();
+            //if (!typeof(ApplicationPart).IsAssignableFrom(typeof(T))) {
+            //    /// For these the slow performance below is tolerable as the number of entities will be limited to an order of magnitue of 100
+            //} else {
+            //    /// For other objects (especially <see cref="APIDataObject"/>) the performance will be unacceptable
+            //    if (DateTime.Now > DateTime.MinValue) throw new NotImplementedException("Implement in efficient manner as done with overload");
+            //}
+            //var retval = GetRootPropertyIds(typeof(T)).Select(id => GetEntityById<T>(id)).ToList();
+
+            /// Note reuse of code in <see cref="GetAllEntities(Type)"/>
+            var retval = GetAllEntities(typeof(T)).Select(e => e as T ?? throw new InvalidObjectTypeException(e, typeof(T))).ToList();
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
         }
 
         public override List<BaseEntity> GetAllEntities(Type type) {
             Log(nameof(type) + ": " + type.ToStringShort());
-            var retval = GetRootPropertyIds(type).Select(id => GetEntityById(id, type)).ToList();
+            // Original naïve version, but too inefficient (result in too many calls against database).k
+            // var retval = GetRootPropertyIds(type).Select(id => GetEntityById(id, type)).ToList();
+
+            /// Better version from 19 Sep 2017, with just two calls towards database:
+            /// Code corresponds to 
+            /// <see cref="GetRootPropertyIds"/> and 
+            /// <see cref="GetChildProperties"/> and
+            /// <see cref="TryGetEntityById"/>
+            /// TODO: IMPORTANT: USE THIS CODE ALSO IN <see cref="TryGetEntities"/> .
+
+            var rootProperties = GetRootProperties(type);
+            var cmd = new Npgsql.NpgsqlCommand(PropertySelect + "WHERE " + DBField.pid + " IN (" +
+                    "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
+                    DBField.strv + " = '" + type.ToStringDB() + "' AND " +
+                    DBField.invalid + " IS NULL" +
+                ") " +
+                "AND\r\n" +                                            // (that would result in lots of properties being set no-longer-current)
+                DBField.invalid + " IS NULL\r\n" +
+                "ORDER BY " + DBField.pid + ", " + DBField.id + " ASC", _cn1);
+
+
+            var currentProperties = new List<Property>();
+            var currentId = -1L;
+            var retval = new List<BaseEntity>();
+            var isManyCorrections = new List<string>();
+            var noLongerCurrent = new List<Property>();
+            var rootPropertyIndex = -1;
+
+            var creatorEntityFromCurrentProperties = new Action(() => {
+                // Take into account that root-properties may exist without any 
+
+                rootPropertyIndex++;
+                while (rootProperties[rootPropertyIndex].Id != currentProperties[0].ParentId) {
+                    // Take into consideration that there may exist entity root properties without any properties at all
+                    // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
+                    Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
+                    retval.Add(CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>()));
+                    rootPropertyIndex++;
+                    if (rootPropertyIndex >= rootProperties.Count) throw new InvalidCountException("Root property not found for " + currentProperties[0].ParentId);
+                }
+
+                var properties = OrderIntoIntoBaseEntityPropertiesCollection(currentProperties, out var temp);
+                temp.ForEach(p => noLongerCurrent.Add(p));
+                retval.Add(CreateEntityInMemory(type, rootProperties[rootPropertyIndex], properties));
+                currentProperties.Clear();
+            });
+
+            try {
+                lock (GetLock(cmd)) {
+                    using (var r = cmd.ExecuteReader()) {
+                        while (r.Read()) {
+                            var p = ReadOneProperty(r, isManyCorrections);
+                            if (currentId == -1) {
+                                // First read
+                            } else if (currentId != p.ParentId) {
+                                creatorEntityFromCurrentProperties();
+                            }
+                            currentId = p.ParentId;
+                            currentProperties.Add(p);
+                        }
+                        r.Close();
+                    }
+                }
+                creatorEntityFromCurrentProperties();
+                while (rootPropertyIndex < (rootProperties.Count - 1)) {
+                    rootPropertyIndex++;
+                    // Take into consideration that there may exist entity root properties without any properties at all
+                    // NOTE: THIS CODE IS COMPLICATED (SEE ALSO ABOVE)
+                    Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
+                    retval.Add(CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>()));
+                }
+            } catch (Exception ex) {
+                throw new PostgreSQLDatabaseException(cmd, ex);
+            }
+            ExecuteNonQuerySQLStatements(isManyCorrections);
+            SetNoLongerCurrent(noLongerCurrent);
+
             Log(nameof(retval) + ".Count: " + retval.Count);
             return retval;
-        }
-
-        public override long CreateEntity(long cid, Type entityType, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) {
-            Log(nameof(cid) + ": " + cid + ", " + nameof(entityType) + ": " + entityType.ToStringShort() + ", " + nameof(properties) + ": " + (properties?.Count().ToString() ?? "[NULL]"));
-            InvalidTypeException.AssertAssignable(entityType, typeof(BaseEntity), detailer: null);
-            var retval = new Result();
-            var pid = CreateProperty(cid, null, null, CoreP.RootProperty.A().PropertyKeyWithIndex, entityType, result);
-            if (properties != null) {
-                foreach (var v in properties) {
-                    CreateProperty(cid, pid, null, v.key, v.value, result);
-                }
-            }
-            return pid;
         }
 
         /// <summary>
         /// Populates property object with information from database
         /// </summary>
-        /// <param name="r"></param>
+        /// <param name="r">Must be "positioned" correct, that is, this method does not call r.Read()</param>
         /// <param name="isManyCorrections">
-        /// "out" parameter giving instruction about corrections to be made i database
-        /// See <see cref="PropertyKeyAttribute.IsMany"/> 
+        /// "out" parameter giving instruction about corrections to be made in database
+        /// See <see cref="PropertyKeyAttribute.IsMany"/> for details about this. 
         /// </param>
         /// <returns></returns>
         protected Property ReadOneProperty(Npgsql.NpgsqlDataReader r, List<string> isManyCorrections) {
@@ -664,14 +655,6 @@ namespace AgoRapide.Database {
             return true;
         }
 
-        /// <summary>
-        /// TODO: Move into <see cref="BaseDatabase"/>
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public override void AssertUniqueness(PropertyKeyWithIndex key, object value) {
-            if (!TryAssertUniqueness(key, value, out var existing, out var errorResponse)) throw new UniquenessException(errorResponse + "\r\nDetails: " + existing.ToString());
-        }
         public override bool TryAssertUniqueness(PropertyKeyWithIndex a, object value, out Property existingProperty, out string errorResponse) {
             var key = a.Key.CoreP;
             Log(nameof(key) + ": " + key + ", " + nameof(value) + ": " + value);
@@ -917,34 +900,32 @@ namespace AgoRapide.Database {
             // TODO: Decide on logging here. What to log.
             Log("\r\n" + nameof(cmd.CommandText) + ":\r\n" + cmd.CommandText + "\r\n" + nameof(cmd.Parameters) + ".Count: " + cmd.Parameters.Count);
             var retval = new List<int>();
-            lock (GetLock(cmd)) {
-                Npgsql.NpgsqlDataReader r;
-                try {
-                    r = cmd.ExecuteReader();
-                } catch (Exception ex) {
-                    throw new PostgreSQLDatabaseException(cmd, ex);
+            try {
+                lock (GetLock(cmd)) {
+                    using (var r = cmd.ExecuteReader()) {
+                        while (r.Read()) retval.Add(r.GetInt32(0));
+                        r.Close();
+                    }
                 }
-                while (r.Read()) {
-                    retval.Add(r.GetInt32(0));
-                }
-                r.Close();
+            } catch (Exception ex) {
+                throw new PostgreSQLDatabaseException(cmd, ex);
             }
             return retval;
         }
 
         protected List<Property> ReadAllPropertyValues(Npgsql.NpgsqlCommand cmd) {
             var retval = new List<Property>();
-            lock (GetLock(cmd)) {
-                Npgsql.NpgsqlDataReader r;
-                try {
-                    r = cmd.ExecuteReader();
-                } catch (Exception ex) {
-                    throw new PostgreSQLDatabaseException(cmd, ex);
-                }
+            try {
                 var isManyCorrections = new List<string>();
-                while (r.Read()) retval.Add(ReadOneProperty(r, isManyCorrections));
-                r.Close();
+                lock (GetLock(cmd)) {
+                    using (var r = cmd.ExecuteReader()) {
+                        while (r.Read()) retval.Add(ReadOneProperty(r, isManyCorrections));
+                        r.Close();
+                    }
+                }
                 ExecuteNonQuerySQLStatements(isManyCorrections);
+            } catch (Exception ex) {
+                throw new PostgreSQLDatabaseException(cmd, ex);
             }
             return retval;
         }
@@ -957,43 +938,25 @@ namespace AgoRapide.Database {
                 "It is therefore important to always read properties in ASCending order from database before calling this method"
         )]
         protected Dictionary<CoreP, Property> ReadAllPropertyValuesAndInvalidateDuplicates(Npgsql.NpgsqlCommand cmd) {
-            var dict = new Dictionary<CoreP, Property>();
-            lock (GetLock(cmd)) {
-                Npgsql.NpgsqlDataReader r;
-                try {
-                    r = cmd.ExecuteReader();
-                } catch (Exception ex) {
-                    throw new PostgreSQLDatabaseException(cmd, ex);
-                }
-                var noLongerCurrent = new List<Property>();
-                var isManyCorrections = new List<string>();
-                while (r.Read()) {
-                    var p = ReadOneProperty(r, isManyCorrections);
-                    var test = p.Key; /// Check that <see cref="Property.KeyDB"/> parses correctly. 
-                    if (p.Key.Key.A.IsMany) {
-                        var isManyParent = dict.GetOrAddIsManyParent(p.Key);
-                        if (isManyParent.Properties.TryGetValue(p.Key.IndexAsCoreP, out var toBeOverwritten)) {
-                            noLongerCurrent.Add(toBeOverwritten);
+            var properties = new List<Property>();
+            var isManyCorrections = new List<string>();
+            try {
+                lock (GetLock(cmd)) {
+                    using (var r = cmd.ExecuteReader()) {
+                        while (r.Read()) {
+                            properties.Add(ReadOneProperty(r, isManyCorrections));
                         }
-                        isManyParent.Properties[p.Key.IndexAsCoreP] = p;
-                    } else {
-                        if (dict.TryGetValue(p.Key.Key.CoreP, out var toBeOverwritten)) {
-                            noLongerCurrent.Add(toBeOverwritten);
-                        }
-                        dict[p.Key.Key.CoreP] = p;
+                        r.Close();
                     }
                 }
-                r.Close();
                 ExecuteNonQuerySQLStatements(isManyCorrections);
-                if (noLongerCurrent.Count > 0) {
-                    Log("Calling " + nameof(OperateOnProperty) + " for " + noLongerCurrent.Count + " properties");
-                    var id = GetIdNonStrict(MethodBase.GetCurrentMethod());
-                    noLongerCurrent.ForEach(p => { /// Note use of <see cref="GetIdNonStrict"/> because we might have <see cref="ApplicationPart.GetFromDatabaseInProgress"/>
-                        OperateOnProperty(operatorId: id, property: p, operation: PropertyOperation.SetInvalid, result: null);
-                    });
-                }
+            } catch (Exception ex) {
+                throw new PostgreSQLDatabaseException(cmd, ex);
             }
-            return dict;
+            /// This somewhat convoluted apporach is due to reusing functionality in <see cref="GetAllEntities(Type)"/>
+            var retval = OrderIntoIntoBaseEntityPropertiesCollection(properties, out var noLongerCurrent);
+            SetNoLongerCurrent(noLongerCurrent);
+            return retval;
         }
 
         /// <summary>
