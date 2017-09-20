@@ -271,7 +271,19 @@ namespace AgoRapide.Core {
                     switch (Operator) {
                         case Operator.EQ:
                             return p.Value.Equals(Value);
-                        default: throw new NotImplementedException(nameof(Operator) + ": " + Operator);
+                        default:
+                            var lngValue = Value as long?;
+                            if (lngValue != null) {
+                                switch (Operator) {
+                                    case Operator.LT: return p.V<long>() < lngValue;
+                                    case Operator.LEQ: return p.V<long>() <= lngValue;
+                                    case Operator.GEQ: return p.V<long>() >= lngValue;
+                                    case Operator.GT: return p.V<long>() > lngValue;
+                                    default: throw new NotImplementedException(nameof(Operator) + ": " + Operator + " for " + Value.GetType());
+                                }
+                            } else {
+                                throw new NotImplementedException(nameof(Operator) + ": " + Operator + " for " + Value.GetType());
+                            }
                     }
             }
         }
@@ -280,7 +292,7 @@ namespace AgoRapide.Core {
         /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatible with parser)
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => "WHERE " + Key.PToString + " = '" + Value + "'";
+        public override string ToString() => "WHERE " + Key.PToString + " " + Operator.ToMathSymbol() + " '" + Value + "'";
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!

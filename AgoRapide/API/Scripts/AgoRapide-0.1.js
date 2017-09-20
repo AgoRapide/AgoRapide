@@ -232,17 +232,17 @@ com.AgoRapide.AgoRapide = function comAgoRapideAgoRapide() {
                     parameters.success(data);
                 } else {
                     var additionalText = "";
-                    // Get additional details through details.Properties["Message"].Value 
-                    if (data.Data.details == undefined) {
+                    // Get additional details through Details.Properties["Message"].Value 
+                    if (data.Data.Details == undefined) {
                         // Give up
-                    } else if (data.Data.details.Properties == undefined) {
+                    } else if (data.Data.Details.Properties == undefined) {
                         // Give up
-                    } else if (data.Data.details.Properties["Message"] == undefined) {
+                    } else if (data.Data.Details.Properties["Message"] == undefined) {
                         // Give up
                     } else {
-                        additionalText = data.Data.details.Properties["Message"].Value;
+                        additionalText = data.Data.Details.Properties["Message"].Value;
                     }
-                    // Note that details.Properties["ResultCodeDescription"].Value is not available for JSON
+                    // Note that Details.Properties["ResultCodeDescription"].Value is not available for JSON
                     callError(data.Data.ResultCode + "\r\nDetails:\r\n" + additionalText, parameters) // 
                 }
             },

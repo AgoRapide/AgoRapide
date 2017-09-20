@@ -120,6 +120,9 @@ namespace AgoRapide {
         [PropertyKey(Parents = new Type[] { typeof(Person) }, InheritFrom = CoreP.AuthResult)]
         AuthResult,
 
+        [PropertyKey(Parents = new Type[] { typeof(Person) }, InheritFrom = CoreP.Context)]
+        Context,
+
         #endregion
     }
 

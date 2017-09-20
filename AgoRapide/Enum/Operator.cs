@@ -34,4 +34,17 @@ namespace AgoRapide {
         [EnumValue(Description = "Case insensitive string wildcard comparision as implemented by PostgreSQL database engine.")]
         ILIKE
     }
+
+    public static class OperatorExtension {
+        public static string ToMathSymbol(this Operator _operator) {
+            switch (_operator) {
+                case Operator.LT: return "<";
+                case Operator.LEQ: return "<=";
+                case Operator.EQ: return "=";
+                case Operator.GEQ: return ">=";
+                case Operator.GT: return ">";
+                default: return _operator.ToString(); // TODO: Decide if this approach is good enough
+            }
+        }
+    }
 }

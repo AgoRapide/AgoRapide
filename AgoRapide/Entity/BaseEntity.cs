@@ -279,9 +279,12 @@ namespace AgoRapide {
         /// 
         /// Note how accepts either single values or complete List for <see cref="PropertyKeyAttribute.IsMany"/>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">
+        /// Must correspond to <paramref name="key"/>'s Type.
+        /// </typeparam>
         /// <param name="key"></param>
-        /// <param name="value"></param>
+        /// <param name="value">
+        /// </param>
         /// <param name="strValue">
         /// May be null. 
         /// See <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> for documentation
@@ -298,6 +301,7 @@ namespace AgoRapide {
             if (detailer == null) detailer = () => ToString();
 
             if (!key.Key.A.IsMany) {
+                InvalidTypeException.AssertAssignable(typeof(T), key.Key.A.Type, () => key.Key.PToString); // Added 20 Sep 2017
                 AddProperty(new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute), detailer);
                 //Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute) {
                 //    ParentId = Id,
