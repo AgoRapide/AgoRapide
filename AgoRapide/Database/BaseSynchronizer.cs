@@ -46,7 +46,7 @@ namespace AgoRapide.Database {
         public void Synchronize2(BaseDatabase db, Result result) {
             var entities = SynchronizeGetEntities(db, result);
             entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, result));
-            SynchronizeMapForeignKeys(entities,result);
+            SynchronizeMapForeignKeys(entities, result);
             entities.ForEach(e => FileCache.Instance.StoreToDisk(this, e.Key, e.Value));
             AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
             result.ResultCode = ResultCode.ok;
@@ -170,7 +170,16 @@ namespace AgoRapide.Database {
                                     ));
                             }
                         }
-                        entity.Properties.AddValue(correspondingInternalKey.Key.CoreP, new PropertyT<long>(correspondingInternalKey.PropertyKeyWithIndex, indexesThisForeignKeyType.GetValue(fk.Value, () => p.Key.PToString + " -" + fk.Value + "- for " + entity.ToString())));
+                        var foreignKey = indexesThisForeignKeyType.GetValue(fk.Value, () => p.Key.PToString + " -" + fk.Value + "- for " + entity.ToString());
+                        if (entity.Properties.TryGetValue(correspondingInternalKey.Key.CoreP, out var existingForeignKey)) {
+                            if (existingForeignKey.V<long>().Equals(foreignKey)) {
+                                // OK. Typical result of cache use or similar. It is considered unrealistic to ensrure
+                            } else {
+                                throw new BaseSynchronizerException("Found two values for " + p.Key.PToString + " - " + fk.Value + " - for " + entity.ToString() + ", both (new) " + foreignKey + " and (old) " + existingForeignKey.V<long>() + ". Details: " + existingForeignKey.ToString());
+                            }
+                        } else {
+                            entity.Properties.AddValue(correspondingInternalKey.Key.CoreP, new PropertyT<long>(correspondingInternalKey.PropertyKeyWithIndex, foreignKey));
+                        }
                     });
                 });
             });
@@ -178,6 +187,11 @@ namespace AgoRapide.Database {
 
         [ClassMember(Description = "Injects additional data based on C# logic.")]
         public abstract void Inject(BaseDatabase db);
+
+        public class BaseSynchronizerException : ApplicationException {
+            public BaseSynchronizerException(string message) : base(message) { }
+            public BaseSynchronizerException(string message, Exception inner) : base(message, inner) { }
+        }
     }
 
     [Enum(AgoRapideEnumType = EnumType.PropertyKey)]

@@ -638,7 +638,11 @@ namespace AgoRapide.Core {
         /// <summary>
         /// See <see cref="GetChildProperties"/> for details.
         /// 
-        /// Returns list sorted by <see cref="PropertyKeyAttribute.PriorityOrder"/>. 
+        /// Returns list sorted by <see cref="PropertyKeyAttribute.PriorityOrder"/> (and alphabetic within that again)
+        /// 
+        /// Useful for listing out objects for instance, with important priorities 
+        /// to the left in <see cref="BaseEntity.ToHTMLTableRow"/> and 
+        /// at the top for <see cref="BaseEntity.ToHTMLDetailed"/> (although not used as of Sep 2017 in that method).
         /// 
         /// Restricts to <paramref name="withinThisPriority"/>. 
         /// NOTE: Does not take into account any access rights. TODO: Improve on this situation (see methods like <see cref="GetChildPropertiesForAccessLevel"/>)
@@ -653,7 +657,11 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static List<PropertyKey> GetChildPropertiesByPriority(this Type type, PriorityOrder withinThisPriority) => _childPropertiesByPriorityCache.GetOrAdd(type + "_" + withinThisPriority, key => {
             var retval = GetChildProperties(type).Where(e => e.Value.Key.A.PriorityOrder <= withinThisPriority).Select(e => e.Value).ToList();
-            retval.Sort(new Comparison<PropertyKey>((key1, key2) => key1.Key.A.PriorityOrder.CompareTo(key2.Key.A.PriorityOrder)));
+            retval.Sort(new Comparison<PropertyKey>((key1, key2) => {
+                var o = key1.Key.A.PriorityOrder.CompareTo(key2.Key.A.PriorityOrder);
+                if (o != 0) return o;
+                return key1.Key.PToString.CompareTo(key2.Key.PToString); // Use alphabetic ordering.
+            }));
             return retval;
         });
 
@@ -836,8 +844,8 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static string HTMLEncodeAndEnrich(this string _string, APICommandCreator api) {
             if (_string.StartsWith("http://") || _string.StartsWith("https://")) {
-                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + 
-                    (api.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator) ? Util.Configuration.C.HTMLPostfixIndicator : "") + 
+                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s +
+                    (api.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator) ? Util.Configuration.C.HTMLPostfixIndicator : "") +
                 "\">" + s.HTMLEncode() + "</a>"));
             }
             return HTMLEncode(_string).Replace("\r\n", "\r\n<br>");

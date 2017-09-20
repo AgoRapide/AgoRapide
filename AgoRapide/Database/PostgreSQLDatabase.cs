@@ -22,9 +22,6 @@ namespace AgoRapide.Database {
     /// TODO: Abstract the basic <see cref="Npgsql.NpgsqlCommand"/> and similar, in order to support multiple databases
     /// TODO: without implementing full sub classes of <see cref="BaseDatabase"/>.
     /// TOOD: (note how little implementator specific functionality is actually used, the abstraction will in other words be very easy to implement).
-    /// 
-    /// TODO: Add TryGetEntityIds and GetEntityIds with <see cref="QueryId"/> as parameter just like done with 
-    /// <see cref="GetEntities{T}"/> and <see cref="TryGetEntities{T}"/>
     /// </summary>
     [Class(Description = "PostgreSQL database implementation of -" + nameof(BaseDatabase) + "- (see that for documentation).")]
     public class PostgreSQLDatabase : BaseDatabase {
@@ -66,10 +63,11 @@ namespace AgoRapide.Database {
         }
 
         public override bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
-            Log(nameof(currentUser) + ": " + (currentUser?.IdFriendly ?? "[NULL]") + ", " + nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
+            var logger = new Func<string>(() => nameof(currentUser) + ": " + (currentUser?.IdFriendly ?? "[NULL]") + ", " + nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
 
             switch (id) { /// First, check for <see cref="QueryIdContext"/> and <see cref="QueryIdInteger"/>, these can be treated directly.
                 case QueryIdContext q: // TOOD: Move this code into BaseDatabase
+                    Log(logger());
                     if (currentUser == null) {
                         entities = null;
                         errorResponse = new ErrorResponse(ResultCode.client_error,
@@ -118,7 +116,8 @@ namespace AgoRapide.Database {
                     }
                     allEntities = InMemoryCache.GetMatchingEntities(requiredType, id, this); // This may do a time-consuming
                     break;
-                default: /// Lookup in database, first step is to find all ids, then calling <see cref="GetEntityById"/> for each id
+                default: /// Lookup in database, first step is to find all ids, then calling <see cref="BaseDatabase.GetEntityById"/> for each id
+                    Log(logger());
                     Npgsql.NpgsqlCommand cmd;
                     switch (id) {
                         case QueryIdAll q: /// Use a simpler SQL query (note that calling <see cref="QueryId.SQLWhereStatement"/> would most probably result in an exception anyway)
@@ -143,7 +142,7 @@ namespace AgoRapide.Database {
                     if (requiredType.Equals(typeof(BaseEntity))) throw new InvalidTypeException(requiredType, "Meaningless value because the query\r\n\r\n" + cmd.CommandText + "\r\n\r\nwill never return anything");
 
                     /// TODO: This has room for improvement. 
-                    /// TODO: Note that at least two separate queries will be executed for each and every entity in <see cref="GetEntityById"/>
+                    /// TODO: Note that at least two separate queries will be executed for each and every entity in <see cref="BaseDatabase.GetEntityById"/>
                     /// TODO: Improve by reading all properties in one go, and populating entities based on this.
                     /// 
                     /// TODO: See <see cref="GetAllEntities(Type)"/> for how this was solved 19 Sep 2017
@@ -426,6 +425,8 @@ namespace AgoRapide.Database {
             /// <see cref="TryGetEntityById"/>
             /// TODO: IMPORTANT: USE THIS CODE ALSO IN <see cref="TryGetEntities"/> .
 
+            var useCache = type.GetClassAttribute().CacheUse != CacheUse.None;
+
             var rootProperties = GetRootProperties(type);
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + "WHERE " + DBField.pid + " IN (" +
                     "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
@@ -452,15 +453,21 @@ namespace AgoRapide.Database {
                     // Take into consideration that there may exist entity root properties without any properties at all
                     // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
                     Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
-                    retval.Add(CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>()));
+                    var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>());
+                    retval.Add(e);
+                    if (useCache) InMemoryCache.EntityCache[e.Id] = e;
                     rootPropertyIndex++;
                     if (rootPropertyIndex >= rootProperties.Count) throw new InvalidCountException("Root property not found for " + currentProperties[0].ParentId);
                 }
 
-                var properties = OrderIntoIntoBaseEntityPropertiesCollection(currentProperties, out var temp);
-                temp.ForEach(p => noLongerCurrent.Add(p));
-                retval.Add(CreateEntityInMemory(type, rootProperties[rootPropertyIndex], properties));
-                currentProperties.Clear();
+                {
+                    var properties = OrderIntoIntoBaseEntityPropertiesCollection(currentProperties, out var temp);
+                    temp.ForEach(p => noLongerCurrent.Add(p));
+                    var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], properties);
+                    retval.Add(e);
+                    if (useCache) InMemoryCache.EntityCache[e.Id] = e;
+                    currentProperties.Clear();
+                }
             });
 
             try {
@@ -485,7 +492,9 @@ namespace AgoRapide.Database {
                     // Take into consideration that there may exist entity root properties without any properties at all
                     // NOTE: THIS CODE IS COMPLICATED (SEE ALSO ABOVE)
                     Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
-                    retval.Add(CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>()));
+                    var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>());
+                    retval.Add(e);
+                    if (useCache) InMemoryCache.EntityCache[e.Id] = e;
                 }
             } catch (Exception ex) {
                 throw new PostgreSQLDatabaseException(cmd, ex);

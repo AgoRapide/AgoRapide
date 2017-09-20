@@ -137,35 +137,45 @@ namespace AgoRapide.Database {
                     // TODO: But for case 2) above this is of course not good enough.
                     return false; 
                 }
-                lock (_synchronizedTypesInternal) { // Ensure that this "univeres" completes first
+                lock (_synchronizedTypesInternal) { // Ensure that this "universe" completes first
                     if (_synchronizedTypesInternal.TryGetValue(t, out _)) return true; // Already done by other call (possible on other thread) within same universe
 
                     var types = s.PV<List<Type>>(SynchronizerP.SynchronizerExternalType.A());
-                    foreach (var st in types) { 
-                        if (!FileCache.Instance.TryEnrichFromDisk(s, st, db, out _)) {
+                    var synchronizerWasCalled = false;
+                    var allEntities = new Dictionary<Type, List<BaseEntity>>();
+                    foreach (var st in types) {
+                        if (FileCache.Instance.TryEnrichFromDisk(s, st, db, out var entities, out _)) { // Note how "result" is ignored. 
+                            allEntities.AddValue(st, entities);
+                        } else { 
                             /// This call can be very time-consuming
                             /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
                             s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+                            synchronizerWasCalled = true;
 
                             /// Now ALL ENTITIES in this synchronizer-"universe" have been place into memory. 
                             /// In other words there is no more work that has to be done in this loop.
                             break;
                         }
                     }
+                    if (synchronizerWasCalled) {
+                        /// No need for calling <see cref="BaseSynchronizer.SynchronizeMapForeignKeys"/>, because was done as part of <see cref="BaseSynchronizer.Synchronize2"/>
+                    } else {
+                        s.SynchronizeMapForeignKeys(allEntities, new API.Result()); // Note how "result" is ignored. 
+                    }
 
                     // Now all keys have been read. Before injection, mark as read (this will stop recursivity)
-                    foreach (var st in types) {
+                    types.ForEach(st => {
                         _synchronizedTypesInternal.AddValue(st, true, () => "Expected all keys " + string.Join(", ", types.Select(temp => temp.ToStringVeryShort()) + " to be set at once, not " + st.ToStringVeryShort() + " to be set separately"));
-                    }
+                    });
 
                     /// Note how the injection process will make recursive calls to this method 
                     /// therefore we have now through <see cref="_synchronizedTypesInternal"/> opened up for these recursive calls to return immediately, 
                     /// while we are still locking out other threads until we are completely finished)
 
-                    foreach (var st in types) { // TODO: Add some more indexing within entityCache.
+                    types.ForEach(st => { // TODO: Add some more indexing within entityCache.
                         /// This will make recursive calls against this method (<see cref="GetMatchingEntities"/>)
                         BaseInjector.CalculateForeignKeyAggregates(st, EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(), db);
-                    }
+                    });
 
                     /// TODO: Call all other Injector-classes relevant for this universe.
                     /// TODO: To be decided how to organise this. 

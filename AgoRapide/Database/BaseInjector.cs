@@ -37,11 +37,31 @@ namespace AgoRapide.Database {
         [ClassMember(Description = "Calculates the actual aggregates based on keys returned by -" + nameof(GetForeignKeyAggregateKeys) + "-.")]
         public static void CalculateForeignKeyAggregates(Type type, List<BaseEntity> entities, BaseDatabase db) => type.GetChildProperties().Values.Select(key => key as ForeignKeyAggregateKey).Where(key => key != null).ForEach(key => {
             var hasLimitedRange = true; var valuesFound = new HashSet<long>();
+
+            // Akkurat samme problem her med index!
+            /// Build index in order to avoid O(n^2) situation.
+            var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
+            InMemoryCache.EntityCache.Values.
+                Where(e => key.SourceEntityType.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order no to repeat queries like this:
+                ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
+                    if (e.Properties.TryGetValue(key.ForeignKeyProperty.Key.CoreP, out var p)) {
+                        var foreignKeyValue = p.V<long>();
+                        if (!toEntitiesIndex.TryGetValue(foreignKeyValue, out var list)) list = (toEntitiesIndex[foreignKeyValue] = new List<BaseEntity>());
+                        list.Add(e);
+                    }
+                });
+
             entities.ForEach(e => {
                 InvalidObjectTypeException.AssertAssignable(e, type);
                 // TODO: Note potential repeated calculations of sourceEntities here. We could have used LINQ GroupBy, but would then have to
                 // TODO: take into account that the ForeignKeyProperty may actually also vary, not only the SourceEntityType
-                var sourceEntities = InMemoryCache.GetMatchingEntities(key.SourceEntityType, new QueryIdKeyOperatorValue(key.ForeignKeyProperty.Key, Operator.EQ, e.Id), db);
+
+                // Unuseable because O(n^2)
+                // var sourceEntities = InMemoryCache.GetMatchingEntities(key.SourceEntityType, new QueryIdKeyOperatorValue(key.ForeignKeyProperty.Key, Operator.EQ, e.Id), db);
+
+                // New variant with index created above
+                var sourceEntities = toEntitiesIndex.TryGetValue(e.Id, out var temp) ? temp : new List<BaseEntity>();
+
                 if (key.ForeignKeyProperty.Key.CoreP == key.SourceProperty.Key.CoreP) {
                     if (key.AggregationType != AggregationType.Count) throw new InvalidEnumException(key.AggregationType, "Because " + nameof(key.ForeignKeyProperty));
 

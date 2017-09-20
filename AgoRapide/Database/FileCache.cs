@@ -59,10 +59,10 @@ namespace AgoRapide.Database {
             )]
         public static List<PropertyKey> GetProperties(Type type) => _propertyKeyCache.GetOrAdd(type, t => {
             var retval = new List<PropertyKey> { PropertyKeyMapper.GetA(CoreP.DBId) };
-            retval.AddRange(type.GetChildProperties().Where(p =>
-                p.Value.Key.A.IsExternal || // This is the normal criteria.
-                p.Value.Key.PToString.EndsWith("CorrespondingInternalKey") /// This is a special case, we must either store this on disk (as done now (Sep 2017)), OR, recalculate the value when reading. The former is considered much more efficient. See <see cref="PropertyKeyMapper.MapEnum{T}"/> for more information. 
-            ).Select(p => p.Value).ToList());
+            retval.AddRange(type.GetChildPropertiesByPriority((PriorityOrder)int.MaxValue).Where(p =>
+                p.Key.A.IsExternal || // This is the normal criteria.
+                p.Key.PToString.EndsWith("CorrespondingInternalKey") /// This is a special case, we must either store this on disk (as done now (Sep 2017)), OR, recalculate the value when reading. The former is considered much more efficient. See <see cref="PropertyKeyMapper.MapEnum{T}"/> for more information. 
+            ));
             return retval;
         });
 
@@ -108,18 +108,20 @@ namespace AgoRapide.Database {
         /// <param name="synchronizer"></param>
         /// <param name="type"></param>
         /// <param name="db"></param>
+        /// <param name="entities">All entities found in database, enriched with data from disk</param>
         /// <param name="errorResponse"></param>
         [ClassMember(Description = "Reads from disk -" + nameof(PropertyKeyAttribute.IsExternal) + "--entities earlier found by a -" + nameof(BaseSynchronizer) + "-.")]
-        public bool TryEnrichFromDisk(BaseSynchronizer synchronizer, Type type, BaseDatabase db, out string errorResponse) {
+        public bool TryEnrichFromDisk(BaseSynchronizer synchronizer, Type type, BaseDatabase db, out List<BaseEntity> entities, out string errorResponse) {
             Log(nameof(type) + ": " + type);
             var returnFalseAdditionalInformation = "\r\nNote that the calling method will now most probably do a (very) time-consuming call against " + nameof(BaseSynchronizer.Synchronize);
             var filepath = GetFilePath(synchronizer, type);
             Log(nameof(filepath) + ": " + filepath);
             if (!System.IO.File.Exists(filepath)) {
                 Log("!System.IO.File.Exists" + returnFalseAdditionalInformation);
+                entities = null;
                 errorResponse = "File " + filepath + " not found";
                 return false;
-            }
+            }            
             var recordsFromDisk = System.IO.File.ReadAllText(filepath, Encoding.Default).Split(RECORD_SEPARATOR);
             var first = true;
             var propertiesOrder = GetProperties(type);
@@ -135,6 +137,7 @@ namespace AgoRapide.Database {
                             "instead of\r\n\r\n" +
                             GetFingerprint(type);
                         Log(msg + returnFalseAdditionalInformation);
+                        entities = null;
                         errorResponse = msg;
                         return false;
                     }
@@ -156,14 +159,17 @@ namespace AgoRapide.Database {
                         i++; return;
                     }
                     if (!o.Key.TryValidateAndParse(properties[i], out var result)) throw new InvalidFileException(filepath, r, o, properties[i], result.ErrorResponse);
-                    if (i == 0) { /// The primary key (<see cref="DBField.id"/>) is stored as first property
+                    if (i == 0) { 
+                        /// The primary key (<see cref="DBField.id"/>) is stored as first property. 
                         if (!entitiesFromDatabase.TryGetValue(result.Result.V<long>(), out entity)) throw new InvalidFileException(filepath, r, o, properties[i], "Not found in " + nameof(entitiesFromDatabase));
+                        /// Only get entity, continue with next property
                         i++; return;
                     }
-                    entity.Properties[o.Key.CoreP] = result.Result;
+                    entity.Properties[o.Key.CoreP] = result.Result; // Enrich with property from disk.
                     i++; return;
                 });
             }
+            entities = entitiesFromDatabase.Values.ToList();
             errorResponse = null;
             return true;
         }

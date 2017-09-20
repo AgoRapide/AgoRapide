@@ -278,10 +278,24 @@ namespace AgoRapide.Core {
                             }); break;
                         case TraversalDirection.ToForeignKey:
                             InvalidTypeException.AssertAssignable(fromType, traversal.Key.Key.A.ForeignKeyOf, () => "Invalid assumption about traversal from " + fromType + ": " + traversal.Key);
-                            fromEntities.Values.Where(from => !toEntities.Values.Any(to => to.PV<long>(traversal.Key, 0) == from.Id)).ToList().ForEach(e => {
+
+                            /// Build index in order to avoid O(n^2) situation.
+                            var toEntitiesIndex = new Dictionary<long, bool>();
+                            toEntities.Values.ForEach(e => {
+                                if (e.Properties.TryGetValue(traversal.Key.Key.CoreP, out var foreignKey)) {
+                                    toEntitiesIndex[foreignKey.V<long>()] = true;
+                                }
+                            });
+
+                            // Unuseable because O(n^2)
+                            // fromEntities.Values.Where(from => !toEntities.Values.Any(to => to.PV<long>(traversal.Key, 0) == from.Id)).ToList().ForEach(e => {
+
+                            // New variant with index created above
+                            fromEntities.Values.Where(from => !toEntitiesIndex.ContainsKey(from.Id)).ToList().ForEach(e => {
                                 fromEntities.Remove(e.Id);
                             }); break;
-                        default: throw new InvalidEnumException(traversal.Direction);
+                        default:
+                            throw new InvalidEnumException(traversal.Direction);
                     }
                 });
             });
@@ -345,13 +359,33 @@ namespace AgoRapide.Core {
                         case TraversalDirection.ToForeignKey:
                             /// TODO: Ensure that <see cref="InvalidTypeException.AssertAssignable"/> is used correct here (compare with <see cref="TryGetTraversal"/>
                             InvalidTypeException.AssertAssignable(fromType, traversal.Key.Key.A.ForeignKeyOf, () => "Invalid assumption about traversal from " + fromType + ": " + traversal.ToString());
-                            fromValues.ForEach(from => {
-                                var toEntities = db.GetEntities(currentUser, new QueryIdKeyOperatorValue(traversal.Key.Key, Operator.EQ, from.Id), AccessType.Read, traversals.Key);
-                                toEntities.ForEach(to => {
-                                    if (toValues.ContainsKey(to.Id)) return;
-                                    toValues[to.Id] = to;
+
+                            /// Build index in order to avoid O(n^2) situation.
+                            var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
+                            InMemoryCache.EntityCache.Values.
+                                Where(e => traversals.Key.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order no to repeat queries like this:
+                                ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
+                                    if (e.Properties.TryGetValue(traversal.Key.Key.CoreP, out var p)) {
+                                        var foreignKeyValue = p.V<long>();
+                                        if (!toEntitiesIndex.TryGetValue(foreignKeyValue, out var list)) list = (toEntitiesIndex[foreignKeyValue] = new List<BaseEntity>());
+                                        list.Add(e);
+                                    }
                                 });
+
+                            fromValues.ForEach(from => {
+                                // Unuseable because O(n^2)
+                                // var toEntities = db.GetEntities(currentUser, new QueryIdKeyOperatorValue(traversal.Key.Key, Operator.EQ, from.Id), AccessType.Read, traversals.Key);
+
+                                // New variant with index created above
+                                if (toEntitiesIndex.TryGetValue(from.Id, out var toEntities)) {
+                                    toEntities.ForEach(to => {
+                                        if (toValues.ContainsKey(to.Id)) return;
+                                        toValues[to.Id] = to;
+                                    });
+                                }
                             }); break;
+                        default:
+                            throw new InvalidEnumException(traversal.Direction);
                     }
                     retval.Add(traversals.Key, toValues);
                 });
