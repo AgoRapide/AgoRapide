@@ -101,11 +101,11 @@ namespace AgoRapide.API {
                 if (e.method.Parameters.Count > 5) throw new InvalidCountException("Maximum of 5 " + method.EntityType.ToStringShort() + " -" + nameof(PropertyKeyAttribute.IsObligatory) + "- allowed for " + e.method.MA.CoreMethod + ". Resolution: Limit is arbitrarily set, may easily be increased in C# code.\r\nDetails: " + method.ToString());
 
                 if (!TryGetRequest(
-                    e.method.Parameters.Count <= 0 ? (string)null : e.parameters.GetValue(0, () => method.ToString()),
-                    e.method.Parameters.Count <= 1 ? (string)null : e.parameters.GetValue(1, () => method.ToString()),
-                    e.method.Parameters.Count <= 2 ? (string)null : e.parameters.GetValue(2, () => method.ToString()),
-                    e.method.Parameters.Count <= 3 ? (string)null : e.parameters.GetValue(3, () => method.ToString()),
-                    e.method.Parameters.Count <= 4 ? (string)null : e.parameters.GetValue(4, () => method.ToString()),
+                    e.method.Parameters.Count <= 0 ? null : e.parameters.GetValue(0, () => method.ToString()),
+                    e.method.Parameters.Count <= 1 ? null : e.parameters.GetValue(1, () => method.ToString()),
+                    e.method.Parameters.Count <= 2 ? null : e.parameters.GetValue(2, () => method.ToString()),
+                    e.method.Parameters.Count <= 3 ? null : e.parameters.GetValue(3, () => method.ToString()),
+                    e.method.Parameters.Count <= 4 ? null : e.parameters.GetValue(4, () => method.ToString()),
                     e.method, out var exactRequest, out var completeErrorResponse)) return completeErrorResponse;
 
                 Log(e.method.MA.CoreMethod + ": " + e.method.EntityType);

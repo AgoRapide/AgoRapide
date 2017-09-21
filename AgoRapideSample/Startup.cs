@@ -98,7 +98,7 @@ namespace AgoRapideSample {
                 {
                     Log("MapEnums",
                         typeof(T) + " to " + typeof(AgoRapide.CoreP) + ":\r\n" +
-                        string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<T>().Select(p => nameof(T) + "." + p + " => " + AgoRapide.Core.PropertyKeyMapper.GetA(p).Key.CoreP)) + "\r\n");
+                        string.Join("\r\n", AgoRapide.Core.Util.EnumGetValues<T>().Select(p => typeof(T) + "." + p + " => " + AgoRapide.Core.PropertyKeyMapper.GetA(p).Key.CoreP)) + "\r\n");
                 }
                 mapper2<AgoRapide.Core.ConfigurationAttribute.ConfigurationP>(); /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow
                 mapper2<AgoRapide.API.ResultP>();                                /// TODO: Move into <see cref="AgoRapide.Core.Startup"/> somehow

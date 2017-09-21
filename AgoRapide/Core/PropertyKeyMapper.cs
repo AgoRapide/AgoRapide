@@ -112,8 +112,18 @@ namespace AgoRapide.Core {
                 var a = new PropertyKey(new PropertyKeyAttributeEnrichedT<T>(PropertyKeyAttribute.GetAttribute(e), e is CoreP ? (CoreP)(object)e : (CoreP)GetNextCorePId()));
                 a.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate(); // HACK
                 if (_fromStringMaps.TryGetValue(e.ToString(), out var existing)) {
-                    overriddenAttributes.GetValue(existing.Key.A.EnumValue.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
-                        existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
+                    if (a.Key.A.InheritFrom == null || a.Key.A.InheritFrom.GetType() != existing.Key.A.EnumValue.GetType() || !a.Key.A.InheritFrom.Equals(existing.Key.A.EnumValue)) {
+                        throw new PropertyKey.InvalidPropertyKeyException(
+                            typeof(T).ToStringVeryShort() + "." + e + " has same name as " + existing.Key.A.EnumValue.GetType().ToStringVeryShort() + "." + existing.Key.A.EnumValue + " " +
+                            (a.Key.A.InheritFrom == null ? "but does not inherit from it" : ("but inherits another key, " + a.Key.A.InheritFrom.GetType().ToStringVeryShort() + "." + a.Key.A.InheritFrom)) + ".\r\n" +
+                            "Possible resolution: Change the name of " + typeof(T).ToStringVeryShort() + "." + e + " to something else.\r\n" +
+                            (a.Key.A.InheritFrom==null ? (
+                            "Another possible resolution is: Specify " + nameof(PropertyKeyAttribute.InheritFrom) + " = " + existing.Key.A.EnumValue.GetType().ToStringVeryShort() + "." + existing.Key.A.EnumValue + " for " + typeof(T).ToStringVeryShort() + "." + e
+                            ) : ""));
+                    } else {
+                        overriddenAttributes.GetValue(existing.Key.A.EnumValue.GetType(), () => nameof(T) + ": " + typeof(T)).Add(
+                            existing.Key.A.EnumValue.GetType().ToStringShort() + "." + existing.Key.A.EnumValue + " replaced by " + typeof(T).ToStringShort() + "." + e);
+                    }
                 }
                 _fromStringMaps[e.ToString()] = a;
                 if (a.Key.A.InheritFrom != null && !a.Key.A.InheritFrom.ToString().Equals(e.ToString())) { // Replace value already stored for "inherited" key

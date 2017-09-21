@@ -451,6 +451,17 @@ namespace AgoRapide {
                     value = (T)_value;
                     return true;
                 }
+                if (Properties.Count == 1) {
+                    var single = Properties.First().Value;
+                    if (single._value != null && single._value is T) {
+                        /// This looks like a IsMany-property has been used as a single-property (at least being asked for as a single-value property now)
+                        /// Since <see cref="BaseEntity.AddProperty{T}"/> accepts single-properties (one at a time), do the same now for retrieval. 
+                        /// TODO: This is a somewhat dubious practice. 
+                        _value = Properties.First().Value._value;
+                        value = (T)_value;
+                        return true;
+                    }
+                }
             } else {
                 if (typeof(HTML).Equals(t)) {
                     value = (T)(object)ValueHTML;
@@ -525,8 +536,9 @@ namespace AgoRapide {
             nameof(ParentId) + ": " + ParentId + ", " +
             nameof(KeyDB) + ": " + (_keyDB ?? "[NULL]") + ", " +
             nameof(Key.Key.CoreP) + ": " + (_key?.Key.A.EnumValueExplained ?? "[NULL]") + ", " +
+            nameof(_value) + ": " + (_value?.GetType().ToString() ?? "[NULL]") + ", " +
             nameof(_stringValue) + ": " + (_stringValue ?? "[NULL]") + ", " +
-            (_key == null ? "" : (", " + nameof(Key.Key.A.Type) + ": " + (_key.Key.A.Type?.ToString() ?? "[NULL]"))) + ", " +
+            (_key == null ? "" : (nameof(Key.Key.A.Type) + ": " + (_key.Key.A.Type?.ToString() ?? "[NULL]"))) + ", " +
             GetType() + ".\r\n";
 
         /// <summary>

@@ -173,6 +173,9 @@ namespace AgoRapide.Core {
             /// Enrichment 1, explicit given
             /// -----------------------------------------
             if (A.InheritFrom != null) {
+                //if ("Email".Equals(PToString)) {
+                //    var a = 1;
+                //}
                 NotOfTypeEnumException.AssertEnum(A.InheritFrom.GetType(), () => nameof(A.InheritFrom) + "\r\n" + ToString());
                 if (A.EnumValue.Equals(A.InheritFrom)) throw new InvalidMappingException(nameof(A) + "." + nameof(A.EnumValue) + " (" + A.EnumValue + ").Equals(" + nameof(A) + "." + nameof(A.InheritFrom) + ")\r\nDetails: " + ToString());
                 var key = PropertyKeyMapper.GetA(A.InheritFrom.ToString());

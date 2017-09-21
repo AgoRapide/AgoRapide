@@ -624,7 +624,7 @@ namespace AgoRapide.Database {
             // )
             if (!TryGetEntityById(entityId, requiredType: null, entity: out currentUser)) return false;
 
-            if (currentUser.PV<string>(CoreP.Username.A(), "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 
+            if (currentUser.PV(CoreP.Username.A(), "") != username) { // Read log text carefully. It is only AFTER call to TryGetEntityById that current was set to FALSE for old properties. In other words, it is normal to read another email now 
                 Log(
                     "It looks like " + CoreP.Username.A().Key.A.EnumValueExplained + " " +
                     "was just changed for entity " + currentUser.Id + " " +

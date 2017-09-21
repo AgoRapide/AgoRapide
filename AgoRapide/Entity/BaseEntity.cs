@@ -264,7 +264,7 @@ namespace AgoRapide {
         /// instead of
         /// entity.AddProperty(P.money, new Money("EUR 42")). 
         /// 
-        /// Calls <see cref="AddProperty{T}(TProperty, out T)"/> vith help of <see cref="Util.MapTToTProperty{T, TProperty}"/> (which throws Exception if no mapping exists).
+        /// Calls <see cref="AddProperty{T}"/> vith help of <see cref="Util.MapTToTProperty{T, TProperty}"/> (which throws Exception if no mapping exists).
         /// 
         /// Note that this is intentionally called AddPropertyM instead of AddProperty because there is too great risk of confusion between these two in practical use.
         /// </summary>
@@ -441,6 +441,8 @@ namespace AgoRapide {
                 request.API.CreateAPILink(CoreAPIMethod.EntityIndex, t.type.ToStringVeryShort(), t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id)))) + "</p>");
 
             Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
+                /// Note how <see cref="CoreP.SuggestedUrl"/> really is a IsMany-property and how <see cref="Property.TryGetV{T}"/> contains code
+                /// for explicit allowing asking for only a single value now. TODO: This is a somewhat dubious practice. 
                 retval.Append("<p><a href=\"" + c.PV<Uri>(CoreP.SuggestedUrl.A()) + "\">" + c.PV<string>(CoreP.Description.A()).HTMLEncode() + "</a></p>");
             });
 
