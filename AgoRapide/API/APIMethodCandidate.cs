@@ -22,7 +22,7 @@ namespace AgoRapide.API {
         public int LastMatchingSegmentNo { get; private set; }
         public RouteSegmentClass FirstNonMatchingSegment { get; private set; }
 
-        public string SuggestedUrl => PV<string>(CoreP.SuggestedUrl.A());
+        // public Uri SuggestedUrl => PV<Uri>(CoreP.SuggestedUrl.A());
 
         /// <summary>
         /// </summary>
@@ -32,7 +32,7 @@ namespace AgoRapide.API {
             Method = method ?? throw new ArgumentNullException(nameof(method));
             LastMatchingSegmentNo = (lastMatchingSegmentNo >= -1 && lastMatchingSegmentNo < (method.RouteSegments.Count - 1)) ? lastMatchingSegmentNo : throw new ArgumentException(nameof(lastMatchingSegmentNo) + " (" + lastMatchingSegmentNo + ") does not fall within valid index value minus one for " + nameof(method) + "." + nameof(method.RouteSegments) + " (which has .Count = " + method.RouteSegments.Count + "), nor is it -1");
             FirstNonMatchingSegment = Method.RouteSegments[LastMatchingSegmentNo + 1];
-            AddProperty(CoreP.SuggestedUrl.A(), request.JSONUrl + "/" + FirstNonMatchingSegment.SampleValues[0] + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : (request.ResponseFormat == ResponseFormat.CSV ? Util.Configuration.C.CSVPostfixIndicator : "")));
+            AddProperty(CoreP.SuggestedUrl.A(), new Uri(request.JSONUrl + "/" + FirstNonMatchingSegment.SampleValues[0] + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : (request.ResponseFormat == ResponseFormat.CSV ? Util.Configuration.C.CSVPostfixIndicator : ""))));
             AddProperty(CoreP.IdFriendly.A(), Method.IdFriendly); /// Alternative to overriding <see cref="BaseEntity.IdFriendly"/>
         }
     }

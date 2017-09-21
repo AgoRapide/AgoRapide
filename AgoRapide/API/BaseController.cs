@@ -85,10 +85,9 @@ namespace AgoRapide.API {
             if (!string.IsNullOrEmpty(Util.Configuration.C.APIPrefix) && Util.Configuration.C.APIPrefix.Length > 1) { // In principle length is guaranteed to be more than one when not empty
                 var prefix = Util.Configuration.C.ApiPrefixToLower;
                 if (!url.ToLower().Contains(prefix)) {
-                    var suggestedUrl = Util.Configuration.C.RootUrl + Util.Configuration.C.APIPrefix;
                     request.Result.ResultCode = ResultCode.client_error;
                     request.Result.AddProperty(CoreP.Message.A(), "Did you remember '" + Util.Configuration.C.APIPrefix + "' in your URL?" + tip);
-                    request.Result.AddProperty(CoreP.SuggestedUrl.A(), suggestedUrl);
+                    request.Result.AddProperty(CoreP.SuggestedUrl.A(), new Uri(Util.Configuration.C.RootUrl + Util.Configuration.C.APIPrefix));
                     return request.GetResponse();
                 }
             }
@@ -140,7 +139,7 @@ namespace AgoRapide.API {
                                     ("Unable to suggest a value for you for this missing parameter" + ((s.Parameter?.Key.A.IsPassword ?? false) ? " since it is a password (you must come up with a value by yourself)" : "")) :
                                     "Try to add '" + s.SampleValues[0] + "' to your URL") +
                                 tip);
-                            request.Result.AddProperty(CoreP.SuggestedUrl.A(), retval.PV<string>(CoreP.SuggestedUrl.A()));
+                            request.Result.AddProperty(CoreP.SuggestedUrl.A(), retval.PV<Uri>(CoreP.SuggestedUrl.A()));
                             return request.GetResponse();
                         }
                     default: {
@@ -156,7 +155,7 @@ namespace AgoRapide.API {
                                 string.Join("\r\n", retval.Select(candidate => candidate.Method.ToString())) + "\r\n?" +
                                 "-----------\r\n" +
                                 tip);
-                            request.Result.AddProperty(CoreP.SuggestedUrl.A(), string.Join("\r\n", retval.Select(candidate => candidate.SuggestedUrl)));
+                            request.Result.AddProperty(CoreP.SuggestedUrl.A(), retval.Select(candidate => candidate.PV<Uri>(CoreP.SuggestedUrl.A())).ToList());
                             return request.GetResponse();
                         }
                 }
@@ -177,9 +176,10 @@ namespace AgoRapide.API {
                 /// Generate <see cref="CoreP.SuggestedUrl"/>:
                 // var docUrl = request.CreateAPIUrl("") does not work (will give us /api//HTML for example)
                 // Therefore we must create the URL manually now:
-                var docUrl = Util.Configuration.C.RootUrl + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash : "");
-                request.Result.AddProperty(CoreP.SuggestedUrl.A(), docUrl);
-                request.Result.AddProperty(CoreP.APIDocumentationUrl.A(), docUrl);
+                new Uri(Util.Configuration.C.RootUrl + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash : "")).Use(u => {
+                    request.Result.AddProperty(CoreP.SuggestedUrl.A(), u);
+                    request.Result.AddProperty(CoreP.APIDocumentationUrl.A(), u);
+                });
                 return request.GetResponse();
             } else {
                 throw new NullReferenceException("None of " + nameof(exactMatch) + ", " + nameof(candidateMatches) + " or " + nameof(maybeIntended) + " was set");

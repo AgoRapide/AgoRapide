@@ -441,7 +441,7 @@ namespace AgoRapide {
                 request.API.CreateAPILink(CoreAPIMethod.EntityIndex, t.type.ToStringVeryShort(), t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id)))) + "</p>");
 
             Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
-                retval.Append("<p><a href=\"" + c.PV<string>(CoreP.SuggestedUrl.A()) + "\">" + c.PV<string>(CoreP.Description.A()).HTMLEncode() + "</a></p>");
+                retval.Append("<p><a href=\"" + c.PV<Uri>(CoreP.SuggestedUrl.A()) + "\">" + c.PV<string>(CoreP.Description.A()).HTMLEncode() + "</a></p>");
             });
 
             // Suggested URLs for this specific entity
@@ -664,7 +664,7 @@ namespace AgoRapide {
             // TODO: Add heading here?
             Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
                 // TODO: Maybe switch positions for these two
-                retval.AppendLine(c.PV<string>(CoreP.SuggestedUrl.A()) + request.CSVFieldSeparator + c.PV<string>(CoreP.Description.A()));
+                retval.AppendLine(c.PV<Uri>(CoreP.SuggestedUrl.A()) + request.CSVFieldSeparator + c.PV<string>(CoreP.Description.A()));
             });
 
             // TODO: Add heading here?

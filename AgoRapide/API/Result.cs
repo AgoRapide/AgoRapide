@@ -399,7 +399,7 @@ namespace AgoRapide.API {
             /// Number of entities resulting if querying according to this suggestion
             /// </summary>
             public long Count;
-            public string Url;
+            public Uri Url;
             public string Text;
             public QueryIdKeyOperatorValue QueryId;
 

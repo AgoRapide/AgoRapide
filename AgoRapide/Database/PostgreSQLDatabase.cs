@@ -428,6 +428,8 @@ namespace AgoRapide.Database {
             var useCache = type.GetClassAttribute().CacheUse != CacheUse.None;
 
             var rootProperties = GetRootProperties(type);
+            if (rootProperties.Count == 0) return new List<BaseEntity>(); // Fresh database / not entities created yet.
+
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + "WHERE " + DBField.pid + " IN (" +
                     "SELECT " + DBField.id + " FROM " + _tableName + " WHERE " + DBField.key + " = '" + CoreP.RootProperty.A().Key.PToString + "' AND " +
                     DBField.strv + " = '" + type.ToStringDB() + "' AND " +

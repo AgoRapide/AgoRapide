@@ -707,7 +707,7 @@ namespace AgoRapide {
             retval.AppendLine("</table>");
 
             request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
-                request.Result.AddProperty(CoreP.SuggestedUrl.A(), cmd);
+                request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(cmd));
                 retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
             });
 
@@ -777,7 +777,7 @@ namespace AgoRapide {
                         (InMemoryCache.EntityCache.TryGetValue((long)value, out var entity) ?
                             request.API.CreateAPIUrl(entity) : /// Preferred variant, link to known entity
                             request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, typeof(BaseEntity), new QueryIdInteger((long)value))) : /// Secondary variant, link to <see cref="BaseEntity"/> since we do not know type of entity
-                        "" // No value available
+                        null // No value available
                     )
                 );
             });

@@ -29,7 +29,7 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="url"></param>
         /// <param name="description"></param>
-        public GeneralQueryResult(string url, string description) {
+        public GeneralQueryResult(Uri url, string description) {
             AddProperty(CoreP.SuggestedUrl.A(), url);
             AddProperty(CoreP.Description.A(), description);
         }
@@ -44,7 +44,7 @@ namespace AgoRapide.API {
         public const string HTMLTableHeading = "<tr><th>Result</th></tr>";
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
-            "<a href=\"" + PV<string>(CoreP.SuggestedUrl.A()) + "\">" + PV<string>(CoreP.Description.A()).HTMLEncode() + "</a>" +
+            "<a href=\"" + PV<Uri>(CoreP.SuggestedUrl.A()) + "\">" + PV<string>(CoreP.Description.A()).HTMLEncode() + "</a>" +
             "</tr>\r\n";
 
     }

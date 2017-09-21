@@ -30,7 +30,7 @@ namespace AgoRapide.Database {
             S1 = nameof(Synchronize), S2 = "DUMMY")] // TODO: REMOVE "DUMMY"
         public object Synchronize(BaseDatabase db, ValidRequest request) {
             Synchronize2(db, request.Result);
-            request.Result.AddProperty(CoreP.SuggestedUrl.A(), new Uri(request.API.CreateAPIUrl(this)));
+            request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(this));
             request.Result.LogInternal("Finished", GetType());
             return request.GetResponse();
         }

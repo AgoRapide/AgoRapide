@@ -51,34 +51,27 @@ namespace AgoRapide.API {
         /// <param name="entityType"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public string CreateAPIUrl(Type entityType, long id) => CreateAPIUrl(CreateAPICommand(entityType, id));
-        public string CreateAPIUrl(BaseEntity entity) => CreateAPIUrl(CreateAPICommand(entity));
-        public string CreateAPIUrl(CoreAPIMethod coreMethod) => CreateAPIUrl(coreMethod, null);
-        public string CreateAPIUrl(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
+        public Uri CreateAPIUrl(Type entityType, long id) => CreateAPIUrl(CreateAPICommand(entityType, id));
+        public Uri CreateAPIUrl(BaseEntity entity) => CreateAPIUrl(CreateAPICommand(entity));
+        public Uri CreateAPIUrl(CoreAPIMethod coreMethod) => CreateAPIUrl(coreMethod, null);
+        public Uri CreateAPIUrl(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPIUrl(CreateAPICommand(coreMethod, type, parameters));
         // public string CreateAPIUrl(string apiCommand) => (!apiCommand.StartsWith(Util.Configuration.BaseUrl) ? Util.Configuration.BaseUrl : "") + apiCommand + (ResponseFormat == ResponseFormat.HTML ? Util.Configuration.HTMLPostfixIndicator : "");
-        public string CreateAPIUrl(string apiCommand) => CreateAPIUrl(apiCommand, ResponseFormat);
+        public Uri CreateAPIUrl(string apiCommand) => CreateAPIUrl(apiCommand, ResponseFormat);
         /// <summary>
         /// </summary>
         /// <param name="apiCommand">If not starts with http:// or https:// then <see cref="ConfigurationAttribute.BaseUrl"/> will be prepended</param>
         /// <param name="responseFormat"></param>
         /// <returns></returns>
-        public static string CreateAPIUrl(string apiCommand, ResponseFormat responseFormat) => (apiCommand.StartsWith("http://") || apiCommand.StartsWith("https://") ? "" : 
-            Util.Configuration.C.BaseUrl) + apiCommand + (responseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : (responseFormat == ResponseFormat.CSV ? Util.Configuration.C.CSVPostfixIndicator : ""));
+        public static Uri CreateAPIUrl(string apiCommand, ResponseFormat responseFormat) => new Uri((apiCommand.StartsWith("http://") || apiCommand.StartsWith("https://") ? "" : 
+            Util.Configuration.C.BaseUrl) + apiCommand + (responseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : (responseFormat == ResponseFormat.CSV ? Util.Configuration.C.CSVPostfixIndicator : "")));
 
         /// <summary>
-        /// Creates API link for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}
+        /// Creates HTML API link for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
         public string CreateAPILink(BaseEntity entity) => CreateAPILink(entity, entity.IdFriendly);
-        public string CreateAPILink(BaseEntity entity, string linkText) =>
-            CreateAPILink(CoreAPIMethod.EntityIndex, linkText, entity.GetType(), entity.IdString);
-            //    (entity.Properties != null && entity.Properties.TryGetValue(CoreP.IdString, out var p) ?
-            //        (QueryId)new QueryIdString(p.V<string>()) : /// Using identifier looks much better in links. Especially good for documentation where names stay the same but id's may change  (like "Property/{QueryId}" to identify an <see cref="APIMethod"/> for instance)
-            //        (QueryId)new QueryIdInteger(entity.Id)
-            //    )
-            //);
-
+        public string CreateAPILink(BaseEntity entity, string linkText) => CreateAPILink(CoreAPIMethod.EntityIndex, linkText, entity.GetType(), entity.IdString);
         public string CreateAPILink(CoreAPIMethod coreMethod, Type type, params object[] parameters) => CreateAPILink(coreMethod, null, null, type, parameters);
         public string CreateAPILink(CoreAPIMethod coreMethod, string linkText, Type type, params object[] parameters) => CreateAPILink(coreMethod, linkText, null, type, parameters);
         public string CreateAPILink(CoreAPIMethod coreMethod, string linkText, string helpText, Type type, params object[] parameters) {

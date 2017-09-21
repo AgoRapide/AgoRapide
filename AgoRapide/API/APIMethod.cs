@@ -210,11 +210,8 @@ namespace AgoRapide.API {
                     if (Parameters.Any(t => t.Key.CoreP.Equals(p.CoreP))) throw new MethodInitialisationException("Duplicate parameter " + typeof(CoreP).ToString() + "." + p.CoreP + " given" + detailer2());
                     Parameters.Add(s.Parameter);
                     restParameters.Remove(p.PToString);
-                    // routeTemplate.Append("/{" + p.PToString + "}");
-                    // break;
-                    // case RouteSegment es:
                 } else if (s.String != null) {
-                    // routeTemplate.Append("/" + s.String);
+                    // ok
                 } else {
                     throw new RouteSegmentClass.InvalidRouteSegmentClassException("Did not recognize any of the supposed required types" + detailer2());
                 }
@@ -240,13 +237,6 @@ namespace AgoRapide.API {
                 };
             }
         }
-
-        ///// <summary>
-        ///// Used for internal indexation for identification
-        ///// TODO: InternalKey and Name should be merged together
-        ///// TODO: (but maybe InternalKey is needed as a filename-safe variant?)
-        ///// </summary>
-        //private string _internalKey => Controller + "." + ControllerMethod.Name;
 
         /// <summary>
         /// TODO: Turn this into a single string since overloads are now handled by the 
@@ -286,7 +276,8 @@ namespace AgoRapide.API {
         /// unnecessary checks here (especially origin)
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => _toString ?? (_toString =
+        public override string ToString() => _toString ?? (_toString = 
+            base.ToString() + ",\r\n" +
             (Properties != null && Properties.ContainsKey(APIMethodP.APIMethodOrigin.A().Key.CoreP) ? (Origin.ToString() + ", ") : "") +
             (RouteTemplates != null && RouteTemplates.Count > 0 ? (RouteTemplates[0] + ", ") : "") +
             (Controller != null ? (Controller.ToStringShort() + ".") : "") +
@@ -946,7 +937,7 @@ namespace AgoRapide.API {
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
             PV(APIMethodP.CoreAPIMethod.A(), Property.HTML.Default) + "</td><td>" +
             PV(CoreP.EntityType.A(), Property.HTML.Default) + "</td><td>" +
-            PV<Property.HTML>(CoreP.AccessLevelUse.A()) + "</td><td>" + // Always present, therefore no default value
+            PV(CoreP.AccessLevelUse.A(), Property.HTML.Default) + "</td><td>" + // TODO: Should always be present. Try to do without default value. BUT, will throw exception at first initializatio of a fresh database as of Sep 2017
             PV(CoreP.Description.A(), Property.HTML.Default) + "</td></tr>\r\n";
 
         public class MethodAttributeInitialisationException : ApplicationException {
@@ -963,7 +954,6 @@ namespace AgoRapide.API {
         }
 
         protected override void ConnectWithDatabase(BaseDatabase db) => Get(A, db, enrichAndReturnThisObject: this);
-
     }
 
     [EnumAttribute(AgoRapideEnumType = EnumType.PropertyKey)]
