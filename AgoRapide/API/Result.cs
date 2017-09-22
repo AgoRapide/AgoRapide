@@ -338,7 +338,7 @@ namespace AgoRapide.API {
                     objStrValues = objValues.
                         Where(v => {
                             if (v == null) mixOfNullsAndNotNullFound = true; // Note "side effect" here.
-                        return v != null;
+                            return v != null;
                         }).
                         Select(v => (v, key.Key.ConvertObjectToString(v))).Distinct(new EqualityComparerTupleObjectString()).
                         ToList(); // Important in order for "side effect" to work as intended (we must force execution of the Where-lambda)
@@ -363,7 +363,7 @@ namespace AgoRapide.API {
                     }
 
                     if (objStrValues.Count == 0) {
-                        mixOfNullsAndNotNullFound = false;                    
+                        mixOfNullsAndNotNullFound = false;
                     }
                 }
                 if (mixOfNullsAndNotNullFound) {
@@ -381,17 +381,28 @@ namespace AgoRapide.API {
                 Util.EnumGetValues<Operator>().ForEach(o => {
                     if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.IsMatch(BaseEntity)"/>
                     if (!key.Key.A.OperatorsAsHashSet.Contains(o)) return;
+
+                    var objStrValuesForThisOperator = objStrValues;
                     if (o == Operator.EQ && !key.Key.A.HasLimitedRange) {
-                        // NOTE: Count > 10 is arbitrarily chosen.
-                        // NOTE: Most probably this will only happen with Count == 1 because of filtering out above for HasLimitedRange
-                        if (objStrValues.Count > 10) return; 
+                        /// NOTE: Count > 10 is arbitrarily chosen.
+                        /// NOTE: Note that for only <see cref="Operator.EQ"/> this will only happen with Count == 1 because of filtering out above for HasLimitedRange
+                        /// NOTE: For <see cref="DateTime"/>, long and similar types that can be compared like <see cref="Operator.LT"/> and similar 
+                        /// NOTE: 
+                        if (objStrValues.Count > 10) {
+                            if (objStrValues[objStrValues.Count - 1].Item1 == null) { // (null, "NULL")
+                                /// We have too many values for using <see cref="Operator.EQ"/> against all of them, but we can check for null
+                                objStrValuesForThisOperator = new List<(object, string)> { (null, "NULL") };
+                            } else {
+                                return; // Give up altogether
+                            }
+                        }
                     }
 
                     var r2 = new Dictionary<
                         string, // The actual values found. 
                         DrillDownSuggestion
                     >();
-                    objStrValues.ForEach(t => {
+                    objStrValuesForThisOperator.ForEach(t => {
                         var query = new QueryIdKeyOperatorValue(key.Key, o, t.Item1); // Now how it is "random" which object value (out of several with identical string-representation) is chosen now. But we assume that all of them have the same predicate effect
                         var count = entities.Where(query.IsMatch).Count();
 

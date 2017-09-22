@@ -470,10 +470,10 @@ namespace AgoRapide {
                 if (typeof(string).Equals(t)) {
                     if (_stringValue == null) {
                         switch (_value) {
-                            case StringBuilder stringBuilder: /// HACK: Usually because we are a <see cref="PropertyLogger"/>
+                            case StringBuilder stringBuilder: /// HACK: Usually because we are a <see cref="PropertyLogger"/>. We can not set <see cref="_stringValue"/> because it would then have to be updated continually.
                                 value = (T)(object)(stringBuilder.ToString());
                                 return true;
-                            case long lng: /// HACK: Usually because we are a <see cref="PropertyCounter"/>
+                            case long lng: /// HACK: Usually because we are a <see cref="PropertyCounter"/>. We can not set <see cref="_stringValue"/> because it would then have to be updated continually.
                                 value = (T)(object)(lng.ToString());
                                 return true;
                         }

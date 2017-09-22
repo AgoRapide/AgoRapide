@@ -794,7 +794,9 @@ namespace AgoRapide.Database {
                         return (nameof(DBField.strv), ":" + nameof(DBField.strv), NpgsqlTypes.NpgsqlDbType.Text); // Leave conversion to Npgsql (because of SQL injection issues)
                 }
             })();
-            Log("Storing as " + valueStrings.nameOfDbField + ", " + valueStrings.valueOrParameter, result);
+
+            // Log("Storing as " + valueStrings.nameOfDbField + ", " + valueStrings.valueOrParameter, result); // REMOVED LOGGING 22 SEP 2017
+
             // Note how we do not bother with parameters for object types which do not have any SQL injection issues.
             cmd = new Npgsql.NpgsqlCommand("INSERT INTO p\r\n" +
                 "(" + DBField.id + idStrings.names + ", " + DBField.key + ", " + valueStrings.nameOfDbField + ")\r\n" +

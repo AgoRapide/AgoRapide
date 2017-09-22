@@ -28,7 +28,7 @@ namespace AgoRapide.Database {
         [APIMethod(
             Description = "Synchronizes from source",
             S1 = nameof(Synchronize), S2 = "DUMMY", // TODO: REMOVE "DUMMY". Added Summer 2017 because of bug in routing mechanism.
-            ShowDetailedResult =true )] 
+            ShowDetailedResult = true)]
         public object Synchronize(BaseDatabase db, ValidRequest request) {
             request.Result.LogInternal("Starting", GetType());
             Synchronize2(db, request.Result);
@@ -111,6 +111,7 @@ namespace AgoRapide.Database {
 
             var internalEntities = db.GetAllEntities(type);
             var internalEntitiesByPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(primaryKey), e => e);
+            result.Count(AggregationKey.Get(AggregationType.Count, typeof(Property), CountP.Total.A()).Key.CoreP, externalEntities.Aggregate(0L, (current, e) => current + e.Properties.Count));
             var newCount = 0;
             externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
                 if (internalEntitiesByPrimaryKey.TryGetValue(e.PV<long>(primaryKey), out var internalEntity)) {
@@ -119,8 +120,8 @@ namespace AgoRapide.Database {
                     internalEntity = db.GetEntityById(db.CreateEntity(Id, type,
                         new List<(PropertyKeyWithIndex key, object value)> {
                             (primaryKey.PropertyKeyWithIndex, e.PV<long>(primaryKey))
-                        }, result), type);
-                    newCount++;
+                        }, result: null), type); // NOTE: Note result: null, we do not want to fill up log here, especially at first synchronization.
+                    newCount++;                  // NOTE: It is sufficient to count through newCount++
                 }
 
                 // Transfer from internal to external (assumed to constitute the least amount to transfer)
@@ -242,6 +243,9 @@ namespace AgoRapide.Database {
             AccessLevelRead = AccessLevel.Relation
         )]
         SynchronizerLastUpdateAgainstSource,
+
+        //[PropertyKey(Description = "Used against -" + nameof(AggregationKey) + "- for general counting of properties")]
+        //SynchronizerProperty,
 
         ///// <summary>
         ///// TODO: Do we need this value? 
