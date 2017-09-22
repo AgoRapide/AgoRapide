@@ -271,6 +271,8 @@ namespace AgoRapide.Core {
         /// TODO: Implement as <see cref="CoreP"/> (maybe as <see cref="PropertyKeyAttribute.IsMany"/>?) and move documentation there.
         /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
         /// 
+        /// May be null. 
+        /// 
         /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically (if not already set) 
         /// for known types like long, double, boolean, enum and DateTime,
         /// (and also set it to <see cref="Operator.EQ"/> for <see cref="HasLimitedRange"/>)

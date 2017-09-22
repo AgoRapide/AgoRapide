@@ -24,6 +24,7 @@ namespace AgoRapide {
     public enum Operator {
         None,
         IN,
+        NEQ, /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
         EQ,
         GT,
         LT,
@@ -38,6 +39,7 @@ namespace AgoRapide {
     public static class OperatorExtension {
         public static string ToMathSymbol(this Operator _operator) {
             switch (_operator) {
+                case Operator.NEQ: return "!=";
                 case Operator.LT: return "<";
                 case Operator.LEQ: return "<=";
                 case Operator.EQ: return "=";

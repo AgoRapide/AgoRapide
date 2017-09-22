@@ -35,7 +35,7 @@ namespace AgoRapide.Core {
             "-" + nameof(QueryIdInteger) + "-\r\n" +
             "-" + nameof(QueryIdKeyOperatorValue) + "-\r\n" +
             "-" + nameof(QueryIdString) + "-\r\n" +
-            "-" + nameof(QueryIdAll)+ "-\r\n" +
+            "-" + nameof(QueryIdAll) + "-\r\n" +
             "-" + nameof(QueryIdMultiple) + "-",
         SampleValues = new string[] {
             "All",
@@ -70,8 +70,11 @@ namespace AgoRapide.Core {
             if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString() + detailer.Result("\r\nDetails: "));
         }
 
-        //[ClassMember(Description = "Corresponds to -" + nameof(ToString) + "- returning \"All\"")]
-        //public bool IsAll { get; protected set; }
+        [ClassMember(Description = 
+            "May be set for instance by -" + nameof(QueryIdKeyOperatorValue) + "- with value NULL.\r\n" +
+            "This will be difficult (very slow) to query in database.\r\n" +
+            "(only in-memory query through -" + nameof(IsMatch) + "- is then possible.)")]
+        public bool SQLQueryNotPossible { get; protected set; }
 
         protected string _SQLWhereStatement;
         [ClassMember(
@@ -87,7 +90,14 @@ namespace AgoRapide.Core {
                 "\"key = 'AccessRight' AND strv IN ('User', 'Relation', 'Admin')\"\r\n" +
                 "\"key = 'Name' AND strv IN (:strv1, :strv2, :strv3)\" (with corresponding parameters in -" + nameof(SQLWhereStatementParameters) + "-)"
         )]
-        public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ". Should have been set by sub class. Will probably not be set for " + nameof(Percentile) + " " + nameof(QueryIdKeyOperatorValue) + " as these are in-memory based. Details: " + ToString());
+        public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ".\r\n" +
+            (SQLQueryNotPossible ? 
+                nameof(SQLQueryNotPossible) : (
+                    "Should have been set by sub class (by " + GetType() + ")\r\n." +
+                    "Will probably not be set for " + nameof(Percentile) + " " + nameof(QueryIdKeyOperatorValue) + " as these are in-memory based.\r\n" +
+                    "Details: " + ToString()
+                )
+            ));
         public bool Equals(QueryId other) => SQLWhereStatement.Equals(other.SQLWhereStatement);
         public override bool Equals(object other) {
             if (other == null) return false;
@@ -204,30 +214,24 @@ namespace AgoRapide.Core {
                     errorResponse = "No value given";
                     return false;
                 }
-                if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
+                if ("NULL".Equals(strValue)) {
+                    id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
+                } else {
+                    if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
 
-                if (!key.Key.TryValidateAndParse(strValue, out var valueResult)) {
-                    id = null;
-                    errorResponse = "Invalid value given for " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
-                    return false;
+                    if (!key.Key.TryValidateAndParse(strValue, out var valueResult)) {
+                        id = null;
+                        errorResponse = "Invalid value given for " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
+                        return false;
+                    }
+
+                    var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
+
+                    id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
-
-                var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
-
-                id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 errorResponse = null;
                 return true;
 
-                //var s = "WHERE " + CoreP.QueryIdParent + " = '";
-                //if (value.StartsWith(s)) {
-                //    // TODO: IMPLEMENT MORE COMPLETE PARSER HERE!
-                //    id = new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, value.Substring(s.Length, value.Length - s.Length - 1));
-                //    errorResponse = null;
-                //    return true;
-                //}
-                //errorResponse = "Invalid long integer, not recognized as " + nameof(QueryIdString) + " and parsing as " + nameof(QueryIdKeyOperatorValue) + " not yet implemented fully.";
-                //id = null;
-                //return false;
             }
 
             var t = value.ToLower().Split(",");

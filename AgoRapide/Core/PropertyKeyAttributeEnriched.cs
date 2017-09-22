@@ -306,18 +306,19 @@ namespace AgoRapide.Core {
 
             if (A.Operators == null) {
                 if (
+                    typeof(string).Equals(A.Type) || // Added 22 Sep 2017
                     typeof(bool).Equals(A.Type) ||
                     typeof(Type).Equals(A.Type) ||
-                    A.HasLimitedRange  // TODO: Maybe add anyway for string also?
+                    A.HasLimitedRange  
                     ) {
-                    A.Operators = new Operator[] { Operator.EQ };
+                    A.Operators = new Operator[] { Operator.EQ }; /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
                 } else if (
                     typeof(double).Equals(A.Type) ||
                     typeof(long).Equals(A.Type) ||
                     typeof(DateTime).Equals(A.Type) ||
                     A.Type.IsEnum
                     ) {
-                    A.Operators = new Operator[] { Operator.LT, Operator.LEQ, Operator.EQ, Operator.GEQ, Operator.GT };
+                    A.Operators = new Operator[] { Operator.LT, Operator.LEQ, Operator.EQ, Operator.GEQ, Operator.GT  }; /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use Remove-Contexts as substitute
                 }
             }
 

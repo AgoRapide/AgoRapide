@@ -23,53 +23,8 @@ namespace AgoRapide.Core {
         /// </summary>
         public PropertyKeyAttributeEnriched Key { get; private set; }
 
-        ///// <summary>
-        ///// TODO: Document better reason for both <see cref="Key"/> and <see cref="Properties"/>. 
-        ///// </summary>
-        //public List<PropertyKeyAttributeEnriched> Properties { get; private set; }
-
         public Operator Operator { get; private set; }
         public object Value { get; private set; }
-
-        // TODO: REMOVE COMMENT OUT CODE:
-        //  _toString ?? throw new NullReferenceException(nameof(_toString));
-
-        // TODO: REMOVE COMMENT OUT CODE:
-        ///// <summary>
-        ///// Constructor for "all" query (results in an empty <see cref="QueryId.SQLWhereStatement"/>
-        ///// </summary>
-        //public QueryIdKeyOperatorValue() {
-        //    Properties = null;
-        //    Operator = Operator.None;
-        //    Value = null;
-        //    _toString = "All"; /// TODO: Improve on use of <see cref="QueryId.ToString"/>
-        //    Initialize();
-        //}
-
-        // TODO: REMOVE COMMENT OUT CODE:
-        ///// <summary>
-        ///// Strongly typed constructor. 
-        ///// (usually used when query originates from "outside" of API)
-        ///// 
-        ///// TODO: Add a LIMIT parameter to <see cref="QueryIdKeyOperatorValue"/>.
-        ///// </summary>
-        ///// <param name="property"></param>
-        ///// <param name="_operator"></param>
-        ///// <param name="value"></param>
-        //public QueryIdKeyOperatorValue(List<PropertyKeyAttributeEnriched> properties, Operator _operator, object value) {
-        //    Properties = properties ?? throw new NullReferenceException(nameof(properties));
-        //    if (Properties.Count == 0) throw new InvalidCountException(nameof(Properties) + ": " + Properties.Count);
-        //    Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
-        //    Value = value ?? throw new ArgumentNullException(Util.BreakpointEnabler + nameof(value)); /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
-        //    switch (properties.Count) {
-        //        case 1:
-        //            _toString = "WHERE " + properties[0].PToString + " = '" + value + "'";
-        //            Key = properties[0];
-        //            break; /// TODO: Improve on use of <see cref="QueryId.ToString"/>
-        //        default: throw new NotImplementedException(nameof(properties.Count) + ": " + properties.Count + " (" + string.Join(",", properties.Select(p => p.PToString)) + ")");
-        //    }
-        //    Initialize();
-        //}
 
         /// <summary>
         /// TODO: Add a LIMIT parameter to <see cref="QueryIdKeyOperatorValue"/>.
@@ -84,10 +39,26 @@ namespace AgoRapide.Core {
         public QueryIdKeyOperatorValue(PropertyKeyAttributeEnriched key, Operator _operator, object value) {
             Key = key ?? throw new ArgumentNullException(nameof(key));
             Operator = _operator != Operator.None ? _operator : throw new InvalidEnumException(_operator);
-            Value = value ?? throw new ArgumentNullException(Util.BreakpointEnabler + nameof(value)); /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
+            Value = value;
+            if (Value == null) {
+                switch (_operator) {
+                    case Operator.EQ:
+                    case Operator.NEQ:
+                        break;
+                    default:
+                        throw new ArgumentNullException(nameof(value) + ". NULL only allowed for " + nameof(_operator) + " " + Operator.EQ + " or " + Operator.NEQ);
+                }
+            }
 
-            // TODO: REMOVE COMMENT OUT CODE:
-            // _toString = "WHERE " + key.PToString + " = '" + value + "'";
+            if (Value == null) {
+                SQLQueryNotPossible = true;
+                _SQLWhereStatement = null;
+
+                IsSingle = false;
+                IsMultiple = true;
+
+                return;
+            }
 
             if (Operator == Operator.EQ && Key.A.IsUniqueInDatabase) {
                 IsSingle = true;
@@ -96,14 +67,6 @@ namespace AgoRapide.Core {
                 IsSingle = false;
                 IsMultiple = true;
             }
-
-            // TODO: REMOVE COMMENT OUT CODE:
-            //if ((Properties == null || Properties.Count == 0) && Operator == Operator.None && Value == null) {
-            //    // Use empty SQL statement
-            //    _SQLWhereStatement = "";
-            //    IsAll = true;
-            //    return;
-            //}
 
             /// "Normally" we expect there to be only one parameter. 
             /// We have to number parameters for instance for <see cref="Operator.IN"/> and for multiple <see cref="Properties"/>
@@ -118,7 +81,8 @@ namespace AgoRapide.Core {
                 sql.Append(DBField.key + " = '" + A.PToString + "' AND ");
 
                 /// Builds SQL query if Value corresponds to T
-                T? valueAs<T>(DBField dbField) where T : struct {
+                T? valueAs<T>(DBField dbField) where T : struct
+                {
                     var retval = Value as T?;
                     if (retval != null) {
                         Operator.AssertValidForType(typeof(T), detailer);
@@ -225,26 +189,7 @@ namespace AgoRapide.Core {
                 })();
                 return sql.ToString();
             });
-
-            // if (Properties.Count == 1) {
             _SQLWhereStatement = singlePropertySQLConstructor(key);
-
-            // TODO: REMOVE COMMENT OUT CODE:
-            //} else {
-            //    /// TODO: Check connection / overlap of functionality with <see cref="QueryIdKeyOperatorValue"/> with multiple properties and <see cref="QueryIdMultiple"/>
-            //    /// TODO: See <see cref="QueryIdKeyOperatorValue.Initialize"/>
-
-            //    // TODO: Fix, SQL will look like
-            //    // TODO:   ... AND 
-            //    // TODO:   (
-            //    // TODO:   (key = 'FirstName' AND strv ILIKE :strv1) OR 
-            //    // TODO:   (key = 'LastName' AND strv ILIKE :strv2) OR 
-            //    // TODO:   (key = 'Email' AND strv ILIKE :strv3)
-            //    // TODO:   ) AND 
-            //    // TODO:   ...
-            //    // TODO: Which clearly does not look optimal...
-            //    _SQLWhereStatement = "(\r\n   " + string.Join(" OR\r\n   ", Properties.Select(p => "(" + singlePropertySQLConstructor(p) + ")")) + "\r\n)";
-            //}
         }
 
         /// <summary>
@@ -254,8 +199,23 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public override bool IsMatch(BaseEntity entity) {
             if (Key == null) throw new NullReferenceException(nameof(Key) + ". Details: " + ToString());
-            if (entity.Properties == null) return false;
-            if (!entity.Properties.TryGetValue(Key.CoreP, out var p)) return false;
+            if (entity.Properties == null || !entity.Properties.TryGetValue(Key.CoreP, out var p)) {
+                if (Value == null) {
+                    switch (Operator) {
+                        case Operator.NEQ: return false;
+                        case Operator.EQ: return true;
+                        default: throw new InvalidEnumException(Operator);
+                    }
+                }
+                return false;
+            }
+            if (Value == null) {
+                switch (Operator) {
+                    case Operator.NEQ: return true;
+                    case Operator.EQ: return false;
+                    default: throw new InvalidEnumException(Operator);
+                }
+            }
             switch (Value) {
                 case Percentile percentile:
                     if (!p.PercentileIsSet) throw new Property.InvalidPropertyException("!" + nameof(p.PercentileIsSet) + " for " + p.ToString() + ".\r\n" + nameof(entity) + ": " + entity.ToString());
@@ -292,7 +252,7 @@ namespace AgoRapide.Core {
         /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatible with parser)
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => "WHERE " + Key.PToString + " " + Operator.ToMathSymbol() + " '" + Value + "'";
+        public override string ToString() => "WHERE " + Key.PToString + " " + Operator.ToMathSymbol() + (Value==null ? " NULL" : (" '" + Value + "'"));
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!

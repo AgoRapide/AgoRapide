@@ -78,7 +78,7 @@ namespace AgoRapide {
                 var objValue = (object)value;
                 switch (objValue) {
                     case double dblValue: return dblValue.ToString2();
-                    case DateTime dtmValue: return dtmValue.ToString(DateTimeFormat.DateHourMin);
+                    case DateTime dtmValue: return dtmValue.ToString(key.Key.A.DateTimeFormat); /// Correction 22 Sep 2017 (instead of always using <see cref="DateTimeFormat.DateHourMin"/>)
                     case Type type: return type.ToStringDB(); // Added 12 Jun 2017
                     default: return objValue.ToString();
                 }

@@ -27,8 +27,10 @@ namespace AgoRapide.Database {
         /// <param name="request"></param>
         [APIMethod(
             Description = "Synchronizes from source",
-            S1 = nameof(Synchronize), S2 = "DUMMY")] // TODO: REMOVE "DUMMY"
+            S1 = nameof(Synchronize), S2 = "DUMMY", // TODO: REMOVE "DUMMY". Added Summer 2017 because of bug in routing mechanism.
+            ShowDetailedResult =true )] 
         public object Synchronize(BaseDatabase db, ValidRequest request) {
+            request.Result.LogInternal("Starting", GetType());
             Synchronize2(db, request.Result);
             request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(this));
             request.Result.LogInternal("Finished", GetType());
@@ -44,11 +46,12 @@ namespace AgoRapide.Database {
         /// <param name="db"></param>
         /// <param name="result"></param>
         public void Synchronize2(BaseDatabase db, Result result) {
+            result.LogInternal("Starting", GetType());
             var entities = SynchronizeGetEntities(db, result);
             entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, result));
             SynchronizeMapForeignKeys(entities, result);
             entities.ForEach(e => FileCache.Instance.StoreToDisk(this, e.Key, e.Value));
-            AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
+            // AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
             result.ResultCode = ResultCode.ok;
             result.LogInternal("Finished", GetType());
         }
@@ -97,7 +100,7 @@ namespace AgoRapide.Database {
         /// <param name="db"></param>
         /// <param name="result"></param>
         private void SynchronizeReconcileWithDatabase(Type type, List<BaseEntity> externalEntities, BaseDatabase db, Result result) {
-            result.LogInternal("", GetType());
+            result.LogInternal(nameof(type) + ": " + type, GetType());
             InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
 
             /// Note how we cannot just do 
@@ -240,16 +243,16 @@ namespace AgoRapide.Database {
         )]
         SynchronizerLastUpdateAgainstSource,
 
-        /// <summary>
-        /// TODO: Do we need this value? 
-        /// </summary>
-        [PropertyKey(
-            Description = "TRUE if actual data has been read into -" + nameof(InMemoryCache) + "- after application startup.",
-            Type = typeof(bool),
-            Parents = new Type[] { typeof(BaseSynchronizer) },
-            AccessLevelRead = AccessLevel.Relation
-        )]
-        SynchronizerDataHasBeenReadIntoMemoryCache,
+        ///// <summary>
+        ///// TODO: Do we need this value? 
+        ///// </summary>
+        //[PropertyKey(
+        //    Description = "TRUE if actual data has been read into -" + nameof(InMemoryCache) + "- after application startup.",
+        //    Type = typeof(bool),
+        //    Parents = new Type[] { typeof(BaseSynchronizer) },
+        //    AccessLevelRead = AccessLevel.Relation
+        //)]
+        //SynchronizerDataHasBeenReadIntoMemoryCache,
     }
 
     public static class SynchronizerPExtensions {

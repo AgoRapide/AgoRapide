@@ -63,7 +63,7 @@ namespace AgoRapide.API {
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        [ClassMember(Description = "Uses the base method -" + nameof(BaseEntity.ToHTMLDetailed) + "- for actual \"packaging\" of information")]       
+        [ClassMember(Description = "Uses the base method -" + nameof(BaseEntity.ToHTMLDetailed) + "- for actual \"packaging\" of information")]
         public override string ToHTMLDetailed(Request request) {
             AdjustAccordingToResultCodeAndMethod(request);
             var retval = new StringBuilder();
@@ -75,7 +75,7 @@ namespace AgoRapide.API {
                     retval.AppendLine("<p>No entities resulted from your query</p>");
                 } else {
                     var types = MultipleEntitiesResult.Select(e => e.GetType()).Distinct().ToList();
-                    if (types.Count > 1) retval.AppendLine("<p>" + MultipleEntitiesResult.Count + " entities in total</p>"); 
+                    if (types.Count > 1) retval.AppendLine("<p>" + MultipleEntitiesResult.Count + " entities in total</p>");
                     types.ForEach(t => { /// Split up separate tables for each type because <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/> are not compatible between different types
                         // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                         var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
@@ -87,6 +87,7 @@ namespace AgoRapide.API {
 
                         /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs
                         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
+                        /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
                         CreateDrillDownUrls(thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
                             var key = e.Key.A();
                             retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.Description) + "</b>: ");
@@ -182,6 +183,8 @@ namespace AgoRapide.API {
         /// <summary>
         /// Note how <see cref="Result"/> is the only <see cref="BaseEntity"/>-class (as of June 2017) having a method called <see cref="ToJSONDetailed"/>. 
         /// (while all <see cref="BaseEntity"/>-classes implement <see cref="BaseEntity.ToJSONEntity"/>)
+        /// 
+        /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -201,6 +204,8 @@ namespace AgoRapide.API {
                 var retvalList = new List<dynamic>();
                 MultipleEntitiesResult.ForEach(e => retvalList.Add(e.ToJSONEntity(request)));
 
+                /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
+                /// 
                 // TODO: This is old "working" code that definitely can be improved upon somehow...
 
                 // This does not work. It will create a table into which we are unable to insert nameof(ResultCode) and similar
@@ -312,33 +317,57 @@ namespace AgoRapide.API {
                 if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
 
                 if (key.Key.A.Operators == null) return;
-                if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) return;
 
-                // Note how Distinct() is called weakly typed for object, meaning it uses the Equals(object other)-method.
-                var objValues = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p.Value : null)).Distinct(); /// TODO: Add support in <see cref="QueryIdKeyOperatorValue"/> for value null.
+                List<(object, string)> objStrValues;
+                var mixOfNullsAndNotNullFound = false; // Found either directly (see direct below) or as "side effect" in lambda (see further below)
 
-                /// Note that the Distinct() operation done above will not work properly of IEquatable is not implemented for the actual type.
-                /// We therefore work around this by collecting together all object-values with the same string-representation
-                /// (Since the resulting API command is string-based this should not present any issues)
-                var objStrValues = objValues.Where(v => v != null).Select(v => (v, key.Key.ConvertObjectToString(v))).Distinct(new EqualityComparerTupleObjectString());
-
-                if (typeof(ITypeDescriber).IsAssignableFrom(key.Key.A.Type)) { /// Enforce IEquatable or similar for these classes anyway as it will improve performance (less calls to <see cref="PropertyKeyAttributeEnriched.ConvertObjectToString"/>)
-                    if (objStrValues.Count() != objValues.Count()) {
-                        var t = typeof(IEquatable<>).MakeGenericType(new Type[] { key.Key.A.Type });
-                        throw new InvalidCountException(objStrValues.Count(), objValues.Count(),
-                                nameof(PropertyKeyAttributeEnriched.ConvertObjectToString) + " is inconsistent with " + nameof(Enumerable.Distinct) + " for " + key.Key.A.Type + ".\r\n" +
-                            "Possible cause: " + // TODO: This explanation is possible wrong. It is the Equals(object other)-method that most probably is missing, and that does not have any connection with IEquatable
-                                (t.IsAssignableFrom(key.Key.A.Type) ?
-                                    ("Wrongly implemented " + t.ToStringShort() + " for " + key.Key.A.Type.ToStringShort()) :
-                                    ("Missing implementation of " + t.ToStringShort() + " for " + key.Key.A.Type.ToStringShort())
-                                ) + "\r\n" +
-                            "Remember to also always implement Equals (both Equals(object other) and Equals(" + key.Key.A.Type.ToStringVeryShort() + " other) and GetHashCode together with " + t.ToStringShort()
-                        );
-                    }
+                /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
+                if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) {
+                    if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) return; // None are set
+                    if (entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) return; // All are set
+                    objStrValues = new List<(object, string)> { }; // null, "NULL" will be added below
+                    mixOfNullsAndNotNullFound = true;
                 } else {
-                    /// We can not enforce IEquatable for other classes. 
-                    /// Note that it is of course worth it anyway to implement IEquatable for all your classes (with corresponding Equals and GetHashCode))
-                    /// (it can for instance dramatically reduce the size of the objValues-collection, improving the performance here)
+
+                    // Note how Distinct() is called weakly typed for object, meaning it uses the Equals(object other)-method.
+                    var objValues = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p.Value : null)).Distinct();
+
+                    /// Note that the Distinct() operation done above will not work properly of IEquatable is not implemented for the actual type.
+                    /// We therefore work around this by collecting together all object-values with the same string-representation
+                    /// (Since the resulting API command is string-based this should not present any issues)
+                    objStrValues = objValues.
+                        Where(v => {
+                            if (v == null) mixOfNullsAndNotNullFound = true; // Note "side effect" here.
+                        return v != null;
+                        }).
+                        Select(v => (v, key.Key.ConvertObjectToString(v))).Distinct(new EqualityComparerTupleObjectString()).
+                        ToList(); // Important in order for "side effect" to work as intended (we must force execution of the Where-lambda)
+
+                    if (typeof(ITypeDescriber).IsAssignableFrom(key.Key.A.Type)) { /// Enforce IEquatable or similar for these classes anyway as it will improve performance (less calls to <see cref="PropertyKeyAttributeEnriched.ConvertObjectToString"/>)
+                        if (objStrValues.Count != objValues.Count()) {
+                            var t = typeof(IEquatable<>).MakeGenericType(new Type[] { key.Key.A.Type });
+                            throw new InvalidCountException(objStrValues.Count, objValues.Count(),
+                                    nameof(PropertyKeyAttributeEnriched.ConvertObjectToString) + " is inconsistent with " + nameof(Enumerable.Distinct) + " for " + key.Key.A.Type + ".\r\n" +
+                                "Possible cause: " + // TODO: This explanation is possible wrong. It is the Equals(object other)-method that most probably is missing, and that does not have any connection with IEquatable
+                                    (t.IsAssignableFrom(key.Key.A.Type) ?
+                                        ("Wrongly implemented " + t.ToStringShort() + " for " + key.Key.A.Type.ToStringShort()) :
+                                        ("Missing implementation of " + t.ToStringShort() + " for " + key.Key.A.Type.ToStringShort())
+                                    ) + "\r\n" +
+                                "Remember to also always implement Equals (both Equals(object other) and Equals(" + key.Key.A.Type.ToStringVeryShort() + " other) and GetHashCode together with " + t.ToStringShort()
+                            );
+                        }
+                    } else {
+                        /// We can not enforce IEquatable for other classes. 
+                        /// Note that it is of course worth it anyway to implement IEquatable for all your classes (with corresponding Equals and GetHashCode))
+                        /// (it can for instance dramatically reduce the size of the objValues-collection, improving the performance here)
+                    }
+
+                    if (objStrValues.Count == 0) {
+                        mixOfNullsAndNotNullFound = false;                    
+                    }
+                }
+                if (mixOfNullsAndNotNullFound) {
+                    objStrValues.Add((null, "NULL"));
                 }
 
                 var r1 = new Dictionary<
@@ -352,7 +381,11 @@ namespace AgoRapide.API {
                 Util.EnumGetValues<Operator>().ForEach(o => {
                     if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.IsMatch(BaseEntity)"/>
                     if (!key.Key.A.OperatorsAsHashSet.Contains(o)) return;
-                    if (o == Operator.EQ && !key.Key.A.HasLimitedRange) return;
+                    if (o == Operator.EQ && !key.Key.A.HasLimitedRange) {
+                        // NOTE: Count > 10 is arbitrarily chosen.
+                        // NOTE: Most probably this will only happen with Count == 1 because of filtering out above for HasLimitedRange
+                        if (objStrValues.Count > 10) return; 
+                    }
 
                     var r2 = new Dictionary<
                         string, // The actual values found. 
