@@ -451,6 +451,7 @@ namespace AgoRapide.Database {
                 // Take into account that root-properties may exist without any 
 
                 rootPropertyIndex++;
+                // if (rootPropertyIndex >= (rootProperties.Count - 1)) return; // TODO: Check this, happens if no properties for last entity???
                 while (rootProperties[rootPropertyIndex].Id != currentProperties[0].ParentId) {
                     // Take into consideration that there may exist entity root properties without any properties at all
                     // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
