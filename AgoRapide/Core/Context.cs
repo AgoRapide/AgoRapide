@@ -403,8 +403,6 @@ namespace AgoRapide.Core {
         /// 
         /// Note how throws exception if combination of types is not known. 
         /// 
-        /// Not thread-safe for initial call. Therefore first call to this method must be done single threaded at application startup. 
-        /// 
         /// TODO: Implement traversing over more than one level. Start with a limit of two levels (do not use recursivity)
         /// </summary>
         /// <param name="fromType">Must be one of <see cref="APIMethod.AllEntityTypes"/></param>
@@ -412,6 +410,7 @@ namespace AgoRapide.Core {
         /// <param name="traversal">Returned value will be either null or have Count > 0</param>
         /// <returns></returns>
         public static bool TryGetTraversal(Type fromType, Type toType, out List<Traversal> traversal) {
+            Util.AssertCurrentlyStartingUp();
             if (_getTraversalCache == null) {
                 _getTraversalCache = new Dictionary<Type, Dictionary<Type, List<Traversal>>>();
                 APIMethod.AllEntityTypes.ForEach(from => {

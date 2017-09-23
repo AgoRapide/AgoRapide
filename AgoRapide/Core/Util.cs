@@ -16,6 +16,22 @@ namespace AgoRapide.Core {
     /// </summary>
     public static class Util {
 
+        public static bool CurrentlyStartingUp = true;
+        [ClassMember(
+            Description = 
+                "Normally called form non-thread safe methods that should be run single-threaded at application startup only.",
+            LongDescription = 
+                "NOTE: If you want to remove a call to this method somewhere in the AgoRapide code " +
+                "then you must first make that code, and all corresponding collections and methods, thread-safe first.\r\n" +
+                "NOTE: Most probably you should NEVER remove any such calls as there is also a performance advantage of finished initialization " +
+                "in \"peace and quite\" at application startup.")]
+        public static void AssertCurrentlyStartingUp() {
+            if (!CurrentlyStartingUp) throw new SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException();
+        }
+        private class SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException : ApplicationException {
+            // public SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException() : base("") { }
+        }
+
         /// <summary>
         /// Note that the default instance is only meant for temporary use at application startup. 
         /// 

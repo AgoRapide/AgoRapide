@@ -326,7 +326,7 @@ namespace AgoRapide.Database {
         /// when <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/> for <paramref name="key"/>
         /// </summary>
         /// <param name="cid">
-        /// Note how null is allowed but is strongly discouraged. Null should only be relevant at application startup. 
+        /// null is allowed only when <see cref="Util.CurrentlyStartingUp"/>. 
         /// Use <see cref="ApplicationPart.GetClassMember"/> in order to get a <paramref name="cid"/>. 
         /// <see cref="DBField.cid"/> 
         /// </param>
@@ -339,8 +339,6 @@ namespace AgoRapide.Database {
         /// <param name="result">May be null</param>
         /// <returns></returns>
         public abstract long CreateProperty(long? cid, long? pid, long? fid, PropertyKeyWithIndex key, object value, Result result);
-
-        // public abstract void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result);
 
         /// <summary>
         /// 
