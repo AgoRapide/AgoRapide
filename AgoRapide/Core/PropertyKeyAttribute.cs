@@ -381,6 +381,14 @@ namespace AgoRapide.Core {
         public DateTimeFormat DateTimeFormat { get; set; }
 
         /// <summary>
+        /// Often relevant when <see cref="Type"/> is <see cref="DateTime"/>
+        /// 
+        /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.
+        /// </summary>
+        [ClassMember(Description = "List of expansions desired for -" + nameof(Type) + "- like -" + nameof(ExpansionType.DateAgeDays) + "- or -" + nameof(ExpansionType.DateYearQuarter) + "-.")]
+        public ExpansionType[] ExpansionTypes;
+
+        /// <summary>
         /// Describes entities for which this property is used.
         /// 
         /// Typical example for an enum like P would be:
@@ -539,6 +547,15 @@ namespace AgoRapide.Core {
                 var temp = AggregationTypes.ToList();
                 temp.AddRange(other.AggregationTypes.Where(o => !temp.Any(p => p == o)).ToList());
                 AggregationTypes = temp.ToArray();
+            }
+
+            if (ExpansionTypes == null) {
+                ExpansionTypes = other.ExpansionTypes;
+            } else if (other.ExpansionTypes == null) { // No changes
+            } else { // Merge both lists
+                var temp = ExpansionTypes.ToList();
+                temp.AddRange(other.ExpansionTypes.Where(o => !temp.Any(p => p == o)).ToList());
+                ExpansionTypes = temp.ToArray();
             }
 
             if (Parents == null) {

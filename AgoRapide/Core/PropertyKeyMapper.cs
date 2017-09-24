@@ -117,7 +117,7 @@ namespace AgoRapide.Core {
                             typeof(T).ToStringVeryShort() + "." + e + " has same name as " + existing.Key.A.EnumValue.GetType().ToStringVeryShort() + "." + existing.Key.A.EnumValue + " " +
                             (a.Key.A.InheritFrom == null ? "but does not inherit from it" : ("but inherits another key, " + a.Key.A.InheritFrom.GetType().ToStringVeryShort() + "." + a.Key.A.InheritFrom)) + ".\r\n" +
                             "Possible resolution: Change the name of " + typeof(T).ToStringVeryShort() + "." + e + " to something else.\r\n" +
-                            (a.Key.A.InheritFrom==null ? (
+                            (a.Key.A.InheritFrom == null ? (
                             "Another possible resolution is: Specify " + nameof(PropertyKeyAttribute.InheritFrom) + " = " + existing.Key.A.EnumValue.GetType().ToStringVeryShort() + "." + existing.Key.A.EnumValue + " for " + typeof(T).ToStringVeryShort() + "." + e
                             ) : ""));
                     } else {
@@ -198,17 +198,14 @@ namespace AgoRapide.Core {
                 if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out PropertyKeyAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
 
-            /// Add aggregation keys over foreign keys for automatic injection by <see cref="BaseInjector"/>
-            BaseInjector.GetForeignKeyAggregateKeys(allCoreP.Values.ToList()).ForEach(key => {
+            var adder = new Action<PropertyKey>(key => {
                 noticeLogger(key.GetType().ToStringVeryShort() + ": " + key.Key.A.Description);
                 allCoreP.AddValue(key.Key.CoreP, key); /// Store with <see cref="_allCoreP"/> in order for <see cref= "Extensions.GetChildProperties"/> for instance to catch these
                 _cache[typeof(CoreP)].AddValue((int)key.Key.CoreP, key); /// Important, for instance in order for <see cref="TryGetA{T}"/> to work.
                 _fromStringMaps.AddValue(key.Key.PToString, key); /// Important, for instance in order for parsing of API requests to work
-
-                // TOOD: REMOVE COMMENTED OUT COMMENT
-                ///// Note that we do not bother with putting these in <see cref="_fromStringMaps"/> because they will not be stored in database, only
-                ///// calculated dynamically. 
-            });
+            });            
+            BaseInjector.GetForeignKeyAggregateKeys(allCoreP.Values.ToList()).ForEach(key => adder(key)); /// Add <see cref="PropertyKeyForeignKeyAggregate"/> for automatic injection by <see cref="BaseInjector"/>                                                                                                          
+            BaseInjector.GetExpansionKeys(allCoreP.Values.ToList()).ForEach(key => adder(key)); /// Add <see cref="PropertyKeyExpansion"/> for automatic injection by <see cref="BaseInjector"/>
 
             _allCoreP = allCoreP.Values.ToList();
         }

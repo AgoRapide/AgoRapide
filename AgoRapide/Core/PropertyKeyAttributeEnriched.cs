@@ -293,6 +293,7 @@ namespace AgoRapide.Core {
             }
 
             if (A.AggregationTypes == null) A.AggregationTypes = new AggregationType[0];
+            if (A.ExpansionTypes == null) A.ExpansionTypes = new Database.ExpansionType[0];
 
             if (!A.HasLimitedRangeIsSet) {
                 if (

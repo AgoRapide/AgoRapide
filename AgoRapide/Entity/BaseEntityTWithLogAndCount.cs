@@ -179,6 +179,7 @@ namespace AgoRapide {
     /// <summary>
     /// TODO: Move to separate file
     /// </summary>
+    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
     public enum AggregationType {
         None,
         Count,
