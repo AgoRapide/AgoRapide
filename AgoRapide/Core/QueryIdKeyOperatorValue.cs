@@ -81,8 +81,7 @@ namespace AgoRapide.Core {
                 sql.Append(DBField.key + " = '" + A.PToString + "' AND ");
 
                 /// Builds SQL query if Value corresponds to T
-                T? valueAs<T>(DBField dbField) where T : struct
-                {
+                T? valueAs<T>(DBField dbField) where T : struct {
                     var retval = Value as T?;
                     if (retval != null) {
                         Operator.AssertValidForType(typeof(T), detailer);
@@ -217,6 +216,16 @@ namespace AgoRapide.Core {
                 }
             }
             switch (Value) {
+                case Quintile quintile: // TODO: ADD OTHER QUANTILES HERE!
+                    if (!p.PercentileIsSet) throw new Property.InvalidPropertyException("!" + nameof(p.PercentileIsSet) + " for " + p.ToString() + ".\r\n" + nameof(entity) + ": " + entity.ToString());
+                    switch (Operator) {
+                        case Operator.LT: return quintile < p.Percentile.AsQuintile;
+                        case Operator.LEQ: return quintile <= p.Percentile.AsQuintile;
+                        case Operator.EQ: return quintile == p.Percentile.AsQuintile;
+                        case Operator.GEQ: return quintile >= p.Percentile.AsQuintile;
+                        case Operator.GT: return quintile > p.Percentile.AsQuintile;
+                        default: throw new InvalidEnumException(Operator);
+                    }
                 case Percentile percentile:
                     if (!p.PercentileIsSet) throw new Property.InvalidPropertyException("!" + nameof(p.PercentileIsSet) + " for " + p.ToString() + ".\r\n" + nameof(entity) + ": " + entity.ToString());
                     switch (Operator) {
@@ -250,9 +259,11 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatible with parser)
+        /// 
+        /// Note how Value as enum is given without apostrophes. 
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => "WHERE " + Key.PToString + " " + Operator.ToMathSymbol() + (Value==null ? " NULL" : (" '" + Value + "'"));
+        public override string ToString() => "WHERE " + Key.PToString + " " + Operator.ToMathSymbol() + (Value == null ? " NULL" : (Value.GetType().IsEnum ? (" " + Value) : (" '" + Value + "'")));
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!

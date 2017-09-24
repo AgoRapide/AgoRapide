@@ -70,7 +70,7 @@ namespace AgoRapide.Core {
             if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString() + detailer.Result("\r\nDetails: "));
         }
 
-        [ClassMember(Description = 
+        [ClassMember(Description =
             "May be set for instance by -" + nameof(QueryIdKeyOperatorValue) + "- with value NULL.\r\n" +
             "This will be difficult (very slow) to query in database.\r\n" +
             "(only in-memory query through -" + nameof(IsMatch) + "- is then possible.)")]
@@ -91,7 +91,7 @@ namespace AgoRapide.Core {
                 "\"key = 'Name' AND strv IN (:strv1, :strv2, :strv3)\" (with corresponding parameters in -" + nameof(SQLWhereStatementParameters) + "-)"
         )]
         public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ".\r\n" +
-            (SQLQueryNotPossible ? 
+            (SQLQueryNotPossible ?
                 nameof(SQLQueryNotPossible) : (
                     "Should have been set by sub class (by " + GetType() + ")\r\n." +
                     "Will probably not be set for " + nameof(Percentile) + " " + nameof(QueryIdKeyOperatorValue) + " as these are in-memory based.\r\n" +
@@ -216,6 +216,8 @@ namespace AgoRapide.Core {
                 }
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
+                } else if (Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
+                    id = new QueryIdKeyOperatorValue(key.Key, _operator, quintile);
                 } else {
                     if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
 
@@ -224,11 +226,10 @@ namespace AgoRapide.Core {
                         errorResponse = "Invalid value given for " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
                         return false;
                     }
-
-                    var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
-
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
+                var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
+
                 errorResponse = null;
                 return true;
 

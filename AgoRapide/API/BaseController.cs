@@ -424,7 +424,7 @@ namespace AgoRapide.API {
                     type.Key.ToStringVeryShort() + " (" + type.Value.Count + ")"
                 ));
 
-                var drilldown = Result.CreateDrillDownUrls(type.Value.Values); // Present all drill-down suggestions. TODO: Find better way of organising this. 
+                var drilldown = Result.CreateDrillDownUrls(type.Key, type.Value.Values); // Present all drill-down suggestions. TODO: Find better way of organising this. 
                 drilldown.ForEach(coreP => {
                     var corePAsString = coreP.Key.A().Key.PToString;
                     coreP.Value.ForEach(_operator => {

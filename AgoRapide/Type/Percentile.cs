@@ -18,13 +18,16 @@ namespace AgoRapide {
 
         public int Value { get; private set; }
 
-        private Percentile() { }
+        public Tertile AsTertile { get; private set; }
+        public Quartile AsQuartile { get; private set; }
+        public Quintile AsQuintile { get; private set; }
 
-        // Hide constructor, we do not want millions of these objects generated.
-        //public Percentile(int value) {
-        //    if (value < 1 || value > 100) throw new InvalidPercentileException("Outside valid range 1-100 (" + value + ")");
-        //    Value = value;
-        //}
+        private Percentile(int value) {
+            Value = value;
+            AsTertile = ToTertile(this);
+            AsQuartile = ToQuartile(this);
+            AsQuintile = ToQuintile(this);
+        }
 
         public static bool TryParse(string value, out Percentile percentile, out string errorResponse) {
 
@@ -55,10 +58,10 @@ namespace AgoRapide {
 
         private static List<Percentile> _allValuesList;
         private static List<Percentile> AllValuesList => _allValuesList ?? (_allValuesList = new Func<List<Percentile>>(() => {
-        // private static List<Percentile> AllValuesList = new Func<List<Percentile>>(() => {
+            // private static List<Percentile> AllValuesList = new Func<List<Percentile>>(() => {
             var retval = new List<Percentile> { null }; /// Note null as first index
             for (var i = 1; i <= 100; i++) {
-                retval.Add(new Percentile { Value = i });
+                retval.Add(new Percentile(i));
             }
             if (retval.Count != 101) throw new InvalidCountException(retval.Count, 101);
             return retval;
@@ -75,15 +78,9 @@ namespace AgoRapide {
             public InvalidPercentileException(string message) : base(message) { }
         }
 
-        public enum Tertile {
-            Tertile1,
-            Tertile2,
-            Tertile3
-        }
-
-        public Tertile ToTertile() {
-            if (Value <= 33) return Tertile.Tertile1;
-            if (Value <= 67) return Tertile.Tertile2;
+        public static Tertile ToTertile(Percentile percentile) {
+            if (percentile.Value <= 33) return Tertile.Tertile1;
+            if (percentile.Value <= 67) return Tertile.Tertile2;
             return Tertile.Tertile3;
         }
 
@@ -95,90 +92,142 @@ namespace AgoRapide {
             }
         }
 
-        public enum Quartile {
-            Quartile1,
-            Quartile2,
-            Quartile3,
-            Quartile4
-        }
-
-        public Quartile ToQuartile() {
-            if (Value <= 25) return Quartile.Quartile1;
-            if (Value <= 50) return Quartile.Quartile2;
-            if (Value <= 75) return Quartile.Quartile3;
+        public static Quartile ToQuartile(Percentile percentile) {
+            if (percentile.Value <= 25) return Quartile.Quartile1;
+            if (percentile.Value <= 50) return Quartile.Quartile2;
+            if (percentile.Value <= 75) return Quartile.Quartile3;
             return Quartile.Quartile4;
         }
 
-        public enum Quintile {
-            Quintile1,
-            Quintile2,
-            Quintile3,
-            Quintile4,
-            Quintile5
+        public static Percentile FromQuartile(Quartile quartile) {
+            switch (quartile) {
+                case Quartile.Quartile1: return Get(25);
+                case Quartile.Quartile2: return Get(50);
+                case Quartile.Quartile3: return Get(75);
+                default: return Get(100);
+            }
         }
 
-        public enum Sextile {
-            Sextile1,
-            Sextile2,
-            Sextile3,
-            Sextile4,
-            Sextile5,
-            Sextile6
+        public static Quintile ToQuintile(Percentile percentile) {
+            if (percentile.Value <= 20) return Quintile.Quintile1;
+            if (percentile.Value <= 40) return Quintile.Quintile2;
+            if (percentile.Value <= 60) return Quintile.Quintile3;
+            if (percentile.Value <= 80) return Quintile.Quintile4;
+            return Quintile.Quintile5;
         }
 
-        public enum Septile {
-            Septile1,
-            Septile2,
-            Septile3,
-            Septile4,
-            Septile5,
-            Septile6,
-            Septile7,
+        public static Percentile FromQuintile(Quintile Quintile) {
+            switch (Quintile) {
+                case Quintile.Quintile1: return Get(20);
+                case Quintile.Quintile2: return Get(40);
+                case Quintile.Quintile3: return Get(60);
+                case Quintile.Quintile4: return Get(80);
+                default: return Get(100);
+            }
         }
 
-        [ClassMember(Description = "Calculates percentiles based on -" + nameof(FileCache) + "-.")]
-        public static void Calculate(Type type, PropertyKey key, QueryId queryid) {
-            //type.GetChildProperties().Values.Where(key =>
-            //    // key.Key.A.Type.Equals(typeof(int)) ||
-            //    key.Key.A.Type.Equals(typeof(long)) /// Note that long is the preferred property type
-            //    // key.Key.A.Type.Equals(typeof(double)) 
-            //).ForEach(key => {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="queryid">Has to be <see cref="QueryIdAll"/> as of Sep 2017</param>
+        /// <param name="key"></param>
+        public static void Calculate(Type type, QueryId queryid, PropertyKey key) {
             switch (queryid) {
                 case QueryIdAll q:
                     /// Calculate and store directly within <see cref="Property.Percentile"/>
-                    var properties = InMemoryCache.EntityCache.Values.
-                        Where(e => type.IsAssignableFrom(e.GetType())).
-                        Select(e => e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null).Where(p => p != null).
-                        Select(p => (Property: p, Value: p.V<long>())). // Extract value only once for each property. Should improve sorting and percentile evaluation
-                        OrderBy(p => p.Value).ToList();
-                    if (properties.Count == 0) throw new InvalidCountException("No properties found for " + type + " " + key.ToString() + ". Are values read into " + nameof(InMemoryCache.EntityCache) + "? Have x");
-                    var lastValue = properties[0].Value;
-                    var lastIndex = 0;
-                    for (var i = 1; i < properties.Count; i++) { // TOOD: This is a quick-and-dirty attempt at Percentile-evaluation. It does probably have room for improvement.
-                        var newValue = properties[i].Value;
-                        if (newValue > lastValue) {
-                            var p = Get((int)(((i - 1) / (double)properties.Count) + 1));
-                            for (var j = lastIndex; j < i; j++) {
-                                properties[j].Property.Percentile = p;
-                            }
-                            lastIndex = i;
-                        }
-                    }
-                    // Remaining values are at 100P
-                    {
-                        var p = Get(100);
-                        for (var j = lastIndex; j < properties.Count; j++) {
-                            properties[j].Property.Percentile = p;
-                        }
-                    }
-                    break;
+                    Calculate(type, InMemoryCache.EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(), key); break;
                 default:
                     /// TODO: Decide where to store this. 
                     /// TODO: Make a cache with <param name="queryid"/>.ToString() for instance.
                     /// TODO: Look out for <see cref="QueryIdContext"/> which complicates (and which probably is exact the one that we want to use)
                     throw new InvalidObjectTypeException(queryid, "Not implemented");
             }
-            // });
         }
+
+        /// <summary>
+        /// Calculates and stores within <see cref="Property.Percentile"/>
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="key"></param>
+        public static void Calculate(Type type, List<BaseEntity> entities, PropertyKey key) {
+            key.Key.A.AssertSuitableForPercentileCalculation();
+            InvalidTypeException.AssertEquals(key.Key.A.Type, typeof(long), () => "Only supported for long as of Sep 2017");
+            var properties = entities.
+                Select(e => e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null).Where(p => p != null).
+                Select(p => (Property: p, Value: p.V<long>())). // Extract value only once for each property. Should improve sorting and percentile evaluation
+                OrderBy(p => p.Value).ToList();
+            // TODO: Consider just returning quietly here.
+            if (properties.Count == 0) throw new InvalidCountException("No properties found for " + type + " " + key.ToString() + ". Are values read into " + nameof(InMemoryCache.EntityCache) + "?");
+            var lastValue = properties[0].Value;
+            var lastIndex = 0;
+            for (var i = 1; i < properties.Count; i++) { // TOOD: This is a quick-and-dirty attempt at Percentile-evaluation. It does probably have room for improvement.
+                var newValue = properties[i].Value;
+                if (newValue > lastValue) {
+                    var p = Get((int)((((i - 1) / (double)properties.Count) * 100) + 1));
+                    for (var j = lastIndex; j < i; j++) {
+                        properties[j].Property.Percentile = p;
+                    }
+                    lastIndex = i;
+                    lastValue = newValue;
+                }
+            }
+            // Remaining values are at 100P
+            {
+                var p = Get(100);
+                for (var j = lastIndex; j < properties.Count; j++) {
+                    properties[j].Property.Percentile = p;
+                }
+            }
+        }
+    }
+
+    public enum Tertile {
+        None,
+        Tertile1,
+        Tertile2,
+        Tertile3
+    }
+
+    public enum Quartile {
+        None,
+        Quartile1,
+        Quartile2,
+        Quartile3,
+        Quartile4
+    }
+
+    public enum Quintile {
+        None,
+        Quintile1,
+        Quintile2,
+        Quintile3,
+        Quintile4,
+        Quintile5
+    }
+
+    // TODO: Implement To and From
+
+    public enum Sextile {
+        None,
+        Sextile1,
+        Sextile2,
+        Sextile3,
+        Sextile4,
+        Sextile5,
+        Sextile6
+    }
+
+    // TODO: Implement To and From
+
+    public enum Septile {
+        None,
+        Septile1,
+        Septile2,
+        Septile3,
+        Septile4,
+        Septile5,
+        Septile6,
+        Septile7,
     }
 }

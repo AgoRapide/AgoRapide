@@ -62,13 +62,11 @@ namespace AgoRapide.Database {
                             case ExpansionType.DateAgeWeeks: { var v = (long)(now.Subtract(dtmValue).TotalDays / 7); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateAgeMonths: { var v = (long)(now.Subtract(dtmValue).TotalDays / 30); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateAgeYears: { var v = (long)(now.Subtract(dtmValue).TotalDays / 365); strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            default:
-                                throw new InvalidEnumException(key.ExpansionType);
+                            default: throw new InvalidEnumException(key.ExpansionType);
                         }
 
                         if (!valuesFound.Contains(strValue)) {
                             // TOOD: TURN LIMIT OF 20 INTO A CONFIGURATION-PARAMETER
-
                             if (valuesFound.Count >= 20) { // Note how we allow up to 20 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
                                 hasLimitedRange = false;
                             } else {
@@ -81,6 +79,10 @@ namespace AgoRapide.Database {
                 }
             });
             key.Key.A.HasLimitedRange = hasLimitedRange; /// If TRUE then important discovery making it possible for <see cref="Result.CreateDrillDownUrls"/> to make more suggestions.
+        });
+
+        public static void CalculatePercentiles(Type type, List<BaseEntity> entities, BaseDatabase db) => type.GetChildProperties().Values.Where(key => key.Key.A.IsSuitableForPercentileCalculation).ForEach(key => {
+            Percentile.Calculate(type, entities, key);
         });
 
         /// <summary>

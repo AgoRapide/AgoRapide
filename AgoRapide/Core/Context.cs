@@ -410,8 +410,8 @@ namespace AgoRapide.Core {
         /// <param name="traversal">Returned value will be either null or have Count > 0</param>
         /// <returns></returns>
         public static bool TryGetTraversal(Type fromType, Type toType, out List<Traversal> traversal) {
-            Util.AssertCurrentlyStartingUp();
             if (_getTraversalCache == null) {
+                Util.AssertCurrentlyStartingUp();
                 _getTraversalCache = new Dictionary<Type, Dictionary<Type, List<Traversal>>>();
                 APIMethod.AllEntityTypes.ForEach(from => {
                     var traversalFrom = (_getTraversalCache[from] = new Dictionary<Type, List<Traversal>>());

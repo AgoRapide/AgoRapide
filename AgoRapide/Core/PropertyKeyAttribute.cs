@@ -105,7 +105,10 @@ namespace AgoRapide.Core {
 
         [ClassMember(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
         public bool IsPassword { get; set; }
-        public void AssertIsPassword(Func<string> detailer) {
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertIsPassword(Func<string> detailer = null) {
             if (!IsPassword) throw new IsPasswordException(
                 "Not marked as " + nameof(PropertyKeyAttribute) + "." + nameof(IsPassword) + "\r\n" +
                 ToString() + "\r\n" +
@@ -195,7 +198,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="detailer">May be null</param>
-        public void AssertIsMany(Func<string> detailer) {
+        public void AssertIsMany(Func<string> detailer = null) {
             if (!IsMany) throw new IsManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -204,7 +207,10 @@ namespace AgoRapide.Core {
             public IsManyException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public void AssertNotIsMany(Func<string> detailer) {
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertNotIsMany(Func<string> detailer = null) {
             if (IsMany) throw new IsNotManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -227,7 +233,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="detailer">May be null</param>
-        public void AssertIsExternal(Func<string> detailer) {
+        public void AssertIsExternal(Func<string> detailer = null) {
             if (!true.Equals(IsExternal)) throw new IsExternalException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -252,7 +258,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="detailer">May be null</param>
-        public void AssertIsInjected(Func<string> detailer) {
+        public void AssertIsInjected(Func<string> detailer = null) {
             if (!true.Equals(IsInjected)) throw new IsInjectedException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -285,7 +291,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="detailer">May be null</param>
-        public void AssertHasLimitedRange(Func<string> detailer) {
+        public void AssertHasLimitedRange(Func<string> detailer = null) {
             if (!true.Equals(HasLimitedRange)) throw new HasLimitedRangeException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -488,6 +494,20 @@ namespace AgoRapide.Core {
             "2) giving sample values for API calls."
         )]
         public string[] SampleValues { get; set; }
+
+        public bool IsSuitableForPercentileCalculation => !IsMany && typeof(long).Equals(Type) && ForeignKeyOf == null && ExternalForeignKeyOf == null && ExternalPrimaryKeyOf == null;
+
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertSuitableForPercentileCalculation(Func<string> detailer = null) {
+            if (!IsSuitableForPercentileCalculation) throw new IsSuitableForPercentileCalculationException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        public class IsSuitableForPercentileCalculationException : ApplicationException {
+            public IsSuitableForPercentileCalculationException(string message) : base(message) { }
+            public IsSuitableForPercentileCalculationException(string message, Exception inner) : base(message, inner) { }
+        }
 
         /// <summary>
         /// Returns <see cref="PropertyKeyAttribute"/> for given <paramref name="_enum"/>-value.
