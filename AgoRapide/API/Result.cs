@@ -321,7 +321,7 @@ namespace AgoRapide.API {
                 var properties = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null));
                 var propertiesNotNull = properties.Where(p => p != null).ToList(); // Used for Percentile-evaluation
 
-                var percentileValuesFound = new Dictionary< // How this is inserted into retval is a HACK. TODO: Make prettier
+                var percentileDrilldowns = new Dictionary< // How this is inserted into retval is a HACK. TODO: Make prettier
                         string, // The actual values found. 
                         DrillDownSuggestion
                 >();
@@ -332,20 +332,22 @@ namespace AgoRapide.API {
                     // NOTE: Hardcoded use of Quintile as of Sep 2017
                     // TODO: Add preferred quantile to PropertyKeyAttribute.
 
+                    // Quintile as relevant considered ALL properties
                     Util.EnumGetValues<Quintile>().ForEach(q => {
                         var count = propertiesNotNull.Count(p => p.Percentile.AsQuintile == q);
                         if (count == 0) return; // No point in suggesting
                         if (count == totalCount) return; // No point in suggesting
                         var query = new QueryIdKeyOperatorValue(key.Key, Operator.EQ, q);
-                        percentileValuesFound.Add(q.ToString(), // TODO: Works fine until we have a value Quintile1 or similar (will give us key-collision below)
+                        percentileDrilldowns.Add(q.ToString(), // TODO: Works fine until we have a value Quintile1 or similar (will give us key-collision below)
                             new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), q + " (" + count + ")", query)
                         );
                     });
+
                 }
 
                 if (key.Key.A.Operators == null) {
-                    if (percentileValuesFound.Count > 0) { // HACK, TODO: MAKE PRETTIER!
-                        retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileValuesFound } });
+                    if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                        retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                     }
                     return;
                 }
@@ -354,17 +356,18 @@ namespace AgoRapide.API {
 
                 /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
                 if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) {
+                    // Our only choice is limiting to NULL or NOT NULL values.  
                     if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) {
-                        if (percentileValuesFound.Count > 0) { // HACK, TODO: MAKE PRETTIER!
-                            retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileValuesFound } });
+                        if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                            retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                         }
-                        return; // None are set
+                        return; // None are set.
                     }
                     if (entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) {
-                        if (percentileValuesFound.Count > 0) { // HACK, TODO: MAKE PRETTIER!
-                            retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileValuesFound } });
+                        if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                            retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                         }
-                        return; // All are set
+                        return; // All are set.
                     }
                     objStrValues = new List<(object, string)> { }; // null, "NULL" will be added below
                     mixOfNullsAndNotNullFound = true;
@@ -456,11 +459,11 @@ namespace AgoRapide.API {
                     });
                     if (r2.Count > 0) r1.AddValue(o, r2);
                 });
-                if (percentileValuesFound.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
                     if (!r1.TryGetValue(Operator.EQ, out var r2)) {
-                        r2 = (r1[Operator.EQ] = percentileValuesFound);
+                        r2 = (r1[Operator.EQ] = percentileDrilldowns);
                     } else {
-                        percentileValuesFound.ForEach(e => r2.AddValue(e.Key, e.Value, () => nameof(percentileValuesFound)));
+                        percentileDrilldowns.ForEach(e => r2.AddValue(e.Key, e.Value, () => nameof(percentileDrilldowns)));
                     }
                 }
                 if (r1.Count > 0) retval.Add(key.Key.CoreP, r1);
