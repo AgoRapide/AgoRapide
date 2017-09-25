@@ -383,7 +383,7 @@ namespace AgoRapide.API {
                         }).
                         Select(v => (v, key.Key.ConvertObjectToString(v))).Distinct(new EqualityComparerTupleObjectString()).
                         ToList(); // Important in order for "side effect" to work as intended (we must force execution of the Where-lambda)
-
+                 
                     if (typeof(ITypeDescriber).IsAssignableFrom(key.Key.A.Type)) { /// Enforce IEquatable or similar for these classes anyway as it will improve performance (less calls to <see cref="PropertyKeyAttributeEnriched.ConvertObjectToString"/>)
                         if (objStrValues.Count != objValues.Count()) {
                             var t = typeof(IEquatable<>).MakeGenericType(new Type[] { key.Key.A.Type });
