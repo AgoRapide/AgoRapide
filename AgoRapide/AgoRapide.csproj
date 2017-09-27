@@ -171,6 +171,7 @@
     <Compile Include="Enum\ResultCode.cs" />
     <Compile Include="Enum\SetOperator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Type\Money.cs" />
     <Compile Include="Type\NorwegianPostalCode.cs" />
     <Compile Include="Type\Percentile.cs" />
   </ItemGroup>

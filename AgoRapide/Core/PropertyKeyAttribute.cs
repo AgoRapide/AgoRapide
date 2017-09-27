@@ -473,7 +473,7 @@ namespace AgoRapide.Core {
         public string DefaultValue { get; set; }
 
         /// <summary>
-        /// Note that will be set automatically through <see cref="AgoRapideAttributeT(PropertyKeyAttribute)"/> for 
+        /// Note that will be set automatically by <see cref="PropertyKeyAttributeEnriched.Initialize"/> for 
         /// <see cref="PropertyKeyAttribute"/> having <see cref="PropertyKeyAttribute.Type"/> which is <see cref="Type.IsEnum"/> 
         /// 
         /// TODO: Add to <see cref="PropertyKeyAttribute.ValidValues"/> a List of tuples with description for each value
@@ -518,7 +518,6 @@ namespace AgoRapide.Core {
         /// <param name="_enum"></param>
         /// <returns></returns>
         public static new PropertyKeyAttribute GetAttribute(object _enum) {
-            // TODO: Consider moving more of this code into AgoRapideAttribute-class
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type); // TODO: Necessary? Most possibly YES!
             if (type.GetEnumAttribute().AgoRapideEnumType != EnumType.PropertyKey) throw new InvalidEnumException(type.GetEnumAttribute().AgoRapideEnumType,

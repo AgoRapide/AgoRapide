@@ -119,4 +119,7 @@ namespace AgoRapide {
             Type = typeof(long))]
         iid = 15
     }
+    public static class DBFieldExtension {
+        public static PropertyKey A(this DBField dbField) => PropertyKeyMapper.GetA(dbField);
+    }
 }

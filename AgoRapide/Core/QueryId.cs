@@ -278,14 +278,14 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichKey for all QueryId-classes!!!
         /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
         /// enumAttribute.Cleaner=
         /// 
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="key"></param>
-        public static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+        public static void EnrichKey(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     ParseResult.Create(key, retval) :

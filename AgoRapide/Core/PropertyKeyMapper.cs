@@ -34,10 +34,6 @@ namespace AgoRapide.Core {
         /// Value is dictionary with values for each enum-value again. 
         /// Note how adding to this dictionary is supposed to be always done by a single thread through <see cref="MapEnum{T}"/>. 
         /// TODO: NOT TRUE as of Apr 2016 as <see cref="TryAddA"/> also has to add properties to this collection.
-        /// 
-        /// Is in principle equivalent to <see cref="Extensions._agoRapideAttributeTCache"/> except that _that_ cache also contains 
-        /// entries for non <see cref="AgoRapide.EnumType.PropertyKey"/> 
-        /// (while _this_ cache, <see cref="_cache"/> only contains entires for entity property enums)
         /// </summary>
         private static Dictionary<Type, Dictionary<int, PropertyKey>> _cache = new Dictionary<Type, Dictionary<int, PropertyKey>>();
 

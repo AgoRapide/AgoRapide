@@ -460,36 +460,6 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static string ToString2(this double _double) => _double.ToString("0.00").Replace(",", ".");
 
-        public static string ToSQLString(this Operator _operator) {
-            switch (_operator) {
-                case Operator.EQ: return "=";
-                case Operator.GT: return ">";
-                case Operator.LT: return "<";
-                case Operator.GEQ: return ">=";
-                case Operator.LEQ: return "<=";
-                case Operator.LIKE: return "LIKE";
-                case Operator.ILIKE: return "ILIKE";
-                // TODO: Support IS (like IS NULL)
-                default: throw new InvalidEnumException(_operator);
-            }
-        }
-        public static Dictionary<Type, HashSet<Operator>> ValidOperatorsForType = new Dictionary<Type, HashSet<Operator>> {
-            { typeof(long), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(double), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(DateTime), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(bool), new HashSet<Operator> { Operator.EQ } },
-            { typeof(string), new HashSet<Operator> { Operator.EQ, Operator.LIKE, Operator.ILIKE } },
-            { typeof(List<long>), new HashSet<Operator> { Operator.IN } },
-            { typeof(List<double>), new HashSet<Operator> { Operator.IN } },
-            { typeof(List<DateTime>), new HashSet<Operator> { Operator.IN } },
-            { typeof(List<bool>), new HashSet<Operator> { Operator.IN} },
-            { typeof(List<string>), new HashSet<Operator> { Operator.IN } },
-        };
-        public static void AssertValidForType(this Operator _operator, Type type, Func<string> detailer) {
-            if (!ValidOperatorsForType.TryGetValue(type, out var validOperators)) throw new InvalidEnumException(_operator, "Not valid for " + type + ". " + nameof(type) + " not recognized at all" + detailer.Result(". Details: "));
-            if (!validOperators.Contains(_operator)) throw new InvalidEnumException(_operator, "Invalid for " + type + ". Valid operators are " + string.Join(", ", validOperators.Select(o => o.ToString())) + detailer.Result(". Details: "));
-        }
-
         public static string ToString(this DateTime dateTime, DateTimeFormat resolution) {
             switch (resolution) {
                 case DateTimeFormat.None:
@@ -775,10 +745,6 @@ namespace AgoRapide.Core {
                 GetOrAdd(type, dummy => new ConcurrentDictionary<string, EnumValueAttribute>()).
                 GetOrAdd(_enum.ToString(), dummy => EnumValueAttribute.GetAttribute(_enum));
         }
-
-        public static PropertyKey A(this CoreP coreP) => PropertyKeyMapper.GetA(coreP);
-        public static PropertyKey A(this DBField dbField) => PropertyKeyMapper.GetA(dbField);
-        public static PropertyKey A(this ConfigurationAttribute.ConfigurationP configurationKey) => PropertyKeyMapper.GetA(configurationKey);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {

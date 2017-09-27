@@ -343,4 +343,8 @@ namespace AgoRapide {
         )]
         Context,
     }
+
+    public static class CorePExtension {
+        public static PropertyKey A(this CoreP coreP) => PropertyKeyMapper.GetA(coreP);
+    }
 }

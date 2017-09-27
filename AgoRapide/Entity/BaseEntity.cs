@@ -500,7 +500,7 @@ namespace AgoRapide {
                 /// Note that is is tempting to do something like this, ensuring that you do not
                 /// have to specify <see cref="PropertyKeyAttribute.Parents"/> for every property for each and every type of entity:
                 /// ---------
-                //var existing = GetType().GetAgoRapideAttribute().AccessLevelRead <= AccessLevel.Anonymous ?
+                //var existing = GetType().GetChildProperties() where .AccessLevelRead <= AccessLevel.Anonymous ?
                 //     Properties : 
                 //     GetExistingProperties(request.CurrentUser, AccessType.Read);
                 /// ---------
