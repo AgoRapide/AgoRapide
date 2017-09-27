@@ -263,7 +263,10 @@ namespace AgoRapide.Core {
         /// Note how Value as enum is given without apostrophes. 
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => "WHERE " + Key.PToString + " " + Operator.ToMathSymbol() + (Value == null ? " NULL" : (Value.GetType().IsEnum ? (" " + Value) : (" '" + Value + "'")));
+        public override string ToString() => "WHERE " + Key.PToString + " " + 
+            // Operator.ToMathSymbol()  // NOTE: This would be preferred method. More human readable.
+            Operator +                  // NOTE: This is chosen method, makes the resulting URL IIS-safe in order to avoid System.Web.HttpException "A potentially dangerous Request.Path value was detected from the client (<)."
+            (Value == null ? " NULL" : (Value.GetType().IsEnum ? (" " + Value) : (" '" + Value + "'")));
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!

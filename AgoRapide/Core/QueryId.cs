@@ -196,16 +196,20 @@ namespace AgoRapide.Core {
                     errorResponse = "No operator given";
                     return false;
                 }
-                switch (strOperator) {
-                    case "<": _operator = Operator.LT; break;
-                    case "<=": _operator = Operator.LEQ; break;
-                    case "=": _operator = Operator.EQ; break;
-                    case ">=": _operator = Operator.GEQ; break;
-                    case ">": _operator = Operator.GT; break;
-                    default:
-                        id = null;
-                        errorResponse = "Invalid operator (" + strOperator + ")";
-                        return false;
+                if (Util.EnumTryParse<Operator>(strOperator, out _operator)) {
+                    // OK
+                } else {
+                    switch (strOperator) {
+                        case "<": _operator = Operator.LT; break;
+                        case "<=": _operator = Operator.LEQ; break;
+                        case "=": _operator = Operator.EQ; break;
+                        case ">=": _operator = Operator.GEQ; break;
+                        case ">": _operator = Operator.GT; break;
+                        default:
+                            id = null;
+                            errorResponse = "Invalid operator (" + strOperator + ")";
+                            return false;
+                    }
                 }
 
                 var strValue = nextWord();
