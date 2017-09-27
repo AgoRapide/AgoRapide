@@ -329,20 +329,50 @@ namespace AgoRapide.API {
                 if (key.Key.A.IsSuitableForPercentileCalculation) {
                     // Offer percentile evaluations for these.
 
-                    // NOTE: Hardcoded use of Quintile as of Sep 2017
+                    // NOTE: Hardcoded use of quantile Quintile as of Sep 2017
                     // TODO: Add preferred quantile to PropertyKeyAttribute.
 
-                    // Quintile as relevant considered ALL properties
+                    // Quintile calculated based on ALL properties within "universe".
                     Util.EnumGetValues<Quintile>().ForEach(q => {
                         var count = propertiesNotNull.Count(p => p.Percentile.AsQuintile == q);
                         if (count == 0) return; // No point in suggesting
                         if (count == totalCount) return; // No point in suggesting
                         var query = new QueryIdKeyOperatorValue(key.Key, Operator.EQ, q);
-                        percentileDrilldowns.Add(q.ToString(), // TODO: Works fine until we have a value Quintile1 or similar (will give us key-collision below)
+                        percentileDrilldowns.Add("Global " + q.ToString(), // TODO: Works fine until we have a value Global Quintile1 or similar (will give us key-collision below)
                             new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), q + " (" + count + ")", query)
                         );
                     });
 
+                    // Lowest and highest quintile based on only properties within selection
+
+                    if (!key.Key.A.OperatorsAsHashSet.Contains(Operator.GT)) {
+                        /// LT, LEQ, GEQ, GT considered equivalant. Most probably we could also ask for if Type implements <see cref="IComparable"/>
+                    } else if (propertiesNotNull.Count < 10) {
+                        // Offering quintiles now considered irrelevant
+                    } else {
+                        var sortedProperties = propertiesNotNull.OrderBy(p => p.Value).ToList();
+                        var oneFifth = sortedProperties.Count / 5;
+
+                        // TODO: Go over algorithm here. May be off by one element!
+                        var quintileValue = sortedProperties[oneFifth - 1].Value; /// Calculate value for local <see cref="Quintile.Quintile1"/>
+                        // Count as efficient as possible, based on the fact that the list is already sorted.
+                        var count = oneFifth; while (count < sortedProperties.Count && sortedProperties[count].Value == quintileValue) count++;
+                        var query = new QueryIdKeyOperatorValue(key.Key, Operator.LEQ, quintileValue);
+                        // TODO: Find better term than "Local" (confer with "Global above).
+                        percentileDrilldowns.Add("Local " + Quintile.Quintile1, // TODO: Works fine until we have a value Local Quintile1 or similar (will give us key-collision below)
+                            new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), "Local " + Quintile.Quintile1 + " (" + count + ")", query)
+                        );
+
+                        // TODO: Go over algorithm here. May be off by one element!
+                        quintileValue = sortedProperties[sortedProperties.Count - oneFifth].Value; /// Calculate value for local <see cref="Quintile.Quintile5"/>
+                        // Count as efficient as possible, based on the fact that the list is already sorted.
+                        count = oneFifth; while ((sortedProperties.Count - count) >= 0 && sortedProperties[sortedProperties.Count - count].Value == quintileValue) count++;
+                        query = new QueryIdKeyOperatorValue(key.Key, Operator.LEQ, quintileValue);
+                        // TODO: Find better term than "Local" (confer with "Global above).
+                        percentileDrilldowns.Add("Local " + Quintile.Quintile5, // TODO: Works fine until we have a value Local Quintile5 or similar (will give us key-collision below)
+                            new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), "Local " + Quintile.Quintile5 + " (" + count + ")", query)
+                        );
+                    }
                 }
 
                 if (key.Key.A.Operators == null) {
@@ -386,7 +416,7 @@ namespace AgoRapide.API {
                         }).
                         Select(v => (v, key.Key.ConvertObjectToString(v))).Distinct(new EqualityComparerTupleObjectString()).
                         ToList(); // Important in order for "side effect" to work as intended (we must force execution of the Where-lambda)
-                 
+
                     if (typeof(ITypeDescriber).IsAssignableFrom(key.Key.A.Type)) { /// Enforce IEquatable or similar for these classes anyway as it will improve performance (less calls to <see cref="PropertyKeyAttributeEnriched.ConvertObjectToString"/>)
                         if (objStrValues.Count != objValues.Count()) {
                             var t = typeof(IEquatable<>).MakeGenericType(new Type[] { key.Key.A.Type });
