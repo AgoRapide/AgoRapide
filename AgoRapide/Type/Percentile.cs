@@ -153,12 +153,15 @@ namespace AgoRapide {
         public static void Calculate(Type type, List<BaseEntity> entities, PropertyKey key) {
             key.Key.A.AssertSuitableForPercentileCalculation();
             InvalidTypeException.AssertEquals(key.Key.A.Type, typeof(long), () => "Only supported for long as of Sep 2017");
+            if (entities.Count == 0) return;
             var properties = entities.
                 Select(e => e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null).Where(p => p != null).
                 Select(p => (Property: p, Value: p.V<long>())). // Extract value only once for each property. Should improve sorting and percentile evaluation
                 OrderBy(p => p.Value).ToList();
-            // TODO: Consider just returning quietly here.
-            if (properties.Count == 0) throw new InvalidCountException("No properties found for " + type + " " + key.ToString() + ". Are values read into " + nameof(InMemoryCache.EntityCache) + "?");
+            if (properties.Count == 0) {
+                // TODO: Consider just returning quietly here instead.
+                throw new InvalidCountException("No properties found for " + type + " " + key.ToString() + ". Are values read into " + nameof(InMemoryCache.EntityCache) + " (Count " + InMemoryCache.EntityCache.Count + ")? " + nameof(entities) + ".Count: " + entities.Count);
+            }
             var lastValue = properties[0].Value;
             var lastIndex = 0;
             for (var i = 1; i < properties.Count; i++) { // TOOD: This is a quick-and-dirty attempt at Percentile-evaluation. It does probably have room for improvement.

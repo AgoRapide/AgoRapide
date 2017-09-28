@@ -367,7 +367,7 @@ namespace AgoRapide.API {
                         quintileValue = sortedProperties[sortedProperties.Count - oneFifth].Value; /// Calculate value for local <see cref="Quintile.Quintile5"/>
                         // Count as efficient as possible, based on the fact that the list is already sorted.
                         count = oneFifth; while ((sortedProperties.Count - count) >= 0 && sortedProperties[sortedProperties.Count - count].Value == quintileValue) count++;
-                        query = new QueryIdKeyOperatorValue(key.Key, Operator.LEQ, quintileValue);
+                        query = new QueryIdKeyOperatorValue(key.Key, Operator.GEQ, quintileValue);
                         // TODO: Find better term than "Local" (confer with "Global above).
                         percentileDrilldowns.Add("Local " + Quintile.Quintile5, // TODO: Works fine until we have a value Local Quintile5 or similar (will give us key-collision below)
                             new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), "Local " + Quintile.Quintile5 + " (" + count + ")", query)

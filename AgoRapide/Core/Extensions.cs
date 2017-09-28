@@ -164,7 +164,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException(Util.BreakpointEnabler + "Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
         public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) => GetValue(dictionary, key, null);
@@ -333,6 +333,15 @@ namespace AgoRapide.Core {
                     retval.Add((T)element);
                 }
             }
+            return retval;
+        }
+
+        [ClassMember(Description = "Alernative to IEnumerable.ToDictionary. Gives better exception for duplicate keys (will explain WHICH key is a duplicate).")]
+        public static Dictionary<TKey, TElement> ToDictionary2<TSource, TKey, TElement>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector) {
+            var retval = new Dictionary<TKey, TElement>();
+            source.ForEach(e => {
+                retval.AddValue(keySelector(e), elementSelector(e), () => "Element " + e.ToString());
+            });
             return retval;
         }
 

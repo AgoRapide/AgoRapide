@@ -52,9 +52,9 @@ namespace AgoRapide.Database {
 
                         string strValue;
                         switch (key.ExpansionType) { /// Note how AddProperty generic type now chosen must correspond to <see cref="ExpansionTypeE.ToExpandedType"/>
-                            case ExpansionType.DateYear: { var v = dtmValue.Year; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.DateYear: { var v = (long)dtmValue.Year; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateQuarter: { var v = (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            case ExpansionType.DateMonth: { var v = dtmValue.Month; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.DateMonth: { var v = (long)dtmValue.Month; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateWeekday: { var v = dtmValue.DayOfWeek; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearQuarter: { var v = dtmValue.Year + "_" + (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v; e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearMonth: { var v = dtmValue.Year + "_" + dtmValue.Month.ToString("00"); strValue = v; e.AddProperty(key, v); break; }
@@ -129,8 +129,10 @@ namespace AgoRapide.Database {
                     e.AddProperty(key, av); // Note cast since long is the preferred type for aggregations. 
 
                     if (!valuesFound.Contains(av)) {
-                        // TOOD: TURN LIMIT OF 20 INTO A CONFIGURATION-PARAMETER
-                        if (valuesFound.Count >= 20) { // Note how we allow up to 20 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
+                        // TOOD: TURN LIMIT OF 30 INTO A CONFIGURATION-PARAMETER
+                        // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
+                        if (valuesFound.Count >= 30) { // Note how we allow up to 30 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
+                            // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
                             hasLimitedRange = false;
                         } else {
                             valuesFound.Add(av);

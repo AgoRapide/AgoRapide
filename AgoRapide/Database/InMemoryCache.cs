@@ -49,8 +49,10 @@ namespace AgoRapide.Database {
 
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
+        /// 
+        /// ResetEntityCache removed from code 28 Sep 2017 because does not work well with <see cref="BaseSynchronizer"/> / <see cref="CacheUse.All"/>
         /// </summary>
-        public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
+        public static void ResetEntityCache() => throw new NotImplementedException(); //  EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 
         private static List<Type> _synchronizerTypes = new List<Type>();
         /// <summary>

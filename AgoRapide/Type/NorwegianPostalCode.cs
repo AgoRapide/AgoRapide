@@ -65,9 +65,9 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="key"></param>
         public static void EnrichKey(PropertyKeyAttributeEnriched key) => key.ValidatorAndParser = new Func<string, ParseResult>(value =>
-                TryParse(value, out var retval, out var errorResponse) ?
-                    ParseResult.Create(key, retval) :
-                    ParseResult.Create(errorResponse));
+            TryParse(value, out var retval, out var errorResponse) ?
+                ParseResult.Create(key, retval) :
+                ParseResult.Create(errorResponse));
 
         public class InvalidNorwegianPostalCodeException : ApplicationException {
             public InvalidNorwegianPostalCodeException(string message) : base(message) { }

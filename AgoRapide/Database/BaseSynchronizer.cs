@@ -50,7 +50,10 @@ namespace AgoRapide.Database {
             var entities = SynchronizeGetEntities(db, result);
             entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, result));
             SynchronizeMapForeignKeys(entities, result);
-            entities.ForEach(e => FileCache.Instance.StoreToDisk(this, e.Key, e.Value));
+            entities.ForEach(e => {
+                result.LogInternal(nameof(FileCache.StoreToDisk) + ": " + e.Key, GetType());
+                FileCache.Instance.StoreToDisk(this, e.Key, e.Value); 
+            });
             // AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
             result.ResultCode = ResultCode.ok;
             result.LogInternal("Finished", GetType());

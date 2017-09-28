@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using AgoRapide.Core;
 
 namespace AgoRapide {
-    public class Money : ITypeDescriber {
+
+    [Class(Description = "Immutable. Note -" + nameof(SetCommonValues) + "-.")]
+    public class Money : ITypeDescriber, IEquatable<Money> {
         public Currency Currency { get; private set; }
         public double Amount { get; private set; }
 
@@ -14,6 +16,17 @@ namespace AgoRapide {
             Currency = currency;
             Amount = amount;
         }
+
+        public bool Equals(Money other) => Currency == other.Currency && Amount == other.Amount;
+        public override bool Equals(object other) {
+            if (other == null) return false;
+            switch (other) {
+                case Money m: return Equals(m);
+                default: return false;
+            }
+        }
+        private int? _hashcode;
+        public override int GetHashCode() => (int)(_hashcode ?? (_hashcode = ToString().GetHashCode()));
 
         /// <summary>
         /// TODO: Create an "adder"-class if you want more efficient calculations
@@ -53,6 +66,7 @@ namespace AgoRapide {
         public static Money Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidMoneyException(nameof(value) + ": " + value + ". Details: " + errorResponse);
         public static bool TryParse(string value, out Money money) => TryParse(value, out money, out _);
         public static bool TryParse(string value, out Money money, out string errorResponse) {
+            if (CommonValues != null && CommonValues.TryGetValue(value, out money)) { errorResponse = null; return true; }
             money = null; errorResponse = null;
             var t = value.Split(' ');
             if (t.Length != 2) { errorResponse = "Not two items separated by space but " + t.Length + " items"; return false; }
@@ -62,14 +76,24 @@ namespace AgoRapide {
             return true;
         }
 
+        public static Dictionary<string, Money> CommonValues = null;
+        [ClassMember(Description = 
+            "Useful if your application uses some values overwhelmingly more than other values. " +
+            "Parsing will then be much quicker and less objects will be generated.")]
+        public static void SetCommonValues(List<Money> list) {
+            Util.AssertCurrentlyStartingUp();
+            CommonValues = list.ToDictionary2(m => m.ToString(), m => m);
+        }
+
         private class InvalidMoneyException : Exception {
             public InvalidMoneyException(string message) : base(message) { }
             public InvalidMoneyException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public static void EnrichKey(PropertyKeyAttributeEnriched key) {
-
-        }
+        public static void EnrichKey(PropertyKeyAttributeEnriched key) => key.ValidatorAndParser = new Func<string, ParseResult>(value =>
+            TryParse(value, out var retval, out var errorResponse) ?
+                ParseResult.Create(key, retval) :
+                ParseResult.Create(errorResponse));
     }
 
     /// <summary>

@@ -196,16 +196,20 @@ namespace AgoRapide.Core {
                     errorResponse = "No operator given";
                     return false;
                 }
-                switch (strOperator) {
-                    case "<": _operator = Operator.LT; break;
-                    case "<=": _operator = Operator.LEQ; break;
-                    case "=": _operator = Operator.EQ; break;
-                    case ">=": _operator = Operator.GEQ; break;
-                    case ">": _operator = Operator.GT; break;
-                    default:
-                        id = null;
-                        errorResponse = "Invalid operator (" + strOperator + ")";
-                        return false;
+                if (Util.EnumTryParse(strOperator, out _operator)) {
+                    // OK
+                } else {
+                    switch (strOperator) {
+                        case "<": _operator = Operator.LT; break;
+                        case "<=": _operator = Operator.LEQ; break;
+                        case "=": _operator = Operator.EQ; break;
+                        case ">=": _operator = Operator.GEQ; break;
+                        case ">": _operator = Operator.GT; break;
+                        default:
+                            id = null;
+                            errorResponse = "Invalid operator (" + strOperator + ")";
+                            return false;
+                    }
                 }
 
                 var strValue = nextWord();
@@ -214,6 +218,15 @@ namespace AgoRapide.Core {
                     errorResponse = "No value given";
                     return false;
                 }
+                var strLeftover = nextWord();
+
+                /// HACK: Ugly hack in order for <see cref="Money"/> to parse.
+                /// TODO: Implement better parsing. Look for starting ' and ending '.
+                if (strLeftover != null && strLeftover.EndsWith("'")) {
+                    strValue = strValue + " " + strLeftover;
+                    strLeftover = null;
+                }
+
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
                 } else if (Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
@@ -228,7 +241,7 @@ namespace AgoRapide.Core {
                     }
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
-                var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
+                if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
 
                 errorResponse = null;
                 return true;

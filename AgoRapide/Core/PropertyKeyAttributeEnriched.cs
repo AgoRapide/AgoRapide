@@ -419,6 +419,7 @@ namespace AgoRapide.Core {
                     ValidatorAndParser = value => {
                         throw new NotImplementedException(
                             "Validator for type " + A.Type.ToStringShort() + " is not implemented because that type is unknown.\r\n" +
+                            (!typeof(ITypeDescriber).IsAssignableFrom(A.Type) ? "" : ("Possible cause: " + nameof(IGroupDescriber.EnrichKey) + " may be wrongly implemented for " + A.Type + "\r\n")) + /// Note that <see cref="ITypeDescriber"/> itself is "empty".
                             "Details: " + A.ToString());
                     };
                 }
