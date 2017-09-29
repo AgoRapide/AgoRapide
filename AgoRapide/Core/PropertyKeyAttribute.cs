@@ -495,6 +495,9 @@ namespace AgoRapide.Core {
         )]
         public string[] SampleValues { get; set; }
 
+        /// <summary>
+        /// TODO: Replace test for typeof(long) with something supporting IComparable.
+        /// </summary>
         public bool IsSuitableForPercentileCalculation => !IsMany && typeof(long).Equals(Type) && ForeignKeyOf == null && ExternalForeignKeyOf == null && ExternalPrimaryKeyOf == null;
 
         /// <summary>
