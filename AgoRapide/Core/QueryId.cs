@@ -196,7 +196,7 @@ namespace AgoRapide.Core {
                     errorResponse = "No operator given";
                     return false;
                 }
-                if (Util.EnumTryParse<Operator>(strOperator, out _operator)) {
+                if (Util.EnumTryParse(strOperator, out _operator)) {
                     // OK
                 } else {
                     switch (strOperator) {
@@ -218,6 +218,15 @@ namespace AgoRapide.Core {
                     errorResponse = "No value given";
                     return false;
                 }
+                var strLeftover = nextWord();
+
+                /// HACK: Ugly hack in order for <see cref="Money"/> to parse.
+                /// TODO: Implement better parsing. Look for starting ' and ending '.
+                if (strLeftover != null && strLeftover.EndsWith("'")) {
+                    strValue = strValue + " " + strLeftover;
+                    strLeftover = null;
+                }
+
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
                 } else if (Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
@@ -232,7 +241,7 @@ namespace AgoRapide.Core {
                     }
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
-                var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
+                if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
 
                 errorResponse = null;
                 return true;
@@ -282,14 +291,14 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichKey for all QueryId-classes!!!
         /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
         /// enumAttribute.Cleaner=
         /// 
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="key"></param>
-        public static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+        public static void EnrichKey(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     ParseResult.Create(key, retval) :

@@ -81,7 +81,8 @@ namespace AgoRapide.Core {
                 sql.Append(DBField.key + " = '" + A.PToString + "' AND ");
 
                 /// Builds SQL query if Value corresponds to T
-                T? valueAs<T>(DBField dbField) where T : struct {
+                T? valueAs<T>(DBField dbField) where T : struct
+                {
                     var retval = Value as T?;
                     if (retval != null) {
                         Operator.AssertValidForType(typeof(T), detailer);
@@ -263,19 +264,19 @@ namespace AgoRapide.Core {
         /// Note how Value as enum is given without apostrophes. 
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => "WHERE " + Key.PToString + " " + 
+        public override string ToString() => "WHERE " + Key.PToString + " " +
             // Operator.ToMathSymbol()  // NOTE: This would be preferred method. More human readable.
             Operator +                  // NOTE: This is chosen method, makes the resulting URL IIS-safe in order to avoid System.Web.HttpException "A potentially dangerous Request.Path value was detected from the client (<)."
             (Value == null ? " NULL" : (Value.GetType().IsEnum ? (" " + Value) : (" '" + Value + "'")));
 
         /// <summary>
-        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichKey for all QueryId-classes!!!
         /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
         /// TODO: enumAttribute.Cleaner=
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="key"></param>
-        public new static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+        public new static void EnrichKey(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is QueryIdKeyOperatorValue ? /// Note how <see cref="QueryId.TryParse"/> returns base class <see cref="QueryId"/>, therefore only accept the returned value if it is a <see cref="QueryIdKeyOperatorValue"/>
