@@ -1037,7 +1037,7 @@ namespace AgoRapide.Database {
                         switch (f) {
                             case DBField.id:
                             case DBField.cid: return " NOT NULL,";
-                            case DBField.created: return " DEFAULT now(),"; // TODO: Should we add these as AgoRapideAttributes?
+                            case DBField.created: return " DEFAULT now(),"; /// TODO: Should we add these as <see cref="PropertyKeyAttribute"/>?
                             default: return ",";
                         }
                     })();

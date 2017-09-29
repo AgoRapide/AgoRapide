@@ -50,7 +50,7 @@ namespace AgoRapide.Core {
             return (T)(object)db.GetEntityById(Id, requiredType: Key.A.ForeignKeyOf);
         }
 
-        public static void EnrichAttribute(PropertyKeyAttributeEnriched key) {
+        public static void EnrichKey(PropertyKeyAttributeEnriched key) {
             if (key.A.ForeignKeyOf == null) throw new NullReferenceException(nameof(key.A.ForeignKeyOf) + ". Details: " + key.ToString());
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(key, value, out var retval, out var errorResponse) ?

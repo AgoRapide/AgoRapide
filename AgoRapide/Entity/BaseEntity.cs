@@ -500,7 +500,7 @@ namespace AgoRapide {
                 /// Note that is is tempting to do something like this, ensuring that you do not
                 /// have to specify <see cref="PropertyKeyAttribute.Parents"/> for every property for each and every type of entity:
                 /// ---------
-                //var existing = GetType().GetAgoRapideAttribute().AccessLevelRead <= AccessLevel.Anonymous ?
+                //var existing = GetType().GetChildProperties() where .AccessLevelRead <= AccessLevel.Anonymous ?
                 //     Properties : 
                 //     GetExistingProperties(request.CurrentUser, AccessType.Read);
                 /// ---------
@@ -603,15 +603,19 @@ namespace AgoRapide {
         public virtual string ToCSVTableRowHeading(Request request) => _CSVTableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
             return nameof(Id) + request.CSVFieldSeparator +
-            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => new Func<string>(() => {
-                var retval = key.Key.PToString;
-                if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
-                    retval = retval.Substring(thisType.Length);
-                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
-                }
-                return retval;
-            })()));
-            // CSVFieldSeparator + nameof(Created)            
+            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
+                    /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
+                    PriorityOrder.Everything // We assume that all information is required for CSV
+                ).Select(key => new Func<string>(() => {
+                    var retval = key.Key.PToString;
+                    if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                        retval = retval.Substring(thisType.Length);
+                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
+                    }
+                    return retval;
+                })())
+            ); 
+            /// request.CSVFieldSeparator + nameof(Created); // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
         });
 
         /// <summary>
@@ -622,11 +626,14 @@ namespace AgoRapide {
         /// <param name="request"></param>
         /// <returns></returns>
         public virtual string ToCSVTableRow(Request request) => (Id <= 0 ? "" : Id.ToString()) + request.CSVFieldSeparator +
-            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ?
+            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
+                    /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
+                    PriorityOrder.Everything // We assume that all information is required for CSV
+                ).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ?
                 p.V<string>().Replace(request.CSVFieldSeparator, ":") :  // Note replacement here with colon. TODO: Document better / create alternatives
                 "")
             ) +
-            // CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) +
+            // request.CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) + // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
             "\r\n";
 
         /// <summary>

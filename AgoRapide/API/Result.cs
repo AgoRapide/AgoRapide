@@ -156,6 +156,12 @@ namespace AgoRapide.API {
                 if (MultipleEntitiesResult.Count == 0) {
                     retval.AppendLine("No entities resulted from your query");
                 } else {
+
+                    if (request.URL.Contains("/CurrentContext/") && request.CurrentUser != null) { // URL as shown in header is not sufficient to explain where data comes from.
+                        retval.AppendLine();
+                        request.CurrentUser.PV<List<Context>>(CoreP.Context.A()).ForEach(c => retval.AppendLine(c.ToString()));
+                    }
+
                     var types = MultipleEntitiesResult.Select(e => e.GetType()).Distinct().ToList();
                     if (types.Count > 1) retval.AppendLine("Total entities" + request.CSVFieldSeparator + MultipleEntitiesResult.Count);
                     types.ForEach(t => { /// Split up separate tables for each type because <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/> are not compatible between different types

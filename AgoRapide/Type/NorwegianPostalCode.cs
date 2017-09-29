@@ -13,6 +13,8 @@ namespace AgoRapide {
     /// TODO: Find a more internationally recognized example instead of Norwegian postal code
     /// TODO: (and preferable something that would be difficult to solve with just <see cref="PropertyKeyAttribute.RegExpValidator"/>)
     /// 
+    /// TODO: One candidate would be the <see cref="Money"/>-class.
+    /// 
     /// <see cref="NorwegianPostalCode"/> is a string "between" 0000 and 9999.
     /// 
     /// This class is maybe a bit over-engineered (and still not complete) but it illustrates in detail how your classes may cooperate with the
@@ -51,7 +53,7 @@ namespace AgoRapide {
             return null;
         };
 
-        /// <see cref="EnrichAttribute"/> is the method that MUST be implemented
+        /// <see cref="EnrichKey"/> is the method that MUST be implemented
         /// 
         /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
         /// enumAttribute.Cleaner=
@@ -61,11 +63,11 @@ namespace AgoRapide {
         /// <summary>
         /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreP"/>)
         /// </summary>
-        /// <param name="agoRapideAttribute"></param>
-        public static void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) => agoRapideAttribute.ValidatorAndParser = new Func<string, ParseResult>(value =>
-                TryParse(value, out var retval, out var errorResponse) ?
-                    ParseResult.Create(agoRapideAttribute, retval) :
-                    ParseResult.Create(errorResponse));
+        /// <param name="key"></param>
+        public static void EnrichKey(PropertyKeyAttributeEnriched key) => key.ValidatorAndParser = new Func<string, ParseResult>(value =>
+            TryParse(value, out var retval, out var errorResponse) ?
+                ParseResult.Create(key, retval) :
+                ParseResult.Create(errorResponse));
 
         public class InvalidNorwegianPostalCodeException : ApplicationException {
             public InvalidNorwegianPostalCodeException(string message) : base(message) { }

@@ -12,10 +12,10 @@ namespace AgoRapide.Core {
     /// TODO: Move to Type-folder. 
     /// 
     /// Dummy interface indicating that implementing class has a static method called
-    ///   EnrichAttribute 
-    /// with the same signature as <see cref="IGroupDescriber.EnrichAttribute"/>
+    ///   EnrichKey 
+    /// with the same signature as <see cref="IGroupDescriber.EnrichKey"/>
     /// 
-    /// Enables adding of validating and parsing information to <see cref="AgoRapideAttributeT"/> 
+    /// Enables adding of validating and parsing information to <see cref="PropertyKeyAttribute"/> 
     /// by specifying a type implementing this interface in <see cref="PropertyKeyAttribute.Type"/>. 
     /// (In other words, the type implementing this interface is by 
     /// this principle able to describe itself to AgoRapide).
@@ -36,7 +36,7 @@ namespace AgoRapide.Core {
     /// TODO: FIND BETTER EXAMPLES! See P in AgoRapideSample for where to put a good example. 
     /// 
     /// Note how this interface is empty. Any class implementing this interface must have a 
-    /// STATIC method with the same signature as <see cref="IGroupDescriber.EnrichAttribute"/>
+    /// STATIC method with the same signature as <see cref="IGroupDescriber.EnrichKey"/>
     /// (this is a practical choice since it avoids AgoRapide having to instantiate the
     /// class for what is essential a static one-off operation done at application initialization)
     /// 
@@ -47,7 +47,7 @@ namespace AgoRapide.Core {
     /// <see cref="ITypeDescriber"/> is not to be confused with <see cref="IGroupDescriber"/>. 
     /// The former is specified through <see cref="PropertyKeyAttribute.Type"/> describing an actual class (usually used for a single TProperty), 
     /// while the latter is specified through <see cref="PropertyKeyAttribute.Group"/> describing common attributes for a group of properties. 
-    /// (although technically they both do the one and same kind of operations, enriching <see cref="AgoRapideAttributeT"/> 
+    /// (although technically they both do the one and same kind of operations, enriching <see cref="PropertyKeyAttribute"/> 
     /// and its member class <see cref="PropertyKeyAttribute"/> (<see cref="PropertyKeyAttributeEnriched.A"/>)
     /// </summary>
     public interface ITypeDescriber {

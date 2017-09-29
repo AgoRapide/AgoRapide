@@ -22,8 +22,8 @@ namespace AgoRapide.Core {
     /// This class is assumed to have marginal use.
     /// </summary>
     public class PropertyKeyAttributeEnrichedDyn : PropertyKeyAttributeEnriched {
-        public PropertyKeyAttributeEnrichedDyn(PropertyKeyAttribute agoRapideAttribute, CoreP coreP) {
-            A = agoRapideAttribute;
+        public PropertyKeyAttributeEnrichedDyn(PropertyKeyAttribute key, CoreP coreP) {
+            A = key;
             _coreP = coreP;
             if (!(A.EnumValue is string)) throw new InvalidObjectTypeException(A.EnumValue, typeof(string), nameof(A.EnumValue) + ".\r\nDetails: " + ToString());
             Initialize();

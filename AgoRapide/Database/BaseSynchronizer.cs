@@ -50,7 +50,10 @@ namespace AgoRapide.Database {
             var entities = SynchronizeGetEntities(db, result);
             entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, result));
             SynchronizeMapForeignKeys(entities, result);
-            entities.ForEach(e => FileCache.Instance.StoreToDisk(this, e.Key, e.Value));
+            entities.ForEach(e => {
+                result.LogInternal(nameof(FileCache.StoreToDisk) + ": " + e.Key, GetType());
+                FileCache.Instance.StoreToDisk(this, e.Key, e.Value); 
+            });
             // AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
             result.ResultCode = ResultCode.ok;
             result.LogInternal("Finished", GetType());
@@ -107,6 +110,8 @@ namespace AgoRapide.Database {
             ///   SetAndStoreCount(CountP.Total, externalEntities.Count, result, db);
             /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as we are called for different types, meaning value stored for last type would just be overridden)
             SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.Total.A()), externalEntities.Count, result, db);
+
+            /// If no keys are found here, a typical cause may be missing statements in Startup.cs
             var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             var internalEntities = db.GetAllEntities(type);

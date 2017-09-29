@@ -66,7 +66,8 @@ namespace AgoRapide.API {
             "AgoRapide CSV\r\n" +
             Util.Configuration.C.RootUrl + "\r\n" +
             (Request.CurrentUser == null ? "" : (nameof(Request.CurrentUser) + Request.CSVFieldSeparator + Request.CurrentUser.IdFriendly + Request.CSVFieldSeparator + Request.API.CreateAPIUrl(Request.CurrentUser) + "\r\n")) +
-            ((Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity == null) ? "" : (nameof(BaseEntity.RepresentedByEntity) + Request.CSVFieldSeparator + Request.CurrentUser.RepresentedByEntity.IdFriendly + Request.CSVFieldSeparator + Request.API.CreateAPIUrl(Request.CurrentUser.RepresentedByEntity) + "\r\n"));
+            ((Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity == null) ? "" : (nameof(BaseEntity.RepresentedByEntity) + Request.CSVFieldSeparator + Request.CurrentUser.RepresentedByEntity.IdFriendly + Request.CSVFieldSeparator + Request.API.CreateAPIUrl(Request.CurrentUser.RepresentedByEntity) + "\r\n")) +
+            "URL" + Request.CSVFieldSeparator + Request.URL + "\r\n";
 
         /// <summary>
         /// TODO: Make configurable through <see cref="Util.Configuration"/>

@@ -35,7 +35,7 @@ namespace AgoRapide.Core {
             );
 
             new TPerson().Use(p => {
-                p.AddProperty(Extensions.A(CoreP.AccessLevelGiven), AccessLevel.System);
+                p.AddProperty(CorePExtension.A(CoreP.AccessLevelGiven), AccessLevel.System);
                 Util.Configuration.C.SystemUser = p;
             });
 

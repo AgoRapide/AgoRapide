@@ -25,16 +25,22 @@ namespace AgoRapide.Core {
         public Type Type { get; private set; }
         public QueryId QueryId { get; private set; }
 
+        public Context(SetOperator setOperator, Type type, QueryId queryId) {
+            SetOperator = setOperator; InvalidEnumException.AssertDefined(SetOperator);
+            Type = type ?? throw new ArgumentNullException(nameof(type));
+            QueryId = queryId ?? throw new ArgumentNullException(nameof(queryId));
+        }
+
         public bool Equals(Context other) => SetOperator == other.SetOperator && Type.Equals(other.Type) && QueryId.Equals(other.QueryId);
         public override bool Equals(object other) {
             if (other == null) return false;
             switch (other) {
-                case Context context: return Equals(context);
+                case Context c: return Equals(c);
                 default: return false;
             }
         }
         private int? _hashcode;
-        public override int GetHashCode() => (int)(_hashcode ?? (_hashcode = (SetOperator + "_" + Type + "_" + QueryId.ToString()).GetHashCode()));
+        public override int GetHashCode() => (int)(_hashcode ?? (_hashcode = ToString().GetHashCode()));
 
         /// <summary>
         /// Hints about optiomal ordering of context querying. 
@@ -50,12 +56,6 @@ namespace AgoRapide.Core {
         /// TODO: Use that again against <see cref="Context.QueryId"/>
         /// </summary>
         public Percentile Size = Percentile.Get(50); // Return median size
-
-        public Context(SetOperator setOperator, Type type, QueryId queryId) {
-            SetOperator = setOperator; InvalidEnumException.AssertDefined(SetOperator);
-            Type = type ?? throw new ArgumentNullException(nameof(type));
-            QueryId = queryId ?? throw new ArgumentNullException(nameof(queryId));
-        }
 
         public static Context Parse(string value) => TryParse(value, out var retval, out var errorResponse) ? retval : throw new InvalidContextException(nameof(value) + ": " + value + ", " + nameof(errorResponse) + ": " + errorResponse);
         public static bool TryParse(string value, out Context id) => TryParse(value, out id, out var dummy);
@@ -182,7 +182,7 @@ namespace AgoRapide.Core {
             return retval;
         }
 
-        public static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+        public static void EnrichKey(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     ParseResult.Create(key, retval) :

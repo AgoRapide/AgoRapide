@@ -60,8 +60,8 @@ namespace AgoRapide {
         /// </summary>
         [PropertyKey(
             Description = "The root property of a -" + nameof(BaseEntity) + "-",
-            Type = typeof(Type), 
-            Parents = new Type[] { typeof(BaseEntity) }, 
+            Type = typeof(Type),
+            Parents = new Type[] { typeof(BaseEntity) },
             CanHaveChildren = true,
             PriorityOrder = PriorityOrder.NotImportant
         )]
@@ -69,7 +69,7 @@ namespace AgoRapide {
 
         [PropertyKey(
             Description = "Corresponds to a -" + nameof(BaseEntity) + "--derived type.",
-            Type = typeof(Type), Parents = new Type[] { typeof(APIMethod) })]
+            Type = typeof(Type), PriorityOrder = PriorityOrder.Important, Parents = new Type[] { typeof(APIMethod) })]
         EntityType,
 
         [PropertyKey(Type = typeof(EntityTypeCategory), Parents = new Type[] { typeof(APIMethod) })]
@@ -118,9 +118,9 @@ namespace AgoRapide {
             Type = typeof(AccessLevel))]
         AccessLevelGiven,
 
-        [PropertyKey(
+        [PropertyKey( /// TODO: Move into <see cref="APIMethodP"/> instead?
             Description = "Access level necessary for -" + nameof(AccessType.Read) + "--access to an object in the sense of using that objects functionality (typical access level necessary in order to call an -" + nameof(APIMethod) + "-).",
-            Type = typeof(AccessLevel), Parents = new Type[] { typeof(APIMethod) })]
+            Type = typeof(AccessLevel), PriorityOrder = PriorityOrder.Important, Parents = new Type[] { typeof(APIMethod) })]
         AccessLevelUse,
 
         [PropertyKey(
@@ -285,8 +285,8 @@ namespace AgoRapide {
                 "Used in " + nameof(APIMethod) + " for giving samples. " +
                 "Also useful for suggesting follow-up API-calls. ",
             IsMany = true, /// TODO: For use within <see cref="GeneralQueryResult"/> we only use a single property.
-            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult), typeof(APIMethod) }, 
-            AccessLevelRead = AccessLevel.Anonymous, 
+            Type = typeof(Uri), Parents = new Type[] { typeof(GeneralQueryResult), typeof(APIMethod) },
+            AccessLevelRead = AccessLevel.Anonymous,
             PriorityOrder = PriorityOrder.Important)]
         SuggestedUrl,
 
@@ -342,5 +342,9 @@ namespace AgoRapide {
             AccessLevelWrite = AccessLevel.Relation
         )]
         Context,
+    }
+
+    public static class CorePExtension {
+        public static PropertyKey A(this CoreP coreP) => PropertyKeyMapper.GetA(coreP);
     }
 }

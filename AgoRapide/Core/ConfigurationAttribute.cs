@@ -337,4 +337,8 @@ namespace AgoRapide.Core {
             idDoc: new List<string> { "Configuration" }
         );
     }
+
+    public static class ConfigurationExtension {
+        public static PropertyKey A(this ConfigurationAttribute.ConfigurationP configurationKey) => PropertyKeyMapper.GetA(configurationKey);
+    }
 }

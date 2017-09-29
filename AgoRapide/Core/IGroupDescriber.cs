@@ -35,19 +35,19 @@ namespace AgoRapide.Core {
     /// <see cref="ITypeDescriber"/> is not to be confused with <see cref="IGroupDescriber"/>. 
     /// The former is specified through <see cref="PropertyKeyAttribute.Type"/> describing an actual class (usually used for a single TProperty), 
     /// while the latter is specified through <see cref="PropertyKeyAttribute.Group"/> describing common attributes for a group of properties. 
-    /// (although technically they both do the one and same kind of operations, enriching <see cref="AgoRapideAttributeT"/> 
+    /// (although technically they both do the one and same kind of operations, enriching <see cref="PropertyKeyAttribute"/> 
     /// and its member class <see cref="PropertyKeyAttribute"/> (<see cref="PropertyKeyAttributeEnriched.A"/>)
     /// </summary>
     public interface IGroupDescriber {
 
         /// <summary>
-        /// This method will be called before any initializing is done in <see cref="AgoRapideAttributeT"/>. 
+        /// This method is called from <see cref="PropertyKeyAttributeEnriched.Initialize"/>
         /// 
         /// The implementation may change both the properties of 
         /// <see cref="PropertyKeyAttributeEnriched"/> and the properties of its member class 
         /// <see cref="PropertyKeyAttribute"/> (<see cref="PropertyKeyAttributeEnriched.A"/>)
         /// </summary>
         /// <param name="key"></param>
-        void EnrichAttribute(PropertyKeyAttributeEnriched key);
+        void EnrichKey(PropertyKeyAttributeEnriched key);
     }
 }

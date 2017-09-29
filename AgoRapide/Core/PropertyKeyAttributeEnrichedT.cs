@@ -34,11 +34,11 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// </summary>
-        /// <param name="agoRapideAttribute"></param>
+        /// <param name="key"></param>
         /// <param name="coreP">
         /// </param>
-        public PropertyKeyAttributeEnrichedT(PropertyKeyAttribute agoRapideAttribute, CoreP coreP) {
-            A = agoRapideAttribute;
+        public PropertyKeyAttributeEnrichedT(PropertyKeyAttribute key, CoreP coreP) {
+            A = key;
             _coreP = coreP;
             if (!(A.EnumValue is T)) throw new InvalidObjectTypeException(A.EnumValue, typeof(T), nameof(A.EnumValue) + ".\r\nDetails: " + ToString());
             P = (T)A.EnumValue;
