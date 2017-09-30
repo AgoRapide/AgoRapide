@@ -56,6 +56,7 @@ namespace AgoRapide.Database {
                             case ExpansionType.DateQuarter: { var v = (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateMonth: { var v = (long)dtmValue.Month; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateWeekday: { var v = dtmValue.DayOfWeek; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.DateHour: { var v = dtmValue.Hour; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearQuarter: { var v = dtmValue.Year + "_" + (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v; e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearMonth: { var v = dtmValue.Year + "_" + dtmValue.Month.ToString("00"); strValue = v; e.AddProperty(key, v); break; }
                             case ExpansionType.DateAgeDays: { var v = (long)(now.Subtract(dtmValue).TotalDays); strValue = v.ToString(); e.AddProperty(key, v); break; }
@@ -330,6 +331,9 @@ namespace AgoRapide.Database {
         [EnumValue(Description = "Only weekday of date, like 2018-09-12 becoming -" + nameof(System.DayOfWeek.Sunday) + "-.")]
         DateWeekday,
 
+        [EnumValue(Description = "Only hour of date (0-23), like 2018-09-12 07:52 becoming 7.")]
+        DateHour,
+
         [EnumValue(Description = "Only year and quarter of date, like 2018-09-12 becoming \"2018_Q4\".")]
         DateYearQuarter,
 
@@ -364,6 +368,7 @@ namespace AgoRapide.Database {
                 case ExpansionType.DateQuarter: return typeof(Quarter);
                 case ExpansionType.DateMonth: return typeof(long);
                 case ExpansionType.DateWeekday: return typeof(DayOfWeek);
+                case ExpansionType.DateHour: return typeof(long);
                 case ExpansionType.DateYearQuarter: return typeof(string);
                 case ExpansionType.DateYearMonth: return typeof(string);
                 case ExpansionType.DateAgeDays: return typeof(long);
