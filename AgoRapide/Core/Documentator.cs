@@ -61,8 +61,8 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="entity"></param>
         /// <param name="attribute"></param>
-        [ClassMember(Description = "Not thread safe. Should be called single threaded at application startup only.")]
         public static void IndexEntity(BaseEntity entity, BaseAttribute attribute) {
+            Util.AssertCurrentlyStartingUp();
             var ea = new EntityAndAttribute { Entity = entity, Attribute = attribute };
             attribute.Id.IdDoc.ForEach(id => {
                 var list = Keys.TryGetValue(id, out var temp) ? temp : Keys[id] = new List<EntityAndAttribute>();
@@ -75,8 +75,8 @@ namespace AgoRapide.Core {
         /// Returns <see cref="KeyReplacementsHTML"/>
         /// </summary>
         /// <returns></returns>
-        [ClassMember(Description = "Not thread safe. Should be called single threaded at application startup only.")]
         public static Dictionary<string, string> IndexFinalize() {
+            Util.AssertCurrentlyStartingUp();
             KeyReplacementsHTML = new Dictionary<string, string>();
             Keys.ForEach(k => KeyReplacementsHTML["-" + k.Key + "-"] = GetSingleReplacement(k.Key, k.Value));
             return KeyReplacementsHTML;

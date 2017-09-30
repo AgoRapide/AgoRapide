@@ -160,7 +160,7 @@ namespace AgoRapide.Core {
         }
 
 
-        public new static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+        public new static void EnrichKey(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out string errorResponse) ?
                 ParseResult.Create(key, retval) :

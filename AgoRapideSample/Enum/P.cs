@@ -5,9 +5,6 @@ using AgoRapide.Core;
 using AgoRapide.Database;
 using AgoRapide.API;
 
-/// <summary>
-/// TODO: Clean up this file. There are too many classes in it.
-/// </summary>
 namespace AgoRapideSample {
 
     [Enum(

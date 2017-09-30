@@ -258,6 +258,29 @@ namespace AgoRapide {
         /// <returns></returns>
         public string PExplained(PropertyKey key) => Properties == null ? ("[" + nameof(Properties) + " == null],\r\n" + key.Key.ToString()) : (Properties.TryGetValue(key.Key.CoreP, out var retval) ? retval.ToString() : "[NOT_FOUND]");
 
+        public void AddOrUpdatePropertyM<T>(T value) => AddOrUpdateProperty(Util.MapTToCoreP<T>(), value, null, null, null);
+        public void AddOrUpdateProperty<T>(PropertyKey key, T value) => AddOrUpdateProperty(key, value, null, null, null);
+        public void AddOrUpdateProperty<T>(PropertyKey key, T value, Func<string> detailer) => AddOrUpdateProperty(key, value, null, null, detailer);
+        public void AddOrUpdateProperty<T>(PropertyKey key, T value, string strValue, Func<string> detailer) => AddOrUpdateProperty(key, value, strValue, null, detailer);
+        /// <summary>
+        /// Note how <see cref="PropertyKeyAttribute.IsMany"/> is not accepted.
+        /// TODO: Accept IsMany, but only if <paramref name="value"/> is complete list, not only a single value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="strValue"></param>
+        /// <param name="valueAttribute"></param>
+        /// <param name="detailer"></param>
+        [ClassMember(Description ="Deletes property if already exists, then calls -" + nameof(AddProperty) + "-.")]
+        public void AddOrUpdateProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute, Func<string> detailer) {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            key.Key.A.AssertNotIsMany(detailer);
+            if (Properties != null && Properties.ContainsKey(key.Key.CoreP)) Properties.Remove(key.Key.CoreP);
+            AddProperty(key, value, strValue, valueAttribute, detailer);
+        }
+
+
         /// <summary>
         /// Convenience method making it possible to call 
         /// entity.AddPropertyM(new Money("EUR 42"));
@@ -270,13 +293,11 @@ namespace AgoRapide {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
-        public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreP<T>(), value);
-
+        public void AddPropertyM<T>(T value) => AddProperty(Util.MapTToCoreP<T>(), value, null, null, null);
         public void AddProperty<T>(PropertyKey key, T value) => AddProperty(key, value, null, null, null);
         public void AddProperty<T>(PropertyKey key, T value, Func<string> detailer) => AddProperty(key, value, null, null, detailer);
+
         /// <summary>
-        /// Adds the property to this entity (in-memory operation only, does not create anything in database)
-        /// 
         /// Note how accepts either single values or complete List for <see cref="PropertyKeyAttribute.IsMany"/>
         /// </summary>
         /// <typeparam name="T">
@@ -294,6 +315,7 @@ namespace AgoRapide {
         /// See <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> for documentation
         /// </param>
         /// <param name="detailer">May be null</param>
+        [ClassMember(Description = "Adds the property to this entity (in-memory operation only, does not create anything in database)")]
         public void AddProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute, Func<string> detailer) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (value == null) throw new ArgumentNullException(nameof(value));
@@ -368,7 +390,7 @@ namespace AgoRapide {
                     if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
                         // TODO: Add mouseover for showing complete name here.
                         retval = retval.Substring(thisType.Length);
-                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.ForeignKeyAggregateKey"/>
+                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
                     }
                     return retval;
                 })() + "</th>")) +
@@ -478,7 +500,7 @@ namespace AgoRapide {
                 /// Note that is is tempting to do something like this, ensuring that you do not
                 /// have to specify <see cref="PropertyKeyAttribute.Parents"/> for every property for each and every type of entity:
                 /// ---------
-                //var existing = GetType().GetAgoRapideAttribute().AccessLevelRead <= AccessLevel.Anonymous ?
+                //var existing = GetType().GetChildProperties() where .AccessLevelRead <= AccessLevel.Anonymous ?
                 //     Properties : 
                 //     GetExistingProperties(request.CurrentUser, AccessType.Read);
                 /// ---------
@@ -581,15 +603,19 @@ namespace AgoRapide {
         public virtual string ToCSVTableRowHeading(Request request) => _CSVTableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
             return nameof(Id) + request.CSVFieldSeparator +
-            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => new Func<string>(() => {
-                var retval = key.Key.PToString;
-                if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
-                    retval = retval.Substring(thisType.Length);
-                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.ForeignKeyAggregateKey"/>
-                }
-                return retval;
-            })()));
-            // CSVFieldSeparator + nameof(Created)            
+            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
+                    /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
+                    PriorityOrder.Everything // We assume that all information is required for CSV
+                ).Select(key => new Func<string>(() => {
+                    var retval = key.Key.PToString;
+                    if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                        retval = retval.Substring(thisType.Length);
+                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
+                    }
+                    return retval;
+                })())
+            ); 
+            /// request.CSVFieldSeparator + nameof(Created); // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
         });
 
         /// <summary>
@@ -600,11 +626,14 @@ namespace AgoRapide {
         /// <param name="request"></param>
         /// <returns></returns>
         public virtual string ToCSVTableRow(Request request) => (Id <= 0 ? "" : Id.ToString()) + request.CSVFieldSeparator +
-            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ? 
+            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
+                    /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
+                    PriorityOrder.Everything // We assume that all information is required for CSV
+                ).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ?
                 p.V<string>().Replace(request.CSVFieldSeparator, ":") :  // Note replacement here with colon. TODO: Document better / create alternatives
                 "")
             ) +
-            // CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) +
+            // request.CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) + // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
             "\r\n";
 
         /// <summary>
@@ -640,7 +669,7 @@ namespace AgoRapide {
 
             /// NOTE: Sep 2017: Code below (parent, children, related entities, operations, suggested URLs) was copied form <see cref="ToHTMLDetailed"/>. 
             /// NOTE: Something of it might not be needed for CSV-format
-            
+
             /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
             /// TOOD: Consider removing this. 
             if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) { // Link from child to parent
@@ -653,7 +682,7 @@ namespace AgoRapide {
             }
             /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
             if (a.ChildrenType != null) { // Link from parent to children
-                retval.AppendLine("Children" + request.CSVFieldSeparator + 
+                retval.AppendLine("Children" + request.CSVFieldSeparator +
                     request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString()))
                 );
             }

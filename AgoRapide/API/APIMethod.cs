@@ -276,7 +276,7 @@ namespace AgoRapide.API {
         /// unnecessary checks here (especially origin)
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => _toString ?? (_toString = 
+        public override string ToString() => _toString ?? (_toString =
             base.ToString() + ",\r\n" +
             (Properties != null && Properties.ContainsKey(APIMethodP.APIMethodOrigin.A().Key.CoreP) ? (Origin.ToString() + ", ") : "") +
             (RouteTemplates != null && RouteTemplates.Count > 0 ? (RouteTemplates[0] + ", ") : "") +
@@ -971,7 +971,7 @@ namespace AgoRapide.API {
         /// This comment describes the recommended approach to setting attributes when the type given (<see cref="PropertyKeyAttribute.Type"/>) 
         /// is one of your own classes / enums, or one of the AgoRapide classes / enums 
         /// </summary>
-        [PropertyKey(Type = typeof(CoreAPIMethod), AccessLevelRead = AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
+        [PropertyKey(Type = typeof(CoreAPIMethod), PriorityOrder = PriorityOrder.Important, AccessLevelRead = AccessLevel.Anonymous, Parents = new Type[] { typeof(APIMethod) })]
         CoreAPIMethod,
 
         /// <summary>

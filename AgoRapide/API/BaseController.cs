@@ -424,7 +424,7 @@ namespace AgoRapide.API {
                     type.Key.ToStringVeryShort() + " (" + type.Value.Count + ")"
                 ));
 
-                var drilldown = Result.CreateDrillDownUrls(type.Value.Values); // Present all drill-down suggestions. TODO: Find better way of organising this. 
+                var drilldown = Result.CreateDrillDownUrls(type.Key, type.Value.Values); // Present all drill-down suggestions. TODO: Find better way of organising this. 
                 drilldown.ForEach(coreP => {
                     var corePAsString = coreP.Key.A().Key.PToString;
                     coreP.Value.ForEach(_operator => {
@@ -692,13 +692,19 @@ namespace AgoRapide.API {
         protected object HandleExceptionAndGenerateResponse(Exception ex, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             HandledExceptionEvent?.Invoke(ex);
             var exceptionMessage = "";
-            InMemoryCache.ResetEntityCache(); // Reset as a precaution
+
+            /// ResetEntityCache removed from code 28 Sep 2017 because does not work well with <see cref="BaseSynchronizer"/> / <see cref="CacheUse.All"/>
+            // InMemoryCache.ResetEntityCache(); // Reset as a precaution
+
             var msg = "An internal exception of type " + ex.GetType().ToStringShort() + " occurred in " + GetType().ToStringShort() + ".\r\n" +
                     (string.IsNullOrEmpty(exceptionMessage) ? "" : "Exception message: " + exceptionMessage + ".\r\n") +
                     (string.IsNullOrEmpty(caller) ? "" : "Method that failed: " + caller + ".\r\n") +
                     "Consult log at server for more details.\r\n" +
-                    "Cache has been reset as a precaution.\r\n" +
-                    "If you have administrative credentials you may try the accompanying exception_details_url";
+
+                    /// ResetEntityCache removed from code 28 Sep 2017 because does not work well with <see cref="BaseSynchronizer"/> / <see cref="CacheUse.All"/>
+                    /// "Cache has been reset as a precaution.\r\n" +
+                    
+                    "If you have administrative credentials you may try the accompanying " + CoreP.ExceptionDetailsUrl;
 
             // Since Method.GetByControllerAndMethodName may be just the call that failed we have to be very careful here.
             if (!APIMethod.TryGetByControllerAndMethodName(GetType(), caller, out var method)) {

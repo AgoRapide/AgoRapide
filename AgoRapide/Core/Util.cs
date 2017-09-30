@@ -16,6 +16,22 @@ namespace AgoRapide.Core {
     /// </summary>
     public static class Util {
 
+        public static bool CurrentlyStartingUp = true;
+        [ClassMember(
+            Description =
+                "Normally called form non-thread safe methods that should be run single-threaded at application startup only.",
+            LongDescription =
+                "NOTE: If you want to remove a call to this method somewhere in the AgoRapide code " +
+                "then you must first make that code, and all corresponding collections and methods, thread-safe first.\r\n" +
+                "NOTE: Most probably you should NEVER remove any such calls as there is also a performance advantage of finished initialization " +
+                "in \"peace and quite\" at application startup.")]
+        public static void AssertCurrentlyStartingUp() {
+            if (!CurrentlyStartingUp) throw new SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException();
+        }
+        private class SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException : ApplicationException {
+            // public SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException() : base("") { }
+        }
+
         /// <summary>
         /// Note that the default instance is only meant for temporary use at application startup. 
         /// 
@@ -25,6 +41,8 @@ namespace AgoRapide.Core {
             rootUrl: "[" + nameof(ConfigurationAttribute.RootUrl) + "NotSetInDefaultInstanceOf" + nameof(Configuration) + "]",
             databaseGetter: ownersType => throw new NullReferenceException(nameof(ConfigurationAttribute.DatabaseGetter) + "NotSetInDefaultInstanceOf" + nameof(Configuration))
         ));
+
+        public static System.Globalization.CultureInfo Culture_en_US = System.Globalization.CultureInfo.CreateSpecificCulture("en-US");
 
         private static ConcurrentDictionary<Type, List<string>> _enumNamesCache = new ConcurrentDictionary<Type, List<string>>();
         /// <summary>
@@ -125,6 +143,24 @@ namespace AgoRapide.Core {
             if (((int)result) == 0) { errorResponse = "0 is not allowed for " + type; return false; } // Duplicate code above
             errorResponse = null;
             return true;
+        }
+
+        public static double DoubleParse(string strValue) => DoubleTryParse(strValue, out var retval) ? retval : throw new InvalidEnumException(strValue);
+        public static bool DoubleTryParse(string strValue, out double dblValue) {
+            if (strValue == null) {
+                dblValue = 0;
+                return false;
+            }
+            return double.TryParse(strValue.Replace(",", "."),
+                System.Globalization.NumberStyles.AllowDecimalPoint |
+                System.Globalization.NumberStyles.Number |
+                System.Globalization.NumberStyles.AllowLeadingSign, Culture_en_US,
+                out dblValue);
+        }
+
+        public class InvalidDoubleException : ApplicationException {
+            public InvalidDoubleException(string message) : base(message) { }
+            public InvalidDoubleException(string message, Exception inner) : base(message, inner) { }
         }
 
         private static ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKeyWithIndex)>> _tToCorePCache = new ConcurrentDictionary<Type, ConcurrentDictionary<Type, (string, PropertyKeyWithIndex)>>();

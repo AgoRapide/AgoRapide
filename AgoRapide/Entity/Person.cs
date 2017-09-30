@@ -140,10 +140,10 @@ namespace AgoRapide {
     /// TODO: In other words, you can, inside the <see cref="Person"/>-class implement an enum called PersonP. 
     /// </summary>
     public class PersonPropertiesDescriber : IGroupDescriber {
-        public void EnrichAttribute(PropertyKeyAttributeEnriched agoRapideAttribute) {
-            agoRapideAttribute.AddParent(typeof(Person));
-            agoRapideAttribute.A.AccessLevelRead = AccessLevel.Relation;
-            agoRapideAttribute.A.AccessLevelWrite = AccessLevel.Relation;
+        public void EnrichKey(PropertyKeyAttributeEnriched key) {
+            key.AddParent(typeof(Person));
+            key.A.AccessLevelRead = AccessLevel.Relation;
+            key.A.AccessLevelWrite = AccessLevel.Relation;
         }
     }
 }

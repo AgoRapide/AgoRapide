@@ -15,6 +15,9 @@ namespace AgoRapide.Core {
     /// TODO: Use more concept like <see cref="IsManyIsSet"/> in order for <see cref="EnrichFrom"/> to know
     /// TODO: which values to enrich.
     /// <see cref="PropertyKeyAttributeEnriched"/>
+    /// 
+    /// TODO: Implement a lot of properties here as <see cref="CoreP"/> and move documentation there so can be made available via 
+    /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
     /// </summary>
     [Enum(Description =
         "Specialized version of -" + nameof(EnumValueAttribute) + "- which describes an enum value of type -" + nameof(EnumType.PropertyKey) + "- (see that one for documentation). " +
@@ -102,7 +105,10 @@ namespace AgoRapide.Core {
 
         [ClassMember(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
         public bool IsPassword { get; set; }
-        public void AssertIsPassword(Func<string> detailer) {
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertIsPassword(Func<string> detailer = null) {
             if (!IsPassword) throw new IsPasswordException(
                 "Not marked as " + nameof(PropertyKeyAttribute) + "." + nameof(IsPassword) + "\r\n" +
                 ToString() + "\r\n" +
@@ -163,8 +169,8 @@ namespace AgoRapide.Core {
 
         private bool _isMany;
         /// <summary>
-        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
-        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there so can be made available via 
+        /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
         /// 
         /// Stored in memory in the <see cref="BaseEntity.Properties"/>-collection under
         /// one parent whose own <see cref="BaseEntity.Properties"/>-collection again 
@@ -192,7 +198,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="detailer">May be null</param>
-        public void AssertIsMany(Func<string> detailer) {
+        public void AssertIsMany(Func<string> detailer = null) {
             if (!IsMany) throw new IsManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -201,7 +207,10 @@ namespace AgoRapide.Core {
             public IsManyException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public void AssertNotIsMany(Func<string> detailer) {
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertNotIsMany(Func<string> detailer = null) {
             if (IsMany) throw new IsNotManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -212,20 +221,19 @@ namespace AgoRapide.Core {
 
         private bool _isExternal;
         /// <summary>
-        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
-        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there so can be made available via 
+        /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
         /// </summary>
-        [ClassMember(
-            Description = "Denotes properties that originates from external systems through -" + nameof(BaseSynchronizer) + "-."
-        )]
+        [ClassMember(Description = "Denotes properties that originates from external systems through -" + nameof(BaseSynchronizer) + "-.")]
         public bool IsExternal { get => _isExternal; set { _isExternal = value; _isExternalIsSet = true; } }
         private bool _isExternalIsSet = false;
         public bool IsExternalIsSet => _isExternalIsSet;
 
+
         /// <summary>
         /// </summary>
         /// <param name="detailer">May be null</param>
-        public void AssertIsExternal(Func<string> detailer) {
+        public void AssertIsExternal(Func<string> detailer = null) {
             if (!true.Equals(IsExternal)) throw new IsExternalException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -234,10 +242,35 @@ namespace AgoRapide.Core {
             public IsExternalException(string message, Exception inner) : base(message, inner) { }
         }
 
+        private bool _isInjected;
+        /// <summary>
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there so can be made available via 
+        /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
+        /// 
+        /// TODO: As of Sep 2017 this "flag" is not actually consumed in any sense, nor asserted set by any involved injection method.
+        /// TODO: In other words, it is used for only informational purpose for the user / developer.
+        /// </summary>
+        [ClassMember(Description = "Denotes properties that are injected by either -" + nameof(BaseInjector) + "- or -" + nameof(BaseSynchronizer.Inject) + "-.")]
+        public bool IsInjected { get => _isInjected; set { _isInjected = value; _isInjectedIsSet = true; } }
+        private bool _isInjectedIsSet = false;
+        public bool IsInjectedIsSet => _isInjectedIsSet;
+
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertIsInjected(Func<string> detailer = null) {
+            if (!true.Equals(IsInjected)) throw new IsInjectedException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        public class IsInjectedException : ApplicationException {
+            public IsInjectedException(string message) : base(message) { }
+            public IsInjectedException(string message, Exception inner) : base(message, inner) { }
+        }
+
         private bool _hasLimitedRange;
         /// <summary>
-        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
-        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there so can be made available via 
+        /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
         /// 
         /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically for boolean and enum. 
         /// 
@@ -258,7 +291,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// </summary>
         /// <param name="detailer">May be null</param>
-        public void AssertHasLimitedRange(Func<string> detailer) {
+        public void AssertHasLimitedRange(Func<string> detailer = null) {
             if (!true.Equals(HasLimitedRange)) throw new HasLimitedRangeException(ToString() + detailer.Result("\r\nDetails: "));
         }
 
@@ -268,8 +301,8 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// TODO: Implement as <see cref="CoreP"/> (maybe as <see cref="PropertyKeyAttribute.IsMany"/>?) and move documentation there.
-        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there so can be made available via 
+        /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
         /// 
         /// May be null. 
         /// 
@@ -319,8 +352,8 @@ namespace AgoRapide.Core {
 
         private bool _isDocumentation;
         /// <summary>
-        /// TODO: Implement as <see cref="CoreP"/> and move documentation there.
-        /// TODO: Meaning of this TODO no longer understood as of Sep 2017. Remove TODO if still not understood at later stage.
+        /// TODO: Implement as <see cref="CoreP"/> and move documentation there so can be made available via 
+        /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
         /// </summary>
         [ClassMember(
             Description =
@@ -352,6 +385,14 @@ namespace AgoRapide.Core {
         /// Only relevant when <see cref="Type"/> is <see cref="DateTime"/>
         /// </summary>
         public DateTimeFormat DateTimeFormat { get; set; }
+
+        /// <summary>
+        /// Often relevant when <see cref="Type"/> is <see cref="DateTime"/>
+        /// 
+        /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.
+        /// </summary>
+        [ClassMember(Description = "List of expansions desired for -" + nameof(Type) + "- like -" + nameof(ExpansionType.DateAgeDays) + "- or -" + nameof(ExpansionType.DateYearQuarter) + "-.")]
+        public ExpansionType[] ExpansionTypes;
 
         /// <summary>
         /// Describes entities for which this property is used.
@@ -432,7 +473,7 @@ namespace AgoRapide.Core {
         public string DefaultValue { get; set; }
 
         /// <summary>
-        /// Note that will be set automatically through <see cref="AgoRapideAttributeT(PropertyKeyAttribute)"/> for 
+        /// Note that will be set automatically by <see cref="PropertyKeyAttributeEnriched.Initialize"/> for 
         /// <see cref="PropertyKeyAttribute"/> having <see cref="PropertyKeyAttribute.Type"/> which is <see cref="Type.IsEnum"/> 
         /// 
         /// TODO: Add to <see cref="PropertyKeyAttribute.ValidValues"/> a List of tuples with description for each value
@@ -455,6 +496,23 @@ namespace AgoRapide.Core {
         public string[] SampleValues { get; set; }
 
         /// <summary>
+        /// TODO: Replace test for typeof(long) with something supporting IComparable.
+        /// </summary>
+        public bool IsSuitableForPercentileCalculation => !IsMany && typeof(long).Equals(Type) && ForeignKeyOf == null && ExternalForeignKeyOf == null && ExternalPrimaryKeyOf == null;
+
+        /// <summary>
+        /// </summary>
+        /// <param name="detailer">May be null</param>
+        public void AssertSuitableForPercentileCalculation(Func<string> detailer = null) {
+            if (!IsSuitableForPercentileCalculation) throw new IsSuitableForPercentileCalculationException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        public class IsSuitableForPercentileCalculationException : ApplicationException {
+            public IsSuitableForPercentileCalculationException(string message) : base(message) { }
+            public IsSuitableForPercentileCalculationException(string message, Exception inner) : base(message, inner) { }
+        }
+
+        /// <summary>
         /// Returns <see cref="PropertyKeyAttribute"/> for given <paramref name="_enum"/>-value.
         /// 
         /// Normally called from <see cref="PropertyKeyMapper.MapEnum{T}"/> but may also be called from 
@@ -463,7 +521,6 @@ namespace AgoRapide.Core {
         /// <param name="_enum"></param>
         /// <returns></returns>
         public static new PropertyKeyAttribute GetAttribute(object _enum) {
-            // TODO: Consider moving more of this code into AgoRapideAttribute-class
             var type = _enum.GetType();
             NotOfTypeEnumException.AssertEnum(type); // TODO: Necessary? Most possibly YES!
             if (type.GetEnumAttribute().AgoRapideEnumType != EnumType.PropertyKey) throw new InvalidEnumException(type.GetEnumAttribute().AgoRapideEnumType,
@@ -512,6 +569,15 @@ namespace AgoRapide.Core {
                 var temp = AggregationTypes.ToList();
                 temp.AddRange(other.AggregationTypes.Where(o => !temp.Any(p => p == o)).ToList());
                 AggregationTypes = temp.ToArray();
+            }
+
+            if (ExpansionTypes == null) {
+                ExpansionTypes = other.ExpansionTypes;
+            } else if (other.ExpansionTypes == null) { // No changes
+            } else { // Merge both lists
+                var temp = ExpansionTypes.ToList();
+                temp.AddRange(other.ExpansionTypes.Where(o => !temp.Any(p => p == o)).ToList());
+                ExpansionTypes = temp.ToArray();
             }
 
             if (Parents == null) {

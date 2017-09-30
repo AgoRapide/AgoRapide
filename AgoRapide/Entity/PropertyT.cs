@@ -62,7 +62,7 @@ namespace AgoRapide {
                 /// TODO: List[Uri] would be correct here
             } else {
                 /// We can not do this:
-                ///   InvalidTypeException.AssertAssignable(typeof(T), key.Key.A.Type, () => nameof(AgoRapideAttribute) + "." + nameof(AgoRapideAttribute.Type) + " for " + key.Key.PExplained + " !IsAssignableFrom " + typeof(T));
+                ///   InvalidTypeException.AssertAssignable(typeof(T), key.Key.A.Type, () => nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " for " + key.Key.PExplained + " !IsAssignableFrom " + typeof(T));
                 /// because often we are called with T = object like from here (See <see cref="PropertyKeyAttributeEnriched"/>):
                 ///   if (Util.EnumTryParse(A.Type, value, out var temp)) return ParseResult.Create(this, temp);
                 /// Instead we must do like this, using the actual type that we got:

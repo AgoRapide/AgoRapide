@@ -95,7 +95,7 @@ namespace AgoRapide.Core {
                 }
 
                 throw new InvalidObjectTypeException(obj, A.Type,
-                    ((obj is CoreP && typeof(PropertyKey).IsAssignableFrom(A.Type)) ? "A common mistake is specifying " + typeof(CoreP) + " (like " + nameof(CoreP) + ".SomeValue) instead of " + typeof(PropertyKey) + " (like " + nameof(CoreP) + ".SomeValue." + nameof(Extensions.A) + "()).\r\n" : "") +
+                    ((obj is CoreP && typeof(PropertyKey).IsAssignableFrom(A.Type)) ? "A common mistake is specifying " + typeof(CoreP) + " (like " + nameof(CoreP) + ".SomeValue) instead of " + typeof(PropertyKey) + " (like " + nameof(CoreP) + ".SomeValue." + nameof(CorePExtension.A) + "()).\r\n" : "") +
                     A.ToString());
             }
             if (A.Type.Equals(typeof(DateTime))) return (obj as DateTime? ?? throw new NullReferenceException(nameof(obj) + " for " + A.ToString())).ToString(DateTimeFormat.DateHourMin);
@@ -108,7 +108,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Cleanup of values, to be used before value is attempted validated. 
         /// 
-        /// Note that for some types (like long, double, bool, DateTime, string) <see cref="AgoRapideAttributeT(PropertyKeyAttribute)"/> 
+        /// Note that for some types (like long, double, bool, DateTime, string) <see cref="Initialize"/> 
         /// will set a standard <see cref="Cleaner"/> automatically (may be overriden afterwards or others chained to it)
         /// TODO: IMPLEMENT CHAINING OF CLEANING!
         /// </summary>
@@ -117,7 +117,7 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Validates and parses a value.
         /// 
-        /// Note that for some types (like long, double, bool, DateTime) <see cref="AgoRapideAttributeT(PropertyKeyAttribute)"/> 
+        /// Note that for some types (like long, double, bool, DateTime) <see cref="Initialize"/> 
         /// will set a standard <see cref="ValidatorAndParser"/> automatically (may be overriden afterwards or others chained to it)
         /// TODO: IMPLEMENT CHAINING OF VALIDATING!
         /// 
@@ -211,7 +211,7 @@ namespace AgoRapide.Core {
             if (A.Group != null) {
                 InvalidTypeException.AssertAssignable(A.Group, typeof(IGroupDescriber), () => "Type given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Group) + " to " + typeof(CoreP).ToString() + "." + A.EnumValue + " must implement " + typeof(Core.IGroupDescriber));
                 try {
-                    ((IGroupDescriber)Activator.CreateInstance(A.Group)).EnrichAttribute(this);
+                    ((IGroupDescriber)Activator.CreateInstance(A.Group)).EnrichKey(this);
                     A.SetEnumValueExplained(A.EnumValueExplained + " (also enriched from " + nameof(IGroupDescriber) + " " + A.Group.ToStringShort() + ")");
                 } catch (Exception ex) {
                     throw new BaseAttribute.AttributeException(
@@ -225,7 +225,7 @@ namespace AgoRapide.Core {
             /// (note how both enrichment 2 and 4 is based on <see cref="PropertyKeyAttribute.Type"/>)
             /// -----------------------------------------
             if (A.TypeIsSet && typeof(ITypeDescriber).IsAssignableFrom(A.Type)) {
-                var methodName = nameof(IGroupDescriber.EnrichAttribute); /// Note that <see cref="ITypeDescriber"/> itself is "empty".
+                var methodName = nameof(IGroupDescriber.EnrichKey); /// Note that <see cref="ITypeDescriber"/> itself is "empty".
                 try {
                     var method = A.Type.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static) ?? throw new InvalidTypeException(A.Type, "Does not have a public static method called " + methodName);
                     method.Invoke(null, new object[] { this });
@@ -237,7 +237,7 @@ namespace AgoRapide.Core {
                         "given as " + typeof(PropertyKeyAttribute).ToString() + "." + nameof(PropertyKeyAttribute.Type) + " to " + typeof(CoreP).ToString() + "." + A.EnumValue + "\r\n" +
                         "Resolution: Check that it exists and that it takes exactly one parameter of type " + typeof(PropertyKeyAttributeEnriched).ToStringShort() + ".\r\n" +
                         "In other words it should look like\r\n\r\n" +
-                        "   public static void method " + methodName + "(" + typeof(PropertyKeyAttributeEnriched).ToStringShort() + " agoRapideAttribute)\r\n\r\n" +
+                        "   public static void " + methodName + "(" + typeof(PropertyKeyAttributeEnriched).ToStringShort() + " key)\r\n\r\n" +
                         "Details:\r\n" + A.ToString(), ex);
                 }
             }
@@ -293,6 +293,7 @@ namespace AgoRapide.Core {
             }
 
             if (A.AggregationTypes == null) A.AggregationTypes = new AggregationType[0];
+            if (A.ExpansionTypes == null) A.ExpansionTypes = new Database.ExpansionType[0];
 
             if (!A.HasLimitedRangeIsSet) {
                 if (
@@ -309,7 +310,7 @@ namespace AgoRapide.Core {
                     typeof(string).Equals(A.Type) || // Added 22 Sep 2017
                     typeof(bool).Equals(A.Type) ||
                     typeof(Type).Equals(A.Type) ||
-                    A.HasLimitedRange  
+                    A.HasLimitedRange
                     ) {
                     A.Operators = new Operator[] { Operator.EQ }; /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
                 } else if (
@@ -318,7 +319,7 @@ namespace AgoRapide.Core {
                     typeof(DateTime).Equals(A.Type) ||
                     A.Type.IsEnum
                     ) {
-                    A.Operators = new Operator[] { Operator.LT, Operator.LEQ, Operator.EQ, Operator.GEQ, Operator.GT  }; /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use Remove-Contexts as substitute
+                    A.Operators = new Operator[] { Operator.LT, Operator.LEQ, Operator.EQ, Operator.GEQ, Operator.GT }; /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use Remove-Contexts as substitute
                 }
             }
 
@@ -418,6 +419,7 @@ namespace AgoRapide.Core {
                     ValidatorAndParser = value => {
                         throw new NotImplementedException(
                             "Validator for type " + A.Type.ToStringShort() + " is not implemented because that type is unknown.\r\n" +
+                            (!typeof(ITypeDescriber).IsAssignableFrom(A.Type) ? "" : ("Possible cause: " + nameof(IGroupDescriber.EnrichKey) + " may be wrongly implemented for " + A.Type + "\r\n")) + /// Note that <see cref="ITypeDescriber"/> itself is "empty".
                             "Details: " + A.ToString());
                     };
                 }

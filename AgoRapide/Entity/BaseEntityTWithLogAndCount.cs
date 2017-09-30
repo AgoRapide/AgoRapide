@@ -124,7 +124,7 @@ namespace AgoRapide {
     ///    Used for instance for a given <see cref="Context"/>, giving statistics about the data seen.
     ///    TODO: NOT IMPLEMENTED AS OF SEP 2017!
     /// 
-    /// NOTE: <see cref="AggregationKey"/> is not to be confused with <see cref="ForeignKeyAggregateKey"/>
+    /// NOTE: <see cref="AggregationKey"/> is not to be confused with <see cref="PropertyKeyForeignKeyAggregate"/>
     /// </summary>
     public class AggregationKey : PropertyKey {
 
@@ -145,9 +145,16 @@ namespace AgoRapide {
             aggregationType + "_" + entityType.ToStringVeryShort() + "_" + property.Key.PToString, key => {
 
                 // Added 14 Sep 2017. May have to relax a bit here though. 
-                InvalidTypeException.AssertEquals(property.Key.A.Type, typeof(long), () => "Details: " + property.ToString());
+                // Removed 27 Sep 2017. 
+                // InvalidTypeException.AssertEquals(property.Key.A.Type, typeof(long), () => "Details: " + property.ToString());
+                // TODO: Consider replacing with checking that supports + operator or similar.
 
-                var retval = new AggregationKey( /// Note that ideally this should only happen at application startup (<see cref="PropertyKeyMapper.MapEnum{T}"/> / <see cref="Startup.Initialize{TPerson}"/>)
+                /// NOTE: Ideally, calls to this method should only happen at application startup (<see cref="PropertyKeyMapper.MapEnum{T}"/> / <see cref="Startup.Initialize{TPerson}"/>)
+                /// NOTE: If restriction below is impractical we may remove this call to <see cref="Util.AssertCurrentlyStartingUp"/> since
+                /// NOTE: code here is thread-safe anyway (but most probably your code is fully able to find all keys at startup anyway). 
+                Util.AssertCurrentlyStartingUp(); // May be removed
+
+                var retval = new AggregationKey( 
                     aggregationType,
                     entityType, 
                     new PropertyKeyAttributeEnrichedDyn(
@@ -174,6 +181,7 @@ namespace AgoRapide {
     /// <summary>
     /// TODO: Move to separate file
     /// </summary>
+    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
     public enum AggregationType {
         None,
         Count,

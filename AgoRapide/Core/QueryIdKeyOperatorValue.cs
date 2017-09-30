@@ -217,6 +217,16 @@ namespace AgoRapide.Core {
                 }
             }
             switch (Value) {
+                case Quintile quintile: // TODO: ADD OTHER QUANTILES HERE!
+                    if (!p.PercentileIsSet) throw new Property.InvalidPropertyException("!" + nameof(p.PercentileIsSet) + " for " + p.ToString() + ".\r\n" + nameof(entity) + ": " + entity.ToString());
+                    switch (Operator) {
+                        case Operator.LT: return quintile < p.Percentile.AsQuintile;
+                        case Operator.LEQ: return quintile <= p.Percentile.AsQuintile;
+                        case Operator.EQ: return quintile == p.Percentile.AsQuintile;
+                        case Operator.GEQ: return quintile >= p.Percentile.AsQuintile;
+                        case Operator.GT: return quintile > p.Percentile.AsQuintile;
+                        default: throw new InvalidEnumException(Operator);
+                    }
                 case Percentile percentile:
                     if (!p.PercentileIsSet) throw new Property.InvalidPropertyException("!" + nameof(p.PercentileIsSet) + " for " + p.ToString() + ".\r\n" + nameof(entity) + ": " + entity.ToString());
                     switch (Operator) {
@@ -250,18 +260,23 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatible with parser)
+        /// 
+        /// Note how Value as enum is given without apostrophes. 
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => "WHERE " + Key.PToString + " " + Operator.ToMathSymbol() + (Value==null ? " NULL" : (" '" + Value + "'"));
+        public override string ToString() => "WHERE " + Key.PToString + " " +
+            // Operator.ToMathSymbol()  // NOTE: This would be preferred method. More human readable.
+            Operator +                  // NOTE: This is chosen method, makes the resulting URL IIS-safe in order to avoid System.Web.HttpException "A potentially dangerous Request.Path value was detected from the client (<)."
+            (Value == null ? " NULL" : (Value.GetType().IsEnum ? (" " + Value) : (" '" + Value + "'")));
 
         /// <summary>
-        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichKey for all QueryId-classes!!!
         /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
         /// TODO: enumAttribute.Cleaner=
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="key"></param>
-        public new static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+        public new static void EnrichKey(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     (retval is QueryIdKeyOperatorValue ? /// Note how <see cref="QueryId.TryParse"/> returns base class <see cref="QueryId"/>, therefore only accept the returned value if it is a <see cref="QueryIdKeyOperatorValue"/>

@@ -164,7 +164,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException(Util.BreakpointEnabler + "Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
         public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) => GetValue(dictionary, key, null);
@@ -336,6 +336,15 @@ namespace AgoRapide.Core {
             return retval;
         }
 
+        [ClassMember(Description = "Alernative to IEnumerable.ToDictionary. Gives better exception for duplicate keys (will explain WHICH key is a duplicate).")]
+        public static Dictionary<TKey, TElement> ToDictionary2<TSource, TKey, TElement>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector) {
+            var retval = new Dictionary<TKey, TElement>();
+            source.ForEach(e => {
+                retval.AddValue(keySelector(e), elementSelector(e), () => "Element " + e.ToString());
+            });
+            return retval;
+        }
+
         private static ConcurrentDictionary<Type, List<(Type, PropertyKey)>> _typesWhereIsForeignKeyCache = new ConcurrentDictionary<Type, List<(Type, PropertyKey)>>();
         public static List<(Type type, PropertyKey key)> GetTypesWhereIsForeignKey(this Type type) => _typesWhereIsForeignKeyCache.GetOrAdd(type, t =>
             PropertyKeyMapper.AllCoreP.Where(k => k.Key.A.ForeignKeyOf == t).SelectMany(k => k.Key.A.Parents == null ? new List<(Type, PropertyKey)>() : k.Key.A.Parents.Select(p => (p, k)).ToList()).ToList());
@@ -459,36 +468,6 @@ namespace AgoRapide.Core {
         /// <param name="_double"></param>
         /// <returns></returns>
         public static string ToString2(this double _double) => _double.ToString("0.00").Replace(",", ".");
-
-        public static string ToSQLString(this Operator _operator) {
-            switch (_operator) {
-                case Operator.EQ: return "=";
-                case Operator.GT: return ">";
-                case Operator.LT: return "<";
-                case Operator.GEQ: return ">=";
-                case Operator.LEQ: return "<=";
-                case Operator.LIKE: return "LIKE";
-                case Operator.ILIKE: return "ILIKE";
-                // TODO: Support IS (like IS NULL)
-                default: throw new InvalidEnumException(_operator);
-            }
-        }
-        public static Dictionary<Type, HashSet<Operator>> ValidOperatorsForType = new Dictionary<Type, HashSet<Operator>> {
-            { typeof(long), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(double), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(DateTime), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(bool), new HashSet<Operator> { Operator.EQ } },
-            { typeof(string), new HashSet<Operator> { Operator.EQ, Operator.LIKE, Operator.ILIKE } },
-            { typeof(List<long>), new HashSet<Operator> { Operator.IN } },
-            { typeof(List<double>), new HashSet<Operator> { Operator.IN } },
-            { typeof(List<DateTime>), new HashSet<Operator> { Operator.IN } },
-            { typeof(List<bool>), new HashSet<Operator> { Operator.IN} },
-            { typeof(List<string>), new HashSet<Operator> { Operator.IN } },
-        };
-        public static void AssertValidForType(this Operator _operator, Type type, Func<string> detailer) {
-            if (!ValidOperatorsForType.TryGetValue(type, out var validOperators)) throw new InvalidEnumException(_operator, "Not valid for " + type + ". " + nameof(type) + " not recognized at all" + detailer.Result(". Details: "));
-            if (!validOperators.Contains(_operator)) throw new InvalidEnumException(_operator, "Invalid for " + type + ". Valid operators are " + string.Join(", ", validOperators.Select(o => o.ToString())) + detailer.Result(". Details: "));
-        }
 
         public static string ToString(this DateTime dateTime, DateTimeFormat resolution) {
             switch (resolution) {
@@ -775,10 +754,6 @@ namespace AgoRapide.Core {
                 GetOrAdd(type, dummy => new ConcurrentDictionary<string, EnumValueAttribute>()).
                 GetOrAdd(_enum.ToString(), dummy => EnumValueAttribute.GetAttribute(_enum));
         }
-
-        public static PropertyKey A(this CoreP coreP) => PropertyKeyMapper.GetA(coreP);
-        public static PropertyKey A(this DBField dbField) => PropertyKeyMapper.GetA(dbField);
-        public static PropertyKey A(this ConfigurationAttribute.ConfigurationP configurationKey) => PropertyKeyMapper.GetA(configurationKey);
 
         public static string Extract(this string text, string start, string end) => TryExtract(text, start, end, out var retval) ? retval : throw new InvalidExtractException(text, start, end);
         public class InvalidExtractException : ApplicationException {

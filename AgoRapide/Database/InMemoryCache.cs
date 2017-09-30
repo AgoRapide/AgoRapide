@@ -49,8 +49,10 @@ namespace AgoRapide.Database {
 
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
+        /// 
+        /// ResetEntityCache removed from code 28 Sep 2017 because does not work well with <see cref="BaseSynchronizer"/> / <see cref="CacheUse.All"/>
         /// </summary>
-        public static void ResetEntityCache() => EntityCache = new ConcurrentDictionary<long, BaseEntity>();
+        public static void ResetEntityCache() => throw new NotImplementedException(); //  EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 
         private static List<Type> _synchronizerTypes = new List<Type>();
         /// <summary>
@@ -135,7 +137,7 @@ namespace AgoRapide.Database {
                     // 2) No synchronizers has been created in the database yet.
                     // TODO: Note how this is (as of Sep 2017) decided permanently for the rest of the application lifetime. 
                     // TODO: But for case 2) above this is of course not good enough.
-                    return false; 
+                    return false;
                 }
                 lock (_synchronizedTypesInternal) { // Ensure that this "universe" completes first
                     if (_synchronizedTypesInternal.TryGetValue(t, out _)) return true; // Already done by other call (possible on other thread) within same universe
@@ -146,7 +148,7 @@ namespace AgoRapide.Database {
                     foreach (var st in types) {
                         if (FileCache.Instance.TryEnrichFromDisk(s, st, db, out var entities, out _)) { // Note how "result" is ignored. 
                             allEntities.AddValue(st, entities);
-                        } else { 
+                        } else {
                             /// This call can be very time-consuming
                             /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
                             s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
@@ -172,15 +174,27 @@ namespace AgoRapide.Database {
                     /// therefore we have now through <see cref="_synchronizedTypesInternal"/> opened up for these recursive calls to return immediately, 
                     /// while we are still locking out other threads until we are completely finished)
 
-                    types.ForEach(st => { // TODO: Add some more indexing within entityCache.
-                        /// This will make recursive calls against this method (<see cref="GetMatchingEntities"/>)
-                        BaseInjector.CalculateForeignKeyAggregates(st, EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(), db);
+                    types.ForEach(st => {
+                        /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
+                        var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        BaseInjector.CalculateExpansions(st, entities, db); /// Call this first, maybe some if these will also be percentile-evaluated and aggregated over foreign keys below.
+
+                        BaseInjector.CalculateForeignKeyAggregates(st, entities, db); /// This will make recursive calls against this method (<see cref="GetMatchingEntities"/>)
+
                     });
 
                     /// TODO: Call all other Injector-classes relevant for this universe.
                     /// TODO: To be decided how to organise this. 
                     /// TODO: Store the types in Synchronizer maybe?
-                    s.Inject(db);
+                    s.Inject(db); // TODO: Will search for entities like already done here!
+
+                    types.ForEach(st => {
+                        /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
+                        var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        // TOOD. Percentiles should most probably be called multiple times in a sort of iterative process.
+                        // TODO: (both before and after injection)
+                        BaseInjector.CalculatePercentiles(st, entities, db); // Call this last, so also foreign key aggregates AND injected values may be evaluated
+                    });
 
                     return true; // Indicates that synchronizing has been done
                 } // Release lock, other threads will now see a "complete" picture.

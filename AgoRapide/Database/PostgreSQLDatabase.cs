@@ -719,6 +719,7 @@ namespace AgoRapide.Database {
                 if (key.Key.A.IsMany) throw new NotImplementedException(nameof(key.Key.A.IsMany) + " when " + nameof(key.Key.A.IsUniqueInDatabase));
                 AssertUniqueness(key, value);
             }
+            if (cid == null) Util.AssertCurrentlyStartingUp();
 
             var idStrings = new Func<(string logtext, string names, string values)>(() => {
                 if (cid == null && pid == null && fid == null) {
@@ -1037,7 +1038,7 @@ namespace AgoRapide.Database {
                         switch (f) {
                             case DBField.id:
                             case DBField.cid: return " NOT NULL,";
-                            case DBField.created: return " DEFAULT now(),"; // TODO: Should we add these as AgoRapideAttributes?
+                            case DBField.created: return " DEFAULT now(),"; /// TODO: Should we add these as <see cref="PropertyKeyAttribute"/>?
                             default: return ",";
                         }
                     })();

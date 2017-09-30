@@ -88,7 +88,7 @@ namespace AgoRapide.API {
                         /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs
                         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
                         /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
-                        CreateDrillDownUrls(thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
+                        CreateDrillDownUrls(t, thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
                             var key = e.Key.A();
                             retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.Description) + "</b>: ");
                             e.Value.ForEach(_operator => {
@@ -156,6 +156,12 @@ namespace AgoRapide.API {
                 if (MultipleEntitiesResult.Count == 0) {
                     retval.AppendLine("No entities resulted from your query");
                 } else {
+
+                    if (request.URL.Contains("/CurrentContext/") && request.CurrentUser != null) { // URL as shown in header is not sufficient to explain where data comes from.
+                        retval.AppendLine();
+                        request.CurrentUser.PV<List<Context>>(CoreP.Context.A()).ForEach(c => retval.AppendLine(c.ToString()));
+                    }
+
                     var types = MultipleEntitiesResult.Select(e => e.GetType()).Distinct().ToList();
                     if (types.Count > 1) retval.AppendLine("Total entities" + request.CSVFieldSeparator + MultipleEntitiesResult.Count);
                     types.ForEach(t => { /// Split up separate tables for each type because <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/> are not compatible between different types
@@ -294,7 +300,7 @@ namespace AgoRapide.API {
                         DrillDownSuggestion
                     >
                 >
-             > CreateDrillDownUrls(IEnumerable<BaseEntity> entities) {
+             > CreateDrillDownUrls(Type type, IEnumerable<BaseEntity> entities) {
 
             var retval = new Dictionary<
                 CoreP,
@@ -310,27 +316,101 @@ namespace AgoRapide.API {
             var totalCount = entities.Count();
             if (totalCount == 0) return retval;
 
-            var type = entities.First().GetType();
             /// Note how this code (in <see cref="Result.CreateDrillDownUrls"/>) only gives suggestions for existing values.
             /// If we want to implement some kind of surveillance (for what-if scenarios) we would also need to know all possible values in advance. 
             type.GetChildProperties().Values.ForEach(key => { // Note how only properties explicitly defined for this type of entity are considered. 
+
                 if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
 
-                if (key.Key.A.Operators == null) return;
-
                 List<(object, string)> objStrValues;
+
+                var properties = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null));
+                var propertiesNotNull = properties.Where(p => p != null).ToList(); // Used for Percentile-evaluation
+
+                var percentileDrilldowns = new Dictionary< // How this is inserted into retval is a HACK. TODO: Make prettier
+                        string, // The actual values found. 
+                        DrillDownSuggestion
+                >();
+
+                if (key.Key.A.IsSuitableForPercentileCalculation) {
+                    // Offer percentile evaluations for these.
+
+                    // NOTE: Hardcoded use of quantile Quintile as of Sep 2017
+                    // TODO: Add preferred quantile to PropertyKeyAttribute.
+
+                    // Quintile calculated based on ALL properties within "universe".
+                    Util.EnumGetValues<Quintile>().ForEach(q => {
+                        var count = propertiesNotNull.Count(p => p.Percentile.AsQuintile == q);
+                        if (count == 0) return; // No point in suggesting
+                        if (count == totalCount) return; // No point in suggesting
+                        var query = new QueryIdKeyOperatorValue(key.Key, Operator.EQ, q);
+                        percentileDrilldowns.Add("Global " + q.ToString(), // TODO: Works fine until we have a value Global Quintile1 or similar (will give us key-collision below)
+                            new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), q + " (" + count + ")", query)
+                        );
+                    });
+
+                    // Lowest and highest quintile based on only properties within selection
+
+                    if (!key.Key.A.OperatorsAsHashSet.Contains(Operator.GT)) {
+                        /// LT, LEQ, GEQ, GT considered equivalant. Most probably we could also ask for if Type implements <see cref="IComparable"/>
+                    } else if (propertiesNotNull.Count < 10) {
+                        // Offering quintiles now considered irrelevant
+                    } else {
+                        var sortedProperties = propertiesNotNull.OrderBy(p => p.Value).ToList();
+                        var oneFifth = sortedProperties.Count / 5;
+
+                        // TODO: Go over algorithm here. May be off by one element!
+                        var quintileValue = sortedProperties[oneFifth - 1].Value; /// Calculate value for local <see cref="Quintile.Quintile1"/>
+                        // Count as efficient as possible, based on the fact that the list is already sorted.
+                        var count = oneFifth; while (count < sortedProperties.Count && sortedProperties[count].Value == quintileValue) count++;
+                        var query = new QueryIdKeyOperatorValue(key.Key, Operator.LEQ, quintileValue);
+                        // TODO: Find better term than "Local" (confer with "Global above).
+                        percentileDrilldowns.Add("Local " + Quintile.Quintile1, // TODO: Works fine until we have a value Local Quintile1 or similar (will give us key-collision below)
+                            new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), "Local " + Quintile.Quintile1 + " (" + count + ")", query)
+                        );
+
+                        // TODO: Go over algorithm here. May be off by one element!
+                        quintileValue = sortedProperties[sortedProperties.Count - oneFifth].Value; /// Calculate value for local <see cref="Quintile.Quintile5"/>
+                        // Count as efficient as possible, based on the fact that the list is already sorted.
+                        count = oneFifth; while ((sortedProperties.Count - count) >= 0 && sortedProperties[sortedProperties.Count - count].Value == quintileValue) count++;
+                        query = new QueryIdKeyOperatorValue(key.Key, Operator.GEQ, quintileValue);
+                        // TODO: Find better term than "Local" (confer with "Global above).
+                        percentileDrilldowns.Add("Local " + Quintile.Quintile5, // TODO: Works fine until we have a value Local Quintile5 or similar (will give us key-collision below)
+                            new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), "Local " + Quintile.Quintile5 + " (" + count + ")", query)
+                        );
+                    }
+                }
+
+                if (key.Key.A.Operators == null) {
+                    if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                        retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
+                    }
+                    return;
+                }
+
                 var mixOfNullsAndNotNullFound = false; // Found either directly (see direct below) or as "side effect" in lambda (see further below)
 
                 /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
                 if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) {
-                    if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) return; // None are set
-                    if (entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) return; // All are set
+                    // Our only choice is limiting to NULL or NOT NULL values.  
+                    if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) {
+                        if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                            retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
+                        }
+                        return; // None are set.
+                    }
+                    if (entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) {
+                        if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                            retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
+                        }
+                        return; // All are set.
+                    }
                     objStrValues = new List<(object, string)> { }; // null, "NULL" will be added below
                     mixOfNullsAndNotNullFound = true;
                 } else {
 
                     // Note how Distinct() is called weakly typed for object, meaning it uses the Equals(object other)-method.
-                    var objValues = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p.Value : null)).Distinct();
+                    var objValues = properties.Select(p => p?.Value ?? null).Distinct();
 
                     /// Note that the Distinct() operation done above will not work properly of IEquatable is not implemented for the actual type.
                     /// We therefore work around this by collecting together all object-values with the same string-representation
@@ -409,18 +489,19 @@ namespace AgoRapide.API {
                         if (count > 0 && count != totalCount) { // Note how we do not offer drill down if all entities match
                             r2.AddValue(
                                 t.Item2,
-                                new DrillDownSuggestion { // TODO: Implement constructor forcing parameters here
-                                    EntityType = type,
-                                    Count = count,
-                                    Url = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query),
-                                    Text = t.Item2 + " (" + count + ")",
-                                    QueryId = query
-                                }
+                                new DrillDownSuggestion(type, count, APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, type, query), t.Item2 + " (" + count + ")", query)
                            );
                         }
                     });
                     if (r2.Count > 0) r1.AddValue(o, r2);
                 });
+                if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                    if (!r1.TryGetValue(Operator.EQ, out var r2)) {
+                        r2 = (r1[Operator.EQ] = percentileDrilldowns);
+                    } else {
+                        percentileDrilldowns.ForEach(e => r2.AddValue(e.Key, e.Value, () => nameof(percentileDrilldowns)));
+                    }
+                }
                 if (r1.Count > 0) retval.Add(key.Key.CoreP, r1);
             });
             return retval;
@@ -438,14 +519,22 @@ namespace AgoRapide.API {
         /// TODO: Make immutable
         /// </summary>
         public class DrillDownSuggestion {
-            public Type EntityType; // TODO: Implement constructor forcing parameters here
+            public Type EntityType { get; private set; }
             /// <summary>
             /// Number of entities resulting if querying according to this suggestion
             /// </summary>
-            public long Count;
-            public Uri Url;
-            public string Text;
-            public QueryIdKeyOperatorValue QueryId;
+            public long Count { get; private set; }
+            public Uri Url { get; private set; }
+            public string Text { get; private set; }
+            public QueryIdKeyOperatorValue QueryId { get; private set; }
+
+            public DrillDownSuggestion(Type entityType, long count, Uri url, string text, QueryIdKeyOperatorValue queryId) {
+                EntityType = entityType;
+                Count = count;
+                Url = url;
+                Text = text;
+                QueryId = queryId;
+            }
 
             /// <summary>
             /// TODO: Find a better name for this method / property

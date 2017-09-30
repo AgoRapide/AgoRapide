@@ -70,7 +70,7 @@ namespace AgoRapide.Core {
             if (!IsMultiple) throw new InvalidCountException("!" + nameof(IsMultiple) + " for " + ToString() + detailer.Result("\r\nDetails: "));
         }
 
-        [ClassMember(Description = 
+        [ClassMember(Description =
             "May be set for instance by -" + nameof(QueryIdKeyOperatorValue) + "- with value NULL.\r\n" +
             "This will be difficult (very slow) to query in database.\r\n" +
             "(only in-memory query through -" + nameof(IsMatch) + "- is then possible.)")]
@@ -91,7 +91,7 @@ namespace AgoRapide.Core {
                 "\"key = 'Name' AND strv IN (:strv1, :strv2, :strv3)\" (with corresponding parameters in -" + nameof(SQLWhereStatementParameters) + "-)"
         )]
         public string SQLWhereStatement => _SQLWhereStatement ?? throw new NullReferenceException(nameof(SQLWhereStatement) + ".\r\n" +
-            (SQLQueryNotPossible ? 
+            (SQLQueryNotPossible ?
                 nameof(SQLQueryNotPossible) : (
                     "Should have been set by sub class (by " + GetType() + ")\r\n." +
                     "Will probably not be set for " + nameof(Percentile) + " " + nameof(QueryIdKeyOperatorValue) + " as these are in-memory based.\r\n" +
@@ -196,16 +196,20 @@ namespace AgoRapide.Core {
                     errorResponse = "No operator given";
                     return false;
                 }
-                switch (strOperator) {
-                    case "<": _operator = Operator.LT; break;
-                    case "<=": _operator = Operator.LEQ; break;
-                    case "=": _operator = Operator.EQ; break;
-                    case ">=": _operator = Operator.GEQ; break;
-                    case ">": _operator = Operator.GT; break;
-                    default:
-                        id = null;
-                        errorResponse = "Invalid operator (" + strOperator + ")";
-                        return false;
+                if (Util.EnumTryParse(strOperator, out _operator)) {
+                    // OK
+                } else {
+                    switch (strOperator) {
+                        case "<": _operator = Operator.LT; break;
+                        case "<=": _operator = Operator.LEQ; break;
+                        case "=": _operator = Operator.EQ; break;
+                        case ">=": _operator = Operator.GEQ; break;
+                        case ">": _operator = Operator.GT; break;
+                        default:
+                            id = null;
+                            errorResponse = "Invalid operator (" + strOperator + ")";
+                            return false;
+                    }
                 }
 
                 var strValue = nextWord();
@@ -214,8 +218,19 @@ namespace AgoRapide.Core {
                     errorResponse = "No value given";
                     return false;
                 }
+                var strLeftover = nextWord();
+
+                /// HACK: Ugly hack in order for <see cref="Money"/> to parse.
+                /// TODO: Implement better parsing. Look for starting ' and ending '.
+                if (strLeftover != null && strLeftover.EndsWith("'")) {
+                    strValue = strValue + " " + strLeftover;
+                    strLeftover = null;
+                }
+
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
+                } else if (Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
+                    id = new QueryIdKeyOperatorValue(key.Key, _operator, quintile);
                 } else {
                     if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
 
@@ -224,11 +239,10 @@ namespace AgoRapide.Core {
                         errorResponse = "Invalid value given for " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
                         return false;
                     }
-
-                    var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
-
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
+                if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
+
                 errorResponse = null;
                 return true;
 
@@ -277,14 +291,14 @@ namespace AgoRapide.Core {
         }
 
         /// <summary>
-        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichAttribute for all QueryId-classes!!!
+        /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichKey for all QueryId-classes!!!
         /// TODO: IMPLEMENT CLEANER AND CHAINING OF CLEANER
         /// enumAttribute.Cleaner=
         /// 
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
         /// </summary>
         /// <param name="key"></param>
-        public static void EnrichAttribute(PropertyKeyAttributeEnriched key) =>
+        public static void EnrichKey(PropertyKeyAttributeEnriched key) =>
             key.ValidatorAndParser = new Func<string, ParseResult>(value => {
                 return TryParse(value, out var retval, out var errorResponse) ?
                     ParseResult.Create(key, retval) :
