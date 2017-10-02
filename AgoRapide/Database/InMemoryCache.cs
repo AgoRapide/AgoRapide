@@ -125,11 +125,17 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="type"></param>
         /// <param name="id"></param>
+        /// <param name="db"></param>
+        /// <param name="logger">
+        /// May be null. 
+        /// Useful of some operations from inside this method takes a very long time, 
+        /// like accessing a <see cref="BaseSynchronizer"/>-class or the <see cref="FileCache.Instance"/></param>
         /// <returns></returns>
-        public static List<BaseEntity> GetMatchingEntities(Type type, QueryId id, BaseDatabase db) {
+        public static List<BaseEntity> GetMatchingEntities(Type type, QueryId id, BaseDatabase db, Action<string> logger) {
             if (type == null) throw new ArgumentNullException(nameof(type));
             if (id == null) throw new ArgumentNullException(nameof(id));
             if (db == null) throw new ArgumentNullException(nameof(db));
+
             _synchronizedTypes.GetOrAdd(type, t => { // Note how actual return value, TRUE / FALSE, is ignored.
                 if (!GetSyncronizers(db).TryGetValue(t, out var s)) {
                     // This is either because 
@@ -145,12 +151,19 @@ namespace AgoRapide.Database {
                     var types = s.PV<List<Type>>(SynchronizerP.SynchronizerExternalType.A());
                     var synchronizerWasCalled = false;
                     var allEntities = new Dictionary<Type, List<BaseEntity>>();
+
+                    var Log = new Action<string>(text => {
+                        if (logger == null) return;
+                        logger(typeof(InMemoryCache).ToStringVeryShort() + "." + nameof(GetMatchingEntities) + ": " + text);
+                    });
                     foreach (var st in types) {
+                        Log("Calling " + nameof(FileCache.TryEnrichFromDisk) + " for " + st.ToStringVeryShort());
                         if (FileCache.Instance.TryEnrichFromDisk(s, st, db, out var entities, out _)) { // Note how "result" is ignored. 
                             allEntities.AddValue(st, entities);
                         } else {
                             /// This call can be very time-consuming
                             /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
+                            Log("Calling " + nameof(BaseSynchronizer.Synchronize2) + " for " + s.IdFriendly);
                             s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
                             synchronizerWasCalled = true;
 
@@ -162,6 +175,7 @@ namespace AgoRapide.Database {
                     if (synchronizerWasCalled) {
                         /// No need for calling <see cref="BaseSynchronizer.SynchronizeMapForeignKeys"/>, because was done as part of <see cref="BaseSynchronizer.Synchronize2"/>
                     } else {
+                        Log("Calling " + nameof(BaseSynchronizer.SynchronizeMapForeignKeys) + " for " + s.IdFriendly);
                         s.SynchronizeMapForeignKeys(allEntities, new API.Result()); // Note how "result" is ignored. 
                     }
 
@@ -177,8 +191,11 @@ namespace AgoRapide.Database {
                     types.ForEach(st => {
                         /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
                         var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+
+                        Log("Calling " + nameof(BaseInjector.CalculateExpansions) + " for " + st.ToStringVeryShort());
                         BaseInjector.CalculateExpansions(st, entities, db); /// Call this first, maybe some if these will also be percentile-evaluated and aggregated over foreign keys below.
 
+                        Log("Calling " + nameof(BaseInjector.CalculateForeignKeyAggregates) + " for " + st.ToStringVeryShort());
                         BaseInjector.CalculateForeignKeyAggregates(st, entities, db); /// This will make recursive calls against this method (<see cref="GetMatchingEntities"/>)
 
                     });
@@ -186,15 +203,21 @@ namespace AgoRapide.Database {
                     /// TODO: Call all other Injector-classes relevant for this universe.
                     /// TODO: To be decided how to organise this. 
                     /// TODO: Store the types in Synchronizer maybe?
+                    Log("Calling " + nameof(BaseSynchronizer.Inject) + " for " + s.IdFriendly);
                     s.Inject(db); // TODO: Will search for entities like already done here!
 
                     types.ForEach(st => {
                         /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
                         var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+
                         // TOOD. Percentiles should most probably be called multiple times in a sort of iterative process.
                         // TODO: (both before and after injection)
+
+                        Log("Calling " + nameof(BaseInjector.CalculatePercentiles) + " for " + st.ToStringVeryShort());
+
                         BaseInjector.CalculatePercentiles(st, entities, db); // Call this last, so also foreign key aggregates AND injected values may be evaluated
                     });
+                    Log("Finished");
 
                     return true; // Indicates that synchronizing has been done
                 } // Release lock, other threads will now see a "complete" picture.

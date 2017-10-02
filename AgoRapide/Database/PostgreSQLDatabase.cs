@@ -114,7 +114,7 @@ namespace AgoRapide.Database {
                         var a = 1;
                         a++;
                     }
-                    allEntities = InMemoryCache.GetMatchingEntities(requiredType, id, this); // This may do a time-consuming
+                    allEntities = InMemoryCache.GetMatchingEntities(requiredType, id, this, text => Log(text, nameof(InMemoryCache.GetMatchingEntities))); // This may be very time-consuming if synchronizing from source has to be performed.
                     break;
                 default: /// Lookup in database, first step is to find all ids, then calling <see cref="BaseDatabase.GetEntityById"/> for each id
                     Log(logger());
@@ -151,11 +151,11 @@ namespace AgoRapide.Database {
                     break;
             }
 
-            Log(nameof(allEntities) + ".Count: " + allEntities.Count);
+            Log(nameof(requiredType) + ": " + (requiredType?.ToStringVeryShort() ?? "[NULL]") + ", " + nameof(allEntities) + ".Count: " + allEntities.Count);
             id.AssertCountFound(allEntities.Count);
             var lastAccessErrorResponse = "";
             entities = allEntities.Where(e => TryVerifyAccess(currentUser, e, accessTypeRequired, out lastAccessErrorResponse)).ToList();
-            if (allEntities.Count > 0) Log(nameof(entities) + ".Count: " + entities.Count + " (after call to " + nameof(TryVerifyAccess) + ")");
+            if (allEntities.Count != entities.Count) Log(nameof(entities) + ".Count: " + entities.Count + " (after call to " + nameof(TryVerifyAccess) + ")");
             if (id.IsSingle) { /// Relevant for <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/>
                 if (allEntities.Count == 0) {
                     entities = null;
@@ -439,6 +439,9 @@ namespace AgoRapide.Database {
                 DBField.invalid + " IS NULL\r\n" +
                 "ORDER BY " + DBField.pid + ", " + DBField.id + " ASC", _cn1);
 
+            if (type.ToStringVeryShort().Equals("Usage")) {
+                var a = 1;
+            }
 
             var currentProperties = new List<Property>();
             var currentId = -1L;
@@ -450,7 +453,7 @@ namespace AgoRapide.Database {
             var creatorEntityFromCurrentProperties = new Action(() => {
                 // Take into account that root-properties may exist without any 
 
-                rootPropertyIndex++;
+                rootPropertyIndex++;// TODO: There is some bug here (look out for entities without properties / initial empty database or similar.
                 while (rootProperties[rootPropertyIndex].Id != currentProperties[0].ParentId) {
                     // Take into consideration that there may exist entity root properties without any properties at all
                     // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)

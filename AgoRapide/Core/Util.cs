@@ -108,7 +108,9 @@ namespace AgoRapide.Core {
             result = default(T);
             if (!System.Enum.TryParse(_string, out result)) { errorResponse = "Not a valid " + typeof(T) + " (" + _string + ")"; return false; } // Duplicate code below
             if (!System.Enum.IsDefined(typeof(T), result)) { errorResponse = "!" + nameof(System.Enum.IsDefined) + " for " + typeof(T) + " (" + result + ")"; return false; } // Duplicate code below
-            if (((int)(object)result) == 0) { errorResponse = "0 is not allowed for " + typeof(T); return false; } // Duplicate code below
+            if (
+                !typeof(T).Equals(typeof(DayOfWeek)) &&  // TODO: REMOVE THIS HACK
+                ((int)(object)result) == 0) { errorResponse = "0 is not allowed for " + typeof(T); return false; } // Duplicate code below
             errorResponse = null;
             return true;
         }
@@ -140,7 +142,9 @@ namespace AgoRapide.Core {
                 return false;
             }
             if (!System.Enum.IsDefined(type, result)) { errorResponse = "!" + nameof(System.Enum.IsDefined) + " for " + type + " (" + result + ")"; return false; } // Duplicate code above
-            if (((int)result) == 0) { errorResponse = "0 is not allowed for " + type; return false; } // Duplicate code above
+            if (
+                !type.Equals(typeof(DayOfWeek)) &&  // TODO: REMOVE THIS HACK
+                ((int)result) == 0) { errorResponse = "0 is not allowed for " + type; return false; } // Duplicate code above
             errorResponse = null;
             return true;
         }

@@ -56,7 +56,7 @@ namespace AgoRapide.Database {
                             case ExpansionType.DateQuarter: { var v = (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateMonth: { var v = (long)dtmValue.Month; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateWeekday: { var v = dtmValue.DayOfWeek; strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            case ExpansionType.DateHour: { var v = dtmValue.Hour; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.DateHour: { var v = (long)dtmValue.Hour; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearQuarter: { var v = dtmValue.Year + "_" + (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v; e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearMonth: { var v = dtmValue.Year + "_" + dtmValue.Month.ToString("00"); strValue = v; e.AddProperty(key, v); break; }
                             case ExpansionType.DateAgeDays: { var v = (long)(now.Subtract(dtmValue).TotalDays); strValue = v.ToString(); e.AddProperty(key, v); break; }

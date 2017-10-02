@@ -78,7 +78,7 @@ namespace AgoRapide {
 
         public static Dictionary<string, Money> CommonValues = null;
         [ClassMember(Description = 
-            "Useful if your application uses some values overwhelmingly more than other values. " +
+            "Practical functionality that is useful if your application uses some values overwhelmingly more than other values. " +
             "Parsing will then be much quicker and less objects will be generated.")]
         public static void SetCommonValues(List<Money> list) {
             Util.AssertCurrentlyStartingUp();
