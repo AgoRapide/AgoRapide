@@ -96,8 +96,9 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Same as <see cref="Enum.TryParse{TEnum}"/> but will in addition check that: 
         /// 1) It is defined and (since <see cref="Enum.TryParse{TEnum}"/> returns true for all integers)
-        /// 2) The int-value is not 0 (we assume that None = 0 is the first defined element 
-        ///    for all enums and that this value is not to be accepted as valid)
+        /// 2) The int-value is not (0 and "None"). 
+        ///    Note: All AgoRapide enums start with None in order to catch missing setting of values. 
+        ///    This value is considered illegal in a parsing context
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="_string"></param>
@@ -108,23 +109,13 @@ namespace AgoRapide.Core {
             result = default(T);
             if (!System.Enum.TryParse(_string, out result)) { errorResponse = "Not a valid " + typeof(T) + " (" + _string + ")"; return false; } // Duplicate code below
             if (!System.Enum.IsDefined(typeof(T), result)) { errorResponse = "!" + nameof(System.Enum.IsDefined) + " for " + typeof(T) + " (" + result + ")"; return false; } // Duplicate code below
-            if (
-                !typeof(T).Equals(typeof(DayOfWeek)) &&  // TODO: REMOVE THIS HACK
-                ((int)(object)result) == 0) { errorResponse = "0 is not allowed for " + typeof(T); return false; } // Duplicate code below
+            if (((int)(object)result) == 0 && result.ToString().Equals("None")) { errorResponse = "0 (None) is not allowed for " + typeof(T) + " (Note: All AgoRapide enums start with None in order to catch missing setting of values. This value is considered illegal in a parsing context)."; return false; } // Duplicate code below
             errorResponse = null;
             return true;
         }
 
-        /// <summary>
-        /// See also generic version <see cref="EnumParse{T}"/> which most often is more practical
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="_string"></param>
-        /// <returns></returns>
         public static object EnumParse(Type type, string _string) => EnumTryParse(type, _string, out var retval, out var errorResponse) ? retval : throw new InvalidEnumException(type, _string + ". Details: " + errorResponse);
-
         public static bool EnumTryParse(Type type, string _string, out object result) => EnumTryParse(type, _string, out result, out _);
-
         /// <summary>
         /// See also generic version <see cref="EnumTryParse{T}"/> which most often is more practical
         /// (also see that version for documentation)
@@ -142,9 +133,7 @@ namespace AgoRapide.Core {
                 return false;
             }
             if (!System.Enum.IsDefined(type, result)) { errorResponse = "!" + nameof(System.Enum.IsDefined) + " for " + type + " (" + result + ")"; return false; } // Duplicate code above
-            if (
-                !type.Equals(typeof(DayOfWeek)) &&  // TODO: REMOVE THIS HACK
-                ((int)result) == 0) { errorResponse = "0 is not allowed for " + type; return false; } // Duplicate code above
+            if (((int)result) == 0 && result.ToString().Equals("None")) { errorResponse = "0 (None) is not allowed for " + type + " (Note: All AgoRapide enums start with None in order to catch missing setting of values. This value is considered illegal in a parsing context)."; return false; } // Duplicate code above
             errorResponse = null;
             return true;
         }
