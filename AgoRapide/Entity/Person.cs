@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+// MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -82,12 +84,21 @@ namespace AgoRapide {
         [PropertyKey(Group = typeof(PersonPropertiesDescriber), IsMany = false, Type = typeof(string))]
         PhoneNumber,
 
+        /// <summary>
+        /// TODO: REMOVE
+        /// </summary>
         [PropertyKey(Parents = new Type[] { typeof(Person) }, MinValueDbl = 1, ValidValues = new string[] { "A", "B" }, InvalidValues = new string[] { "C", "D" })]
         TestString,
 
+        /// <summary>
+        /// TODO: REMOVE
+        /// </summary>
         [PropertyKey(Parents = new Type[] { typeof(Person) }, SampleValues = new string[] { "2017-12-09", "1968-12-09" }, InvalidValues = new string[] { "2017-12-09 00:00", "C", "D" })]
         TestDateOnly,
 
+        /// <summary>
+        /// TODO: REMOVE
+        /// </summary>
         [PropertyKey(Parents = new Type[] { typeof(Person) }, SampleValues = new string[] { "2017-01-13 08:00" }, InvalidValues = new string[] { "2017-12-09", "C", "D" })]
         TestDateAndtime,
 

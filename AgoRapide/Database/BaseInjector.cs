@@ -56,9 +56,11 @@ namespace AgoRapide.Database {
                             case ExpansionType.DateQuarter: { var v = (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateMonth: { var v = (long)dtmValue.Month; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateWeekday: { var v = dtmValue.DayOfWeek; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.DatePeriodOfDay: { var v = (PeriodOfDay)((dtmValue.Hour / 6) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateHour: { var v = (long)dtmValue.Hour; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearQuarter: { var v = dtmValue.Year + "_" + (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v; e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearMonth: { var v = dtmValue.Year + "_" + dtmValue.Month.ToString("00"); strValue = v; e.AddProperty(key, v); break; }
+                            case ExpansionType.DateWeekDayPeriodOfDay: { var v = dtmValue.DayOfWeek.ToString() + ((PeriodOfDay)((dtmValue.Hour / 6) + 1)).ToString(); strValue = v; e.AddProperty(key, v); break; }
                             case ExpansionType.DateAgeDays: { var v = (long)(now.Subtract(dtmValue).TotalDays); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateAgeWeeks: { var v = (long)(now.Subtract(dtmValue).TotalDays / 7); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateAgeMonths: { var v = (long)(now.Subtract(dtmValue).TotalDays / 30); strValue = v.ToString(); e.AddProperty(key, v); break; }
@@ -79,7 +81,10 @@ namespace AgoRapide.Database {
                     }
                 }
             });
-            key.Key.A.HasLimitedRange = hasLimitedRange; /// If TRUE then important discovery making it possible for <see cref="Result.CreateDrillDownUrls"/> to make more suggestions.
+            if (!key.Key.A.HasLimitedRangeIsSet) { // Note that we do only set this once
+                // TOOD: Improve on this situation. First call to this method decides. For instance if set to TRUE here, then it will never change back to FALSE afterwards
+                key.Key.A.HasLimitedRange = hasLimitedRange; /// If TRUE then important discovery making it possible for <see cref="Result.CreateDrillDownUrls"/> to make more suggestions.
+            }
         });
 
         public static void CalculatePercentiles(Type type, List<BaseEntity> entities, BaseDatabase db) => type.GetChildProperties().Values.Where(key => key.Key.A.IsSuitableForPercentileCalculation).ForEach(key => {
@@ -167,6 +172,9 @@ namespace AgoRapide.Database {
                         "Illegal " + nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.ExpansionTypes) + " (" + e + ") specified for " + k.ToString() + ".\r\n" +
                         "The specified value has a source type of " + e.ToSourceType().ToStringVeryShort() + " while the key is of type " + k.Key.A.Type.ToStringVeryShort() + ".\r\n" +
                         "Possible resolution: Delete " + nameof(PropertyKeyAttribute.ExpansionTypes) + " specified for " + k.ToString() + ".");
+                    if (k.Key.PToString.Equals("UsageDateTime") && e == ExpansionType.DateHour) {
+                        var a = 1;
+                    }
 
                     var expansionKey = new PropertyKeyExpansion(
                         e,
@@ -180,6 +188,7 @@ namespace AgoRapide.Database {
                                     ) {
                                 Parents = k.Key.A.Parents,
                                 Type = e.ToExpandedType(),
+                                HasLimitedRange = e.HasLimitedRange(),
 
                                 /// TODO: Note how <see cref="BaseEntity.ToHTMLTableRowHeading"/> / <see cref="BaseEntity.ToHTMLTableRow"/> uses
                                 /// TODO: <see cref="Extensions.GetChildPropertiesByPriority(Type, PriorityOrder)"/> which as of Sep 2017
@@ -328,8 +337,11 @@ namespace AgoRapide.Database {
         [EnumValue(Description = "Only month of date, like 2018-09-12 becoming 12")]
         DateMonth,
 
-        [EnumValue(Description = "Only weekday of date, like 2018-09-12 becoming -" + nameof(System.DayOfWeek.Sunday) + "-.")]
+        [EnumValue(Description = "Only weekday of date, like 2018-09-12 becoming -" + nameof(DayOfWeek.Sunday) + "-.")]
         DateWeekday,
+
+        [EnumValue(Description = "Only period of day, like 2018-09-12 09:00 becoming -" + nameof(PeriodOfDay.Morning) + "-.")]
+        DatePeriodOfDay,
 
         [EnumValue(Description = "Only hour of date (0-23), like 2018-09-12 07:52 becoming 7.")]
         DateHour,
@@ -339,6 +351,9 @@ namespace AgoRapide.Database {
 
         [EnumValue(Description = "Only year and month of date, like 2018-09-12 becoming \"2018_12\".")]
         DateYearMonth,
+
+        [EnumValue(Description = "Only weekday and period of day, like 2018-09-12 13:00 becoming \"Sunday_Afternoon\".")]
+        DateWeekDayPeriodOfDay,
 
         [EnumValue(Description = "Less than 24 hours is 0 days, less than 48 is 1 day and so on.")]
         DateAgeDays,
@@ -353,12 +368,30 @@ namespace AgoRapide.Database {
         DateAgeYears
     }
 
+    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
     public enum Quarter {
         None,
         Q1,
         Q2,
         Q3,
         Q4
+    }
+
+    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
+    public enum PeriodOfDay {
+        None,
+
+        [EnumValue(Description = "[00:00 - 06:00>")]
+        Night,
+
+        [EnumValue(Description = "[06:00 - 12:00>")]
+        Morning,
+
+        [EnumValue(Description = "[12:00 - 18:00>")]
+        Afternoon,
+
+        [EnumValue(Description = "[18:00 - 24:00>")]
+        Evening,
     }
 
     public static class ExpansionTypeE {
@@ -368,14 +401,32 @@ namespace AgoRapide.Database {
                 case ExpansionType.DateQuarter: return typeof(Quarter);
                 case ExpansionType.DateMonth: return typeof(long);
                 case ExpansionType.DateWeekday: return typeof(DayOfWeek);
+                case ExpansionType.DatePeriodOfDay: return typeof(PeriodOfDay);
                 case ExpansionType.DateHour: return typeof(long);
                 case ExpansionType.DateYearQuarter: return typeof(string);
                 case ExpansionType.DateYearMonth: return typeof(string);
+                case ExpansionType.DateWeekDayPeriodOfDay: return typeof(string);
                 case ExpansionType.DateAgeDays: return typeof(long);
                 case ExpansionType.DateAgeWeeks: return typeof(long);
                 case ExpansionType.DateAgeMonths: return typeof(long);
                 case ExpansionType.DateAgeYears: return typeof(long);
                 default: throw new InvalidEnumException(expansionType);
+            }
+        }
+
+        public static bool HasLimitedRange(this ExpansionType expansionType) {
+            switch (expansionType) {
+                case ExpansionType.DateHour:
+                case ExpansionType.DateMonth:
+                case ExpansionType.DateYear: // May have to be removed (or made configurable).
+                case ExpansionType.DateAgeYears: // May have to be removed (or made configurable).
+                case ExpansionType.DateWeekday:
+                case ExpansionType.DatePeriodOfDay:
+                case ExpansionType.DateWeekDayPeriodOfDay:
+                case ExpansionType.DateYearQuarter: // May have to be removed (or made configurable).
+                    return true;
+                default:
+                    return false;
             }
         }
 

@@ -91,7 +91,7 @@ namespace AgoRapide.API {
                             }
                             retval.AppendLine("<p" +
                                 // "style=\"color:red\"" +  This is most probably only a distraction
-                                ">(Too many entities for HTML-view, showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". Drill down suggestions are based on complete dataset.)</p>");
+                                ">(Too many entities for HTML-view, showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". Drill down suggestions are based on complete dataset though.)</p>");
                         }
 
                         retval.AppendLine("<table>");

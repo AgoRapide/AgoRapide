@@ -202,7 +202,7 @@ namespace AgoRapide.Core {
             });            
             BaseInjector.GetForeignKeyAggregateKeys(allCoreP.Values.ToList()).ForEach(key => adder(key)); /// Add <see cref="PropertyKeyForeignKeyAggregate"/> for automatic injection by <see cref="BaseInjector"/>                                                                                                          
             BaseInjector.GetExpansionKeys(allCoreP.Values.ToList()).ForEach(key => adder(key)); /// Add <see cref="PropertyKeyExpansion"/> for automatic injection by <see cref="BaseInjector"/>
-
+            
             _allCoreP = allCoreP.Values.ToList();
         }
 

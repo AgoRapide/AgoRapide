@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+// MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
+using System;
 using System.Linq;
 using System.Collections.Generic;
 // Due to some perceived confusion about origin of some methods, we deliberately omit some using-statements here

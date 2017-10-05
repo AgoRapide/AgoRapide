@@ -654,10 +654,9 @@ namespace AgoRapide.Database {
                 return false;
             }
 
-            if (currentUser.PV(CoreP.RejectCredentialsNextTime.A(), defaultValue: false)) {
-                // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-                UpdateProperty(GetId(MethodBase.GetCurrentMethod()), currentUser, new PropertyKeyWithIndex(CoreP.RejectCredentialsNextTime.A().Key), value: false, result: null);
-                return false;
+            if (currentUser.Properties.TryGetValue(CoreP.RejectCredentialsNextTime.A().Key.CoreP, out var p)) {
+                OperateOnProperty(GetId(MethodBase.GetCurrentMethod()), p, PropertyOperation.SetInvalid, null);
+                if (p.V<bool>()) return false;
             }
 
             Log("Returning TRUE");

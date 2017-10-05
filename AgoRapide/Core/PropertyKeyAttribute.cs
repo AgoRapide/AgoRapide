@@ -274,7 +274,7 @@ namespace AgoRapide.Core {
         /// 
         /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically for boolean and enum. 
         /// 
-        /// Note how <see cref="BaseInjector.CalculateForeignKeyAggregates"/> actually sets this dynamically also.
+        /// Note how <see cref="BaseInjector.CalculateForeignKeyAggregates"/> actually sets this dynamically also (at first use of the relevant key). 
         /// </summary>
         [ClassMember(
             Description =

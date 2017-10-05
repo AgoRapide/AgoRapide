@@ -17,6 +17,10 @@ namespace AgoRapide.API {
 
         public AccessLevel AccessLevelUse { get; set; }
 
+        private static IAdditionalCredentialsVerifier _additionalCredentialsVerifier;
+        [ClassMember(Description = "If given then -" + nameof(IAdditionalCredentialsVerifier.TryVerifyCredentials) + "- will be called before -" + nameof(Database.BaseDatabase.TryVerifyCredentials) + "-.")]
+        public static IAdditionalCredentialsVerifier AdditionalCredentialsVerifier { get => _additionalCredentialsVerifier; set { Util.AssertCurrentlyStartingUp(); _additionalCredentialsVerifier = value; } }
+
         public Task AuthenticateAsync(System.Web.Http.Filters.HttpAuthenticationContext context, System.Threading.CancellationToken cancellationToken) {
             var errorResultGenerator = new Func<System.Web.Http.Results.UnauthorizedResult>(() => new System.Web.Http.Results.UnauthorizedResult(new System.Net.Http.Headers.AuthenticationHeaderValue[0], context.Request));
             try {
@@ -49,7 +53,7 @@ namespace AgoRapide.API {
                     // NOTE:   context.ErrorResult = errorResultGenerator();
                     // NOTE: here if security is important. 
 
-                    AgoRapide.API.Request.GetMethodsMatchingRequest(context.Request, AgoRapide.API.Request.GetResponseFormatFromURL(context.Request.RequestUri.ToString()), out var exactMatch, out var candidateMatches, out _);
+                    Request.GetMethodsMatchingRequest(context.Request, Request.GetResponseFormatFromURL(context.Request.RequestUri.ToString()), out var exactMatch, out var candidateMatches, out _);
                     if (
                         (exactMatch != null && exactMatch.Value.method.RequiresAuthorization) ||
                         (candidateMatches != null && candidateMatches.Value.methods.Any(m => m.RequiresAuthorization))
@@ -64,15 +68,16 @@ namespace AgoRapide.API {
                         generatePrincipal(Util.Configuration.C.AnonymousUser);
                     }
                 } else {
-                    var credArray = System.Text.Encoding.GetEncoding("UTF-8").GetString(Convert.FromBase64String(headers.Authorization.Parameter)).Split(':');
+                    var credArray = Encoding.GetEncoding("UTF-8").GetString(Convert.FromBase64String(headers.Authorization.Parameter)).Split(':');
                     if (credArray.Length != 2) {
                         context.ErrorResult = errorResultGenerator();
+                    } else if (
+                        (AdditionalCredentialsVerifier != null && AdditionalCredentialsVerifier.TryVerifyCredentials(database, credArray[0], credArray[1], out var currentUser)) ||
+                        database.TryVerifyCredentials(credArray[0], credArray[1], out currentUser)
+                      ) {
+                        generatePrincipal(currentUser);
                     } else {
-                        if (!database.TryVerifyCredentials(credArray[0], credArray[1], out var currentUser)) {
-                            context.ErrorResult = errorResultGenerator();
-                        } else {
-                            generatePrincipal(currentUser);
-                        }
+                        context.ErrorResult = errorResultGenerator();
                     }
                 }
                 return Task.FromResult(0);
@@ -80,7 +85,7 @@ namespace AgoRapide.API {
                 /// Insert your preferred logging mechanism in:
                 /// DAPI.BaseController.LogFinal and DAPI.BaseController.LogException AND
                 /// Startup.cs (multiple places)
-                AgoRapide.Core.Util.LogException(ex);
+                Util.LogException(ex);
 
                 // TODO: Add missing parameters here and return ExceptionResult instead
                 // TODO: context.ErrorResult = new System.Web.Http.Results.ExceptionResult(ex, false, null, request, null);
@@ -105,6 +110,13 @@ namespace AgoRapide.API {
                 }
                 return response;
             }
+        }
+
+        [Class(Description =
+            "Useful when using -" + nameof(Database.BaseSynchronizer) + "- and it is desired to reuse the credentials from the system that is synchronized from, " +
+            "that is, when it is desired not to administer an additional set of administrative user profiles in the AgoRapide-based system.")]
+        public interface IAdditionalCredentialsVerifier {
+            bool TryVerifyCredentials(Database.BaseDatabase database, string username, string password, out BaseEntity currentUser);
         }
 
         public bool AllowMultiple => false;
