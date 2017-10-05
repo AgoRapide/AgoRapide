@@ -47,10 +47,10 @@ namespace AgoRapide.Database {
                 InvalidObjectTypeException.AssertAssignable(e, type);
 
                 if (e.Properties.TryGetValue(key.SourceProperty.Key.CoreP, out var sourceProperty)) {
+                    string strValue;
+
                     if (typeof(DateTime).Equals(key.ExpansionType.ToSourceType())) {
                         var dtmValue = sourceProperty.V<DateTime>();
-
-                        string strValue;
                         switch (key.ExpansionType) { /// Note how AddProperty generic type now chosen must correspond to <see cref="ExpansionTypeE.ToExpandedType"/>
                             case ExpansionType.DateYear: { var v = (long)dtmValue.Year; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateQuarter: { var v = (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
@@ -67,17 +67,23 @@ namespace AgoRapide.Database {
                             case ExpansionType.DateAgeYears: { var v = (long)(now.Subtract(dtmValue).TotalDays / 365); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             default: throw new InvalidEnumException(key.ExpansionType);
                         }
-
-                        if (!valuesFound.Contains(strValue)) {
-                            // TOOD: TURN LIMIT OF 20 INTO A CONFIGURATION-PARAMETER
-                            if (valuesFound.Count >= 20) { // Note how we allow up to 20 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
-                                hasLimitedRange = false;
-                            } else {
-                                valuesFound.Add(strValue);
-                            }
+                    } else if (typeof(TimeSpan).Equals(key.ExpansionType.ToSourceType())) {
+                        var tspValue = sourceProperty.V<TimeSpan>();
+                        switch (key.ExpansionType) { /// Note how AddProperty generic type now chosen must correspond to <see cref="ExpansionTypeE.ToExpandedType"/>
+                            case ExpansionType.TimeSpanHours: { var v = (long)tspValue.TotalHours; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanDays: { var v = (long)tspValue.TotalDays; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            default: throw new InvalidEnumException(key.ExpansionType);
                         }
                     } else {
                         throw new InvalidTypeException(key.ExpansionType.ToSourceType(), nameof(key.ExpansionType) + ": " + key.ExpansionType);
+                    }
+                    if (!valuesFound.Contains(strValue)) {
+                        // TOOD: TURN LIMIT OF 20 INTO A CONFIGURATION-PARAMETER
+                        if (valuesFound.Count >= 20) { // Note how we allow up to 20 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
+                            hasLimitedRange = false;
+                        } else {
+                            valuesFound.Add(strValue);
+                        }
                     }
                 }
             });
@@ -172,9 +178,10 @@ namespace AgoRapide.Database {
                         "Illegal " + nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.ExpansionTypes) + " (" + e + ") specified for " + k.ToString() + ".\r\n" +
                         "The specified value has a source type of " + e.ToSourceType().ToStringVeryShort() + " while the key is of type " + k.Key.A.Type.ToStringVeryShort() + ".\r\n" +
                         "Possible resolution: Delete " + nameof(PropertyKeyAttribute.ExpansionTypes) + " specified for " + k.ToString() + ".");
-                    if (k.Key.PToString.Equals("UsageDateTime") && e == ExpansionType.DateHour) {
-                        var a = 1;
-                    }
+
+                    //if (k.Key.PToString.Equals("UsageDateTime") && e == ExpansionType.DateHour) {
+                    //    var a = 1;
+                    //}
 
                     var expansionKey = new PropertyKeyExpansion(
                         e,
@@ -365,7 +372,11 @@ namespace AgoRapide.Database {
         DateAgeMonths,
 
         [EnumValue(Description = "Less than 365 days is 0 years, less than 730 days is 1 year and so on (note how years are not calculcated exact as of Sep 2017).")]
-        DateAgeYears
+        DateAgeYears,
+
+        TimeSpanHours,
+
+        TimeSpanDays,
     }
 
     [Enum(AgoRapideEnumType = EnumType.EnumValue)]
@@ -410,6 +421,8 @@ namespace AgoRapide.Database {
                 case ExpansionType.DateAgeWeeks: return typeof(long);
                 case ExpansionType.DateAgeMonths: return typeof(long);
                 case ExpansionType.DateAgeYears: return typeof(long);
+                case ExpansionType.TimeSpanHours: return typeof(long);
+                case ExpansionType.TimeSpanDays: return typeof(long);
                 default: throw new InvalidEnumException(expansionType);
             }
         }
@@ -430,9 +443,16 @@ namespace AgoRapide.Database {
             }
         }
 
+        /// <summary>
+        /// TODO: REPLACE WITH ONE-TIME INITIALIZATION AT APPLICATION STARTUP
+        /// </summary>
+        /// <param name="expansionType"></param>
+        /// <returns></returns>
         public static Type ToSourceType(this ExpansionType expansionType) {
             if (expansionType.ToString().StartsWith("Date")) {
                 return typeof(DateTime);
+            } else if (expansionType.ToString().StartsWith("TimeSpan")) {
+                return typeof(TimeSpan);
             } else {
                 throw new InvalidEnumException(expansionType);
             }
