@@ -923,11 +923,11 @@ namespace AgoRapide.API {
                 }
             }
 
-            updater(CoreP.SuggestedUrl.A(), suggestedUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl + s)).ToList());
+            updater(CoreP.SuggestedUrl.A(), suggestedUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl.ToString() + s)).ToList());
 
             // TODO: Fix reason for duplicates occurring here (necessitating the Distinct-operation)
             suggestedBaseEntityMethodUrls = suggestedBaseEntityMethodUrls.Distinct().ToList();
-            updater(APIMethodP.BaseEntityMethodUrl.A(), suggestedBaseEntityMethodUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl + s)).ToList());
+            updater(APIMethodP.BaseEntityMethodUrl.A(), suggestedBaseEntityMethodUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl.ToString() + s)).ToList());
 
             if (method.MA.Environment < Util.Configuration.C.Environment) {
                 IgnoredMethods.Add(method); // Moved from start. We want to update database anyway.

@@ -63,7 +63,7 @@ namespace AgoRapide.API {
         /// <param name="responseFormat"></param>
         /// <returns></returns>
         public static Uri CreateAPIUrl(string apiCommand, ResponseFormat responseFormat) => new Uri((apiCommand.StartsWith("http://") || apiCommand.StartsWith("https://") ? "" : 
-            Util.Configuration.C.BaseUrl) + apiCommand + (responseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : (responseFormat == ResponseFormat.CSV ? Util.Configuration.C.CSVPostfixIndicator : "")));
+            Util.Configuration.C.BaseUrl.ToString()) + apiCommand + (responseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicator : (responseFormat == ResponseFormat.CSV ? Util.Configuration.C.CSVPostfixIndicator : "")));
 
         /// <summary>
         /// Creates HTML API link for <see cref="CoreAPIMethod.EntityIndex"/> for <paramref name="entity"/> like {a href="https://AgoRapide.com/api/Person/42/HTML"}John Smith{/a}

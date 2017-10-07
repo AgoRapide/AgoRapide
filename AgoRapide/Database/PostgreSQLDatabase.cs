@@ -637,8 +637,15 @@ namespace AgoRapide.Database {
                     "does not correspond to the one given (" + username + ")");
                 return false;
             }
-            if (!currentUser.TryGetPV<string>(CoreP.Password.A(), out var correctPasswordHashedWithSalt) || string.IsNullOrEmpty(correctPasswordHashedWithSalt)) {
-                Log("Password not set for " + currentUser.ToString());
+
+            if (!currentUser.Properties.TryGetValue(CoreP.Password.A().Key.CoreP, out var pPassword)) {
+                Log("Password does not exist for " + currentUser.ToString());
+                return false;
+            }
+            /// Now how we must access <see cref="Property.Value"/> instead of <see cref="Property.V{T}"/> because that latter will only give us [SET] as value
+            var correctPasswordHashedWithSalt = pPassword.Value as string ?? throw new InvalidObjectTypeException(pPassword.Value, typeof(string), pPassword.ToString());
+            if (string.Empty.Equals(correctPasswordHashedWithSalt)) {
+                Log("Password has empty value for " + currentUser.ToString());
                 return false;
             }
             if (password.Equals(correctPasswordHashedWithSalt)) throw new InvalidPasswordException<CoreP>(CoreP.Password, nameof(password) + ".Equals(" + nameof(correctPasswordHashedWithSalt) + "). Either 1) Password was not correct stored in database (check that " + nameof(CreateProperty) + " really salts and hashes passwords), or 2) The caller actually supplied an already salted and hashed password.");

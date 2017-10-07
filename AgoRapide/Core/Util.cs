@@ -38,7 +38,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public static Configuration Configuration { get; set; } = new Configuration(new ConfigurationAttribute(
             logPath: @"c:\AgoRapideLog_[DATE_HOUR].txt", // TODO: Find a better default value than this
-            rootUrl: "[" + nameof(ConfigurationAttribute.RootUrl) + "NotSetInDefaultInstanceOf" + nameof(Configuration) + "]",
+            rootUrl: new Uri("http://example.com/[" + nameof(ConfigurationAttribute.RootUrl) + "NotSetInDefaultInstanceOf" + nameof(Configuration) + "]"),
             databaseGetter: ownersType => throw new NullReferenceException(nameof(ConfigurationAttribute.DatabaseGetter) + "NotSetInDefaultInstanceOf" + nameof(Configuration))
         ));
 
@@ -804,6 +804,11 @@ namespace AgoRapide.Core {
     public class UnknownEnvironmentException : ApplicationException {
         public UnknownEnvironmentException(string message) : base(message) { }
         public UnknownEnvironmentException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class InvalidProtocolException : ApplicationException {
+        public InvalidProtocolException(string message) : base(message) { }
+        public InvalidProtocolException(string message, Exception inner) : base(message, inner) { }
     }
 
     /// <summary>

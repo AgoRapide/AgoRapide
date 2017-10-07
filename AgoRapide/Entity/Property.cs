@@ -421,7 +421,16 @@ namespace AgoRapide {
         /// <param name="value"></param>
         /// <returns></returns>
         public bool TryGetV<T>(out T value) {
-            if (_value != null && _value is T) { value = (T)_value; return true; } // Note how "as T" is not possible to use here
+            if (_value != null && _value is T) {
+                if (Key.Key.A.IsPassword) {
+                    if (!typeof(string).Equals(typeof(T))) throw new InvalidTypeException(typeof(T), typeof(string), nameof(PropertyKeyAttribute.IsPassword));
+                    value = (T)(object)"[SET]";
+                    return true;
+                }
+                value = (T)_value;
+                return true;
+            } // Note how "as T" is not possible to use here
+
             var t = typeof(T);
 
             if (IsIsManyParent) {
@@ -477,6 +486,10 @@ namespace AgoRapide {
                                 value = (T)(object)(lng.ToString());
                                 return true;
                         }
+                    }
+                    if (Key.Key.A.IsPassword) {
+                        value = (T)(object)(_stringValue != null ? (string.IsNullOrEmpty(_stringValue) ? "[EMPTY]" : "[SET]") : throw new NullReferenceException(nameof(_stringValue) + ". Details: " + ToString()));
+                        return true;
                     }
                     value = (T)(object)(_stringValue ?? throw new NullReferenceException(nameof(_stringValue) + ". Details: " + ToString()));
                     return true;

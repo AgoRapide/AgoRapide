@@ -42,11 +42,11 @@ namespace AgoRapide.Core {
         public string LogPath { get; private set; }
 
         /// <summary>
-        /// Example: https://api.agorapide.com/ or http://localhost:59294/
+        /// Example: https://sample.agorapide.com/ or http://localhost:59294/
         /// 
         /// Note the useless default value offered in the default instance of <see cref="ConfigurationAttribute"/> offered through <see cref="Util.Configuration"/>
         /// </summary>
-        public string RootUrl { get; private set; }
+        public Uri RootUrl { get; private set; }
 
         /// <summary>
         /// Note the useless default value offered in the default instance of <see cref="ConfigurationAttribute"/> offered through <see cref="Util.Configuration"/>
@@ -58,11 +58,24 @@ namespace AgoRapide.Core {
         /// All other properties have sensible default values.
         /// </summary>
         /// <param name="rootUrl"></param>
-        public ConfigurationAttribute(string logPath, string rootUrl, Func<Type, BaseDatabase> databaseGetter) {
+        public ConfigurationAttribute(string logPath, Uri rootUrl, Func<Type, BaseDatabase> databaseGetter) {
             Description = "Contains all Configuration information for AgoRapide";
             LogPath = logPath ?? throw new ArgumentNullException(nameof(logPath));
             RootUrl = rootUrl ?? throw new ArgumentNullException(nameof(rootUrl));
             DatabaseGetter = databaseGetter ?? throw new ArgumentNullException(nameof(databaseGetter));
+
+            RootUrlUsesHTTPS = "https".Equals(RootUrl.Scheme);
+        }
+
+        public bool RootUrlUsesHTTPS { get; private set; }
+
+        public void AssertHTTPSAsRelevant(Uri requestUri) { if (!TryAssertHTTPSAsRelevant(requestUri, out var errorReponse)) throw new InvalidProtocolException(errorReponse); }
+        [ClassMember(Description = "Asserts that https is used for request (but only if -" + nameof(RootUrl) + "- uses https).")]
+        public bool TryAssertHTTPSAsRelevant(Uri requestUri, out string errorResponse) {
+            if (!RootUrlUsesHTTPS) { errorResponse = null; return true; }
+            if ("https".Equals(requestUri.Scheme)) { errorResponse = null; return true; }
+            errorResponse = "Invalid protocol for request (" + requestUri.Scheme + "). Since " + nameof(RootUrlUsesHTTPS) + ", every request has to be made with https. Possible resolution: Start your url with https:// instead of http://";
+            return false;
         }
 
         public Environment Environment { get; set; } = Environment.Test;
@@ -222,7 +235,7 @@ namespace AgoRapide.Core {
             return retval;
         })());
 
-        private string _baseUrl;
+        private Uri _baseUrl;
         /// <summary>
         /// Example: https://bapi.agorapide.com/api/ or http://localhost:59294/api/
         /// </summary>
@@ -233,9 +246,7 @@ namespace AgoRapide.Core {
             LongDescription =
                 "Equivalent to -" + nameof(RootUrl) + "- plus -" + nameof(APIPrefix) + "-"
         )]
-        public string BaseUrl => _baseUrl ?? (_baseUrl = RootUrl + APIPrefix);
-
-        // public List<string> ScriptUrls
+        public Uri BaseUrl => _baseUrl ?? (_baseUrl = new Uri(RootUrl.ToString() + APIPrefix));
 
         private string _APIPrefix = "api/";
         [ClassMember(
@@ -268,7 +279,7 @@ namespace AgoRapide.Core {
 
         public List<string> ScriptRelativePaths { get; set; } = new List<string> { "Scripts/AgoRapide-0.1.js", "Scripts/jquery-3.1.1.min.js" };
 
-        [ClassMember(Description= "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.HTML) + "- is desired by client.")]
+        [ClassMember(Description = "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.HTML) + "- is desired by client.")]
         public string HTMLPostfixIndicator { get; set; } = "/HTML";
 
         private string _HTMLPostfixIndicatorToLower;
@@ -302,7 +313,7 @@ namespace AgoRapide.Core {
             None,
             [PropertyKey(AccessLevelRead = AccessLevel.Admin)]
             ConfigurationLogPath,
-            [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
+            [PropertyKey(Type = typeof(Uri), AccessLevelRead = AccessLevel.Anonymous)]
             ConfigurationRootUrl,
             [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
             ConfigurationAPIPrefix,
@@ -320,9 +331,9 @@ namespace AgoRapide.Core {
 
             /// Note adding of string value and <see cref="Property.ValueA"/> (<see cref="BaseAttribute"/>) here
             p.AddProperty(ConfigurationP.ConfigurationLogPath.A(), LogPath, LogPath, GetType().GetClassMemberAttribute(nameof(LogPath)), d);
-            p.AddProperty(ConfigurationP.ConfigurationRootUrl.A(), RootUrl, RootUrl, GetType().GetClassMemberAttribute(nameof(RootUrl)), d);
+            p.AddProperty(ConfigurationP.ConfigurationRootUrl.A(), RootUrl, RootUrl.ToString(), GetType().GetClassMemberAttribute(nameof(RootUrl)), d);
             p.AddProperty(ConfigurationP.ConfigurationAPIPrefix.A(), APIPrefix, APIPrefix, GetType().GetClassMemberAttribute(nameof(APIPrefix)), d);
-            p.AddProperty(ConfigurationP.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl, GetType().GetClassMemberAttribute(nameof(BaseUrl)), d);
+            p.AddProperty(ConfigurationP.ConfigurationBaseUrl.A(), BaseUrl, BaseUrl.ToString(), GetType().GetClassMemberAttribute(nameof(BaseUrl)), d);
 
             p.AddProperty(CoreP.Message.A(), "TODO: ADD MORE PROPERTIES IN " + GetType() + "." + System.Reflection.MethodBase.GetCurrentMethod().Name, d);
             /// TODO: Add more values to this list. Expand <see cref="ConfigurationP"/> as needed.

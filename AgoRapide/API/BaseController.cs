@@ -87,7 +87,7 @@ namespace AgoRapide.API {
                 if (!url.ToLower().Contains(prefix)) {
                     request.Result.ResultCode = ResultCode.client_error;
                     request.Result.AddProperty(CoreP.Message.A(), "Did you remember '" + Util.Configuration.C.APIPrefix + "' in your URL?" + tip);
-                    request.Result.AddProperty(CoreP.SuggestedUrl.A(), new Uri(Util.Configuration.C.RootUrl + Util.Configuration.C.APIPrefix));
+                    request.Result.AddProperty(CoreP.SuggestedUrl.A(), Util.Configuration.C.BaseUrl);
                     return request.GetResponse();
                 }
             }
@@ -176,7 +176,7 @@ namespace AgoRapide.API {
                 /// Generate <see cref="CoreP.SuggestedUrl"/>:
                 // var docUrl = request.CreateAPIUrl("") does not work (will give us /api//HTML for example)
                 // Therefore we must create the URL manually now:
-                new Uri(Util.Configuration.C.RootUrl + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash : "")).Use(u => {
+                new Uri(Util.Configuration.C.RootUrl.ToString() + (request.ResponseFormat == ResponseFormat.HTML ? Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash : "")).Use(u => {
                     request.Result.AddProperty(CoreP.SuggestedUrl.A(), u);
                     request.Result.AddProperty(CoreP.APIDocumentationUrl.A(), u);
                 });
@@ -527,12 +527,19 @@ namespace AgoRapide.API {
             out ValidRequest request, out object errorResponse, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             if (method == null) method = GetMethod(caller);
             Log(caller + ", " + method.IdFriendly); // It is too early to log parameters here because we do not know their names yet. Insted we log AFTER we know the name (see below).
+
             BaseEntity currentUser = null;
             if (method.RequiresAuthorization) { // TODO: Put functionality for CurrentUser into TryGetRequest instead. ESPECIALLY LETTING TryGetCurrentUser CHECK AccessLevel looks weird
                 if (!TryGetCurrentUser(method, out currentUser, out errorResponse)) {
                     request = null;
                     return false;
                 }
+            }
+
+            if (!Util.Configuration.C.TryAssertHTTPSAsRelevant(Request.RequestUri, out var strErrorRsponse)) {
+                errorResponse = new Request(Request, method, currentUser, exceptionHasOccurred: false).GetErrorResponse(ResultCode.client_error, strErrorRsponse);
+                request = null;
+                return false;
             }
 
             { /// Check if request is attempted <see cref="ResponseFormat.HTML"/> / <see cref="ResponseFormat.CSV"/>-request 
