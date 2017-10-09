@@ -179,10 +179,6 @@ namespace AgoRapide.Database {
                         "The specified value has a source type of " + e.ToSourceType().ToStringVeryShort() + " while the key is of type " + k.Key.A.Type.ToStringVeryShort() + ".\r\n" +
                         "Possible resolution: Delete " + nameof(PropertyKeyAttribute.ExpansionTypes) + " specified for " + k.ToString() + ".");
 
-                    //if (k.Key.PToString.Equals("UsageDateTime") && e == ExpansionType.DateHour) {
-                    //    var a = 1;
-                    //}
-
                     var expansionKey = new PropertyKeyExpansion(
                         e,
                         k,

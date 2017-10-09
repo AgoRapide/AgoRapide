@@ -141,6 +141,19 @@ namespace AgoRapide {
         }
 
         private static ConcurrentDictionary<string, AggregationKey> _aggregations = new ConcurrentDictionary<string, AggregationKey>();
+        /// <summary>
+        /// TODO: For PropertyKey (or similar), add method ExpandedTo with ExpansionType as parameter 
+        /// TODO: The purpose of this is now having to create code like
+        /// TODO: PropertyKeyMapper.GetA(GatewayP.GatewayFirstSeenOnline + "_" + ExpansionType.DateAgeYears).PropertyKeyWithIndex
+        /// TODO: 
+        /// TODO: The principle is a little like <see cref="AggregationKey.Get"/>
+        /// TODO: (this could in principle also be turned into a Property / Method of PropertyKey)
+        /// TODO: 
+        /// </summary>
+        /// <param name="aggregationType"></param>
+        /// <param name="entityType"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
         public static AggregationKey Get(AggregationType aggregationType, Type entityType, PropertyKey property) => _aggregations.GetOrAdd(
             aggregationType + "_" + entityType.ToStringVeryShort() + "_" + property.Key.PToString, key => {
 

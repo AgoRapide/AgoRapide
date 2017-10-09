@@ -272,7 +272,7 @@ namespace AgoRapide {
         /// <param name="strValue"></param>
         /// <param name="valueAttribute"></param>
         /// <param name="detailer"></param>
-        [ClassMember(Description ="Deletes property if already exists, then calls -" + nameof(AddProperty) + "-.")]
+        [ClassMember(Description = "Deletes property if already exists, then calls -" + nameof(AddProperty) + "-.")]
         public void AddOrUpdateProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute, Func<string> detailer) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             key.Key.A.AssertNotIsMany(detailer);
@@ -514,7 +514,7 @@ namespace AgoRapide {
                     // This would be the normal approach but we can use the const-value instead:
                     // retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableHeading(request));
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
-                    retval.AppendLine(string.Join("", existing.Values.OrderBy(p => p.Key.Key.A.PriorityOrder).Select(p => {
+                    retval.AppendLine(string.Join("", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
                         p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                         return p.ToHTMLTableRow(request);
                     })));
@@ -614,7 +614,7 @@ namespace AgoRapide {
                     }
                     return retval;
                 })())
-            ); 
+            );
             /// request.CSVFieldSeparator + nameof(Created); // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
         });
 

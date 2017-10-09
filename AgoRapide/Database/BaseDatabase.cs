@@ -82,7 +82,7 @@ namespace AgoRapide.Database {
             return true;
         }
 
-        public T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired)  where T: BaseEntity, new() => TryGetEntity<T>(currentUser, id, accessTypeRequired, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
+        public T GetEntity<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new() => TryGetEntity<T>(currentUser, id, accessTypeRequired, out var retval, out var errorResponse) ? retval : throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
         /// <summary>
         /// Convenience method, easier alternative to <see cref="TryGetEntities{T}"/>
         /// 
@@ -116,7 +116,7 @@ namespace AgoRapide.Database {
         /// <param name="id"></param>
         /// <param name="accessTypeRequired"></param>
         /// <returns></returns>
-        public List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new() { 
+        public List<T> GetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired) where T : BaseEntity, new() {
             id.AssertIsMultiple();
             if (!TryGetEntities(currentUser, id, accessTypeRequired, out List<T> entities, out var errorResponse)) throw new InvalidCountException(id + ". Details: " + errorResponse.ResultCode + ", " + errorResponse.Message);
             return entities;
@@ -138,7 +138,7 @@ namespace AgoRapide.Database {
         /// <param name="entities"></param>
         /// <param name="errorResponse"></param>
         /// <returns></returns>
-        public bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new() { 
+        public bool TryGetEntities<T>(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, out List<T> entities, out ErrorResponse errorResponse) where T : BaseEntity, new() {
             if (!TryGetEntities(currentUser, id, accessTypeRequired, typeof(T), out var temp, out errorResponse)) {
                 entities = null;
                 return false;
@@ -209,7 +209,7 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public BaseEntity GetEntityById(long id, Type requiredType) => TryGetEntityById(id, requiredType, out var retval) ? retval : throw new ExactOneEntityNotFoundException(id);
 
-        public bool TryGetEntityById<T>(long id, out T entity) where T : BaseEntity, new() { 
+        public bool TryGetEntityById<T>(long id, out T entity) where T : BaseEntity, new() {
             if (!TryGetEntityById(id, typeof(T), out var retval)) {
                 entity = null;
                 return false;
@@ -469,7 +469,7 @@ namespace AgoRapide.Database {
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result) {
+        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result = null) {
             // Log(""); Note how we only log when property is actually created or updated
             var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
             if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
