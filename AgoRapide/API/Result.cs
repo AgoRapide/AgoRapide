@@ -80,9 +80,23 @@ namespace AgoRapide.API {
                         // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
                         var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
                         retval.AppendLine("<p>" + thisTypeSorted.Count + " entities of type " + t.ToStringShort() + "</p>");
+
+                        var entitiesToShowAsHTML = thisTypeSorted;
+                        if (entitiesToShowAsHTML.Count > 1000) { // TODO: Create better algoritm here. Draw randomly between 0 and total count, until have 1000 entities. Look out for situation with close to 1000 entities.
+                            entitiesToShowAsHTML = new List<BaseEntity>();
+                            var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue)); var step = (thisTypeSorted.Count / 1000) * 2;
+                            var i = 0; while (i < thisTypeSorted.Count && entitiesToShowAsHTML.Count < 1000) {
+                                entitiesToShowAsHTML.Add(thisTypeSorted[i]);
+                                i += r.Next(step) + 1;
+                            }
+                            retval.AppendLine("<p" +
+                                // "style=\"color:red\"" +  This is most probably only a distraction
+                                ">(Too many entities for HTML-view, showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". Drill down suggestions are based on complete dataset though.)</p>");
+                        }
+
                         retval.AppendLine("<table>");
-                        retval.AppendLine(thisTypeSorted[0].ToHTMLTableRowHeading(request));
-                        retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToHTMLTableRow(request))));
+                        retval.AppendLine(entitiesToShowAsHTML[0].ToHTMLTableRowHeading(request));
+                        retval.AppendLine(string.Join("", entitiesToShowAsHTML.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</table>");
 
                         /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs

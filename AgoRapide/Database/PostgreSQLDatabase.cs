@@ -114,7 +114,7 @@ namespace AgoRapide.Database {
                         var a = 1;
                         a++;
                     }
-                    allEntities = InMemoryCache.GetMatchingEntities(requiredType, id, this); // This may do a time-consuming
+                    allEntities = InMemoryCache.GetMatchingEntities(requiredType, id, this, text => Log(text, nameof(InMemoryCache.GetMatchingEntities))); // This may be very time-consuming if synchronizing from source has to be performed.
                     break;
                 default: /// Lookup in database, first step is to find all ids, then calling <see cref="BaseDatabase.GetEntityById"/> for each id
                     Log(logger());
@@ -151,11 +151,11 @@ namespace AgoRapide.Database {
                     break;
             }
 
-            Log(nameof(allEntities) + ".Count: " + allEntities.Count);
+            Log(nameof(requiredType) + ": " + (requiredType?.ToStringVeryShort() ?? "[NULL]") + ", " + nameof(allEntities) + ".Count: " + allEntities.Count);
             id.AssertCountFound(allEntities.Count);
             var lastAccessErrorResponse = "";
             entities = allEntities.Where(e => TryVerifyAccess(currentUser, e, accessTypeRequired, out lastAccessErrorResponse)).ToList();
-            if (allEntities.Count > 0) Log(nameof(entities) + ".Count: " + entities.Count + " (after call to " + nameof(TryVerifyAccess) + ")");
+            if (allEntities.Count != entities.Count) Log(nameof(entities) + ".Count: " + entities.Count + " (after call to " + nameof(TryVerifyAccess) + ")");
             if (id.IsSingle) { /// Relevant for <see cref="PropertyKeyAttribute.IsUniqueInDatabase"/>
                 if (allEntities.Count == 0) {
                     entities = null;
@@ -439,6 +439,9 @@ namespace AgoRapide.Database {
                 DBField.invalid + " IS NULL\r\n" +
                 "ORDER BY " + DBField.pid + ", " + DBField.id + " ASC", _cn1);
 
+            if (type.ToStringVeryShort().Equals("Usage")) {
+                var a = 1;
+            }
 
             var currentProperties = new List<Property>();
             var currentId = -1L;
@@ -450,8 +453,10 @@ namespace AgoRapide.Database {
             var creatorEntityFromCurrentProperties = new Action(() => {
                 // Take into account that root-properties may exist without any 
 
+
                 rootPropertyIndex++;
                 // if (rootPropertyIndex >= (rootProperties.Count - 1)) return; // TODO: Check this, happens if no properties for last entity???
+
                 while (rootProperties[rootPropertyIndex].Id != currentProperties[0].ParentId) {
                     // Take into consideration that there may exist entity root properties without any properties at all
                     // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
@@ -635,8 +640,15 @@ namespace AgoRapide.Database {
                     "does not correspond to the one given (" + username + ")");
                 return false;
             }
-            if (!currentUser.TryGetPV<string>(CoreP.Password.A(), out var correctPasswordHashedWithSalt) || string.IsNullOrEmpty(correctPasswordHashedWithSalt)) {
-                Log("Password not set for " + currentUser.ToString());
+
+            if (!currentUser.Properties.TryGetValue(CoreP.Password.A().Key.CoreP, out var pPassword)) {
+                Log("Password does not exist for " + currentUser.ToString());
+                return false;
+            }
+            /// Now how we must access <see cref="Property.Value"/> instead of <see cref="Property.V{T}"/> because that latter will only give us [SET] as value
+            var correctPasswordHashedWithSalt = pPassword.Value as string ?? throw new InvalidObjectTypeException(pPassword.Value, typeof(string), pPassword.ToString());
+            if (string.Empty.Equals(correctPasswordHashedWithSalt)) {
+                Log("Password has empty value for " + currentUser.ToString());
                 return false;
             }
             if (password.Equals(correctPasswordHashedWithSalt)) throw new InvalidPasswordException<CoreP>(CoreP.Password, nameof(password) + ".Equals(" + nameof(correctPasswordHashedWithSalt) + "). Either 1) Password was not correct stored in database (check that " + nameof(CreateProperty) + " really salts and hashes passwords), or 2) The caller actually supplied an already salted and hashed password.");
@@ -652,10 +664,9 @@ namespace AgoRapide.Database {
                 return false;
             }
 
-            if (currentUser.PV(CoreP.RejectCredentialsNextTime.A(), defaultValue: false)) {
-                // TODO: Instead of just using cid = currentUser.Id let this class discover its own id used as cid and iid
-                UpdateProperty(GetId(MethodBase.GetCurrentMethod()), currentUser, new PropertyKeyWithIndex(CoreP.RejectCredentialsNextTime.A().Key), value: false, result: null);
-                return false;
+            if (currentUser.Properties.TryGetValue(CoreP.RejectCredentialsNextTime.A().Key.CoreP, out var p)) {
+                OperateOnProperty(GetId(MethodBase.GetCurrentMethod()), p, PropertyOperation.SetInvalid, null);
+                if (p.V<bool>()) return false;
             }
 
             Log("Returning TRUE");

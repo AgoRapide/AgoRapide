@@ -1,16 +1,18 @@
-﻿using System.Reflection;
+﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+// MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("BSample")]
+[assembly: AssemblyTitle("AgoRapideSample")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HP")]
-[assembly: AssemblyProduct("BSample")]
-[assembly: AssemblyCopyright("Copyright © HP 2016")]
+[assembly: AssemblyCompany("Aniri AS")]
+[assembly: AssemblyProduct("AgoRapideSample")]
+[assembly: AssemblyCopyright("Copyright © Bjørn Erling Fløtten")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
