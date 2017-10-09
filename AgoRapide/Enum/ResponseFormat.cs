@@ -12,7 +12,7 @@ namespace AgoRapide {
 
     /// <summary>
     /// Note how XML can be disabled and JSON added 
-    /// like this in Startup.cs class WebApiConfig static method Register(System.Web.Http.HttpConfiguration httpConfiguration):
+    /// like this in your Startup.cs class WebApiConfig static method Register(System.Web.Http.HttpConfiguration httpConfiguration):
     ///    httpConfiguration.Formatters.Remove(httpConfiguration.Formatters.XmlFormatter);
     ///    httpConfiguration.Formatters.JsonFormatter.MediaTypeMappings.Add(new System.Net.Http.Formatting.QueryStringMapping("json", "true", "application/json"));
     /// </summary>

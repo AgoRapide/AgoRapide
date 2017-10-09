@@ -10,7 +10,7 @@ using AgoRapide.API;
 namespace AgoRapide.Core {
 
     [Class(Description = "Contains code called at application startup (normally from an application-specific Startup.cs-file located in the client root-folder)")]
-    public class Startup {
+    public class CoreStartup {
 
         /// <summary>
         /// </summary>

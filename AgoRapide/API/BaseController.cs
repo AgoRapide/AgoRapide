@@ -196,7 +196,7 @@ namespace AgoRapide.API {
         public object AddFirstAdminUser<TPerson>(ValidRequest request) where TPerson : BaseEntity, new() {
 
             /// Check that the only <typeparam name="TPerson"/> entity in the database at the moment is the anonymous user created by Startup.cs
-            /// TODO: CHANGE TO CHECK IN <see cref="Startup.Initialize{TPerson}"/> IF TPERSON EXISTS AND DISABLE THIS METHOD IF IT DOES 
+            /// TODO: CHANGE TO CHECK IN <see cref="CoreStartup.Initialize{TPerson}"/> IF TPERSON EXISTS AND DISABLE THIS METHOD IF IT DOES 
             /// TODO: (less costly, less risk of DDOS against this method)
             /// TODO: (it not disabled we can still make a check, reading all entities)
             var persons = DB.GetRootPropertyIds(typeof(TPerson));  // TODO: This is costly! Check in a less costly manner!
@@ -204,7 +204,7 @@ namespace AgoRapide.API {
                                                                    // TODO: password from database or deleting all properties for admin-user.
             if (persons.Count == 0) throw new InvalidCountException("No persons found, not even the anonymous user");
             var au = Util.Configuration.C.AnonymousUser;
-            InvalidTypeException.AssertEquals(au.GetType(), typeof(TPerson), () => nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly. Must correspond with call to " + nameof(Startup.Initialize));
+            InvalidTypeException.AssertEquals(au.GetType(), typeof(TPerson), () => nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly. Must correspond with call to " + nameof(CoreStartup.Initialize));
             if (persons.Count > 1) return request.GetErrorResponse(ResultCode.data_error, "An admin user already exists. There is no need for calling this method.");
             if (persons[0] != au.Id) throw new ApplicationException(nameof(Util.Configuration.C.AnonymousUser) + " not set up correctly (" + nameof(au.Id) + " " + au.Id + " does not correspond to " + nameof(DB.GetRootPropertyIds) + " result which was " + persons[0] + ")");
             request.Parameters.AddProperty(CoreP.AccessLevelGiven.A(), AccessLevel.Admin);

@@ -111,20 +111,24 @@ namespace AgoRapide.Database {
             /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as we are called for different types, meaning value stored for last type would just be overridden)
             SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.Total.A()), externalEntities.Count, result, db);
 
-            /// If no keys are found here, a typical cause may be missing statements in Startup.cs
-            var primaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
+            /// If no keys are found here, a typical cause may be missing statements in your Startup.cs
+            var externalPrimaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             var internalEntities = db.GetAllEntities(type);
-            var internalEntitiesByPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(primaryKey), e => e);
+            // var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(externalPrimaryKey), e => e);
+            var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary(e => e.Properties.GetValue(externalPrimaryKey.Key.CoreP, () => e.ToString()).Value, e => e);
             result.Count(AggregationKey.Get(AggregationType.Count, typeof(Property), CountP.Total.A()).Key.CoreP, externalEntities.Aggregate(0L, (current, e) => current + e.Properties.Count));
             var newCount = 0;
             externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
-                if (internalEntitiesByPrimaryKey.TryGetValue(e.PV<long>(primaryKey), out var internalEntity)) {
-                    internalEntitiesByPrimaryKey.Remove(e.PV<long>(primaryKey)); // Remove in order to check at end for any left
+                // if (internalEntitiesByExternalPrimaryKey.TryGetValue(e.PV<long>(externalPrimaryKey), out var internalEntity)) {
+                var externalPrimaryKeyValue = e.Properties.GetValue(externalPrimaryKey.Key.CoreP, () => e.ToString()).Value;
+                if (internalEntitiesByExternalPrimaryKey.TryGetValue(externalPrimaryKeyValue, out var internalEntity)) {
+                    internalEntitiesByExternalPrimaryKey.Remove(externalPrimaryKeyValue); // Remove in order to check at end for any left
                 } else {
                     internalEntity = db.GetEntityById(db.CreateEntity(Id, type,
                         new List<(PropertyKeyWithIndex key, object value)> {
-                            (primaryKey.PropertyKeyWithIndex, e.PV<long>(primaryKey))
+                          //  (externalPrimaryKey.PropertyKeyWithIndex, e.PV<long>(externalPrimaryKey))
+                            (externalPrimaryKey.PropertyKeyWithIndex, externalPrimaryKeyValue)
                         }, result: null), type); // NOTE: Note result: null, we do not want to fill up log here, especially at first synchronization.
                     newCount++;                  // NOTE: It is sufficient to count through newCount++
                 }
@@ -143,11 +147,11 @@ namespace AgoRapide.Database {
                 InMemoryCache.EntityCache[e.Id] = e; // Put into cache
             });
             SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.Created.A()), newCount, result, db);
-            internalEntitiesByPrimaryKey.ForEach(e => { // Remove any internal entities left.
+            internalEntitiesByExternalPrimaryKey.ForEach(e => { // Remove any internal entities left.
                 db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid, result);
                 if (InMemoryCache.EntityCache.ContainsKey(e.Value.Id)) InMemoryCache.EntityCache.TryRemove(e.Value.Id, out _);
             });
-            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.SetInvalid.A()), internalEntitiesByPrimaryKey.Count, result, db);
+            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.SetInvalid.A()), internalEntitiesByExternalPrimaryKey.Count, result, db);
         }
 
         /// <summary>

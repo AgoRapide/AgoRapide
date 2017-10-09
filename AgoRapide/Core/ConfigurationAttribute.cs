@@ -86,7 +86,7 @@ namespace AgoRapide.Core {
         /// </summary>
         public BaseEntity AnonymousUser {
             get {
-                if (_anonymousUser == null) throw new NullReferenceException(nameof(AnonymousUser) + ". Should have been set at application startup, like in Startup.cs");
+                if (_anonymousUser == null) throw new NullReferenceException(nameof(AnonymousUser) + ". Should have been set at application startup, like in your Startup.cs");
                 if (_anonymousUser.Id <= 0) throw new Exception(nameof(_anonymousUser) + " not set up correctly (" + nameof(_anonymousUser.Id) + ": " + _anonymousUser.Id + ")");
                 return _anonymousUser;
             }
@@ -102,7 +102,7 @@ namespace AgoRapide.Core {
         /// Note that <see cref="AnonymousUser"/> on the other hand, IS stored in database.
         /// </summary>
         public BaseEntity SystemUser {
-            get => _systemUser ?? throw new NullReferenceException(nameof(SystemUser) + ". Should have been set at application startup, like in Startup.cs");
+            get => _systemUser ?? throw new NullReferenceException(nameof(SystemUser) + ". Should have been set at application startup, like in your Startup.cs");
             set => _systemUser = value ?? throw new NullReferenceException(nameof(SystemUser));
         }
 
@@ -317,7 +317,7 @@ namespace AgoRapide.Core {
             ConfigurationRootUrl,
             [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
             ConfigurationAPIPrefix,
-            [PropertyKey(AccessLevelRead = AccessLevel.Anonymous)]
+            [PropertyKey(Type = typeof(Uri), AccessLevelRead = AccessLevel.Anonymous)]
             ConfigurationBaseUrl
         }
 

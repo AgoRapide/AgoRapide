@@ -49,7 +49,7 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// The order in which <see cref="MapEnum"/> was being called.
-        /// Only used temporarily by <see cref="MapEnum{T}"/> and <see cref="MapEnumFinalize"/> (when called from <see cref="Startup.Initialize{TPerson}"/>). 
+        /// Only used temporarily by <see cref="MapEnum{T}"/> and <see cref="MapEnumFinalize"/> (when called from <see cref="CoreStartup.Initialize{TPerson}"/>). 
         /// </summary>
         private static List<Type> mapOrders = new List<Type>();
 
@@ -318,6 +318,6 @@ namespace AgoRapide.Core {
             "Possible resolution:\r\n" +
             "Add the statement\r\n" +
             nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + "<" + type + ">()\r\n" +
-            "to Startup.cs (as of Jun 2017 look for 'mapper1<...>')."; /// See also <see cref="MapKnownEnums"/> of course
+            "to your Startup.cs (as of Jun 2017 look for 'mapper1<...>')."; /// See also <see cref="MapKnownEnums"/> of course
     }
 }

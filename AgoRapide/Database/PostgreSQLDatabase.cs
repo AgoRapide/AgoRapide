@@ -455,17 +455,21 @@ namespace AgoRapide.Database {
 
 
                 rootPropertyIndex++;
-                // if (rootPropertyIndex >= (rootProperties.Count - 1)) return; // TODO: Check this, happens if no properties for last entity???
-
-                while (rootProperties[rootPropertyIndex].Id != currentProperties[0].ParentId) {
-                    // Take into consideration that there may exist entity root properties without any properties at all
-                    // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
-                    Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
-                    var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>());
-                    retval.Add(e);
-                    if (useCache) InMemoryCache.EntityCache[e.Id] = e;
-                    rootPropertyIndex++;
-                    if (rootPropertyIndex >= rootProperties.Count) throw new InvalidCountException("Root property not found for " + currentProperties[0].ParentId);
+                if (rootPropertyIndex >= (rootProperties.Count)) {
+                    // TODO: Check this, happens if no properties for last entity???
+                } else if (currentProperties.Count == 0) {
+                    // No properties for new entities(?)
+                } else { 
+                    while (rootProperties[rootPropertyIndex].Id != currentProperties[0].ParentId) {
+                        // Take into consideration that there may exist entity root properties without any properties at all
+                        // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
+                        Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
+                        var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>());
+                        retval.Add(e);
+                        if (useCache) InMemoryCache.EntityCache[e.Id] = e;
+                        rootPropertyIndex++;
+                        if (rootPropertyIndex >= rootProperties.Count) throw new InvalidCountException("Root property not found for " + currentProperties[0].ParentId);
+                    }
                 }
 
                 {
@@ -803,7 +807,8 @@ namespace AgoRapide.Database {
                         if (value.GetType().IsEnum) return (nameof(DBField.strv), "'" + value.ToString() + "'", null); // Considered SQL injection safe
                         var _typeDescriber = value as ITypeDescriber;
                         if (_typeDescriber != null) value = value.ToString();
-                        if (!(value is string)) throw new InvalidObjectTypeException(value, typeof(string));
+                        value = value.ToString(); /// We have to trust that the ToString representation is possible to reconstruct from the String value. Unknown type of object, maybe <see cref="System.Uri"/> for instance.
+                        // if (!(value is string)) throw new InvalidObjectTypeException(value, typeof(string));
                         return (nameof(DBField.strv), ":" + nameof(DBField.strv), NpgsqlTypes.NpgsqlDbType.Text); // Leave conversion to Npgsql (because of SQL injection issues)
                 }
             })();

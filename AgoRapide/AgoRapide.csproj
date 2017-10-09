@@ -107,6 +107,7 @@
     <Compile Include="Core\Configuration.cs" />
     <Compile Include="Core\ConfigurationAttribute.cs" />
     <Compile Include="Core\Context.cs" />
+    <Compile Include="Core\CoreStartup.cs" />
     <Compile Include="Core\Documentator.cs" />
     <Compile Include="Core\Enum.cs" />
     <Compile Include="Core\EnumAttribute.cs" />
@@ -133,7 +134,6 @@
     <Compile Include="Core\QueryIdKeyOperatorValue.cs" />
     <Compile Include="Core\QueryIdMultiple.cs" />
     <Compile Include="Core\QueryIdString.cs" />
-    <Compile Include="Core\Startup.cs" />
     <Compile Include="Core\Util.cs" />
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Database\BaseDatabase.cs" />

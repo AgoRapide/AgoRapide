@@ -189,10 +189,10 @@ namespace AgoRapide.Core {
                             return (
                         "No mapping exists from " + typeof(T).ToStringShort() + " to " + typeof(CoreP).ToStringShort() + "\r\n" +
                         "Possible cause (probably): No -" + nameof(EnumType) + "." + nameof(EnumType.PropertyKey) + "- has defined " + nameof(PropertyKeyAttribute.Type) + " = " + typeof(T).ToStringShort() + ".\r\n" +
-                        "Possible cause (less probable): There is missing a call to " + nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + " in Startup.cs.\r\n" +
+                        "Possible cause (less probable): There is missing a call to " + nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + " in your Startup.cs.\r\n" +
                         "Possible resolution (less probable): Look for missing calls to \r\n" +
                         nameof(PropertyKeyMapper) + "." + nameof(PropertyKeyMapper.MapEnum) + "<...>()\r\n" +
-                        "in Startup.cs (as of Jun 2017 look for 'mapper1<...>').",
+                        "in your Startup.cs (as of Jun 2017 look for 'mapper1<...>').",
                         null);
                         case 1:
                             var key = candidates[0];
@@ -422,7 +422,7 @@ namespace AgoRapide.Core {
                 } finally {
                     loggerThreadIsRunning = 0;
                 }
-            });
+            });  
         }
 
         public static System.Security.Cryptography.MD5 MD5 = System.Security.Cryptography.MD5.Create();
