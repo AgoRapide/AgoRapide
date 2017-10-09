@@ -514,6 +514,7 @@ namespace AgoRapide {
                     // This would be the normal approach but we can use the const-value instead:
                     // retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableHeading(request));
                     retval.AppendLine("<table>" + Property.HTMLTableHeading);
+                    /// TODO: Implement a common comparer for use by both <see cref="CreateHTMLForExistingProperties"/> and <see cref="CreateCSVForExistingProperties"/>
                     retval.AppendLine(string.Join("", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
                         p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
                         return p.ToHTMLTableRow(request);
@@ -662,7 +663,7 @@ namespace AgoRapide {
             } else {
                 var description = GetType().GetClassAttribute().Description;
                 retval.AppendLine(
-                    "Type" + request.CSVFieldSeparator + GetType().ToStringVeryShort() + (string.IsNullOrEmpty(description) ? "" : (request.CSVFieldSeparator + description)) + "\r\n" +
+                    "Type" + request.CSVFieldSeparator + GetType().ToStringVeryShort() + (string.IsNullOrEmpty(description) ? "" : (request.CSVFieldSeparator + request.CSVFieldSeparator + request.CSVFieldSeparator + description.Replace("\r\n", "\r\n" + request.CSVFieldSeparator + request.CSVFieldSeparator + request.CSVFieldSeparator + request.CSVFieldSeparator))) + "\r\n" +
                     "Name" + request.CSVFieldSeparator + IdFriendly);
             }
             var a = GetType().GetClassAttribute();
@@ -670,6 +671,7 @@ namespace AgoRapide {
             /// NOTE: Sep 2017: Code below (parent, children, related entities, operations, suggested URLs) was copied form <see cref="ToHTMLDetailed"/>. 
             /// NOTE: Something of it might not be needed for CSV-format
 
+            /// TODO: RECONSIDER IF THESE ARE NEEDED FOR CSV!
             /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
             /// TOOD: Consider removing this. 
             if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) { // Link from child to parent
@@ -680,6 +682,8 @@ namespace AgoRapide {
                     request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString()))
                 );
             }
+
+            /// TODO: RECONSIDER IF THESE ARE NEEDED FOR CSV!
             /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
             if (a.ChildrenType != null) { // Link from parent to children
                 retval.AppendLine("Children" + request.CSVFieldSeparator +
@@ -687,22 +691,29 @@ namespace AgoRapide {
                 );
             }
 
+            /// TODO: RECONSIDER IF THESE ARE NEEDED FOR CSV!
             var whereForeignKey = GetType().GetTypesWhereIsForeignKey();
             if (whereForeignKey.Count > 0) retval.AppendLine("Related entities:" + request.CSVFieldSeparator + "\r\n" + string.Join("\r\n", whereForeignKey.Select(t =>
                 t.type.ToStringVeryShort() + request.CSVFieldSeparator + request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id))))
             );
 
-            // TODO: Add heading here?
-            Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
-                // TODO: Maybe switch positions for these two
-                retval.AppendLine(c.PV<Uri>(CoreP.SuggestedUrl.A()) + request.CSVFieldSeparator + c.PV<string>(CoreP.Description.A()));
-            });
+            // NOT NECESSARY FOR CSV. REMOVE!
+            //// TODO: Add heading here?
+            //Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
+            //    // TODO: Maybe switch positions for these two
+            //    retval.AppendLine(c.PV<Uri>(CoreP.SuggestedUrl.A()) + request.CSVFieldSeparator + c.PV<string>(CoreP.Description.A()));
+            //});
 
-            // TODO: Add heading here?
-            // Suggested URLs for this specific entity
-            if (Id > 0) retval.AppendLine(string.Join("\r\n", BaseEntityUrls));
+            // NOT NECESSARY FOR CSV. REMOVE!
+            //// TODO: Add heading here?
+            //// Suggested URLs for this specific entity
+            //if (Id > 0) retval.AppendLine(string.Join("\r\n", BaseEntityUrls));
 
+            // TODO: REPLACE WITH SOMETHING BETTER, PREFERABLE SOMETHING INVISIBLE IN A TYPICAL SPREADSHEET PROGRAM
+            retval.AppendLine();
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
+
+            retval.AppendLine();
             retval.AppendLine(CreateCSVForExistingProperties(request));
             // retval.AppendLine(CreateCSVForAddingProperties(request)); This is considered unnecessary. Eventually add as desired later.
             return retval.ToString();
@@ -719,9 +730,10 @@ namespace AgoRapide {
             if (Properties != null) {
                 var existing = GetExistingProperties(request.CurrentUser, AccessType.Read);
                 if (existing.Count > 0) {
-                    retval.AppendLine("Properties:");
+                    // retval.AppendLine("Properties:");
                     retval.AppendLine(Property.ToCSVTableRowHeadingStatic(request));
-                    retval.AppendLine(string.Join("\r\n", existing.Values.OrderBy(p => p.Key.Key.A.PriorityOrder).Select(p => {
+                    /// TODO: Implement a common comparer for use by both <see cref="CreateHTMLForExistingProperties"/> and <see cref="CreateCSVForExistingProperties"/>
+                    retval.AppendLine(string.Join("\r\n", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
                         return p.ToCSVTableRow(request);
                     })));
                 }

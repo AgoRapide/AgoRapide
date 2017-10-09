@@ -740,7 +740,7 @@ namespace AgoRapide {
         }
 
         public override string ToCSVTableRowHeading(Request request) => ToCSVTableRowHeadingStatic(request);
-        public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + "ValueDescription" + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "Url";
+        public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + "ValueDescription";
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -749,16 +749,16 @@ namespace AgoRapide {
         /// <param name="withinThisPriority">Ignored as of Sep 2017</param>
         /// <returns></returns>
         public override string ToCSVTableRow(Request request) {
-            if (IsIsManyParent) return string.Join("\r\n", Properties.Select(p => {
-                return p.Value.ToHTMLTableRow(request);
-            }));
+            if (IsIsManyParent) {
+                return string.Join("\r\n", Properties.Select(p => p.Value.ToCSVTableRow(request)));
+            }
             var a = Key.Key.A;
             return /// TODO: Use StringBuilder. Makes for more efficient code and also code that is easier to debug.
 
                 // --------------------
                 // Column 1, Key
                 // --------------------
-                Id + request.CSVFieldSeparator +
+                Key.Key.PToString + request.CSVFieldSeparator +
 
                 // --------------------
                 // Column 2, Value
@@ -773,8 +773,13 @@ namespace AgoRapide {
                 // --------------------
                 // Column 4, Invalid
                 // --------------------
-                (Invalid == null ? "" : ((DateTime)Invalid).ToString(DateTimeFormat.DateHourMin)) +
-                "\r\n";
+                (Invalid == null ? "" : ((DateTime)Invalid).ToString(DateTimeFormat.DateHourMin)) + request.CSVFieldSeparator +
+
+                (a.Description == null ? "" : (a.Description.Replace("\r\n", " // "))) + request.CSVFieldSeparator +
+
+                (ValueA.Description == null ? "" : (ValueA.Description.Replace("\r\n", " // "))) + request.CSVFieldSeparator +
+
+                ""; // No line-ending here
         }
 
         public override string ToCSVDetailed(Request request) {

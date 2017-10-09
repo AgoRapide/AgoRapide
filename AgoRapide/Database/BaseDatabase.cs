@@ -21,7 +21,7 @@ namespace AgoRapide.Database {
     [Class(Description = "Provides the fundamentals for reading and writing towards a database")]
     public abstract class BaseDatabase : BaseCore, IDisposable {
 
-        [ClassMember(Description = "Name of main table in database. Also used for naming other objects in database like sequence_p_id.")]
+        [ClassMember(Description = "Name of main table in database. Usually 'p'. Also used for naming other objects in database like SEQUENCE sequence_p_id and CONSTRAINT p_pk.")]
         protected string _tableName { get; private set; }
 
         [ClassMember(Description =

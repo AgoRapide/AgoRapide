@@ -1046,7 +1046,7 @@ namespace AgoRapide.Database {
         public string SQL_CREATE_TABLE => _SQL_CREATE_TABLE ?? (_SQL_CREATE_TABLE = new Func<string>(() => {
             // makeSQLSafe is a quite quick and dirty implementation. Do not use elsewhere!
             var makeSQLSafe = new Func<string, string>(s => s.Replace(";", ":").Replace("--", "__").Replace("\r", "/").Replace("\n", "/").Replace("'", "`").Replace("\"", "`"));
-            return "CREATE TABLE p\r\n(\r\n" +
+            return "CREATE TABLE " + _tableName + "\r\n(\r\n" +
             string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => {
                 return "  " + f.ToString() + " " + new Func<string>(() => {
                     var a = f.A();
@@ -1066,19 +1066,19 @@ namespace AgoRapide.Database {
                     throw new InvalidTypeException(a.Key.A.Type, nameof(PropertyKeyAttribute) + "." + nameof(PropertyKeyAttribute.Type) + " (" + a.Key.A.Type + ") defined for " + typeof(DBField) + "." + f.ToString() + " is not valid");
                 })();
             })) + "\r\n" +
-            "  CONSTRAINT p_pk PRIMARY KEY (" + DBField.id + @") 
+            "  CONSTRAINT " + _tableName + "_pk PRIMARY KEY (" + DBField.id + @") 
 )
 WITH(
   OIDS = FALSE
 );
 
-ALTER TABLE p
+ALTER TABLE " + _tableName + @"
   OWNER TO " + _objectsOwner + @";
 
-COMMENT ON TABLE p IS 'Main property table'; 
+COMMENT ON TABLE " + _tableName + @" IS 'Main property table'; 
 " +
             string.Join("\r\n", Util.EnumGetValues((DBField)(-1)).Select(f => f.A().Key).Select(f =>
-                "COMMENT ON COLUMN p." + f.A.EnumValue + " IS '" + makeSQLSafe(f.A.Description) + (string.IsNullOrEmpty(f.A.LongDescription) ? "" : (" // " + nameof(f.A.LongDescription) + ": " + f.A.LongDescription)) + "';")) +
+                "COMMENT ON COLUMN " + _tableName + "." + f.A.EnumValue + " IS '" + makeSQLSafe(f.A.Description) + (string.IsNullOrEmpty(f.A.LongDescription) ? "" : (" // " + nameof(f.A.LongDescription) + ": " + f.A.LongDescription)) + "';")) +
 
         @"
 
@@ -1087,7 +1087,19 @@ INCREMENT 1
 MINVALUE 1
 MAXVALUE 9223372036854775807
 START 1000  -- Starting with 1000 is a trick that makes it possible in API calls to have the range 1 to 999 signify entity specific id's (for instance like node-id's for an IoT gateway (like Z-Wave Node ID))
-CACHE 1;
+CACHE 1; -- TODO: Use COMMENT ON for comment above!
+
+CREATE INDEX " + _tableName + @"_" + DBField.invalid + @"_is_null 
+  ON public." + _tableName + @"
+  USING btree
+  (" + DBField.invalid + @") -- TODO: Use COMMENT ON for comment below
+  WHERE " + DBField.invalid + @" IS NULL; -- Important index if you have lots of historical invalid data (in order to quickly query current data)
+
+CREATE INDEX " + _tableName + "_" + DBField.pid + @"
+  ON public." + _tableName + @"
+  USING btree
+  (" + DBField.pid + @")
+
 ALTER TABLE " + SEQUENCE_NAME + @"
 OWNER TO " + _objectsOwner + @";
 
