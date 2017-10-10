@@ -61,6 +61,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="synchronizer"></param>
         public static void AddSynchronizerType(Type synchronizer) {
+            Util.AssertCurrentlyStartingUp();
             InvalidTypeException.AssertAssignable(synchronizer, typeof(BaseSynchronizer));
             _synchronizerTypes.Add(synchronizer);
         }
@@ -138,11 +139,12 @@ namespace AgoRapide.Database {
 
             _synchronizedTypes.GetOrAdd(type, t => { // Note how actual return value, TRUE / FALSE, is ignored.
                 if (!GetSyncronizers(db).TryGetValue(t, out var s)) {
-                    // This is either because 
-                    // 1) Synchronizing is not relevant for this type, or
-                    // 2) No synchronizers has been created in the database yet.
-                    // TODO: Note how this is (as of Sep 2017) decided permanently for the rest of the application lifetime. 
-                    // TODO: But for case 2) above this is of course not good enough.
+                    /// This is either because 
+                    /// 1) Synchronizing is not relevant for this type, or
+                    /// 2) No synchronizers has been created in the database yet.
+                    /// 3) OR (IMPORTANT) You may just have forgotten to call <see cref="AddSynchronizerType"/> from your Startup.cs
+                    /// TODO: Note how this is (as of Sep 2017) decided permanently for the rest of the application lifetime. 
+                    /// TODO: But for case 2) above this is of course not good enough.
                     return false;
                 }
                 lock (_synchronizedTypesInternal) { // Ensure that this "universe" completes first
