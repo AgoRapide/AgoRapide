@@ -166,8 +166,6 @@ namespace AgoRapide.Core {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException(Util.BreakpointEnabler + "Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
-        
-        public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) => GetValue(dictionary, key, null);
         /// <summary>
         /// Gives better error messages when reading value from directory if key does not exist
         /// 
@@ -181,8 +179,8 @@ namespace AgoRapide.Core {
         /// May be null
         /// Used to give details in case of an exception being thrown
         /// </param>
-        /// <returns></returns> 
-        public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) {
+        /// <returns></returns>
+        public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer = null) {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
@@ -853,5 +851,17 @@ namespace AgoRapide.Core {
         /// <param name="detailer">May be null</param>
         /// <returns></returns>
         public static Property ToIsManyParent<T>(this List<T> list, BaseEntity parent, PropertyKey key, Func<string> detailer) => Util.ConvertListToIsManyParent(parent, key, list, detailer);
+
+        public static T Second<T>(this List<T> collection) => collection.ElementAt(1);
+        public static T SecondOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(1);
+
+        public static T Third<T>(this List<T> collection) => collection.ElementAt(2);
+        public static T ThirdOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(2);
+
+        public static T Fourth<T>(this List<T> collection) => collection.ElementAt(3);
+        public static T FourthOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(3);
+
+        public static T Fifth<T>(this List<T> collection) => collection.ElementAt(4);
+        public static T FifthOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(4);
     }
 }

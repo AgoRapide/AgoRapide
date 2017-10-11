@@ -52,6 +52,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         public void AddParent(Type type) {
+            InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
             if (A.Parents == null) {
                 A.Parents = new Type[] { type }; return;
             }
@@ -169,6 +170,8 @@ namespace AgoRapide.Core {
                 // AddParent(A.ExternalForeignKeyOf) is of course not relevant now
                 A.IsExternal = true;
             }
+
+            if (A.Parents != null) A.Parents.ForEach(t => InvalidTypeException.AssertAssignable(t, typeof(BaseEntity), () => "Invalid as parent, only " + typeof(BaseEntity) + " derived types may be given as parent. Details: " + ToString()));
 
             /// Enrichment 1, explicit given
             /// -----------------------------------------

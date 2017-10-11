@@ -59,7 +59,7 @@ namespace AgoRapide.Database {
             )]
         public static List<PropertyKey> GetProperties(Type type) => _propertyKeyCache.GetOrAdd(type, t => {
             var retval = new List<PropertyKey> { PropertyKeyMapper.GetA(CoreP.DBId) };
-            retval.AddRange(type.GetChildPropertiesByPriority((PriorityOrder)int.MaxValue).Where(p =>
+            retval.AddRange(type.GetChildPropertiesByPriority((PriorityOrder)int.MaxValue).Where(p => /// NOTE: Change of <see cref="PropertyKeyAttribute.PriorityOrder"/> will change fingerprint, consider improving on this
                 p.Key.A.IsExternal || // This is the normal criteria.
                 p.Key.PToString.EndsWith("CorrespondingInternalKey") /// This is a special case, we must either store this on disk (as done now (Sep 2017)), OR, recalculate the value when reading. The former is considered much more efficient. See <see cref="PropertyKeyMapper.MapEnum{T}"/> for more information. 
             ));

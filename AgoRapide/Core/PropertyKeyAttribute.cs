@@ -73,6 +73,13 @@ namespace AgoRapide.Core {
         public Type GenericListType => IsMany ? (_genericListType ?? (_genericListType = typeof(List<>).MakeGenericType(Type))) : throw new IsManyException(Util.BreakpointEnabler + "!" + nameof(IsMany) + ".\r\nDetails: " + ToString());
 
         /// <summary>
+        /// NOTE: Added Oct 2017. Not used much for the time being.
+        /// TODO: Add use of this in the user interface (show actual value in the user interface). 
+        /// </summary>
+        [ClassMember(Description = "Typical values could be Percent, m, km/h, W, kWh and similar. Mostly used for explanatory purposes in the user interface")]
+        public string Unit { get; set; }
+
+        /// <summary>
         /// TODO: Is this relevant? Is not <see cref="EnumValue.EnumValue"/> always set for this class?
         /// </summary>
         public void AssertProperty() {
