@@ -60,6 +60,8 @@ namespace AgoRapide.Core {
         private static Dictionary<Type, List<string>> overriddenAttributes = new Dictionary<Type, List<string>>();
 
         public static void MapKnownEnums(Action<string> noticeLogger) {
+            Util.AssertCurrentlyStartingUp();
+
             MapEnum<DBField>(noticeLogger); /// This is a quasi <see cref="AgoRapide.Core.PropertyKeyAttribute"/>
             MapEnum<CoreP>(noticeLogger);
             MapEnum<ConfigurationAttribute.ConfigurationP>(noticeLogger);
@@ -89,6 +91,8 @@ namespace AgoRapide.Core {
         /// TODO: What about simply returning a string for logging instead?
         /// </param>
         public static void MapEnum<T>(Action<string> noticeLogger) where T : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            Util.AssertCurrentlyStartingUp();
+
             if (overriddenAttributes.ContainsKey(typeof(T))) {
                 noticeLogger( // TODO: Consider eliminating this possibility through smarter implementation and instead throwing exception now
                 "NOTICE: Duplicate calls made to " + nameof(MapEnum) + " for " + typeof(T) + ". " +
@@ -162,10 +166,25 @@ namespace AgoRapide.Core {
             mapOrders.Add(typeof(T));
         }
 
+        private static Dictionary<string, List<PropertyKey>> _propertyKeyLists = new Dictionary<string, List<PropertyKey>>();
+
+        [ClassMember(
+            Description =
+                "Use this for any kind of algorithmically generated lists of key that your application generates at startup.",
+            LongDescription =
+                "Note how this makes it possible to generate a large amounts of keys without having to specify each and every enum manually " +
+                "with corresponding information.")]
+        public static void MapPropertyKeyList(string description, List<PropertyKey> keys) {
+            Util.AssertCurrentlyStartingUp();
+            _propertyKeyLists.AddValue(description, keys);
+        }
+
         /// <summary>
         /// To be called once at application initialization.
         /// </summary>
         public static void MapEnumFinalize(Action<string> noticeLogger) {
+            Util.AssertCurrentlyStartingUp();
+
             mapOrders.ForEach(o => {
                 var overridden = overriddenAttributes.GetValue(o);
                 noticeLogger(
@@ -194,15 +213,16 @@ namespace AgoRapide.Core {
                 if (!enumMapForCoreP.ContainsKey((int)e.Value.Key.CoreP)) enumMapForCoreP.Add((int)e.Value.Key.CoreP, e.Value); /// This ensures that <see cref="TryGetA{T}(T, out PropertyKeyAttributeEnriched)"/> also works as intended (accepting "int" as parameter as long as it is mapped)
             });
 
-            var adder = new Action<PropertyKey>(key => {
-                noticeLogger(key.GetType().ToStringVeryShort() + ": " + key.Key.A.Description);
+            var adder = new Action<string, PropertyKey>((description, key) => {
+                noticeLogger(nameof(description) + ": " + description + ", " + key.GetType().ToStringVeryShort() + ": " + key.Key.A.Description);
                 allCoreP.AddValue(key.Key.CoreP, key); /// Store with <see cref="_allCoreP"/> in order for <see cref= "Extensions.GetChildProperties"/> for instance to catch these
                 _cache[typeof(CoreP)].AddValue((int)key.Key.CoreP, key); /// Important, for instance in order for <see cref="TryGetA{T}"/> to work.
                 _fromStringMaps.AddValue(key.Key.PToString, key); /// Important, for instance in order for parsing of API requests to work
-            });            
-            BaseInjector.GetForeignKeyAggregateKeys(allCoreP.Values.ToList()).ForEach(key => adder(key)); /// Add <see cref="PropertyKeyForeignKeyAggregate"/> for automatic injection by <see cref="BaseInjector"/>                                                                                                          
-            BaseInjector.GetExpansionKeys(allCoreP.Values.ToList()).ForEach(key => adder(key)); /// Add <see cref="PropertyKeyExpansion"/> for automatic injection by <see cref="BaseInjector"/>
-            
+            });
+            BaseInjector.GetForeignKeyAggregateKeys(allCoreP.Values.ToList()).ForEach(key => adder(nameof(BaseInjector.GetForeignKeyAggregateKeys), key)); /// Add <see cref="PropertyKeyForeignKeyAggregate"/> for automatic injection by <see cref="BaseInjector"/>                                                                                                          
+            BaseInjector.GetExpansionKeys(allCoreP.Values.ToList()).ForEach(key => adder(nameof(BaseInjector.GetExpansionKeys), key)); /// Add <see cref="PropertyKeyExpansion"/> for automatic injection by <see cref="BaseInjector"/>
+            _propertyKeyLists.ForEach(e => e.Value.ForEach(v => adder(e.Key, v)));
+
             _allCoreP = allCoreP.Values.ToList();
         }
 
@@ -231,7 +251,8 @@ namespace AgoRapide.Core {
                 dict.TryGetValue((int)(object)_enum, out key) :
                 throw new InvalidMappingException<T>(_enum, GetProbableCauseAndResolutionForInvalidMapping(typeof(T)));
 
-        public static PropertyKey GetA(string _enum) => _fromStringMaps.GetValue(_enum);
+        public static PropertyKey GetA(string _enum) => GetA(_enum, null);
+        public static PropertyKey GetA(string _enum, Func<string> detailer = null) => _fromStringMaps.GetValue(_enum, detailer);
 
         /// <summary>
         /// Called from <see cref="PostgreSQLDatabase"/>.ReadOneProperty.
