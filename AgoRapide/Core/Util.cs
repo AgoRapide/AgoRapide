@@ -423,7 +423,7 @@ namespace AgoRapide.Core {
                     loggerThreadIsRunning = 0;
                 }
             });  
-        }
+        } 
 
         public static System.Security.Cryptography.MD5 MD5 = System.Security.Cryptography.MD5.Create();
         /// <summary>
