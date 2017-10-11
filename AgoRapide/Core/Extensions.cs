@@ -852,5 +852,17 @@ namespace AgoRapide.Core {
         /// <param name="detailer">May be null</param>
         /// <returns></returns>
         public static Property ToIsManyParent<T>(this List<T> list, BaseEntity parent, PropertyKey key, Func<string> detailer) => Util.ConvertListToIsManyParent(parent, key, list, detailer);
+
+        public static T Second<T>(this List<T> collection) => collection.ElementAt(1);
+        public static T SecondOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(1);
+
+        public static T Third<T>(this List<T> collection) => collection.ElementAt(2);
+        public static T ThirdOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(2);
+
+        public static T Fourth<T>(this List<T> collection) => collection.ElementAt(3);
+        public static T FourthOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(3);
+
+        public static T Fifth<T>(this List<T> collection) => collection.ElementAt(4);
+        public static T FifthOrDefault<T>(this List<T> collection) => collection.ElementAtOrDefault(4);
     }
 }

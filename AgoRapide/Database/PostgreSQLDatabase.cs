@@ -507,7 +507,7 @@ namespace AgoRapide.Database {
                     var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>());
                     retval.Add(e);
                     if (useCache) InMemoryCache.EntityCache[e.Id] = e;
-                }
+                } 
             } catch (Exception ex) {
                 throw new PostgreSQLDatabaseException(cmd, ex);
             }
