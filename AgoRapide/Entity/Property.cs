@@ -409,7 +409,7 @@ namespace AgoRapide {
                             return Documentator.GetSingleReplacement(v, list);
                         } else {
                             _showValueHTMLSeparate = false;
-                            return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance);
+                            return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance) + (Key.Key.A.Unit == null ? "" : ("&nbsp;" + Key.Key.A.Unit.HTMLEncode()));
                         }
                     }
             }
@@ -743,7 +743,7 @@ namespace AgoRapide {
         }
 
         public override string ToCSVTableRowHeading(Request request) => ToCSVTableRowHeadingStatic(request);
-        public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + "ValueDescription";
+        public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + "Unit" + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + "ValueDescription";
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -768,13 +768,15 @@ namespace AgoRapide {
                 // --------------------
                 (a.IsPassword ? "[SET]" : V<string>()) + request.CSVFieldSeparator +
 
+                a.Unit + request.CSVFieldSeparator +
+
                 // --------------------
-                // Column 3, Created
+                // Column 4, Created
                 // --------------------
                 (Created.Equals(default(DateTime)) ? "" : Created.ToString(DateTimeFormat.DateHourMin)) + request.CSVFieldSeparator +
 
                 // --------------------
-                // Column 4, Invalid
+                // Column 5, Invalid
                 // --------------------
                 (Invalid == null ? "" : ((DateTime)Invalid).ToString(DateTimeFormat.DateHourMin)) + request.CSVFieldSeparator +
 
