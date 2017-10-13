@@ -112,9 +112,6 @@ namespace AgoRapide.Core {
 
         [ClassMember(Description = "Hint about not to expose actual value of Property as JSON / HTML, and to generate corresponding \"password\" input fields in HTML.")]
         public bool IsPassword { get; set; }
-        /// <summary>
-        /// </summary>
-        /// <param name="detailer">May be null</param>
         public void AssertIsPassword(Func<string> detailer = null) {
             if (!IsPassword) throw new IsPasswordException(
                 "Not marked as " + nameof(PropertyKeyAttribute) + "." + nameof(IsPassword) + "\r\n" +
@@ -162,6 +159,24 @@ namespace AgoRapide.Core {
         /// </summary>
         public bool CanHaveChildren { get; set; }
 
+        public void AssertCanHaveChildren(Func<string> detailer = null) {
+            if (!CanHaveChildren) throw new CanHaveChildrenException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        public class CanHaveChildrenException : ApplicationException {
+            public CanHaveChildrenException(string message) : base(message) { }
+            public CanHaveChildrenException(string message, Exception inner) : base(message, inner) { }
+        }
+
+        public void AssertNotCanHaveChildren(Func<string> detailer = null) {
+            if (CanHaveChildren) throw new IsNotManyException(ToString() + detailer.Result("\r\nDetails: "));
+        }
+
+        public class NotCanHaveChildrenException : ApplicationException {
+            public NotCanHaveChildrenException(string message) : base(message) { }
+            public NotCanHaveChildrenException(string message, Exception inner) : base(message, inner) { }
+        }
+
         /// <summary>
         /// TODO: TURN INTO LIST, WITH CSS AS ENUM
         /// CSS class to be used when generating HTML representation of property
@@ -202,9 +217,6 @@ namespace AgoRapide.Core {
         private bool _isManyIsSet = false;
         public bool IsManyIsSet => _isManyIsSet;
 
-        /// <summary>
-        /// </summary>
-        /// <param name="detailer">May be null</param>
         public void AssertIsMany(Func<string> detailer = null) {
             if (!IsMany) throw new IsManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
@@ -214,9 +226,6 @@ namespace AgoRapide.Core {
             public IsManyException(string message, Exception inner) : base(message, inner) { }
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="detailer">May be null</param>
         public void AssertNotIsMany(Func<string> detailer = null) {
             if (IsMany) throw new IsNotManyException(ToString() + detailer.Result("\r\nDetails: "));
         }
@@ -236,10 +245,6 @@ namespace AgoRapide.Core {
         private bool _isExternalIsSet = false;
         public bool IsExternalIsSet => _isExternalIsSet;
 
-
-        /// <summary>
-        /// </summary>
-        /// <param name="detailer">May be null</param>
         public void AssertIsExternal(Func<string> detailer = null) {
             if (!true.Equals(IsExternal)) throw new IsExternalException(ToString() + detailer.Result("\r\nDetails: "));
         }
@@ -262,9 +267,6 @@ namespace AgoRapide.Core {
         private bool _isInjectedIsSet = false;
         public bool IsInjectedIsSet => _isInjectedIsSet;
 
-        /// <summary>
-        /// </summary>
-        /// <param name="detailer">May be null</param>
         public void AssertIsInjected(Func<string> detailer = null) {
             if (!true.Equals(IsInjected)) throw new IsInjectedException(ToString() + detailer.Result("\r\nDetails: "));
         }
@@ -295,9 +297,6 @@ namespace AgoRapide.Core {
         private bool _hasLimitedRangeIsSet = false;
         public bool HasLimitedRangeIsSet => _hasLimitedRangeIsSet;
 
-        /// <summary>
-        /// </summary>
-        /// <param name="detailer">May be null</param>
         public void AssertHasLimitedRange(Func<string> detailer = null) {
             if (!true.Equals(HasLimitedRange)) throw new HasLimitedRangeException(ToString() + detailer.Result("\r\nDetails: "));
         }
@@ -507,9 +506,6 @@ namespace AgoRapide.Core {
         /// </summary>
         public bool IsSuitableForPercentileCalculation => !IsMany && typeof(long).Equals(Type) && ForeignKeyOf == null && ExternalForeignKeyOf == null && ExternalPrimaryKeyOf == null;
 
-        /// <summary>
-        /// </summary>
-        /// <param name="detailer">May be null</param>
         public void AssertSuitableForPercentileCalculation(Func<string> detailer = null) {
             if (!IsSuitableForPercentileCalculation) throw new IsSuitableForPercentileCalculationException(ToString() + detailer.Result("\r\nDetails: "));
         }

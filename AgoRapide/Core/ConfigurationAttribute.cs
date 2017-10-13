@@ -78,6 +78,8 @@ namespace AgoRapide.Core {
             return false;
         }
 
+        public string ApplicationName { get; set; } = "AgoRapide";
+
         public Environment Environment { get; set; } = Environment.Test;
 
         private BaseEntity _anonymousUser;

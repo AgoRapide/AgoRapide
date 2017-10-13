@@ -193,6 +193,7 @@ namespace AgoRapide.Database {
                                     isMany: false
                                     ) {
                                 Parents = k.Key.A.Parents,
+                                PriorityOrder = k.Key.A.PriorityOrder, // Added 13 Oct 2017
                                 Type = e.ToExpandedType(),
                                 HasLimitedRange = e.HasLimitedRange(),
 
@@ -256,7 +257,8 @@ namespace AgoRapide.Database {
                                                     a + "_" +
                                                     p.ToStringVeryShort() + "_" + fp.Key.PToString.Replace("CorrespondingInternalKey", "")). // Note removal of "CorrespondingInternalKey", resulting in shorter identification                                           
                                                     Replace(a + "_" + p.ToStringVeryShort() + "_" + p.ToStringVeryShort(), a + "_" + p.ToStringVeryShort() + "_"), // This replace will turn for instance Count_Project_ProjectLeaderPersonId into Count_Project_LeaderPersonId, that is, it shortens down aggregate keys when the P-enums repeat their parent-entity type.
-                                                description: "-" + k.Key.A.ForeignKeyOf.ToStringVeryShort() + "- -" + a + "- for -" + p.ToStringVeryShort() + "- -" + fp.Key.PToString.Replace("CorrespondingInternalKey", "") + "-",
+                                                description: "-" + k.Key.A.ForeignKeyOf.ToStringVeryShort() + "- -" + a + "- for -" + p.ToStringVeryShort() + "- -" + fp.Key.PToString.Replace("CorrespondingInternalKey", "") + "-." +
+                                                    (a != AggregationType.Count ? "" : "\r\n(count of " + p.ToStringVeryShort() + " related to " + k.Key.A.ForeignKeyOf.ToStringVeryShort() + ".)"),
                                                 longDescription: "",
                                                 isMany: false
                                             ) {

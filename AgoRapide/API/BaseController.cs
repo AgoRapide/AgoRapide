@@ -429,9 +429,15 @@ namespace AgoRapide.API {
                     var corePAsString = coreP.Key.A().Key.PToString;
                     coreP.Value.ForEach(_operator => {
                         _operator.Value.ForEach(suggestion => {
-                            new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
-                               request.Result.MultipleEntitiesResult.Add(suggestion.Value.ToContext(s, request, s == SetOperator.Intersect ? (s + " " + type.Key.ToStringVeryShort() + " " + corePAsString + " " + _operator.Key) : s.ToString(), s != SetOperator.Intersect))
-                                );
+                            new List<SetOperator> {
+                                SetOperator.Intersect,
+                                // Removed Remove and Union 13 Oct 2017. We just got too many suggestions (over 1000), meaning that
+                                // not all would be shown in HTML-view for instance.
+                                // SetOperator.Remove,
+                                // SetOperator.Union /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
+                            }.ForEach(s => 
+                               request.Result.MultipleEntitiesResult.Add(suggestion.Value.ToContext(s, request, s == SetOperator.Intersect ? (s + " " + type.Key.ToStringVeryShort() + " " + corePAsString + " " + _operator.Key) : s.ToString(), useOnlyHeader: s != SetOperator.Intersect))
+                            );
                         });
                     });
                 });
@@ -710,7 +716,7 @@ namespace AgoRapide.API {
 
                     /// ResetEntityCache removed from code 28 Sep 2017 because does not work well with <see cref="BaseSynchronizer"/> / <see cref="CacheUse.All"/>
                     /// "Cache has been reset as a precaution.\r\n" +
-                    
+
                     "If you have administrative credentials you may try the accompanying " + CoreP.ExceptionDetailsUrl;
 
             // Since Method.GetByControllerAndMethodName may be just the call that failed we have to be very careful here.

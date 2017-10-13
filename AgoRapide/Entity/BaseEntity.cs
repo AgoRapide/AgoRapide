@@ -400,7 +400,7 @@ namespace AgoRapide {
                         }
                         r2.Append(retval[i]);
                     }
-                    return r2.ToString();
+                    return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
                 })() + "</th>")) +
                 // "<th>" + nameof(Created) + "</th>" +
                 "</tr></thead>";

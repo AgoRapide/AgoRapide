@@ -236,11 +236,18 @@ namespace AgoRapide.Database {
         /// <returns></returns>
         public abstract bool TryGetEntityById(long id, Type requiredType, out BaseEntity entity);
 
+        /// <summary>
+        /// Note how this is used for both "ordinary" entities and properties that may have children
+        /// 
+        /// Returns null if !<paramref name="parentProperty"/>.<see cref="PropertyKeyAttribute.CanHaveChildren"/>
+        /// </summary>
+        /// <param name="parentProperty"></param>
+        /// <returns></returns>
         public abstract Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
 
         public Property GetPropertyById(long id) => TryGetPropertyById(id, out var retval) ? retval : throw new PropertyNotFoundException(id);
         public abstract bool TryGetPropertyById(long id, out Property property);
-
+     
         /// <summary>
         /// Gets all root properties of a given type. 
         /// The implementation must return result in increasing order.
@@ -396,61 +403,80 @@ namespace AgoRapide.Database {
         }
 
         /// <summary>
-        /// 
+        /// Creates and populates an instance of <see cref="BaseEntity"/> based on <paramref name="root"/> and <paramref name="properties"/>. 
+        /// (note that <paramref name="root"/> itself may also be returned if <paramref name="requiredType"/> indicates that 
+        /// <see cref="Property"/> is desired).
         /// </summary>
         /// <param name="requiredType"></param>
         /// <param name="root"></param>
-        /// <param name="properties">May be null (typical for <paramref name="requiredType"/> = <see cref="Property"/></param>
+        /// <param name="properties">May be null (typical for <paramref name="requiredType"/> = <see cref="Property"/>)</param>
         /// <returns></returns>
         protected BaseEntity CreateEntityInMemory(Type requiredType, Property root, Dictionary<CoreP, Property> properties) {
-            if (!root.Key.Key.CoreP.Equals(CoreP.RootProperty)) {
-                if (requiredType != null && requiredType.Equals(typeof(BaseEntity))) {
-                    // OK, return what we have got. 
-                    return root;
+            BaseEntity retval = null;
+            var addProperties = new Action(() => {
+                if (properties == null) return;
+                retval.Properties = properties;
+                retval.Properties.Values.ForEach(p => {
+                    p.Parent = retval;
+                    if (p.Properties != null) { /// Typical case for <see cref="Property.IsIsManyParent"/>
+                        p.Properties.Values.ForEach(p2 => {
+                            p2.Parent = retval;
+                        });
+                    }
+                });
+            });
+            if (root.Key.Key.CoreP.Equals(CoreP.RootProperty)) {
+                /// This is the "normal" variant, that <param name="root"/> is root-property of the BaseEntity-object
+                /// being asked for.                
+                var rootType = root.V<Type>();
+                if (requiredType != null) {
+                    InvalidTypeException.AssertAssignable(requiredType, typeof(BaseEntity), () => "Regards parameter " + nameof(requiredType));
+                    InvalidTypeException.AssertAssignable(rootType, requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match " + nameof(rootType) + " (" + rootType + " (as found in database as " + root.V<string>() + "))");
                 }
-                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + PropertyKeyMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ". " +
+
+                /// TODO: 
+                /// TODO: Decide how to use <see cref="InMemoryCache"/> if <param name="requiredType"/> was null
+                /// TODO: 
+
+                if (rootType.IsAbstract) throw new InvalidTypeException(rootType, nameof(rootType) + " (as found in database as " + root.V<string>() + "). Details: " + root.ToString());
+                // Log("Activator.CreateInstance(requiredType) (" + rootType.ToStringShort() + ")");
+                // Note how "where T: new()" constraint helps to ensure that we have a parameter less constructor now
+                // We could of course also check with rootType.GetConstructor first.
+                retval = Activator.CreateInstance(rootType) as BaseEntity ?? throw new InvalidTypeException(rootType, "Very unexpected since was just asserted OK");
+
+                retval.Id = root.Id;
+                retval.RootProperty = root;
+                retval.Created = root.Created;
+
+                addProperties();
+
+                retval.Properties.AddValue(CoreP.RootProperty, root);
+                retval.AddProperty(CoreP.DBId.A(), root.Id);
+                switch (retval) {
+                    case IStaticProperties s: s.GetStaticProperties().ForEach(p => retval.Properties.AddValue(p.Key, p.Value)); break;
+                }
+                return retval;
+            } else { 
+                // This is only allowed if what is asked for is a property-object, or if it can be assumed that returning a property-object is OK.
+                if (requiredType != null) {
+                    if (requiredType.Equals(typeof(Property))) { /// <param name="root"/> is excplicit what is asked for, OK. 
+                        retval = root;
+                        addProperties();
+                        return retval;
+                    }
+                    if (requiredType.Equals(typeof(BaseEntity))) { // Assume that root (as Property) is what is asked for. 
+                        retval = root;
+                        addProperties();
+                        return retval;
+                    }
+                }
+                throw new InvalidEnumException(root.Key.Key.CoreP, "Expected " + PropertyKeyMapper.GetA(CoreP.RootProperty).Key.A.EnumValueExplained + " but got " + nameof(root.KeyDB) + ": " + root.KeyDB + ".\r\n" +
                     (requiredType == null ?
-                        ("Possible cause: Method " + MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible") :
-                        ("Possible cause: " + nameof(root.Id) + " does not point to an 'entity root property' (" + nameof(CoreP.RootProperty) + ")")
+                        ("Possible cause (1): Method " + MethodBase.GetCurrentMethod().Name + " was called without " + nameof(requiredType) + " and a redirect to " + nameof(TryGetPropertyById) + " was therefore not possible.\r\n") :
+                        ("Possible cause (2): " + nameof(root.Id) + " does not point to an 'entity root property' (" + nameof(CoreP.RootProperty) + ").")
                     )
                 );
             }
-
-            var rootType = root.V<Type>();
-            if (requiredType != null) {
-                InvalidTypeException.AssertAssignable(requiredType, typeof(BaseEntity), () => "Regards parameter " + nameof(requiredType));
-                InvalidTypeException.AssertAssignable(rootType, requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match " + nameof(rootType) + " (" + rootType + " (as found in database as " + root.V<string>() + "))");
-            }
-
-            /// TODO: 
-            /// TODO: Decide how to use <see cref="InMemoryCache"/> if <param name="requiredType"/> was null
-            /// TODO: 
-
-            if (rootType.IsAbstract) throw new InvalidTypeException(rootType, nameof(rootType) + " (as found in database as " + root.V<string>() + ")");
-            // Log("Activator.CreateInstance(requiredType) (" + rootType.ToStringShort() + ")");
-            // Note how "where T: new()" constraint helps to ensure that we have a parameter less constructor now
-            // We could of course also check with rootType.GetConstructor first.
-            var retval = Activator.CreateInstance(rootType) as BaseEntity ?? throw new InvalidTypeException(rootType, "Very unexpected since was just asserted OK");
-
-            retval.Id = root.Id;
-            retval.RootProperty = root;
-            retval.Created = root.Created;
-            retval.Properties = properties; // 
-
-            retval.Properties.Values.ForEach(p => {
-                p.Parent = retval;
-                if (p.Properties != null) { /// Typical case for <see cref="Property.IsIsManyParent"/>
-                    p.Properties.Values.ForEach(p2 => {
-                        p2.Parent = retval;
-                    });
-                }
-            });
-            retval.Properties.AddValue(CoreP.RootProperty, root);
-            retval.AddProperty(CoreP.DBId.A(), root.Id);
-            switch (retval) {
-                case IStaticProperties s: s.GetStaticProperties().ForEach(p => retval.Properties.AddValue(p.Key, p.Value)); break;
-            }
-            return retval;
         }
 
         /// <summary>

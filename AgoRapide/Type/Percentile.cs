@@ -159,8 +159,11 @@ namespace AgoRapide {
                 Select(p => (Property: p, Value: p.V<long>())). // Extract value only once for each property. Should improve sorting and percentile evaluation
                 OrderBy(p => p.Value).ToList();
             if (properties.Count == 0) {
+                // TODO: Remove commented out code.
                 // TODO: Consider just returning quietly here instead.
-                throw new InvalidCountException("No properties found for " + type + " " + key.ToString() + ". Are values read into " + nameof(InMemoryCache.EntityCache) + " (Count " + InMemoryCache.EntityCache.Count + ")? " + nameof(entities) + ".Count: " + entities.Count);
+                // throw new InvalidCountException("No properties found for " + type + " " + key.ToString() + ". Are values read into " + nameof(InMemoryCache.EntityCache) + " (Count " + InMemoryCache.EntityCache.Count + ")? " + nameof(entities) + ".Count: " + entities.Count);
+
+                return;
             }
             var lastValue = properties[0].Value;
             var lastIndex = 0;

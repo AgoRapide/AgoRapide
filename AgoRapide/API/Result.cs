@@ -121,14 +121,15 @@ namespace AgoRapide.API {
                                         // Suggest both 
                                         // 1) adding to context
                                         new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
-                                        retval.Append("&nbsp;" + request.API.CreateAPILink(
-                                            CoreAPIMethod.UpdateProperty,
-                                            s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
-                                            request.CurrentUser.GetType(),
-                                            new QueryIdInteger(request.CurrentUser.Id),
-                                            CoreP.Context.A(),
-                                            new Context(s, t, suggestion.Value.QueryId).ToString()
-                                        )));
+                                            retval.Append("&nbsp;" + request.API.CreateAPILink(
+                                                 CoreAPIMethod.UpdateProperty,
+                                                 s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
+                                                 request.CurrentUser.GetType(),
+                                                 new QueryIdInteger(request.CurrentUser.Id),
+                                                 CoreP.Context.A(),
+                                                 new Context(s, t, suggestion.Value.QueryId).ToString()
+                                             ))
+                                        );
                                         // and 
                                         // 2) Showing all with this value (general query)
                                         retval.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>&nbsp;");
@@ -176,7 +177,7 @@ namespace AgoRapide.API {
                     retval.AppendLine("No entities resulted from your query");
                 } else {
 
-                    if (request.URL.Contains("/CurrentContext/") && request.CurrentUser != null) { // URL as shown in header is not sufficient to explain where data comes from.
+                    if (request.URL.ToString().Contains("/CurrentContext/") && request.CurrentUser != null) { // URL as shown in header is not sufficient to explain where data comes from.
                         retval.AppendLine();
                         request.CurrentUser.PV<List<Context>>(CoreP.Context.A()).ForEach(c => retval.AppendLine(c.ToString()));
                     }

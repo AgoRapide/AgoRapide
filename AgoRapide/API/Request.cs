@@ -71,7 +71,7 @@ namespace AgoRapide.API {
             CurrentUser = currentUser;
             ExceptionHasOccurred = exceptionHasOccurred;
 
-            URL = httpRequestMessage.RequestUri.ToString();
+            URL = httpRequestMessage.RequestUri;
             ResponseFormat = GetResponseFormatFromURL(URL);
 
             if (ExceptionHasOccurred) {
@@ -220,42 +220,48 @@ namespace AgoRapide.API {
         /// </summary>
         public bool ExceptionHasOccurred { get; private set; }
 
-        public string URL { get; private set; }
+        /// <summary>
+        /// TODO: Change into <see cref="Uri"/>
+        /// </summary>
+        public Uri URL { get; private set; }
 
-        private string _JSONUrl;
+        private Uri _JSONUrl;
         /// <summary>
         /// Gives corresponding URL for <see cref="ResponseFormat.JSON"/>
         /// </summary>
-        public string JSONUrl => _JSONUrl ?? (_JSONUrl = new Func<string>(() => {
+        public Uri JSONUrl => _JSONUrl ?? (_JSONUrl = new Func<Uri>(() => {
+            var strUrl = URL.ToString();
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return URL;
-                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.C.HTMLPostfixIndicator.Length);
-                case ResponseFormat.CSV: return URL.Substring(0, URL.Length - Util.Configuration.C.CSVPostfixIndicator.Length);
+                case ResponseFormat.HTML: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.HTMLPostfixIndicator.Length));
+                case ResponseFormat.CSV: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.CSVPostfixIndicator.Length));
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
 
-        private string _HTMLUrl;
+        private Uri _HTMLUrl;
         /// <summary>
-        /// Gives corresponding URL for <see cref="ResponseFormat.CSV"/>
+        /// Gives corresponding URL for <see cref="ResponseFormat.HTML"/>
         /// </summary>
-        public string HTMLUrl => _HTMLUrl ?? (_HTMLUrl = new Func<string>(() => {
+        public Uri HTMLUrl => _HTMLUrl ?? (_HTMLUrl = new Func<Uri>(() => {
+            var strUrl = URL.ToString();
             switch (ResponseFormat) {
-                case ResponseFormat.JSON: return URL + Util.Configuration.C.HTMLPostfixIndicator;
+                case ResponseFormat.JSON: return new Uri(strUrl + Util.Configuration.C.HTMLPostfixIndicator);
                 case ResponseFormat.HTML: return URL;
-                case ResponseFormat.CSV: return URL.Substring(0, URL.Length - Util.Configuration.C.CSVPostfixIndicator.Length) + Util.Configuration.C.HTMLPostfixIndicator;
+                case ResponseFormat.CSV: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.CSVPostfixIndicator.Length) + Util.Configuration.C.HTMLPostfixIndicator);
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
 
-        private string _CSVUrl;
+        private Uri _CSVUrl;
         /// <summary>
         /// Gives corresponding URL for <see cref="ResponseFormat.CSV"/>
         /// </summary>
-        public string CSVUrl => _CSVUrl ?? (_CSVUrl = new Func<string>(() => {
+        public Uri CSVUrl => _CSVUrl ?? (_CSVUrl = new Func<Uri>(() => {
+            var strUrl = URL.ToString();
             switch (ResponseFormat) {
-                case ResponseFormat.JSON: return URL + Util.Configuration.C.CSVPostfixIndicator;
-                case ResponseFormat.HTML: return URL.Substring(0, URL.Length - Util.Configuration.C.HTMLPostfixIndicator.Length) + Util.Configuration.C.CSVPostfixIndicator;
+                case ResponseFormat.JSON: return new Uri(strUrl + Util.Configuration.C.CSVPostfixIndicator);
+                case ResponseFormat.HTML: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.HTMLPostfixIndicator.Length) + Util.Configuration.C.CSVPostfixIndicator);
                 case ResponseFormat.CSV: return URL;
                 default: throw new InvalidEnumException(ResponseFormat);
             }
@@ -492,8 +498,8 @@ namespace AgoRapide.API {
             public MethodMatchingException(string message, Exception inner) : base(message, inner) { }
         }
 
-        public static ResponseFormat GetResponseFormatFromURL(string url) {
-            var urlToLower = url.ToLower();
+        public static ResponseFormat GetResponseFormatFromURL(Uri url) {
+            var urlToLower = url.ToString().ToLower();
             if (urlToLower.EndsWith(Util.Configuration.C.HTMLPostfixIndicatorToLower)) return ResponseFormat.HTML;
             if (urlToLower.EndsWith(Util.Configuration.C.CSVPostfixIndicatorToLower)) return ResponseFormat.CSV;
             return ResponseFormat.JSON;

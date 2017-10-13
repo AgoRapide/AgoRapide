@@ -247,7 +247,7 @@ namespace AgoRapide.Database {
                 if (cacheUse == CacheUse.All) throw new InvalidEnumException(cacheUse, "Invalid to combine with Property");
                 // TODO: Should we also cache single properties?
                 var retvalTemp = TryGetPropertyById(id, out var propertyTemp);
-                if (retvalTemp) InvalidTypeException.AssertAssignable(propertyTemp.GetType(), requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match Property type as found in database (" + propertyTemp.GetType() + ")");
+                InvalidTypeException.AssertAssignable(propertyTemp.GetType(), requiredType, () => nameof(requiredType) + " (" + requiredType + ") does not match Property type as found in database (" + propertyTemp.GetType() + ")");
                 entity = propertyTemp;
                 return retvalTemp;
                 // throw new InvalidTypeException(requiredType, "Do not call this method for properties, use " + nameof(TryGetPropertyById) + " directly instead.");
@@ -292,6 +292,7 @@ namespace AgoRapide.Database {
                         if (r.Read()) throw new ExactOnePropertyNotFoundException("Multiple properties found for id " + id);
                         r.Close();
                     }
+                    if (property.Key.Key.A.CanHaveChildren) property.Properties= GetChildProperties(property); // Added 13 Oct 2017, check that is correct.
                     ExecuteNonQuerySQLStatements(isManyCorrections);
                     return true;
                 }
@@ -452,7 +453,6 @@ namespace AgoRapide.Database {
 
             var creatorEntityFromCurrentProperties = new Action(() => {
                 // Take into account that root-properties may exist without any 
-
 
                 rootPropertyIndex++;
                 if (rootPropertyIndex >= (rootProperties.Count)) {
@@ -841,20 +841,10 @@ namespace AgoRapide.Database {
             return id;
         }
 
-        /// <summary>
-        /// TODO: MOVE COMMENT TO INTERFACE DECLARATION INSTEAD!
-        /// Note how this is used for both "ordinary" entities and properties that may have children
-        /// 
-        /// TODO: FIX COMMENT OR CODE:
-        /// Bemerk at denne LEGGER IKKE TIL child i selve property-parameteren (bruk AddChildrenToProperty for dette formålet). THIS IS A BIT ARTIFICIAL!
-        /// </summary>
-        /// <param name="parentProperty"></param>
-        /// <returns></returns>
         public override Dictionary<CoreP, Property> GetChildProperties(Property parentProperty) {
+            if (!parentProperty.Key.Key.A.CanHaveChildren) return null;
             Log(nameof(parentProperty.Id) + ": " + parentProperty.Id);
-            if (!true.Equals(parentProperty.Key.Key.A.CanHaveChildren)) throw new Exception(
-                "!" + nameof(parentProperty.Key.Key.A.CanHaveChildren) + " (" + parentProperty.ToString() + ". " +
-                "Explanation: You are not allowed to operate with child properties for " + parentProperty.Key.Key.A.EnumValueExplained + " because there is no [" + nameof(PropertyKeyAttribute) + "(" + nameof(PropertyKeyAttribute.CanHaveChildren) + " = true)] defined for this enum value");
+            // parentProperty.Key.Key.A.AssertCanHaveChildren();
             var cmd = new Npgsql.NpgsqlCommand(PropertySelect + " WHERE\r\n" +
                 // TODO: CHECK IF THIS IS STILL THE CORRECT METHOD
                 "(\r\n" +
