@@ -70,8 +70,11 @@ namespace AgoRapide.Database {
                     } else if (typeof(TimeSpan).Equals(key.ExpansionType.ToSourceType())) {
                         var tspValue = sourceProperty.V<TimeSpan>();
                         switch (key.ExpansionType) { /// Note how AddProperty generic type now chosen must correspond to <see cref="ExpansionTypeE.ToExpandedType"/>
-                            case ExpansionType.TimeSpanHours: { var v = (long)tspValue.TotalHours; strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            case ExpansionType.TimeSpanDays: { var v = (long)tspValue.TotalDays; strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanHours: { var v = (long)(tspValue.TotalHours + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanDays: { var v = (long)(tspValue.TotalDays + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanWeeks: { var v = (long)((tspValue.TotalDays / 7) + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanMonths: { var v = (long)((tspValue.TotalDays / 30) + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanYears: { var v = (long)((tspValue.TotalDays / 365) + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             default: throw new InvalidEnumException(key.ExpansionType);
                         }
                     } else {
@@ -370,9 +373,20 @@ namespace AgoRapide.Database {
         [EnumValue(Description = "Less than 365 days is 0 years, less than 730 days is 1 year and so on (note how years are not calculcated exact as of Sep 2017).")]
         DateAgeYears,
 
+        [EnumValue(Description = "Less than 60 minutes is 0 hours, less than 120 is 1 hour and so on.")]
         TimeSpanHours,
 
+        [EnumValue(Description = "Less than 24 hours is 0 days, less than 48 is 1 day and so on.")]
         TimeSpanDays,
+
+        [EnumValue(Description = "Less than 7 days is 0 weeks, less than 14 days is 1 week and so on.")]
+        TimeSpanWeeks,
+
+        [EnumValue(Description = "Less than 30 days is 0 months, less than 60 days is 1 month and so on (note how months are not calculcated exact as of Sep 2017).")]
+        TimeSpanMonths,
+
+        [EnumValue(Description = "Less than 365 days is 0 years, less than 730 days is 1 year and so on (note how years are not calculcated exact as of Sep 2017).")]
+        TimeSpanYears,
     }
 
     [Enum(AgoRapideEnumType = EnumType.EnumValue)]
@@ -419,6 +433,9 @@ namespace AgoRapide.Database {
                 case ExpansionType.DateAgeYears: return typeof(long);
                 case ExpansionType.TimeSpanHours: return typeof(long);
                 case ExpansionType.TimeSpanDays: return typeof(long);
+                case ExpansionType.TimeSpanWeeks: return typeof(long);
+                case ExpansionType.TimeSpanMonths: return typeof(long);
+                case ExpansionType.TimeSpanYears: return typeof(long);
                 default: throw new InvalidEnumException(expansionType);
             }
         }
@@ -427,12 +444,14 @@ namespace AgoRapide.Database {
             switch (expansionType) {
                 case ExpansionType.DateHour:
                 case ExpansionType.DateMonth:
-                case ExpansionType.DateYear: // May have to be removed (or made configurable).
-                case ExpansionType.DateAgeYears: // May have to be removed (or made configurable).
+                case ExpansionType.DateYear:       // May have to be removed (or made configurable).
+                case ExpansionType.DateAgeYears:   // May have to be removed (or made configurable).
                 case ExpansionType.DateWeekday:
                 case ExpansionType.DatePeriodOfDay:
                 case ExpansionType.DateWeekDayPeriodOfDay:
                 case ExpansionType.DateYearQuarter: // May have to be removed (or made configurable).
+                case ExpansionType.TimeSpanMonths:  // May have to be removed (or made configurable).
+                case ExpansionType.TimeSpanYears:   // May have to be removed (or made configurable).
                     return true;
                 default:
                     return false;
