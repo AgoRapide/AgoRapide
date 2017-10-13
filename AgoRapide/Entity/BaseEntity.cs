@@ -384,7 +384,7 @@ namespace AgoRapide {
         /// <returns></returns>
         public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
-            return "<tr><th>" + nameof(IdFriendly) + "</th>" +
+            return "<thead><tr><th>" + nameof(IdFriendly) + "</th>" +
                 string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<th>" + new Func<string>(() => {
                     var retval = key.Key.PToString;
                     if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
@@ -395,7 +395,7 @@ namespace AgoRapide {
                     return retval;
                 })() + "</th>")) +
                 // "<th>" + nameof(Created) + "</th>" +
-                "</tr>";
+                "</tr></thead>";
         });
 
         /// <summary>

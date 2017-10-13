@@ -93,11 +93,16 @@ namespace AgoRapide.API {
                                 // "style=\"color:red\"" +  This is most probably only a distraction
                                 ">(Too many entities for HTML-view, showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". Drill down suggestions are based on complete dataset though.)</p>");
                         }
-
-                        retval.AppendLine("<table>");
+                        var tableId = t.ToStringVeryShort();
+                        retval.Append("<table id=\"sorttable\">\r\n"); // Unsure if multiple tables are supported this way?
+                        //  retval.AppendLine("<table id=\"sort_" + tableId + "\">");                        
                         retval.AppendLine(entitiesToShowAsHTML[0].ToHTMLTableRowHeading(request));
+                        retval.AppendLine("<tbody>");
                         retval.AppendLine(string.Join("", entitiesToShowAsHTML.Select(e => e.ToHTMLTableRow(request))));
+                        retval.AppendLine("</tbody>");
                         retval.AppendLine("</table>");
+                        retval.Append("<script>new Tablesort(document.getElementById('sorttable'));</script>\r\n");
+                        // retval.Append("<script>new Tablesort(document.getElementById('\"sort_" + tableId + "\"'));</script>\r\n");                        
 
                         /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs
                         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs

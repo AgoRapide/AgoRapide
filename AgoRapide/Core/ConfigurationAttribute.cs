@@ -277,7 +277,7 @@ namespace AgoRapide.Core {
 
         public string CSSRelativePath { get; set; } = "css.css";
 
-        public List<string> ScriptRelativePaths { get; set; } = new List<string> { "Scripts/AgoRapide-0.1.js", "Scripts/jquery-3.1.1.min.js" };
+        public List<string> ScriptRelativePaths { get; set; } = new List<string> { "Scripts/AgoRapide-0.1.js", "Scripts/jquery-3.1.1.min.js", "Scripts/tablesort.min.js", "Scripts/tablesort.number.js" };
 
         [ClassMember(Description = "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.HTML) + "- is desired by client.")]
         public string HTMLPostfixIndicator { get; set; } = "/HTML";
