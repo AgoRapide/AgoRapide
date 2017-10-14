@@ -91,7 +91,12 @@ namespace AgoRapide.API {
                             }
                             retval.AppendLine("<p" +
                                 // "style=\"color:red\"" +  This is most probably only a distraction
-                                ">(Too many entities for HTML-view, showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". Drill down suggestions are based on complete dataset though.)</p>");
+                                ">" + "NOTE: Limited selection shown.".HTMLEncloseWithinTooltip(
+                                    "Too many entities for HTML-view, " +
+                                    "showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". " +
+                                    "Any sorting directly on HTML-page will only sort within limited selection, not from total result. " +
+                                    "Drill down suggestions and CSV / JSON are based on complete dataset though.") +
+                                "</p>");
                         }
                         var tableId = t.ToStringVeryShort();
                         retval.Append("<table id=\"sorttable\">\r\n"); // Unsure if multiple tables are supported this way?
