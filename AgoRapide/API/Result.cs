@@ -82,19 +82,22 @@ namespace AgoRapide.API {
                         retval.AppendLine("<p>" + thisTypeSorted.Count + " entities of type " + t.ToStringShort() + "</p>");
 
                         var entitiesToShowAsHTML = thisTypeSorted;
-                        if (entitiesToShowAsHTML.Count > 1000) { // TODO: Create better algoritm here. Draw randomly between 0 and total count, until have 1000 entities. Look out for situation with close to 1000 entities.
+                        var max = request.CurrentUser == null ? 1000 : request.CurrentUser.PV<long>(PersonP.ConfigHTMLMaxCount.A(), 1000);
+                        if (entitiesToShowAsHTML.Count > max) { // TODO: Create better algoritm here. Draw randomly between 0 and total count, until have 1000 entities. Look out for situation with close to 1000 entities.
+                            var originalCount = entitiesToShowAsHTML.Count;
                             entitiesToShowAsHTML = new List<BaseEntity>();
-                            var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue)); var step = (thisTypeSorted.Count / 1000) * 2;
-                            var i = 0; while (i < thisTypeSorted.Count && entitiesToShowAsHTML.Count < 1000) {
+                            var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue)); var step = (thisTypeSorted.Count / max) * 2;
+                            var i = 0; while (i < thisTypeSorted.Count && entitiesToShowAsHTML.Count < max) {
                                 entitiesToShowAsHTML.Add(thisTypeSorted[i]);
-                                i += r.Next(step) + 1;
+                                i += r.Next((int)step) + 1;
                             }
                             retval.AppendLine("<p" +
                                 // "style=\"color:red\"" +  This is most probably only a distraction
                                 ">" + "NOTE: Limited selection shown.".HTMLEncloseWithinTooltip(
-                                    "Too many entities for HTML-view, " +
-                                    "showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". " +
-                                    "Any sorting directly on HTML-page will only sort within limited selection, not from total result. " +
+                                    "Too many entities for HTML-view (" + originalCount + "), " +
+                                    "showing approximately " + max + " entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ".\r\n" +
+                                    (request.CurrentUser==null ? "" : ("(the value of " + max + " may be changed through property -" + nameof(PersonP.ConfigHTMLMaxCount) + "- for " + request.CurrentUser.IdFriendly + ".)\r\n")) + 
+                                    "Any sorting directly on HTML-page will only sort within limited selection, not from total result.\r\n" +
                                     "Drill down suggestions and CSV / JSON are based on complete dataset though.") +
                                 "</p>");
                         }

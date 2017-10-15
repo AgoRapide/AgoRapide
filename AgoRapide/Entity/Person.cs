@@ -58,7 +58,7 @@ namespace AgoRapide {
         /// NOTE: https://www.w3.org/International/questions/qa-personal-names
         /// NOTE: for a thorough explanation about how to represent names in different cultures world-wide.
         /// </summary>
-        [PropertyKey(Group = typeof(PersonPropertiesDescriber), Type = typeof(string), SampleValues = new string[] { "John", "Maria", "Peter", "Ann", "Margareth", "Charles", "Eva", "Bob", "Lucy", "Grace", "Albert" })]
+        [PropertyKey(Type = typeof(string), Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "John", "Maria", "Peter", "Ann", "Margareth", "Charles", "Eva", "Bob", "Lucy", "Grace", "Albert" })]
         FirstName,
 
         /// <summary>
@@ -66,23 +66,28 @@ namespace AgoRapide {
         /// NOTE: https://www.w3.org/International/questions/qa-personal-names
         /// NOTE: for a thorough explanation about how to represent names in different cultures world-wide.
         /// </summary>
-        [PropertyKey(Group = typeof(PersonPropertiesDescriber), Type = typeof(string), SampleValues = new string[] { "Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Miller", "Wilson", "More", "Taylor", "Anderson", "Jackson", "Harris" })]
+        [PropertyKey(Type = typeof(string), Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Miller", "Wilson", "More", "Taylor", "Anderson", "Jackson", "Harris" })]
         LastName,
 
-        [PropertyKey(Group = typeof(PersonPropertiesDescriber), Type = typeof(DateTime), SampleValues = new string[] { "1968-11-09", "1972-10-16", "1981-04-18", "2000-12-13", "2003-09-05", "2006-04-10" }, DateTimeFormat = DateTimeFormat.DateOnly)]
+        [PropertyKey(Type = typeof(DateTime), Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "1968-11-09", "1972-10-16", "1981-04-18", "2000-12-13", "2003-09-05", "2006-04-10" }, DateTimeFormat = DateTimeFormat.DateOnly)]
         DateOfBirth,
 
         /// <summary>
         /// Note how <see cref="NorwegianPostalCode"/> implements <see cref="ITypeDescriber"/>. 
         /// </summary>
-        [PropertyKey(Group = typeof(PersonPropertiesDescriber), Type = typeof(NorwegianPostalCode))]
+        [PropertyKey(Type = typeof(NorwegianPostalCode), Group = typeof(PersonPropertiesDescriber))]
         PostalCode,
 
         /// <summary>
         /// Note how this is candidate for a <see cref="ITypeDescriber"/>
         /// </summary>
-        [PropertyKey(Group = typeof(PersonPropertiesDescriber), IsMany = false, Type = typeof(string))]
+        [PropertyKey(Type = typeof(string), Group = typeof(PersonPropertiesDescriber))]
         PhoneNumber,
+
+        [PropertyKey(
+            Description = "Maximum number of elements for -" + nameof(Result.ToHTMLDetailed) + "- to show in HTML-view. Default is 1000. ",
+            Type = typeof(long), Group = typeof(PersonPropertiesDescriber))]
+        ConfigHTMLMaxCount,
 
         /// <summary>
         /// TODO: REMOVE
