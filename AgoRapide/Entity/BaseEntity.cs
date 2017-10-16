@@ -477,7 +477,7 @@ namespace AgoRapide {
             });
 
             // Suggested URLs for this specific entity
-            if (Id > 0) retval.Append("<p>" + string.Join("<br>", BaseEntityUrls.Select(url => request.API.CreateAPILink(url))) + "</p>");
+            if (Id > 0) retval.Append("<p>" + string.Join("<br>", BaseEntityUrls.Select(url => request.API.CreateAPILink(url.Item1).HTMLEncloseWithinTooltip(url.Item2))) + "</p>");
 
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
@@ -485,7 +485,7 @@ namespace AgoRapide {
             return retval.ToString();
         }
 
-        private List<string> _baseEntityUrls;
+        private List<(Uri, string)> _baseEntityUrls;
         /// <summary>
         /// TODO: Maybe rename into "UrlsForOperationOnThisEntity" or "RelevantUrls"
         /// 
@@ -493,8 +493,8 @@ namespace AgoRapide {
         /// 
         /// See also <see cref="Context.GetPossibleContextOperationsForCurrentUserAndEntity"/>
         /// </summary>
-        [ClassMember(Description = "Returns urls for operation on this entity.")]
-        public List<string> BaseEntityUrls => _baseEntityUrls ?? (_baseEntityUrls = GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(APIMethodP.BaseEntityMethodUrl.A()).Select(uri => uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString()))).OrderBy(url => url).ToList());
+        [ClassMember(Description = "Returns urls (with \"link text\" / help-text) for operation on this entity.")]
+        public List<(Uri, string)> BaseEntityUrls => _baseEntityUrls ?? (_baseEntityUrls = GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(APIMethodP.BaseEntityMethodUrl.A()).Select(uri => (new Uri(uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString())), m.A.Description))).OrderBy(url => url.ToString()).ToList());
 
         /// <summary>
         /// Creates an HTML representation of the existing properties for this entity, including input fields and save buttons (through <see cref="Property.ToHTMLTableRow"/>

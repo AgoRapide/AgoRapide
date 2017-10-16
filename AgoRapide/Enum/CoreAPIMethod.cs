@@ -12,7 +12,7 @@ using AgoRapide.Database;
 namespace AgoRapide {
 
     /// <summary>
-    /// Note how we DO NOT set any <see cref="PropertyKeyAttribute.Description"/> for <see cref="CoreP.CoreAPIMethod"/> 
+    /// Note how we DO NOT set any <see cref="PropertyKeyAttribute.Description"/> for <see cref="APIMethodP.CoreAPIMethod"/> 
     /// but instead rely on the <see cref="ClassAttribute.Description"/> set here. 
     /// This comment describes the recommended approach to setting attributes when the type given (<see cref="PropertyKeyAttribute.Type"/>) 
     /// is one of your own classes / enums, or one of the AgoRapide classes / enums 

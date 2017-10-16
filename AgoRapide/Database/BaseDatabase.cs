@@ -247,7 +247,7 @@ namespace AgoRapide.Database {
 
         public Property GetPropertyById(long id) => TryGetPropertyById(id, out var retval) ? retval : throw new PropertyNotFoundException(id);
         public abstract bool TryGetPropertyById(long id, out Property property);
-     
+
         /// <summary>
         /// Gets all root properties of a given type. 
         /// The implementation must return result in increasing order.
@@ -345,7 +345,7 @@ namespace AgoRapide.Database {
         /// <param name="value">TODO: Consider strongly typed overloads which leads to less processing here</param>
         /// <param name="result">May be null</param>
         /// <returns></returns>
-        public abstract long CreateProperty(long? cid, long? pid, long? fid, PropertyKeyWithIndex key, object value, Result result);
+        public abstract long CreateProperty(long? cid, long? pid, long? fid, PropertyKeyWithIndex key, object value, Result result = null);
 
         /// <summary>
         /// 
@@ -358,7 +358,7 @@ namespace AgoRapide.Database {
         /// <param name="property"></param>
         /// <param name="operation"></param>
         /// <param name="result">May be null</param>
-        public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result);
+        public abstract void OperateOnProperty(long? operatorId, Property property, PropertyOperation operation, Result result = null);
 
         public abstract void Dispose();
 
@@ -456,7 +456,7 @@ namespace AgoRapide.Database {
                     case IStaticProperties s: s.GetStaticProperties().ForEach(p => retval.Properties.AddValue(p.Key, p.Value)); break;
                 }
                 return retval;
-            } else { 
+            } else {
                 // This is only allowed if what is asked for is a property-object, or if it can be assumed that returning a property-object is OK.
                 if (requiredType != null) {
                     if (requiredType.Equals(typeof(Property))) { /// <param name="root"/> is excplicit what is asked for, OK. 

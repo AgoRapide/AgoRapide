@@ -335,8 +335,13 @@ namespace AgoRapide {
             Type = typeof(bool))]
         IsAnonymous,
 
+        /// <summary>
+        /// See <see cref="AgoRapide.Core.Context"/>
+        /// </summary>
         [PropertyKey(
             Type = typeof(Context),
+            Parents = new Type[] { typeof(Person), typeof(Report) },
+            Size = InputFieldSize.Big,
             IsMany = true,
             AccessLevelRead = AccessLevel.Relation,
             AccessLevelWrite = AccessLevel.Relation

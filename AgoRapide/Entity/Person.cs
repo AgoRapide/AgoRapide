@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AgoRapide.Core;
 using AgoRapide.API;
+using AgoRapide.Database;
 
 namespace AgoRapide {
 
@@ -25,6 +26,31 @@ namespace AgoRapide {
         AccessLevelWrite = AccessLevel.Relation
     )]
     public class Person : APIDataObject {
+
+        /// <summary>
+        /// <see cref="CoreAPIMethod.BaseEntityMethod"/>. 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="request"></param>
+        [APIMethod(
+            Description = "Creates a new report based on the -" + nameof(CoreP.Context) + "- for person identified by {QueryId}.",
+            S1 = nameof(AddReport), S2 = "DUMMY", // TODO: REMOVE "DUMMY". Added Summer 2017 because of bug in routing mechanism.
+            AccessLevelUse = AccessLevel.Relation
+        )]
+        public object AddReport(BaseDatabase db, ValidRequest request) {
+            // request.Result.LogInternal("Starting", GetType());
+            var properties = new List<(PropertyKeyWithIndex, object)>();
+            if (Properties.TryGetValue(CoreP.Context.A().Key.CoreP, out var c)) {
+                /// TODO: Improve on <see cref="BaseDatabase.CreateEntity"/>, allow use of List and no PropertyKeyWithIndex (only PropertyKey)
+                c.Properties.ForEach(p => properties.Add((p.Value.Key.PropertyKeyWithIndex, p.Value.Value)));
+            }
+            properties.Add((ReportP.ReportAuthor.A().PropertyKeyWithIndex, Id));
+            var report = db.GetEntityById<Report>(db.CreateEntity(Id, typeof(Report), properties, request.Result));
+            request.Result.ResultCode = ResultCode.ok;
+            request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(report));
+            // request.Result.LogInternal("Finished", GetType());
+            return request.GetResponse();
+        }
 
         /// <summary>
         /// Note that this way of storing names is valid for only some cultures. See instead 
@@ -58,7 +84,7 @@ namespace AgoRapide {
         /// NOTE: https://www.w3.org/International/questions/qa-personal-names
         /// NOTE: for a thorough explanation about how to represent names in different cultures world-wide.
         /// </summary>
-        [PropertyKey(Type = typeof(string), Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "John", "Maria", "Peter", "Ann", "Margareth", "Charles", "Eva", "Bob", "Lucy", "Grace", "Albert" })]
+        [PropertyKey(Type = typeof(string), Size = InputFieldSize.Medium, Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "John", "Maria", "Peter", "Ann", "Margareth", "Charles", "Eva", "Bob", "Lucy", "Grace", "Albert" })]
         FirstName,
 
         /// <summary>
@@ -66,7 +92,7 @@ namespace AgoRapide {
         /// NOTE: https://www.w3.org/International/questions/qa-personal-names
         /// NOTE: for a thorough explanation about how to represent names in different cultures world-wide.
         /// </summary>
-        [PropertyKey(Type = typeof(string), Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Miller", "Wilson", "More", "Taylor", "Anderson", "Jackson", "Harris" })]
+        [PropertyKey(Type = typeof(string), Size = InputFieldSize.Medium, Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Miller", "Wilson", "More", "Taylor", "Anderson", "Jackson", "Harris" })]
         LastName,
 
         [PropertyKey(Type = typeof(DateTime), Group = typeof(PersonPropertiesDescriber), SampleValues = new string[] { "1968-11-09", "1972-10-16", "1981-04-18", "2000-12-13", "2003-09-05", "2006-04-10" }, DateTimeFormat = DateTimeFormat.DateOnly)]

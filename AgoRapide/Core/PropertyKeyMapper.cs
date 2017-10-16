@@ -70,6 +70,7 @@ namespace AgoRapide.Core {
             MapEnum<API.ResultP>(noticeLogger);
             MapEnum<SynchronizerP>(noticeLogger);
             MapEnum<PersonP>(noticeLogger);
+            MapEnum<ReportP>(noticeLogger);
         }
         /// <summary>
         /// TODO: Rename into something else. MapEnum for instance.

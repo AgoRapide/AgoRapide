@@ -606,7 +606,7 @@ namespace AgoRapide {
                     (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML.ToString())) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
                         (IsTemplateOnly || !ShowValueHTMLSeparate ? "" : (ValueHTML + "&nbsp;")) + /// Added <see cref="ValueHTML"/> 21 Jun 2017
-                        "<input size = \"60\" " + // TODO: Vary size according to attribute. Introduce an IsBig attribute. Or a size-enum like Small, Medium, Big. Or let system itself determine dynamically.
+                        a.Size.ToHTMLStartTag() + 
                             "id=\"input_" + KeyHTML + "\"" +
                             (!a.IsPassword ? "" : " type=\"password\"") +
                             " value=\"" + (IsTemplateOnly || a.IsPassword ? "" : V<string>().HTMLEncode()) + "\"" +

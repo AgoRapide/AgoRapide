@@ -177,7 +177,13 @@ namespace AgoRapide.Core {
             public NotCanHaveChildrenException(string message, Exception inner) : base(message, inner) { }
         }
 
+        public InputFieldSize Size { get; set; }
+
         /// <summary>
+        /// NOTE: Not in use as of Oct 2017
+        /// 
+        /// NOTE: See <see cref="Size"/>
+        /// 
         /// TODO: TURN INTO LIST, WITH CSS AS ENUM
         /// CSS class to be used when generating HTML representation of property
         /// 
@@ -611,6 +617,7 @@ namespace AgoRapide.Core {
             }
 
             // TODO: Should CSSClass also be merged together?
+            if (Size == InputFieldSize.None) Size = other.Size;
             if (string.IsNullOrEmpty(CSSClass)) CSSClass = other.CSSClass;
 
             if (AccessLevelRead == AccessLevel.System) AccessLevelRead = other.AccessLevelRead; // Careful with what is default value here
@@ -700,5 +707,49 @@ namespace AgoRapide.Core {
         //public override string ToString() => nameof(EnumValue) + ": " + (_enumValue?.ToString() ?? "[NULL]") + "\r\n" + base.ToString();
         //protected override string GetIdentifier() => GetType().ToStringShort().Replace("Attribute", "") + "_" + EnumValue.GetType().ToStringShort() + "_" + EnumValue.ToString();
 
+    }
+
+    /// <summary>
+    /// TODO: Experimental as of Oct 2017
+    /// 
+    /// TODO: Consider replacing this with corresponding CSS-classes.
+    /// TODO: That is, consider using <see cref="PropertyKeyAttribute.CSSClass"/> instead of <see cref="PropertyKeyAttribute.Size"/>
+    /// </summary>
+    [Enum(AgoRapideEnumType = EnumType.EnumValue,
+        Description = "Recommended size of input field, for instance HTML an <input>-tag.")]
+    public enum InputFieldSize {
+        None,
+        Small,
+        Medium,
+        Big,
+        MultilineSmall,
+        MultilineMedium,
+        MultilineBig
+    }
+
+    public static class InputFieldSizeExtensions {
+        /// <summary>
+        /// TODO: Experimental as of Oct 2017
+        /// 
+        /// TODO: Consider replacing this with corresponding CSS-classes.
+        /// TODO: That is, consider using <see cref="PropertyKeyAttribute.CSSClass"/> instead of <see cref="PropertyKeyAttribute.Size"/>
+        /// </summary>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public static string ToHTMLStartTag(this InputFieldSize size) {
+            switch (size) {
+                case InputFieldSize.None:
+                case InputFieldSize.Small: return "<input size=\"10\" ";
+                case InputFieldSize.Medium: return "<input size=\"40\" ";
+                case InputFieldSize.Big: return "<input size=\"80\" ";
+                /// TODO: Change <see cref="Property.ToHTMLDetailed"/> to use only TextArea
+                /// TODO: As of Oct we can only use Input-tag now.
+                // case InputFieldSize.MultilineSmall: return "<textarea rows=\"3\" columns=\"80\" ";
+                case InputFieldSize.MultilineSmall:
+                case InputFieldSize.MultilineMedium:
+                case InputFieldSize.MultilineBig: return "<input size=\"80\" ";
+                default: throw new InvalidEnumException(size);
+            }
+        }
     }
 }

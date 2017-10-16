@@ -63,7 +63,12 @@ namespace AgoRapide.Core {
         /// HACK. See <see cref="IS_MANY_PARENT_OR_TEMPLATE_INDEX"/>
         /// Only relevant when originates from <see cref="PropertyKeyMapper"/>
         /// </summary>
-        public PropertyKeyWithIndex PropertyKeyAsIsManyParentOrTemplate => _propertyKeyWithIndexAsIsManyParentOrTemplate ?? throw new NullReferenceException(nameof(_propertyKeyWithIndexAsIsManyParentOrTemplate) + ". Most probably because this instance does not originate from " + nameof(PropertyKeyMapper) + ".\r\nDetails: " + ToString());
+        public PropertyKeyWithIndex PropertyKeyAsIsManyParentOrTemplate => _propertyKeyWithIndexAsIsManyParentOrTemplate ?? throw new NullReferenceException(
+            nameof(_propertyKeyWithIndexAsIsManyParentOrTemplate) + ". " +
+            "Possible cause (1): This instance does not originate from " + nameof(PropertyKeyMapper) + ".\r\n" +
+            /// TODO: Cause below would typically arise when calling <see cref="BaseDatabase.UpdateProperty{T}"/>
+            (!Key.A.IsMany ? "" : ("Possible cause (2): (Somewhat obscure) You have specified " + nameof(PropertyKey) + "." + nameof(PropertyKey.PropertyKeyWithIndex) + " in IsMany-context where " + nameof(PropertyKey) + " in itself would have been sufficient.\r\n")) +
+            "Details: " + ToString());
 
         /// <summary>
         /// This is a hack to allow <see cref="Property.IsIsManyParent"/> and <see cref="Property.IsTemplateOnly"/> 

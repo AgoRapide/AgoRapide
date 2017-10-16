@@ -79,6 +79,8 @@ namespace AgoRapide.API {
             return CreateAPILink(apiCommand, linkText, helpText);
         }
 
+        public string CreateAPILink(Uri url) => CreateAPILink(url.ToString(), url.ToString().Replace(Util.Configuration.C.BaseUrl.ToString(), ""), null);
+        public string CreateAPILink(Uri url, string linkText) => CreateAPILink(url.ToString(), linkText, null);
         public string CreateAPILink(string apiCommand) => CreateAPILink(apiCommand, apiCommand, null);
         public string CreateAPILink(string apiCommand, string linkText) => CreateAPILink(apiCommand, linkText, null);
         public string CreateAPILink(string apiCommand, string linkText, string helpText) =>
