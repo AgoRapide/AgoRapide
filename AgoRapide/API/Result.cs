@@ -94,16 +94,14 @@ namespace AgoRapide.API {
                                 ">(Too many entities for HTML-view, showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". Drill down suggestions are based on complete dataset though.)</p>");
                         }
                         var tableId = t.ToStringVeryShort();
-                        retval.Append("<table id=\"sorttable\">\r\n"); // Unsure if multiple tables are supported this way?
-                        //  retval.AppendLine("<table id=\"sort_" + tableId + "\">");                        
+                        retval.Append("<table id=\"sorttable" + tableId + "\">\r\n"); // Unsure if multiple tables are supported this way?                                        
                         retval.AppendLine(entitiesToShowAsHTML[0].ToHTMLTableRowHeading(request));
                         retval.AppendLine("<tbody>");
                         retval.AppendLine(string.Join("", entitiesToShowAsHTML.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</tbody>");
                         retval.AppendLine("</table>");
-                        retval.Append("<script>new Tablesort(document.getElementById('sorttable'));</script>\r\n");
-                        // retval.Append("<script>new Tablesort(document.getElementById('\"sort_" + tableId + "\"'));</script>\r\n");                        
-
+                        retval.Append("<script>new Tablesort(document.getElementById('sorttable" + tableId + "'));</script>\r\n");
+                        // retval.Append("<script>new Tablesort(document.getElementById('\"sort_" + tableId + "\"'));</script>\r\n");                                                
                         /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs
                         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
                         /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
