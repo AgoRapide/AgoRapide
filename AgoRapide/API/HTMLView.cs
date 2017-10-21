@@ -63,15 +63,20 @@ namespace AgoRapide.API {
         /// <returns></returns>
         public virtual string GetHTMLStart() =>
             "<html><head>\r\n" +
-            "<title>AgoRapide HTML " +
-            (Request.CurrentUser == null ? "" : "(" + Request.CurrentUser.IdFriendly + ")") +
+            "<title>" +
+            // Change 13 Oct 2017, will now show actual URL instead of current user (assumed to be more helpful when ALT-TAB'ing like in Windows 
+            // between different browser windows for instance.
+            // (Request.CurrentUser == null ? "" : "(" + Request.CurrentUser.IdFriendly + ")") +
+            Util.Configuration.C.ApplicationName + ": " + Request.URL.ToString().
+                Replace(Util.Configuration.C.BaseUrl.ToString(),""). // TODO: Replace only if URL starts with this string
+                Replace(Util.Configuration.C.HTMLPostfixIndicator,"") + // TODO: Replace only if URL ends with this string
             "</title>\r\n" +
             "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + Util.Configuration.C.RootUrl + Util.Configuration.C.CSSRelativePath + "\">\r\n" +
             string.Join("", Util.Configuration.C.ScriptRelativePaths.Select(s => "<script src=\"" + Util.Configuration.C.RootUrl + s + "\"></script>\r\n")) +
                 "</head>\r\n" +
             "<body>\r\n" +
             "<div style=\"display:none\" id=\"hiddenDiv\"></div>" + // Dummy element used for JQuery html / text conversion
-
+            
             // TODO: Make this static. 
             "<h1><a href=\"" + Util.Configuration.C.RootUrl + "\">AgoRapide</a></h1>\r\n" +
 

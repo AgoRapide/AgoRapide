@@ -10,11 +10,16 @@ using AgoRapide.API;
 
 namespace AgoRapide.Core {
 
+    /// <summary>
+    /// TODO: See also <see cref="CoreAPIMethod.Context"/>, <see cref="CoreP.Context"/>
+    /// </summary>
     [Class(
         Description =
-            "Building block for drill down functionality and AgoRapide query language. " +
-            "Consists of -" + nameof(AgoRapide.SetOperator) + "-, Type and a -" + nameof(AgoRapide.Core.QueryId) + "-. " +
-            "Typical value: \"Intersect;Person;WHERE Department = 'Manufacturing'\"."
+            "Building block for drill down functionality and AgoRapide query language.\r\n" +
+            "Consists of -" + nameof(AgoRapide.SetOperator) + "-, Type and a -" + nameof(AgoRapide.Core.QueryId) + "-.\r\n" +
+            "Typical value: \"Intersect;Person;WHERE Department = 'Manufacturing'\".\r\n" +
+            "Multiple -" + nameof(Context) + "- instances are combined into one complete query.",
+        LongDescription = "-" + nameof(Report) + "- is the continuation of the -" + nameof(Context) + "--concept."
     )]
     public class Context : ITypeDescriber, IEquatable<Context> {
 
@@ -31,7 +36,14 @@ namespace AgoRapide.Core {
             QueryId = queryId ?? throw new ArgumentNullException(nameof(queryId));
         }
 
-        public bool Equals(Context other) => SetOperator == other.SetOperator && Type.Equals(other.Type) && QueryId.Equals(other.QueryId);
+        /// <summary>
+        /// Note that returning 
+        /// SetOperator == other.SetOperator && Type.Equals(other.Type) && QueryId.Equals(other.QueryId);
+        /// is also possible except that we ran into problems with <see cref="QueryId.SQLWhereStatement"/> being null.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(Context other) => ToString().Equals(other.ToString());
         public override bool Equals(object other) {
             if (other == null) return false;
             switch (other) {
@@ -83,7 +95,12 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        public override string ToString() => SetOperator + ";" + Type.ToStringVeryShort() + ";" + QueryId.ToString();
+        private string _toString;
+        /// <summary>
+        /// Note that return value is cached.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString() => _toString ?? (_toString = SetOperator + ";" + Type.ToStringVeryShort() + ";" + QueryId.ToString());
 
         /// <summary>
         /// TODO: Reconsider necessity (value) of this method (or give better name)

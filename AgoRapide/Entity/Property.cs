@@ -341,7 +341,7 @@ namespace AgoRapide {
         private Percentile _percentile;
         /// <summary>
         /// TODO: Disabled NullReferenceException 11 Oct 2017. 
-        /// TODO: Put back when have better controll of when percentiles are calculated.
+        /// TODO: Put back when have better control of when percentiles are calculated.
         /// 
         /// Note how getter throws <see cref="NullReferenceException"/> if value not set. 
         /// 
@@ -350,7 +350,9 @@ namespace AgoRapide {
         /// TODO: As of June 2017 we only have Percentiles based on the whole "universe" of same properties
         /// </summary>
         public Percentile Percentile {
-            get => _percentile ?? Percentile.Get(100); // throw new NullReferenceException(nameof(Percentile) + ". Details: " + ToString());
+            get => _percentile ?? 
+                Percentile.Get(100); 
+                // throw new NullReferenceException(nameof(Percentile) + ". Details: " + ToString());
             set => _percentile = value ?? throw new ArgumentNullException(nameof(value) + ". Details: " + ToString());
         }
         public bool PercentileIsSet => _percentile != null;
@@ -604,7 +606,7 @@ namespace AgoRapide {
                     (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML.ToString())) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
                         (IsTemplateOnly || !ShowValueHTMLSeparate ? "" : (ValueHTML + "&nbsp;")) + /// Added <see cref="ValueHTML"/> 21 Jun 2017
-                        "<input size = \"60\" " + // TODO: Vary size according to attribute. Introduce an IsBig attribute. Or a size-enum like Small, Medium, Big. Or let system itself determine dynamically.
+                        a.Size.ToHTMLStartTag() + 
                             "id=\"input_" + KeyHTML + "\"" +
                             (!a.IsPassword ? "" : " type=\"password\"") +
                             " value=\"" + (IsTemplateOnly || a.IsPassword ? "" : V<string>().HTMLEncode()) + "\"" +

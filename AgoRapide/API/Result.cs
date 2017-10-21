@@ -82,16 +82,24 @@ namespace AgoRapide.API {
                         retval.AppendLine("<p>" + thisTypeSorted.Count + " entities of type " + t.ToStringShort() + "</p>");
 
                         var entitiesToShowAsHTML = thisTypeSorted;
-                        if (entitiesToShowAsHTML.Count > 1000) { // TODO: Create better algoritm here. Draw randomly between 0 and total count, until have 1000 entities. Look out for situation with close to 1000 entities.
+                        var max = request.CurrentUser == null ? 1000 : request.CurrentUser.PV<long>(PersonP.ConfigHTMLMaxCount.A(), 1000);
+                        if (entitiesToShowAsHTML.Count > max) { // TODO: Create better algoritm here. Draw randomly between 0 and total count, until have 1000 entities. Look out for situation with close to 1000 entities.
+                            var originalCount = entitiesToShowAsHTML.Count;
                             entitiesToShowAsHTML = new List<BaseEntity>();
-                            var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue)); var step = (thisTypeSorted.Count / 1000) * 2;
-                            var i = 0; while (i < thisTypeSorted.Count && entitiesToShowAsHTML.Count < 1000) {
+                            var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue)); var step = (thisTypeSorted.Count / max) * 2;
+                            var i = 0; while (i < thisTypeSorted.Count && entitiesToShowAsHTML.Count < max) {
                                 entitiesToShowAsHTML.Add(thisTypeSorted[i]);
-                                i += r.Next(step) + 1;
+                                i += r.Next((int)step) + 1;
                             }
                             retval.AppendLine("<p" +
                                 // "style=\"color:red\"" +  This is most probably only a distraction
-                                ">(Too many entities for HTML-view, showing approximately 1000 entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ". Drill down suggestions are based on complete dataset though.)</p>");
+                                ">" + "NOTE: Limited selection shown.".HTMLEncloseWithinTooltip(
+                                    "Too many entities for HTML-view (" + originalCount + "), " +
+                                    "showing approximately " + max + " entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ".\r\n" +
+                                    (request.CurrentUser==null ? "" : ("(the value of " + max + " may be changed through property -" + nameof(PersonP.ConfigHTMLMaxCount) + "- for " + request.CurrentUser.IdFriendly + ".)\r\n")) + 
+                                    "Any sorting directly on HTML-page will only sort within limited selection, not from total result.\r\n" +
+                                    "Drill down suggestions and CSV / JSON are based on complete dataset though.") +
+                                "</p>");
                         }
                         var tableId = t.ToStringVeryShort();
                         retval.Append("<table id=\"sorttable" + tableId + "\">\r\n"); // Unsure if multiple tables are supported this way?                                        
@@ -119,14 +127,15 @@ namespace AgoRapide.API {
                                         // Suggest both 
                                         // 1) adding to context
                                         new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
-                                        retval.Append("&nbsp;" + request.API.CreateAPILink(
-                                            CoreAPIMethod.UpdateProperty,
-                                            s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
-                                            request.CurrentUser.GetType(),
-                                            new QueryIdInteger(request.CurrentUser.Id),
-                                            CoreP.Context.A(),
-                                            new Context(s, t, suggestion.Value.QueryId).ToString()
-                                        )));
+                                            retval.Append("&nbsp;" + request.API.CreateAPILink(
+                                                 CoreAPIMethod.UpdateProperty,
+                                                 s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
+                                                 request.CurrentUser.GetType(),
+                                                 new QueryIdInteger(request.CurrentUser.Id),
+                                                 CoreP.Context.A(),
+                                                 new Context(s, t, suggestion.Value.QueryId).ToString()
+                                             ))
+                                        );
                                         // and 
                                         // 2) Showing all with this value (general query)
                                         retval.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>&nbsp;");
@@ -174,7 +183,7 @@ namespace AgoRapide.API {
                     retval.AppendLine("No entities resulted from your query");
                 } else {
 
-                    if (request.URL.Contains("/CurrentContext/") && request.CurrentUser != null) { // URL as shown in header is not sufficient to explain where data comes from.
+                    if (request.URL.ToString().Contains("/CurrentContext/") && request.CurrentUser != null) { // URL as shown in header is not sufficient to explain where data comes from.
                         retval.AppendLine();
                         request.CurrentUser.PV<List<Context>>(CoreP.Context.A()).ForEach(c => retval.AppendLine(c.ToString()));
                     }

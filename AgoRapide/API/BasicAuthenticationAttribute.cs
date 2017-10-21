@@ -51,7 +51,7 @@ namespace AgoRapide.API {
                     // NOTE:   context.ErrorResult = errorResultGenerator();
                     // NOTE: here if security is important. 
 
-                    Request.GetMethodsMatchingRequest(context.Request, Request.GetResponseFormatFromURL(context.Request.RequestUri.ToString()), out var exactMatch, out var candidateMatches, out _);
+                    Request.GetMethodsMatchingRequest(context.Request, Request.GetResponseFormatFromURL(context.Request.RequestUri), out var exactMatch, out var candidateMatches, out _);
                     if (
                         (exactMatch != null && exactMatch.Value.method.RequiresAuthorization) ||
                         (candidateMatches != null && candidateMatches.Value.methods.Any(m => m.RequiresAuthorization))
