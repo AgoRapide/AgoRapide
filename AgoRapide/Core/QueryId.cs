@@ -220,12 +220,18 @@ namespace AgoRapide.Core {
                 }
                 var strLeftover = nextWord();
 
-                /// HACK: Ugly hack in order for <see cref="Money"/> to parse.
+                /// HACK: Ugly hack in order for <see cref="Money"/> to parse
+                /// HACK: Or something like WHERE VismaOrderLineProductGeneralName EQ 'GSM Unit Bosch'
                 /// TODO: Implement better parsing. Look for starting ' and ending '.
-                if (strLeftover != null && strLeftover.EndsWith("'")) {
-                    strValue = strValue + " " + strLeftover;
-                    strLeftover = null;
+                if (strLeftover != null) {
+                    if (strValue.StartsWith("'")) {
+                        while (strLeftover != null) {
+                            strValue = strValue + " " + strLeftover;
+                            strLeftover = nextWord();
+                        }
+                    }
                 }
+                if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
 
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
@@ -241,7 +247,6 @@ namespace AgoRapide.Core {
                     }
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
-                if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
 
                 errorResponse = null;
                 return true;

@@ -96,7 +96,7 @@ namespace AgoRapide.API {
                                 ">" + "NOTE: Limited selection shown.".HTMLEncloseWithinTooltip(
                                     "Too many entities for HTML-view (" + originalCount + "), " +
                                     "showing approximately " + max + " entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ".\r\n" +
-                                    (request.CurrentUser==null ? "" : ("(the value of " + max + " may be changed through property -" + nameof(PersonP.ConfigHTMLMaxCount) + "- for " + request.CurrentUser.IdFriendly + ".)\r\n")) + 
+                                    (request.CurrentUser == null ? "" : ("(the value of " + max + " may be changed through property -" + nameof(PersonP.ConfigHTMLMaxCount) + "- for " + request.CurrentUser.IdFriendly + ".)\r\n")) +
                                     "Any sorting directly on HTML-page will only sort within limited selection, not from total result.\r\n" +
                                     "Drill down suggestions and CSV / JSON are based on complete dataset though.") +
                                 "</p>");
@@ -348,6 +348,10 @@ namespace AgoRapide.API {
 
                 if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
 
+                if (key.Key.PToString.Equals("VismaProduct_Count_VismaOrderLine_ProductId")) {
+                    var a = 1;
+                }
+
                 List<(object, string)> objStrValues;
 
                 var properties = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null));
@@ -495,10 +499,18 @@ namespace AgoRapide.API {
                         /// NOTE: For <see cref="DateTime"/>, long and similar types that can be compared like <see cref="Operator.LT"/> and similar 
                         /// NOTE: 
                         if (objStrValues.Count > 10) {
-                            if (objStrValues[objStrValues.Count - 1].Item1 == null) { // (null, "NULL")
-                                /// We have too many values for using <see cref="Operator.EQ"/> against all of them, but we can check for null
-                                objStrValuesForThisOperator = new List<(object, string)> { (null, "NULL") };
-                            } else {
+                            /// We have too many values for using <see cref="Operator.EQ"/> against all of them, but we can check for null and 0
+                            objStrValuesForThisOperator = new List<(object, string)>();
+                            if (objStrValues[objStrValues.Count - 1].Item1 == null) {
+                                objStrValuesForThisOperator.Add((null, "NULL"));
+                            }
+                            if (typeof(long).Equals(key.Key.A.Type)) {
+                                if (objStrValues.Any(i => i.Item2 == "0")) { // TODO: Any-query IS NOT GOOD PERFORMANCE WISE
+                                    objStrValuesForThisOperator.Add(((long)0, "0"));
+                                }
+                            }
+
+                            if (objStrValuesForThisOperator.Count == 0) {
                                 return; // Give up altogether
                             }
                         }
