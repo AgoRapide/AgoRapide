@@ -304,10 +304,6 @@ namespace AgoRapide.Core {
                                 }
                             });
 
-                            // Unuseable because O(n^2)
-                            // fromEntities.Values.Where(from => !toEntities.Values.Any(to => to.PV<long>(traversal.Key, 0) == from.Id)).ToList().ForEach(e => {
-
-                            // New variant with index created above
                             fromEntities.Values.Where(from => !toEntitiesIndex.ContainsKey(from.Id)).ToList().ForEach(e => {
                                 fromEntities.Remove(e.Id);
                             }); break;
@@ -390,10 +386,6 @@ namespace AgoRapide.Core {
                                 });
 
                             fromValues.ForEach(from => {
-                                // Unuseable because O(n^2)
-                                // var toEntities = db.GetEntities(currentUser, new QueryIdKeyOperatorValue(traversal.Key.Key, Operator.EQ, from.Id), AccessType.Read, traversals.Key);
-
-                                // New variant with index created above
                                 if (toEntitiesIndex.TryGetValue(from.Id, out var toEntities)) {
                                     toEntities.ForEach(to => {
                                         if (toValues.ContainsKey(to.Id)) return;

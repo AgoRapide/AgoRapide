@@ -252,20 +252,6 @@ namespace AgoRapide.Database {
             AccessLevelRead = AccessLevel.Relation
         )]
         SynchronizerLastUpdateAgainstSource,
-
-        //[PropertyKey(Description = "Used against -" + nameof(AggregationKey) + "- for general counting of properties")]
-        //SynchronizerProperty,
-
-        ///// <summary>
-        ///// TODO: Do we need this value? 
-        ///// </summary>
-        //[PropertyKey(
-        //    Description = "TRUE if actual data has been read into -" + nameof(InMemoryCache) + "- after application startup.",
-        //    Type = typeof(bool),
-        //    Parents = new Type[] { typeof(BaseSynchronizer) },
-        //    AccessLevelRead = AccessLevel.Relation
-        //)]
-        //SynchronizerDataHasBeenReadIntoMemoryCache,
     }
 
     public static class SynchronizerPExtensions {

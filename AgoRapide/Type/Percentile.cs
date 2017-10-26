@@ -130,6 +130,16 @@ namespace AgoRapide {
         /// 
         /// </summary>
         /// <param name="type"></param>
+        /// <param name="entities"></param>
+        /// <param name="db">TODO: REMOVE, NOT NEEDED</param>
+        public static void Calculate(Type type, List<BaseEntity> entities, BaseDatabase db) => type.GetChildProperties().Values.Where(key => key.Key.A.IsSuitableForPercentileCalculation).ForEach(key => {
+            Calculate(type, entities, key);
+        });
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type"></param>
         /// <param name="queryid">Has to be <see cref="QueryIdAll"/> as of Sep 2017</param>
         /// <param name="key"></param>
         public static void Calculate(Type type, QueryId queryid, PropertyKey key) {

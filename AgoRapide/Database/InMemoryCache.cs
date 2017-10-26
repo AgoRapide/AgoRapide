@@ -194,12 +194,14 @@ namespace AgoRapide.Database {
                         /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
                         var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
 
-                        Log("Calling " + nameof(BaseInjector.CalculateExpansions) + " for " + st.ToStringVeryShort());
-                        BaseInjector.CalculateExpansions(st, entities, db); /// Call this first, maybe some if these will also be percentile-evaluated and aggregated over foreign keys below.
+                        Log("Calling " + nameof(PropertyKeyExpansion) + "." + nameof(PropertyKeyExpansion.CalculateValues) + " for " + st.ToStringVeryShort());
+                        PropertyKeyExpansion.CalculateValues(st, entities); /// Call this first, maybe some if these will also be percentile-evaluated and aggregated over foreign keys below.
 
-                        Log("Calling " + nameof(BaseInjector.CalculateForeignKeyAggregates) + " for " + st.ToStringVeryShort());
-                        BaseInjector.CalculateForeignKeyAggregates(st, entities, db); /// This will make recursive calls against this method (<see cref="GetMatchingEntities"/>)
+                        Log("Calling " + nameof(PropertyKeyAggregate) + "." + nameof(PropertyKeyAggregate.CalculateValues) + " for " + st.ToStringVeryShort());
+                        PropertyKeyAggregate.CalculateValues(st, entities); 
 
+                        Log("Calling " + nameof(PropertyKeyJoinTo) + "." + nameof(PropertyKeyJoinTo.CalculateValues) + " for " + st.ToStringVeryShort());
+                        PropertyKeyJoinTo.CalculateValues(st, entities);
                     });
 
                     /// TODO: Call all other Injector-classes relevant for this universe.
@@ -215,9 +217,9 @@ namespace AgoRapide.Database {
                         // TOOD. Percentiles should most probably be called multiple times in a sort of iterative process.
                         // TODO: (both before and after injection)
 
-                        Log("Calling " + nameof(BaseInjector.CalculatePercentiles) + " for " + st.ToStringVeryShort());
+                        Log("Calling " + nameof(Percentile.Calculate) + " for " + st.ToStringVeryShort());
 
-                        BaseInjector.CalculatePercentiles(st, entities, db); // Call this last, so also foreign key aggregates AND injected values may be evaluated
+                        Percentile.Calculate(st, entities, db); // Call this last, so also foreign key aggregates AND injected values may be evaluated
                     });
                     Log("Finished");
 

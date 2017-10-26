@@ -37,14 +37,16 @@ namespace AgoRapide.Core {
         /// </summary>
         public CoreP CoreP => _coreP ?? throw new NullReferenceException(nameof(_coreP) + ".\r\nDetails: " + ToString()); /// Set by methods like <see cref="PropertyKeyAttributeEnrichedT{T}.PropertyKeyAttributeEnrichedT"/>
 
-        private ConcurrentDictionary<Type, bool> _isParentForCache = new ConcurrentDictionary<Type, bool>();
+        private ConcurrentDictionary<Type, bool> _hasParentOfTypeCache = new ConcurrentDictionary<Type, bool>();
         /// <summary>
         /// Explains if this property belongs to the given entity type (based on <see cref="PropertyKeyAttribute.Parents"/>). 
         /// Used by <see cref="Extensions.GetObligatoryChildProperties(Type)"/>. 
+        /// 
+        /// TODO: Consider moving to <see cref="PropertyKeyAttribute"/>
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public bool IsParentFor(Type type) => _isParentForCache.GetOrAdd(type, t => A.Parents != null && A.Parents.Any(p => p.IsAssignableFrom(t)));
+        public bool HasParentOfType(Type type) => _hasParentOfTypeCache.GetOrAdd(type, t => A.Parents != null && A.Parents.Any(p => p.IsAssignableFrom(t)));
 
         /// <summary>
         /// Typically used by an <see cref="IGroupDescriber"/>.
@@ -52,6 +54,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         public void AddParent(Type type) {
+            Util.AssertCurrentlyStartingUp();
             InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
             if (A.Parents == null) {
                 A.Parents = new Type[] { type }; return;
@@ -296,7 +299,8 @@ namespace AgoRapide.Core {
             }
 
             if (A.AggregationTypes == null) A.AggregationTypes = new AggregationType[0];
-            if (A.ExpansionTypes == null) A.ExpansionTypes = new Database.ExpansionType[0];
+            if (A.ExpansionTypes == null) A.ExpansionTypes = new ExpansionType[0];
+            if (A.JoinTo == null) A.JoinTo = new Type[0];
 
             if (!A.HasLimitedRangeIsSet) {
                 if (

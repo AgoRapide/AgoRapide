@@ -655,8 +655,10 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) => _childPropertiesCache.GetOrAdd(type, t =>
-            PropertyKeyMapper.AllCoreP.Where(key => key.Key.IsParentFor(type)).ToDictionary(key => key.Key.CoreP, key => key));
+        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) {
+            PropertyKeyMapper.AssertMapEnumFinalizeHasCompleted(); // This assert is done in order to avoid invalid cache issues if called during startup.
+            return _childPropertiesCache.GetOrAdd(type, t => PropertyKeyMapper.AllCoreP.Where(key => key.Key.HasParentOfType(type)).ToDictionary(key => key.Key.CoreP, key => key));
+        }
 
         private static ConcurrentDictionary<Type, ClassAttribute> _classAttributeCache = new ConcurrentDictionary<Type, ClassAttribute>();
         /// <summary>

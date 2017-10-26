@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using AgoRapide;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using AgoRapide.Database;
 
@@ -289,7 +290,7 @@ namespace AgoRapide.Core {
         /// 
         /// Note how <see cref="PropertyKeyAttributeEnriched.Initialize"/> will set this automatically for boolean and enum. 
         /// 
-        /// Note how <see cref="BaseInjector.CalculateForeignKeyAggregates"/> actually sets this dynamically also (at first use of the relevant key). 
+        /// Note how <see cref="PropertyKeyAggregate.CalculateValues"/> actually sets this dynamically also (at first use of the relevant key). 
         /// </summary>
         [ClassMember(
             Description =
@@ -390,7 +391,10 @@ namespace AgoRapide.Core {
         /// <summary>
         /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.
         /// </summary>
-        [ClassMember(Description = "List of aggregations desired for -" + nameof(Type) + "- like -" + nameof(AggregationType.Count) + "- or -" + nameof(AggregationType.Sum) + "-.")]
+        [ClassMember(Description =
+            "List of aggregations desired for -" + nameof(Type) + "- " +
+            "like -" + nameof(AggregationType.Count) + "- or -" + nameof(AggregationType.Sum) + "-.\r\n" +
+            "See also -" + nameof(PropertyKeyAggregate) + "-.")]
         public AggregationType[] AggregationTypes;
 
         /// <summary>
@@ -402,13 +406,17 @@ namespace AgoRapide.Core {
         /// Often relevant when <see cref="Type"/> is <see cref="DateTime"/>
         /// 
         /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.
+        /// 
+        /// See also <see cref="PropertyKeyExpansion"/>
         /// </summary>
-        [ClassMember(Description = "List of expansions desired for -" + nameof(Type) + "- like -" + nameof(ExpansionType.DateAgeDays) + "- or -" + nameof(ExpansionType.DateYearQuarter) + "-.")]
+        [ClassMember(Description =
+            "List of expansions desired for -" + nameof(Type) + "- " +
+            "like -" + nameof(ExpansionType.DateAgeDays) + "- or -" + nameof(ExpansionType.DateYearQuarter) + "-.\r\n" +
+            "See also -" + nameof(PropertyKeyExpansion) + "-."
+        )]
         public ExpansionType[] ExpansionTypes;
 
         /// <summary>
-        /// Describes entities for which this property is used.
-        /// 
         /// Typical example for an enum like P would be:
         /// public enum P {
         ///   ...
@@ -423,7 +431,26 @@ namespace AgoRapide.Core {
         /// <see cref="BaseEntity.GetExistingProperties"/> (through <see cref="Extensions.GetChildPropertiesForAccessLevel"/>) 
         /// will take into account these access rights (which default to <see cref="AccessLevel.System"/>. 
         /// </summary>
+        [ClassMember(Description = "Describes entities for which this property is part of.")]
         public Type[] Parents { get; set; }
+
+        /// <summary>
+        /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.
+        /// </summary>
+        [ClassMember(Description =
+            "List of entity types for which this property is to be copied into " +
+            "like Customer.Name being copied into Order.\r\n" +
+            "See also -" + nameof(PropertyKeyJoinTo) + "-."
+        )]
+        public Type[] JoinTo { get; set; }
+
+        private ConcurrentDictionary<Type, bool> _isJoinToCache = new ConcurrentDictionary<Type, bool>();
+        /// <summary>
+        /// True if this key should be copied to the given entity.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public bool IsJoinToFor(Type type) => _isJoinToCache.GetOrAdd(type, t => JoinTo.Any(p => p.IsAssignableFrom(t)));
 
         /// <summary>
         /// TODO: Implement so that may also be given for Type string (string will be converted to int, and checked for value. Useful for postal codes)

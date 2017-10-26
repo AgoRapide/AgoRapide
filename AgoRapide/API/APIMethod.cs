@@ -194,13 +194,13 @@ namespace AgoRapide.API {
                     _entityType = s.Type;
                 } else if (s.Parameter != null) {
                     var p = s.Parameter.Key;
-                    if (p.A.Parents != null && EntityType != null && !p.IsParentFor(EntityType)) throw new MethodInitialisationException(
+                    if (p.A.Parents != null && EntityType != null && !p.HasParentOfType(EntityType)) throw new MethodInitialisationException(
                             "Incompatible types given for " +
                             p.GetType().ToString() + "-segment (" + EntityType + ") and " +
                             typeof(CoreP).ToString() + "." + p.CoreP.ToString() + " (" + p.A.Parents + ")\r\n" +
                             "You can not have " + typeof(CoreP).ToString() + "." + p.CoreP + " " +
                             "as parameter for operations involving entities of type " + EntityType + " " +
-                            "because !" + nameof(p.IsParentFor) + "(" + EntityType + ")" + detailer2());
+                            "because !" + nameof(p.HasParentOfType) + "(" + EntityType + ")" + detailer2());
 
                     if (restParameters.Count == 0) throw new MethodInitialisationException(
                         "Too few parameters defined in source code.\r\n" +
