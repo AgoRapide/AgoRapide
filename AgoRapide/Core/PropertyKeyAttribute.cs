@@ -600,7 +600,8 @@ namespace AgoRapide.Core {
 
             if (AggregationTypes == null) {
                 AggregationTypes = other.AggregationTypes;
-            } else if (other.AggregationTypes == null) { // No changes
+            } else if (other.AggregationTypes == null) { 
+                // No changes
             } else { // Merge both lists
                 var temp = AggregationTypes.ToList();
                 temp.AddRange(other.AggregationTypes.Where(o => !temp.Any(p => p == o)).ToList());
@@ -609,7 +610,8 @@ namespace AgoRapide.Core {
 
             if (ExpansionTypes == null) {
                 ExpansionTypes = other.ExpansionTypes;
-            } else if (other.ExpansionTypes == null) { // No changes
+            } else if (other.ExpansionTypes == null) { 
+                // No changes
             } else { // Merge both lists
                 var temp = ExpansionTypes.ToList();
                 temp.AddRange(other.ExpansionTypes.Where(o => !temp.Any(p => p == o)).ToList());

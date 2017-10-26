@@ -155,13 +155,15 @@ namespace AgoRapide.Core {
                     _fromStringMaps[e + "CorrespondingInternalKey"] = correspondingInternalKey;
                 }
 
-                if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later in <see cref="AddA"/>)
-                    a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
-                        a.Key.A.Parents.ToList().ForEach(parent => {
-                            var dummy = AggregationKey.Get(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
-                        });
-                    });
-                }
+                /// Code moved into <see cref="MapEnumFinalize"/> as code below results in <see cref="_cache"/> being indexed before it is populated
+                //if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later in <see cref="AddA"/>)
+                //    a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
+                //        a.Key.A.Parents.ToList().ForEach(parent => {
+                //            var dummy = AggregationKey.Get(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
+                //        });
+                //    });
+                //}
+
                 var test = a.Key.A.EnumValueExplained;
             });
             mapOrders.Add(typeof(T));
@@ -198,6 +200,18 @@ namespace AgoRapide.Core {
                     _fromStringMaps.GetValue(e.ToString(), () => nameof(o) + ": " + o)
                 );
                 _cache[o] = dict;
+
+                /// Code moved here from <see cref="MapEnum"/> as code below results in <see cref="_cache"/> being indexed (there we must wait until its population above).
+                dict.Values.ForEach(a => { // TODO: The rationale for creating these keys at all is a bit unclear as of Oct 2017.
+                    if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later on in <see cref="AddA"/>)
+                        a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
+                            a.Key.A.Parents.ToList().ForEach(parent => {
+                                var dummy = AggregationKey.Get(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
+                            });
+                        });
+                    }
+                });
+
             });
             var enumMapForCoreP = _cache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
 

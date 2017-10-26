@@ -9,7 +9,10 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
-    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
+    [Enum(
+        AgoRapideEnumType = EnumType.EnumValue,
+        Description = "Used by -" + nameof(PropertyKeyAggregate) + "- and -" + nameof(AggregationKey) + "-."
+    )]
     public enum AggregationType {
         None,
         Count,

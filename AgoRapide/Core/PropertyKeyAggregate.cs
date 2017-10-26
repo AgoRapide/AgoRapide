@@ -67,12 +67,12 @@ namespace AgoRapide.Core {
             Description = "Calculates the actual aggregates based on keys returned by -" + nameof(GetKeys) + "-.",
             LongDescription = "Example: If we have Persons and Projects and every Project has a foreign key LeaderPersonId, then this method will aggregate Count_ProjectLeaderPersonid for every Person.")]
         public static void CalculateValues(Type type, List<BaseEntity> entities) => type.GetChildProperties().Values.Select(key => key as PropertyKeyAggregate).Where(key => key != null).ForEach(key => {
-            var hasLimitedRange = true; var valuesFound = new HashSet<long>();
+            var hasLimitedRange = true; var valuesFound = new HashSet<long>(); // TODO: Support other types of aggregations.
 
             /// Build index in order to avoid O(n^2) situation.
             var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
             InMemoryCache.EntityCache.Values.
-                Where(e => key.SourceEntityType.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order no to repeat queries like this:
+                Where(e => key.SourceEntityType.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order not to repeat queries like this:
                 ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
                     if (e.Properties.TryGetValue(key.ForeignKeyProperty.Key.CoreP, out var p)) {
                         var foreignKeyValue = p.V<long>();
@@ -86,25 +86,32 @@ namespace AgoRapide.Core {
                 // TODO: Note potential repeated calculations of sourceEntities here. We could have used LINQ GroupBy, but would then have to
                 // TODO: take into account that the ForeignKeyProperty may actually also vary, not only the SourceEntityType
                 var sourceEntities = toEntitiesIndex.TryGetValue(e.Id, out var temp) ? temp : new List<BaseEntity>();
-
+                
+                long av; // Note how long is the preferred type for aggregations. 
+                // TODO: Support other types of aggregations.
                 if (key.ForeignKeyProperty.Key.CoreP == key.SourceProperty.Key.CoreP) {
                     if (key.AggregationType != AggregationType.Count) throw new InvalidEnumException(key.AggregationType, "Because " + nameof(key.ForeignKeyProperty));
 
-                    var av = (long)sourceEntities.Count;
-                    e.AddProperty(key, av); // Note cast since long is the preferred type for aggregations. 
-
-                    if (!valuesFound.Contains(av)) {
-                        // TOOD: TURN LIMIT OF 30 INTO A CONFIGURATION-PARAMETER
-                        // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
-                        if (valuesFound.Count >= 30) { // Note how we allow up to 30 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
-                            // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
-                            hasLimitedRange = false;
-                        } else {
-                            valuesFound.Add(av);
-                        }
-                    }
+                    av = sourceEntities.Count; 
                 } else {
-                    throw new NotImplementedException(key.SourceProperty.Key.PToString);
+                    switch (key.AggregationType) {
+                        case AggregationType.Sum:
+                            InvalidTypeException.AssertEquals(key.Key.A.Type, typeof(long), () => key.ToString());
+                            av = sourceEntities.Aggregate(0L, (acc, se) => acc + se.PV<long>(key.SourceProperty, 0)); break;
+                        default: throw new NotImplementedException(key.SourceProperty.Key.PToString + " " + key.AggregationType + " for " + key.Key.A.Parents);
+                    }
+                }
+                e.AddProperty(key, av);
+
+                if (!valuesFound.Contains(av)) {
+                    // TOOD: TURN LIMIT OF 30 INTO A CONFIGURATION-PARAMETER
+                    // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
+                    if (valuesFound.Count >= 30) { // Note how we allow up to 30 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
+                                                   // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
+                        hasLimitedRange = false;
+                    } else {
+                        valuesFound.Add(av);
+                    }
                 }
             });
             key.Key.A.HasLimitedRange = hasLimitedRange; /// If TRUE then important discovery making it possible for <see cref="Result.CreateDrillDownUrls"/> to make more suggestions.
@@ -133,8 +140,10 @@ namespace AgoRapide.Core {
 
                             // Added 14 Sep 2017. May have to relax a bit here though. 
                             InvalidTypeException.AssertEquals(fp.Key.A.Type, typeof(long), () => "Details: " + fp.ToString());
-
-                            var aggregationTypes = k.Key.A.AggregationTypes.ToList();
+                            //if (fp.Key.PToString.Equals("VismaOrderLineValueWithCosts")) {
+                            //    var a = 1;
+                            //}
+                            var aggregationTypes = fp.Key.A.AggregationTypes.ToList();
                             if (fp.Key.CoreP == k.Key.CoreP && !aggregationTypes.Contains(AggregationType.Count)) aggregationTypes.Add(AggregationType.Count); // Always count number of foreign entities
                             aggregationTypes.ForEach(a => {
                                 var foreignKeyAggregateKey = new PropertyKeyAggregate(
