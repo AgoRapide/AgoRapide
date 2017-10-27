@@ -54,8 +54,9 @@ namespace AgoRapide.Core {
                     return; // Foreign key does not exist for this entity (for instance like Customer does not exist for Order). Ignore.
                 }
                 var sourceEntity = InMemoryCache.EntityCache.GetValue(foreignKey, () => "Attempting to find " + key.Key.PToString + " for " + e.ToString());
-                var value = sourceEntity.PV<string>(key.SourceProperty);  // NOTE HOW WE USE string ALWAYS AS TYPE HERE
-                e.AddProperty(key, value);                                // NOTE HOW WE USE string ALWAYS AS TYPE HERE
+                if (sourceEntity.TryGetPV(key.SourceProperty, out string value)) {  // NOTE HOW WE USE string ALWAYS AS TYPE HERE
+                    e.AddProperty(key, value);                                      // NOTE HOW WE USE string ALWAYS AS TYPE HERE
+                }
             });
         });
 

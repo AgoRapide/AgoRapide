@@ -91,7 +91,7 @@ namespace AgoRapide.API {
                                 entitiesToShowAsHTML.Add(thisTypeSorted[i]);
                                 i += r.Next((int)step) + 1;
                             }
-                            retval.AppendLine("<p" +
+                            retval.AppendLine("<p " +
                                 "style=\"color:red\"" +  // It is very important to emphasize this
                                 ">" + "NOTE: Limited selection shown.".HTMLEncloseWithinTooltip(
                                     "Too many entities for HTML-view (" + originalCount + "), " +
