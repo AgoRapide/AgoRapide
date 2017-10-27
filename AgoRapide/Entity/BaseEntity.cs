@@ -205,12 +205,25 @@ namespace AgoRapide {
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
+        /// 
+        /// NOTE: Use overload <see cref="PV{T}(PropertyKey, Func{T})"/> instead of <see cref="PV{T}(PropertyKey, T)"/> if default value is expensive to calculate and seldom used
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
         public T PV<T>(PropertyKey key, T defaultValue) => TryGetPV(key, out T retval) ? retval : defaultValue;
+
+        /// <summary>
+        /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValueGetter"/> if that fails.
+        /// 
+        /// NOTE: Use overload <see cref="PV{T}(PropertyKey, Func{T})"/> instead of <see cref="PV{T}(PropertyKey, T)"/> if default value is expensive to calculate and seldom used
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="key"></param>
+        /// <param name="defaultValueGetter"></param>
+        /// <returns></returns>
+        public T PV<T>(PropertyKey key, Func<T> defaultValueGetter) => TryGetPV(key, out T retval) ? retval : defaultValueGetter();
 
         /// <summary>
         /// Convenience method making it possible to call 

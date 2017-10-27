@@ -93,9 +93,7 @@ namespace AgoRapide.Core {
                                 jp,
                                 new PropertyKeyAttributeEnrichedDyn(
                                     new PropertyKeyAttribute(
-                                            property: (
-                                                p.ToStringVeryShort() + "_" + jp.Key.PToString). // Note "." would be better than "_" for delimiting entity type with field name because that would be more SQL-like
-                                                Replace(p.ToStringVeryShort() + "_" + p.ToStringVeryShort(), p.ToStringVeryShort() + "_"), // This replace will turn for instance Customer_CustomerName into CustomerName
+                                            property: GetKeyName(p, jp),
                                             description: "-" + jp.Key.PToString + "- copied from -" + k.Key.A.ForeignKeyOf.ToStringVeryShort() + "- to -" + p.ToStringVeryShort() + "-.)",
                                             longDescription: "",
                                             isMany: false
@@ -121,5 +119,9 @@ namespace AgoRapide.Core {
             });
             return retval;
         }
+
+        public static string GetKeyName(Type joinedToParent, PropertyKey joinToProperty) =>
+            (joinedToParent.ToStringVeryShort() + "_" + joinToProperty.Key.PToString). // Note "." would be better than "_" for delimiting entity type with field name because that would be more SQL-like
+            Replace(joinedToParent.ToStringVeryShort() + "_" + joinedToParent.ToStringVeryShort(), joinedToParent.ToStringVeryShort() + "_"); // This replace will turn for instance Customer_CustomerName into CustomerName
     }
 }

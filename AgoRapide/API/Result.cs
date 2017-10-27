@@ -92,7 +92,7 @@ namespace AgoRapide.API {
                                 i += r.Next((int)step) + 1;
                             }
                             retval.AppendLine("<p" +
-                                // "style=\"color:red\"" +  This is most probably only a distraction
+                                "style=\"color:red\"" +  // It is very important to emphasize this
                                 ">" + "NOTE: Limited selection shown.".HTMLEncloseWithinTooltip(
                                     "Too many entities for HTML-view (" + originalCount + "), " +
                                     "showing approximately " + max + " entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ".\r\n" +
