@@ -1088,7 +1088,7 @@ CREATE INDEX " + _tableName + @"_" + DBField.invalid + @"_is_null
 CREATE INDEX " + _tableName + "_" + DBField.pid + @"
   ON public." + _tableName + @"
   USING btree
-  (" + DBField.pid + @")
+  (" + DBField.pid + @");
 
 ALTER TABLE " + SEQUENCE_NAME + @"
 OWNER TO " + _objectsOwner + @";
