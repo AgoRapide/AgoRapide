@@ -28,7 +28,7 @@ namespace AgoRapide.Core {
             "Calls to this method will often have no effect. " +
             "See comment for -" + nameof(LogEvent) + "-. " +
             "See instead overload with -" + nameof(BaseEntityWithLogAndCount) + "- parameter.")]
-        protected void Log(string text, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogEvent?.Invoke(GetType().ToStringShort() + "." + caller + ": " + text);
+        protected virtual void Log(string text, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") => LogEvent?.Invoke(GetType().ToStringShort() + "." + caller + ": " + text);
 
         /// <summary>
         /// </summary>
@@ -36,7 +36,7 @@ namespace AgoRapide.Core {
         /// <param name="result">Often an instance of <see cref="Result"/></param>
         /// <param name="caller"></param>
         [ClassMember(Description = "Logs both \"ordinary\" through -" + nameof(LogEvent) + "- and \"internally\" through -" + nameof(BaseEntityWithLogAndCount.LogInternal) + "-.")]
-        protected void Log(string text, BaseEntityWithLogAndCount result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
+        protected virtual void Log(string text, BaseEntityWithLogAndCount result, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
             Log(text, caller);
             result?.LogInternal(text, GetType(), caller);
         }
@@ -46,6 +46,6 @@ namespace AgoRapide.Core {
             "See -" + nameof(BaseController) + "-.-" + nameof(BaseController.HandledExceptionEvent) + "- for documentation. "
         )]
         public event Action<Exception> HandledExceptionEvent;
-        public void HandleException(Exception ex) => HandledExceptionEvent?.Invoke(ex);
+        public virtual void HandleException(Exception ex) => HandledExceptionEvent?.Invoke(ex);
     }
 }
