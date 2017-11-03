@@ -263,7 +263,7 @@ namespace AgoRapide {
             return new Property(dummy: null) {
                 IsIsManyParent = true,
                 _key = strictKey,
-                Properties = new Dictionary<CoreP, Property>()
+                Properties = new  ConcurrentDictionary<CoreP, Property>()
             };
         }
 

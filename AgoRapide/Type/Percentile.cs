@@ -132,7 +132,9 @@ namespace AgoRapide {
         /// <param name="type"></param>
         /// <param name="entities"></param>
         /// <param name="db">TODO: REMOVE, NOT NEEDED</param>
-        public static void Calculate(Type type, List<BaseEntity> entities, BaseDatabase db) => type.GetChildProperties().Values.Where(key => key.Key.A.IsSuitableForPercentileCalculation).ForEach(key => {
+        public static void Calculate(Type type, List<BaseEntity> entities, BaseDatabase db) => 
+            // Introduced Parallel.ForEach 3 Nov 2017
+            Parallel.ForEach(type.GetChildProperties().Values.Where(key => key.Key.A.IsSuitableForPercentileCalculation), key => {
             Calculate(type, entities, key);
         });
 

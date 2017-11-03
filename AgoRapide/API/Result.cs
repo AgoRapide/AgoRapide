@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -313,11 +314,14 @@ namespace AgoRapide.API {
         /// <summary>
         /// Extracts all distinct values 
         /// 
+        /// Result is <see cref="ConcurrentDictionary{TKey, TValue}"/> instead of <see cref="Dictionary{TKey, TValue}"/> because code 
+        /// executes in parallell.
+        /// 
         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
         /// </summary>
         /// <param name="entities">Alle objects are required to be of an identical type</param>
         /// <returns></returns>
-        public static Dictionary<
+        public static ConcurrentDictionary<
                 CoreP,
                 Dictionary<
                     Operator,
@@ -328,7 +332,7 @@ namespace AgoRapide.API {
                 >
              > CreateDrillDownUrls(Type type, IEnumerable<BaseEntity> entities) {
 
-            var retval = new Dictionary<
+            var retval = new ConcurrentDictionary<
                 CoreP,
                 Dictionary<
                     Operator,
@@ -344,13 +348,21 @@ namespace AgoRapide.API {
 
             /// Note how this code (in <see cref="Result.CreateDrillDownUrls"/>) only gives suggestions for existing values.
             /// If we want to implement some kind of surveillance (for what-if scenarios) we would also need to know all possible values in advance. 
-            type.GetChildProperties().Values.ForEach(key => { // Note how only properties explicitly defined for this type of entity are considered. 
+
+            //// For some information about parallellism see:
+            ///// http://download.microsoft.com/download/B/C/F/BCFD4868-1354-45E3-B71B-B851CD78733D/WhenToUseParallelForEachOrPLINQ.pdf
+
+            // NOTE: Inefficient / not working attempt at parallel execution.
+            //type.GetChildProperties().Values.
+            //    // AsParallel(). // NOTE: This was a naïve attempt of parallel exection, it has no effect.
+            //    ForEach(key => {
+            
+            // NOTE: The level of parallelization here is quite coarse.
+            // NOTE: If for instance a given type has only one child property that is computationaly expensive, then
+            // NOTE: the parallelization here would have no little effect.
+            Parallel.ForEach(type.GetChildProperties().Values, key => { // Added use of Parallel.ForEach 3 Nov 2017.
 
                 if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
-
-                if (key.Key.PToString.Equals("VismaProduct_Count_VismaOrderLine_ProductId")) {
-                    var a = 1;
-                }
 
                 List<(object, string)> objStrValues;
 

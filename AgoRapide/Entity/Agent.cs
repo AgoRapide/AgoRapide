@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent ;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace AgoRapide {
         /// <see cref="IStaticProperties.GetStaticProperties"/>
         /// </summary>
         /// <returns></returns>
-        public abstract Dictionary<CoreP, Property> GetStaticProperties();
+        public abstract ConcurrentDictionary<CoreP, Property> GetStaticProperties();
     }
 
     /// <summary>
@@ -47,6 +48,6 @@ namespace AgoRapide {
     /// </summary>
     public interface IStaticProperties {
         [ClassMember(Description = "Usually added by -" + nameof(BaseDatabase.TryGetEntityById) + "-.")]
-        Dictionary<CoreP, Property> GetStaticProperties();
+        ConcurrentDictionary<CoreP, Property> GetStaticProperties();
     }
 }

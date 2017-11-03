@@ -139,19 +139,35 @@ namespace AgoRapide {
             }
         }
 
+        private static Type[] _sourceTypes;
         /// <summary>
-        /// TODO: REPLACE WITH ONE-TIME INITIALIZATION AT APPLICATION STARTUP
+        /// Returns either type of <see cref="DateTime"/> or type of <see cref="TimeSpan"/>.
+        /// (throws <see cref="InvalidEnumException"/> for <see cref="ExpansionType.None"/>)
         /// </summary>
         /// <param name="expansionType"></param>
         /// <returns></returns>
         public static Type ToSourceType(this ExpansionType expansionType) {
-            if (expansionType.ToString().StartsWith("Date")) {
-                return typeof(DateTime);
-            } else if (expansionType.ToString().StartsWith("TimeSpan")) {
-                return typeof(TimeSpan);
-            } else {
-                throw new InvalidEnumException(expansionType);
-            }
+            if (_sourceTypes == null) _sourceTypes = new Func<Type[]>(() => { // NOTE: Method is really a bit over-engineered (but quite performant)
+                var expansionTypes = Util.EnumGetValues((ExpansionType)(-1)); // Include .None
+                var retval = new Type[expansionTypes.Count];
+                expansionTypes.ForEach(e => {
+                    var i = (int)e;
+                    if (i >= retval.Length) throw new InvalidEnumException(e, "Invalid index (" + i + ") for " + nameof(ExpansionType) + "." + e + ". Possible cause: Integer values specified in enum declaration.");
+                    if (e == ExpansionType.None) {
+                        retval[i] = null;
+                    } else if (e.ToString().StartsWith("Date")) {
+                        retval[i] = typeof(DateTime);
+                    } else if (e.ToString().StartsWith("TimeSpan")) {
+                        retval[i] = typeof(TimeSpan);
+                    } else {
+                        throw new InvalidEnumException(e);
+                    }
+                });
+                return retval;
+            })();
+            var _int = (int)expansionType;
+            if (_int < 0 || _int >= _sourceTypes.Length) throw new InvalidEnumException(expansionType, "Index (" + _int + ") out of range");
+            return _sourceTypes[_int] ?? throw new InvalidEnumException(expansionType); /// Exception would typically happen for <see cref="ExpansionType.None"/>
         }
     }
 }

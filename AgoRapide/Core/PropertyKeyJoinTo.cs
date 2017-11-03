@@ -47,18 +47,20 @@ namespace AgoRapide.Core {
         /// <param name="type"></param>
         /// <param name="entities"></param>
         [ClassMember(Description = "Calculates (or rather copies) properties based on keys returned by -" + nameof(GetKeys) + "-.")]
-        public static void CalculateValues(Type type, List<BaseEntity> entities) => type.GetChildProperties().Values.Select(key => key as PropertyKeyJoinTo).Where(key => key != null).ForEach(key => {
-            entities.ForEach(e => {
-                InvalidObjectTypeException.AssertAssignable(e, type);
-                if (!e.TryGetPV<long>(key.ForeignKeyProperty, out var foreignKey)) {
-                    return; // Foreign key does not exist for this entity (for instance like Customer does not exist for Order). Ignore.
-                }
-                var sourceEntity = InMemoryCache.EntityCache.GetValue(foreignKey, () => "Attempting to find " + key.Key.PToString + " for " + e.ToString());
-                if (sourceEntity.TryGetPV(key.SourceProperty, out string value)) {  // NOTE HOW WE USE string ALWAYS AS TYPE HERE
-                    e.AddProperty(key, value);                                      // NOTE HOW WE USE string ALWAYS AS TYPE HERE
-                }
+        public static void CalculateValues(Type type, List<BaseEntity> entities) =>
+            // Introduced Parallel.ForEach 3 Nov 2017
+            Parallel.ForEach(type.GetChildProperties().Values.Select(key => key as PropertyKeyJoinTo).Where(key => key != null), key => {
+                entities.ForEach(e => {
+                    InvalidObjectTypeException.AssertAssignable(e, type);
+                    if (!e.TryGetPV<long>(key.ForeignKeyProperty, out var foreignKey)) {
+                        return; // Foreign key does not exist for this entity (for instance like Customer does not exist for Order). Ignore.
+                    }
+                    var sourceEntity = InMemoryCache.EntityCache.GetValue(foreignKey, () => "Attempting to find " + key.Key.PToString + " for " + e.ToString());
+                    if (sourceEntity.TryGetPV(key.SourceProperty, out string value)) {  // NOTE HOW WE USE string ALWAYS AS TYPE HERE
+                        e.AddProperty(key, value);                                      // NOTE HOW WE USE string ALWAYS AS TYPE HERE
+                    }
+                });
             });
-        });
 
         /// <summary>
         /// Called from <see cref="PropertyKeyMapper.MapEnumFinalize"/>

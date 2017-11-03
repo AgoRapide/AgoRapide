@@ -190,6 +190,7 @@ namespace AgoRapide.Database {
                     /// therefore we have now through <see cref="_synchronizedTypesInternal"/> opened up for these recursive calls to return immediately, 
                     /// while we are still locking out other threads until we are completely finished)
 
+                    /// TODO: Move this code into <see cref="BaseInjector"/>
                     types.ForEach(st => {
                         /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
                         var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
@@ -204,11 +205,15 @@ namespace AgoRapide.Database {
                         PropertyKeyJoinTo.CalculateValues(st, entities);
                     });
 
+                    /// TODO: Move this code into <see cref="BaseInjector"/>
+                
                     /// TODO: Call all other Injector-classes relevant for this universe.
                     /// TODO: To be decided how to organise this. 
                     /// TODO: Store the types in Synchronizer maybe?
                     Log("Calling " + nameof(BaseSynchronizer.Inject) + " for " + s.IdFriendly);
                     s.Inject(db); // TODO: Will search for entities like already done here!
+
+                    /// TODO: Move this code into <see cref="BaseInjector"/>
 
                     types.ForEach(st => {
                         /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>

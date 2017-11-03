@@ -807,8 +807,7 @@ namespace AgoRapide.API {
                     return new Id(
                         idString: new QueryIdString(MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + MA.CoreMethod.ToString()),
                         idFriendly: RouteTemplates[0],
-                        idDoc: new List<string> { RouteTemplates[0]
-} // Most probably little useful
+                        idDoc: new List<string> { RouteTemplates[0] } // Most probably little useful
                     );
                 default:
                     return new Id(
@@ -846,7 +845,7 @@ namespace AgoRapide.API {
 
             method.A.AssertToBeUsed();
 
-            if (method.Properties == null) method.Properties = new Dictionary<CoreP, Property>();
+            if (method.Properties == null) method.Properties = new ConcurrentDictionary<CoreP, Property>();
 
             void updater<T>(PropertyKey key, T value) { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
                 db.UpdateProperty(cid, method, key, value, result: null);

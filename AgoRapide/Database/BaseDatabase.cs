@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -243,7 +244,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="parentProperty"></param>
         /// <returns></returns>
-        public abstract Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
+        public abstract ConcurrentDictionary<CoreP, Property> GetChildProperties(Property parentProperty);
 
         public Property GetPropertyById(long id) => TryGetPropertyById(id, out var retval) ? retval : throw new PropertyNotFoundException(id);
         public abstract bool TryGetPropertyById(long id, out Property property);
@@ -371,9 +372,9 @@ namespace AgoRapide.Database {
         /// <see cref="OperateOnProperty"/> should be called with <see cref="PropertyOperation.SetInvalid"/> for these by calling method. 
         /// </param>
         /// <returns></returns>
-        protected Dictionary<CoreP, Property> OrderIntoIntoBaseEntityPropertiesCollection(List<Property> properties, out List<Property> noLongerCurrent) {
+        protected ConcurrentDictionary<CoreP, Property> OrderIntoIntoBaseEntityPropertiesCollection(List<Property> properties, out List<Property> noLongerCurrent) {
             noLongerCurrent = new List<Property>();
-            var retval = new Dictionary<CoreP, Property>();
+            var retval = new ConcurrentDictionary<CoreP, Property>();
             foreach (var p in properties) {
                 var test = p.Key; /// Check that <see cref="Property.KeyDB"/> parses correctly. 
                 if (p.Key.Key.A.IsMany) {
@@ -411,7 +412,7 @@ namespace AgoRapide.Database {
         /// <param name="root"></param>
         /// <param name="properties">May be null (typical for <paramref name="requiredType"/> = <see cref="Property"/>)</param>
         /// <returns></returns>
-        protected BaseEntity CreateEntityInMemory(Type requiredType, Property root, Dictionary<CoreP, Property> properties) {
+        protected BaseEntity CreateEntityInMemory(Type requiredType, Property root,  ConcurrentDictionary<CoreP, Property> properties) {
             BaseEntity retval = null;
             var addProperties = new Action(() => {
                 if (properties == null) return;

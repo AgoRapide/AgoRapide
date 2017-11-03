@@ -33,7 +33,7 @@ namespace AgoRapide {
     )]
     public abstract class BaseEntityWithLogAndCount : BaseEntity {
 
-        public BaseEntityWithLogAndCount() => Properties = new Dictionary<CoreP, Property>(); // TODO: Initialize more deterministically for the different classes.
+        public BaseEntityWithLogAndCount() => Properties = new ConcurrentDictionary<CoreP, Property>(); // TODO: Initialize more deterministically for the different classes.
         
         [ClassMember(Description = "In-memory only logging (often used for short-lived logging like with -" + nameof(Result) + "-).")]
         public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
