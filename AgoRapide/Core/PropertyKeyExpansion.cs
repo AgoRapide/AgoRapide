@@ -63,7 +63,8 @@ namespace AgoRapide.Core {
                 if (e.Properties.TryGetValue(key.SourceProperty.Key.CoreP, out var sourceProperty)) {
                     string strValue;
 
-                    if (typeof(DateTime).Equals(key.ExpansionType.ToSourceType())) {
+                    var sourceType = key.ExpansionType.ToSourceType();
+                    if (typeof(DateTime).Equals(sourceType)) {
                         var dtmValue = sourceProperty.V<DateTime>();
                         switch (key.ExpansionType) { /// Note how AddProperty generic type now chosen must correspond to <see cref="ExpansionTypeE.ToExpandedType"/>
                             case ExpansionType.DateYear: { var v = (long)dtmValue.Year; strValue = v.ToString(); e.AddProperty(key, v); break; }
@@ -81,18 +82,18 @@ namespace AgoRapide.Core {
                             case ExpansionType.DateAgeYears: { var v = (long)(now.Subtract(dtmValue).TotalDays / 365); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             default: throw new InvalidEnumException(key.ExpansionType);
                         }
-                    } else if (typeof(TimeSpan).Equals(key.ExpansionType.ToSourceType())) {
+                    } else if (typeof(TimeSpan).Equals(sourceType)) {
                         var tspValue = sourceProperty.V<TimeSpan>();
                         switch (key.ExpansionType) { /// Note how AddProperty generic type now chosen must correspond to <see cref="ExpansionTypeE.ToExpandedType"/>
-                            case ExpansionType.TimeSpanHours: { var v = (long)(tspValue.TotalHours + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            case ExpansionType.TimeSpanDays: { var v = (long)(tspValue.TotalDays + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            case ExpansionType.TimeSpanWeeks: { var v = (long)((tspValue.TotalDays / 7) + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            case ExpansionType.TimeSpanMonths: { var v = (long)((tspValue.TotalDays / 30) + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
-                            case ExpansionType.TimeSpanYears: { var v = (long)((tspValue.TotalDays / 365) + .5); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanHours: { var v = (long)(tspValue.TotalHours); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanDays: { var v = (long)(tspValue.TotalDays); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanWeeks: { var v = (long)((tspValue.TotalDays / 7)); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanMonths: { var v = (long)((tspValue.TotalDays / 30)); strValue = v.ToString(); e.AddProperty(key, v); break; }
+                            case ExpansionType.TimeSpanYears: { var v = (long)((tspValue.TotalDays / 365)); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             default: throw new InvalidEnumException(key.ExpansionType);
                         }
                     } else {
-                        throw new InvalidTypeException(key.ExpansionType.ToSourceType(), nameof(key.ExpansionType) + ": " + key.ExpansionType);
+                        throw new InvalidTypeException(sourceType, nameof(key.ExpansionType) + ": " + key.ExpansionType);
                     }
                     if (!valuesFound.Contains(strValue)) {
                         // TOOD: TURN LIMIT OF 20 INTO A CONFIGURATION-PARAMETER

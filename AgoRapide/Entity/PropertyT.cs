@@ -77,9 +77,10 @@ namespace AgoRapide {
                 // switch (value) // Wondering why we can not switch on value directly? See http://stackoverflow.com/questions/41436399/expression-of-type-t-cannot-be-handled-by-a-pattern-of-type-x
                 var objValue = (object)value;
                 switch (objValue) {
-                    case double dblValue: return dblValue.ToString2();
-                    case DateTime dtmValue: return dtmValue.ToString(key.Key.A.DateTimeFormat); /// Correction 22 Sep 2017 (instead of always using <see cref="DateTimeFormat.DateHourMin"/>)
-                    case Type type: return type.ToStringDB(); // Added 12 Jun 2017
+                    case double v: return v.ToString2();
+                    case DateTime v: return v.ToString(key.Key.A.DateTimeFormat); /// Correction 22 Sep 2017 (instead of always using <see cref="DateTimeFormat.DateHourMin"/>)
+                    case TimeSpan v: return v.TotalHours < 24 ? v.ToString(@"hh\:mm\:ss") : v.ToString(@"d\.hh\:mm\:ss"); /// Note corresponding code in <see cref="PropertyT{T}.PropertyT"/> and <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+                    case Type v: return v.ToStringDB(); // Added 12 Jun 2017
                     default: return objValue.ToString();
                 }
             })();

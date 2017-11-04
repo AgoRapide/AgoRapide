@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,7 +60,7 @@ namespace AgoRapide.Database {
             result.LogInternal("Finished", GetType());
         }
 
-        private Dictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {
+        private ConcurrentDictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {
             result.LogInternal("", GetType());
             var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
             if (PV(SynchronizerP.SynchronizerUseMockData.A(), defaultValue: false)) { // Create mock-data.
@@ -73,7 +74,12 @@ namespace AgoRapide.Database {
                 var maxN = types.ToDictionary(key => key, key => defaultCount);
                 // TOOD: ---------
 
-                return types.ToDictionary(t => t, t => GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+                // return types.ToDictionary(t => t, t => GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+                var r = new ConcurrentDictionary<Type, List<BaseEntity>>();
+                types.ForEach(t => {
+                    r.Add(t, GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+                });
+                return r;
             }
             var retval = SynchronizeInternal(db, result);
             if (retval.Count != types.Count) throw new InvalidCountException(retval.Count, types.Count,
@@ -82,7 +88,7 @@ namespace AgoRapide.Database {
             return retval;
         }
 
-        public abstract Dictionary<Type, List<BaseEntity>> SynchronizeInternal(BaseDatabase db, Result result);
+        public abstract ConcurrentDictionary<Type, List<BaseEntity>> SynchronizeInternal(BaseDatabase db, Result result);
 
         /// <summary>
         /// Reconciles <paramref name="externalEntities"/> of type <paramref name="type"/> 
@@ -163,7 +169,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entities"></param>
         /// <param name="result"></param>
-        public void SynchronizeMapForeignKeys(Dictionary<Type, List<BaseEntity>> entities, Result result) {
+        public void SynchronizeMapForeignKeys(ConcurrentDictionary<Type, List<BaseEntity>> entities, Result result) {
             result.LogInternal("", GetType());
             var foreignPrimaryKeyToPrimaryKeyIndexes = new Dictionary<Type, Dictionary<object, long>>();
             entities.ForEach(e => {

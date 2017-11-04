@@ -401,11 +401,11 @@ namespace AgoRapide.Core {
                         "Must be in one of the following formats:\r\n" +
                         string.Join(", ", validFormats) + "\r\n");
                 } else if (typeof(TimeSpan).Equals(A.Type)) {
-                    ValidatorAndParser = value => TimeSpan.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
-                        "Invalid as " + A.Type + ".\r\n" +
+                    ValidatorAndParser = value => TimeSpan.TryParseExact(value, new string[] { @"hh\:mm\:ss" , @"d\.hh\:mm\:ss" }, System.Globalization.CultureInfo.InvariantCulture, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        Util.BreakpointEnabler + "Invalid as " + A.Type + ".\r\n" +
                         "Must be in one of the following formats:\r\n" +
-                        "HH:mm:ss\r\n");
-                        // string.Join(", ", validFormats) + "\r\n");
+                        "'hh:mm:ss' or 'd.hh:mm:ss'\r\n"); /// Note corresponding code in <see cref="PropertyT{T}.PropertyT"/> and <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+                    // string.Join(", ", validFormats) + "\r\n");
                 } else if (typeof(Type).Equals(A.Type)) {
                     ValidatorAndParser = value => Util.TryGetTypeFromString(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
                         "Invalid as " + A.Type + " (must be in a format understood by " + nameof(Util) + "." + nameof(Util.TryGetTypeFromString) + ").");

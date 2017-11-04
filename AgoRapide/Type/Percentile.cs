@@ -148,7 +148,8 @@ namespace AgoRapide {
             switch (queryid) {
                 case QueryIdAll q:
                     /// Calculate and store directly within <see cref="Property.Percentile"/>
-                    Calculate(type, InMemoryCache.EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(), key); break;
+                    // Calculate(type, InMemoryCache.EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(), key); break;
+                    Calculate(type, InMemoryCache.EntityCacheWhereIs(type), key); break;
                 default:
                     /// TODO: Decide where to store this. 
                     /// TODO: Make a cache with <param name="queryid"/>.ToString() for instance.

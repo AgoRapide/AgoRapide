@@ -47,6 +47,11 @@ namespace AgoRapide.Database {
         [ClassMember(Description = "Cache as relevant for -" + nameof(CacheUse.Dynamic) + "- and -" + nameof(CacheUse.All) + "-.")]
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 
+        private static ConcurrentDictionary<Type, object> _entityCacheWhereIsCacheT = new ConcurrentDictionary<Type, object>();
+        public static List<T> EntityCacheWhereIs<T>() => (List<T>)(_entityCacheWhereIsCacheT.GetOrAdd(typeof(T), t => EntityCacheWhereIs(typeof(T)).Select(e => (T)(object)e).ToList()));
+        private static ConcurrentDictionary<Type, List<BaseEntity>> _entityCacheWhereIsCacheType = new ConcurrentDictionary<Type, List<BaseEntity>>();
+        public static List<BaseEntity> EntityCacheWhereIs(Type type) => _entityCacheWhereIsCacheType.GetOrAdd(type, t => EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList());
+
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
         /// 
@@ -151,34 +156,59 @@ namespace AgoRapide.Database {
                     if (_synchronizedTypesInternal.TryGetValue(t, out _)) return true; // Already done by other call (possible on other thread) within same universe
 
                     var types = s.PV<List<Type>>(SynchronizerP.SynchronizerExternalType.A());
-                    var synchronizerWasCalled = false;
-                    var allEntities = new Dictionary<Type, List<BaseEntity>>();
+                    var allEntities = new ConcurrentDictionary<Type, List<BaseEntity>>();
 
                     var Log = new Action<string>(text => {
                         if (logger == null) return;
                         logger(typeof(InMemoryCache).ToStringVeryShort() + "." + nameof(GetMatchingEntities) + ": " + text);
                     });
-                    foreach (var st in types) {
+
+                    //foreach (var st in types) {
+                    //    Log("Calling " + nameof(FileCache.TryEnrichFromDisk) + " for " + st.ToStringVeryShort());
+                    //    if (FileCache.Instance.TryEnrichFromDisk(s, st, db, out var entities, out _)) { // Note how "result" is ignored. 
+                    //        allEntities.AddValue(st, entities);
+                    //    } else {
+                    //        /// This call can be very time-consuming
+                    //        /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
+                    //        Log("Calling " + nameof(BaseSynchronizer.Synchronize2) + " for " + s.IdFriendly);
+                    //        s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+                    //        synchronizerWasCalled = true;
+
+                    //        /// Now ALL ENTITIES in this synchronizer-"universe" have been place into memory. 
+                    //        /// In other words there is no more work that has to be done in this loop.
+                    //        break;
+                    //    }
+                    //}
+                    //if (synchronizerWasCalled) {
+                    //    / No need for calling < see cref = "BaseSynchronizer.SynchronizeMapForeignKeys" />, because was done as part of < see cref = "BaseSynchronizer.Synchronize2" />
+                    //} else {
+                    //    Log("Calling " + nameof(BaseSynchronizer.SynchronizeMapForeignKeys) + " for " + s.IdFriendly);
+                    //    s.SynchronizeMapForeignKeys(allEntities, new API.Result()); // Note how "result" is ignored. 
+                    //}
+
+                    var tryEnrichFromDiskReturnedFalse = false;
+                    Parallel.ForEach(types, (st, state) => { // NOTE: Parallelization is considered very relevant here because reading from disk entails a lot of in-memory processing (that is, this process is CPU-bound, not disk-bound).
+                        if (state.IsStopped) return; /// This check / signal is almost meaningless for only a few types (more threads than types), because <see cref="FileCache.TryEnrichFromDisk"/> is what is time consuming.
                         Log("Calling " + nameof(FileCache.TryEnrichFromDisk) + " for " + st.ToStringVeryShort());
                         if (FileCache.Instance.TryEnrichFromDisk(s, st, db, out var entities, out _)) { // Note how "result" is ignored. 
                             allEntities.AddValue(st, entities);
                         } else {
-                            /// This call can be very time-consuming
-                            /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
-                            Log("Calling " + nameof(BaseSynchronizer.Synchronize2) + " for " + s.IdFriendly);
-                            s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
-                            synchronizerWasCalled = true;
-
-                            /// Now ALL ENTITIES in this synchronizer-"universe" have been place into memory. 
-                            /// In other words there is no more work that has to be done in this loop.
-                            break;
+                            state.Stop(); /// This check / signal is almost meaningless for only a few types (more threads than types), because <see cref="FileCache.TryEnrichFromDisk"/> is what is time consuming.
+                            tryEnrichFromDiskReturnedFalse = true;
                         }
-                    }
-                    if (synchronizerWasCalled) {
-                        /// No need for calling <see cref="BaseSynchronizer.SynchronizeMapForeignKeys"/>, because was done as part of <see cref="BaseSynchronizer.Synchronize2"/>
-                    } else {
+                    });
+
+                    if (!tryEnrichFromDiskReturnedFalse) {
                         Log("Calling " + nameof(BaseSynchronizer.SynchronizeMapForeignKeys) + " for " + s.IdFriendly);
                         s.SynchronizeMapForeignKeys(allEntities, new API.Result()); // Note how "result" is ignored. 
+                    } else {
+                        /// Note that <see cref="BaseSynchronizer.SynchronizeMapForeignKeys"/> will be called as part of <see cref="BaseSynchronizer.Synchronize2"/>
+                        /// 
+                        /// This call can be very time-consuming
+                        /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
+                        Log("Calling " + nameof(BaseSynchronizer.Synchronize2) + " for " + s.IdFriendly);
+                        s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+                        /// Now ALL ENTITIES in this synchronizer-"universe" have been place into memory. 
                     }
 
                     // Now all keys have been read. Before injection, mark as read (this will stop recursivity)
@@ -192,21 +222,22 @@ namespace AgoRapide.Database {
 
                     /// TODO: Move this code into <see cref="BaseInjector"/>
                     types.ForEach(st => {
-                        /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
-                        var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        ///// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
+                        //var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        var entities = EntityCacheWhereIs(st);
 
                         Log("Calling " + nameof(PropertyKeyExpansion) + "." + nameof(PropertyKeyExpansion.CalculateValues) + " for " + st.ToStringVeryShort());
                         PropertyKeyExpansion.CalculateValues(st, entities); /// Call this first, maybe some if these will also be percentile-evaluated and aggregated over foreign keys below.
 
                         Log("Calling " + nameof(PropertyKeyAggregate) + "." + nameof(PropertyKeyAggregate.CalculateValues) + " for " + st.ToStringVeryShort());
-                        PropertyKeyAggregate.CalculateValues(st, entities); 
+                        PropertyKeyAggregate.CalculateValues(st, entities);
 
                         Log("Calling " + nameof(PropertyKeyJoinTo) + "." + nameof(PropertyKeyJoinTo.CalculateValues) + " for " + st.ToStringVeryShort());
                         PropertyKeyJoinTo.CalculateValues(st, entities);
                     });
 
                     /// TODO: Move this code into <see cref="BaseInjector"/>
-                
+
                     /// TODO: Call all other Injector-classes relevant for this universe.
                     /// TODO: To be decided how to organise this. 
                     /// TODO: Store the types in Synchronizer maybe?
@@ -216,8 +247,9 @@ namespace AgoRapide.Database {
                     /// TODO: Move this code into <see cref="BaseInjector"/>
 
                     types.ForEach(st => {
-                        /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
-                        var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        ///// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
+                        //var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        var entities = EntityCacheWhereIs(st);
 
                         // TOOD. Percentiles should most probably be called multiple times in a sort of iterative process.
                         // TODO: (both before and after injection)
@@ -233,17 +265,16 @@ namespace AgoRapide.Database {
             });
             switch (id) {
                 case QueryIdAll q:
-                    return EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(); // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                    // return EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(); // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                    return EntityCacheWhereIs(type);
                 case QueryIdKeyOperatorValue q:
-                    return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
-                        if (!type.IsAssignableFrom(e.GetType())) return false;
-                        return q.IsMatch(e);
-                    }).ToList();
+                    //return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                    //    if (!type.IsAssignableFrom(e.GetType())) return false;
+                    return EntityCacheWhereIs(type).Where(e => q.IsMatch(e)).ToList();
                 case QueryIdMultiple q:
-                    return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
-                        if (!type.IsAssignableFrom(e.GetType())) return false;
-                        return q.Ids.Any(i => i.IsMatch(e));
-                    }).ToList();
+                    //return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                    //    if (!type.IsAssignableFrom(e.GetType())) return false;
+                    return EntityCacheWhereIs(type).Where(e => q.Ids.Any(i => i.IsMatch(e))).ToList();
                 default:
                     throw new InvalidObjectTypeException(id);
             }
