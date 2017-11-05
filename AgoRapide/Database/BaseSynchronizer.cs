@@ -85,6 +85,7 @@ namespace AgoRapide.Database {
             if (retval.Count != types.Count) throw new InvalidCountException(retval.Count, types.Count,
                 "Found " + retval.KeysAsString() + ", expected " + string.Join(", ", types.Select(t => t.ToStringVeryShort())) + ".\r\n" +
                 "Resolution: Ensure that " + GetType() + "." + nameof(SynchronizeInternal) + " really returns data for all the types given in " + SynchronizerP.SynchronizerExternalType + ".");
+            db.UpdateProperty(Id, this, SynchronizerP.SynchronizerLastUpdate.A(), DateTime.Now);
             return retval;
         }
 
@@ -252,12 +253,12 @@ namespace AgoRapide.Database {
         SynchronizerExternalType,
 
         [PropertyKey(
-            Description = "Last update against source.",
+            Description = "Time of last update against source database (time when last synchronization was performed).",
             Type = typeof(DateTime), DateTimeFormat = DateTimeFormat.DateHourMin,
             Parents = new Type[] { typeof(BaseSynchronizer) },
             AccessLevelRead = AccessLevel.Relation
         )]
-        SynchronizerLastUpdateAgainstSource,
+        SynchronizerLastUpdate,
     }
 
     public static class SynchronizerPExtensions {

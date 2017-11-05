@@ -27,7 +27,7 @@ namespace AgoRapide {
         [ClassMember(Description = "Practical method for both communicating statistics to API client and for storing in database")]
         protected void SetAndStoreCount(PropertyKey key, long value, Result result, BaseDatabase db) {
             result.Count(key.Key.CoreP, value); // This assumes that has not already been counted. 
-            db.UpdateProperty(Id, this, key, value, null); // Keep result itself out of this operation
+            db.UpdateProperty(Id, this, key, value, result: null); // Keep result itself out of this operation
         }
 
         /// <summary>

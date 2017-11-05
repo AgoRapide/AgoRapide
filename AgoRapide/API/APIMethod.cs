@@ -782,7 +782,7 @@ namespace AgoRapide.API {
             var classMembers = ApplicationPart.AllApplicationParts.Where(e => e.Value is ClassMember).Select(e => (ClassMember)e.Value).ToList();
             AllMethods.ForEach(method => {
                 void updater<T>(PropertyKey key, T value) { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
-                    db.UpdateProperty(cid, method, key, value, result: null);
+                    db.UpdateProperty(cid, method, key, value, result: null, SkipSetValid: TimeSpan.FromDays(1)); // Use of SkipSetValid reduces startup time of application, especially useful when developing.
                 }
                 var idFriendly = method.PV<string>(APIMethodP.ImplementatorIdFriendly.A());
                 var implementator = classMembers.FirstOrDefault(c => c.IdFriendly.Equals(idFriendly));
@@ -848,7 +848,7 @@ namespace AgoRapide.API {
             if (method.Properties == null) method.Properties = new ConcurrentDictionary<CoreP, Property>();
 
             void updater<T>(PropertyKey key, T value) { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
-                db.UpdateProperty(cid, method, key, value, result: null);
+                db.UpdateProperty(cid, method, key, value, result: null, SkipSetValid: TimeSpan.FromDays(1)); // Use of SkipSetValid reduces startup time of application, especially useful when developing.
             }
 
             if (method._entityType != null) {
