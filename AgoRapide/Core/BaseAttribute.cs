@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -151,11 +152,11 @@ namespace AgoRapide.Core {
             return new T { IsDefault = true };
         }
 
-        private Dictionary<CoreP, Property> _properties;
+        private ConcurrentDictionary<CoreP, Property> _properties;
         /// <summary>
         /// Returns a <see cref="BaseEntity.Properties"/> collection based on properties of this instance.
         /// </summary>
-        public Dictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<Dictionary<CoreP, Property>>(() => {
+        public ConcurrentDictionary<CoreP, Property> Properties => _properties ?? (_properties = new Func<ConcurrentDictionary<CoreP, Property>>(() => {
             var retval = GetProperties();
             var p = Util.GetNewPropertiesParent();
 
@@ -174,7 +175,7 @@ namespace AgoRapide.Core {
             });
             return retval;
         })());
-        protected virtual Dictionary<CoreP, Property> GetProperties() => new Dictionary<CoreP, Property>();
+        protected virtual ConcurrentDictionary<CoreP, Property> GetProperties() => new ConcurrentDictionary<CoreP, Property>();
 
         public override string ToString() => nameof(Description) + ":\r\n" + Description + "\r\n" + nameof(LongDescription) + ":\r\n" + LongDescription + "\r\n" + nameof(BaseAttribute) + "Subclass: " + GetType().ToString() + (!IsDefault ? "" : ", " + (nameof(IsDefault) + ": " + IsDefault)) + (!IsNotToBeUsed ? "" : ", " + (nameof(IsNotToBeUsed) + ": " + IsNotToBeUsed));
         /// <summary>

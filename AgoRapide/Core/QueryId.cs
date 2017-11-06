@@ -235,7 +235,9 @@ namespace AgoRapide.Core {
 
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
-                } else if (Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
+                } else if (
+                    !int.TryParse(strValue, out _) && // Important that "GT 5" is not parsed as "GT Quintile5", that is, do not accept integer as enum here.
+                    Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, quintile);
                 } else {
                     if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);

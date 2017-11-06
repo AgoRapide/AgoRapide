@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -243,7 +244,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="parentProperty"></param>
         /// <returns></returns>
-        public abstract Dictionary<CoreP, Property> GetChildProperties(Property parentProperty);
+        public abstract ConcurrentDictionary<CoreP, Property> GetChildProperties(Property parentProperty);
 
         public Property GetPropertyById(long id) => TryGetPropertyById(id, out var retval) ? retval : throw new PropertyNotFoundException(id);
         public abstract bool TryGetPropertyById(long id, out Property property);
@@ -371,9 +372,9 @@ namespace AgoRapide.Database {
         /// <see cref="OperateOnProperty"/> should be called with <see cref="PropertyOperation.SetInvalid"/> for these by calling method. 
         /// </param>
         /// <returns></returns>
-        protected Dictionary<CoreP, Property> OrderIntoIntoBaseEntityPropertiesCollection(List<Property> properties, out List<Property> noLongerCurrent) {
+        protected ConcurrentDictionary<CoreP, Property> OrderIntoIntoBaseEntityPropertiesCollection(List<Property> properties, out List<Property> noLongerCurrent) {
             noLongerCurrent = new List<Property>();
-            var retval = new Dictionary<CoreP, Property>();
+            var retval = new ConcurrentDictionary<CoreP, Property>();
             foreach (var p in properties) {
                 var test = p.Key; /// Check that <see cref="Property.KeyDB"/> parses correctly. 
                 if (p.Key.Key.A.IsMany) {
@@ -411,7 +412,7 @@ namespace AgoRapide.Database {
         /// <param name="root"></param>
         /// <param name="properties">May be null (typical for <paramref name="requiredType"/> = <see cref="Property"/>)</param>
         /// <returns></returns>
-        protected BaseEntity CreateEntityInMemory(Type requiredType, Property root, Dictionary<CoreP, Property> properties) {
+        protected BaseEntity CreateEntityInMemory(Type requiredType, Property root, ConcurrentDictionary<CoreP, Property> properties) {
             BaseEntity retval = null;
             var addProperties = new Action(() => {
                 if (properties == null) return;
@@ -494,8 +495,16 @@ namespace AgoRapide.Database {
         /// </param>
         /// <param name="value"></param>
         /// <param name="result">May be null</param>
+        /// <param name="SkipSetValid">
+        /// May be null.
+        /// If set then (for cases when existing value equals <paramref name="value"/>) 
+        /// <see cref="PropertyOperation.SetValid"/> will not be performed 
+        /// if age of last <see cref="Property.Valid"/> is less than the given value.
+        /// In other words, this is a performance increasing feature in cases where you do not constantly want / need to 
+        /// update <see cref="DBField.valid"/> (typicall would be API method information at startup for instance). 
+        /// </param>
         /// <returns></returns>
-        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result = null) {
+        public void UpdateProperty<T>(long cid, BaseEntity entity, PropertyKey key, T value, Result result = null, TimeSpan? SkipSetValid = null) {
             // Log(""); Note how we only log when property is actually created or updated
             var detailer = new Func<string>(() => nameof(entity) + ": " + entity.Id + ", " + nameof(key) + ": " + key + ", " + nameof(value) + ": " + value + ", " + nameof(cid) + ": " + cid);
             if (entity.Properties == null) throw new NullReferenceException(nameof(entity) + "." + nameof(entity.Properties) + ", " + detailer());
@@ -520,6 +529,8 @@ namespace AgoRapide.Database {
                         // Note how this is not logged
                         if (existingProperty.Id <= 0) {
                             // Skip this, property is in-memory only 
+                        } else if (SkipSetValid != null && existingProperty.Valid != null && existingProperty.Valid.Value.Add(SkipSetValid.Value) > DateTime.Now) {
+                            // Skip this, recently updated.
                         } else {
                             OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
                         }
@@ -571,23 +582,26 @@ namespace AgoRapide.Database {
                                 var remainingToAdd = list.ToList<string>();
                                 var toInvalidate = new List<Property>();
                                 var toBeDeleted = new List<CoreP>();
-                                isManyParent.Properties.ForEach(existingProperty => { /// Note that entityOrIsManyParentUpdater can not be used because it relies on <typeparam name="T"/>
-                                    var s = existingProperty.Value.V<string>();
+                                isManyParent.Properties.ForEach(e => { /// Note that entityOrIsManyParentUpdater can not be used because it relies on <typeparam name="T"/>
+                                    var existingProperty = e.Value;
+                                    var s = existingProperty.V<string>();
                                     if (remainingToAdd.Contains(s)) { /// Note how we compare with string while entityOrIsManyParentUpdater compares directly against <typeparam name="T"/>
-                                        if (existingProperty.Value.Id <= 0) {
+                                        if (existingProperty.Id <= 0) {
                                             // Skip this, property is in-memory only 
+                                        } else if (SkipSetValid != null && existingProperty.Valid != null && existingProperty.Valid.Value.Add(SkipSetValid.Value) > DateTime.Now) {
+                                            // Skip this, recently updated.
                                         } else {
-                                            OperateOnProperty(cid, existingProperty.Value, PropertyOperation.SetValid, result);
+                                            OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
                                         }
                                         remainingToAdd.Remove(s);
                                     } else {
-                                        if (existingProperty.Value.Id <= 0) {
+                                        if (existingProperty.Id <= 0) {
                                             // Skip this, property is in-memory only 
                                         } else {
-                                            OperateOnProperty(cid, existingProperty.Value, PropertyOperation.SetInvalid, result);
+                                            OperateOnProperty(cid, existingProperty, PropertyOperation.SetInvalid, result);
                                         }
                                         // result?.Count(CoreP.PSetInvalidCount); // TODO: Correct statistics here
-                                        toBeDeleted.Add(existingProperty.Key);
+                                        toBeDeleted.Add(e.Key);
                                     }
                                 });
                                 toBeDeleted.ForEach(c => isManyParent.Properties.Remove(c));

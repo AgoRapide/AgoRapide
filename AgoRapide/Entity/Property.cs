@@ -93,8 +93,9 @@ namespace AgoRapide {
         /// Key for use in HTML-code (as identifiers for use by Javascript)
         /// (that is, NOT key in HTML-format)
         /// 
-        /// TODO: Make id more specific because saving for instance will now fail 
+        /// TODO: Make id more specific because Javascript will now fail operating 
         /// TODO: for multiple properties on same HTML page with same <see cref="KeyDB"/>
+        /// TODO: (for instance if HTML pages contains multiple Person with Context#1-property for instance then Javascript for saving these properties will fail)
         /// </summary>
         public string KeyHTML => KeyDB.ToString().Replace("#", "_");
 
@@ -112,6 +113,12 @@ namespace AgoRapide {
             _keyDB = null;
         }
 
+        /// <summary>
+        /// Will normally always be set by constructor (like <see cref="PropertyT{T}.PropertyT"/>). 
+        /// 
+        /// Exceptions are for instance when instance of <see cref="PropertyLogger"/> / <see cref="PropertyCounter"/> when 
+        /// the value will change constantly and it is not desireable to cache it here.
+        /// </summary>
         protected string _stringValue;
 
         /// <summary>
@@ -263,7 +270,7 @@ namespace AgoRapide {
             return new Property(dummy: null) {
                 IsIsManyParent = true,
                 _key = strictKey,
-                Properties = new Dictionary<CoreP, Property>()
+                Properties = new  ConcurrentDictionary<CoreP, Property>()
             };
         }
 
@@ -378,6 +385,8 @@ namespace AgoRapide {
         /// 
         /// Note how result in itself is cached, something which is very useful when <see cref="Parent"/> itself is cached 
         /// since the process of inserting links is quite performance heavy.
+        /// 
+        /// Public accessible from outside as <see cref="V{T}"/> (as V[HTML]), that is, made private on purpose.
         /// </summary>
         /// <returns></returns>
         private HTML ValueHTML => _valueHTML ?? (_valueHTML = new HTML(new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {

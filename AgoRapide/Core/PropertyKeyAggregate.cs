@@ -66,13 +66,16 @@ namespace AgoRapide.Core {
         [ClassMember(
             Description = "Calculates the actual aggregates based on keys returned by -" + nameof(GetKeys) + "-.",
             LongDescription = "Example: If we have Persons and Projects and every Project has a foreign key LeaderPersonId, then this method will aggregate Count_ProjectLeaderPersonid for every Person.")]
-        public static void CalculateValues(Type type, List<BaseEntity> entities) => type.GetChildProperties().Values.Select(key => key as PropertyKeyAggregate).Where(key => key != null).ForEach(key => {
+        public static void CalculateValues(Type type, List<BaseEntity> entities) =>
+            // Introduced Parallel.ForEach 3 Nov 2017
+            Parallel.ForEach(type.GetChildProperties().Values.Select(key => key as PropertyKeyAggregate).Where(key => key != null), key => {
             var hasLimitedRange = true; var valuesFound = new HashSet<long>(); // TODO: Support other types of aggregations.
 
             /// Build index in order to avoid O(n^2) situation.
             var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
-            InMemoryCache.EntityCache.Values.
-                Where(e => key.SourceEntityType.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order not to repeat queries like this:
+            //InMemoryCache.EntityCache.Values.
+            //    Where(e => key.SourceEntityType.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order not to repeat queries like this:
+            InMemoryCache.EntityCacheWhereIs(key.SourceEntityType).
                 ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
                     if (e.Properties.TryGetValue(key.ForeignKeyProperty.Key.CoreP, out var p)) {
                         var foreignKeyValue = p.V<long>();

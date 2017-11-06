@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,7 +42,6 @@ namespace AgoRapide.Database {
         /// Split out from <see cref="Synchronize"/> in order to be able to call directly from <see cref="InMemoryCache"/>
         /// 
         /// TODO: Missing resetting of <see cref="InMemoryCache._synchronizedTypes"/> / <see cref="InMemoryCache._synchronizedTypesInternal"/>.
-        /// TODO: E
         /// </summary>
         /// <param name="db"></param>
         /// <param name="result"></param>
@@ -52,16 +52,17 @@ namespace AgoRapide.Database {
             SynchronizeMapForeignKeys(entities, result);
             entities.ForEach(e => {
                 result.LogInternal(nameof(FileCache.StoreToDisk) + ": " + e.Key, GetType());
-                FileCache.Instance.StoreToDisk(this, e.Key, e.Value); 
+                FileCache.Instance.StoreToDisk(this, e.Key, e.Value);
             });
-            // AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
+            PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>()).ForEach(t => InMemoryCache.ResetForType(t)); // Important in order to ensure that read information is actually utilized
             result.ResultCode = ResultCode.ok;
             result.LogInternal("Finished", GetType());
         }
-
-        private Dictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {
+     
+        private ConcurrentDictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {
             result.LogInternal("", GetType());
             var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
+            if (types.Count == 0) throw new BaseSynchronizerException("Property " + nameof(SynchronizerP.SynchronizerExternalType) + " has not been defined. Possible resolution: Add this property in " + GetType().ToStringVeryShort() + "." + nameof(GetStaticProperties) + ".");
             if (PV(SynchronizerP.SynchronizerUseMockData.A(), defaultValue: false)) { // Create mock-data.
 
                 // Note how this process is reproducable, the same result should be returned each time (given the same percentileValue)                    
@@ -73,16 +74,22 @@ namespace AgoRapide.Database {
                 var maxN = types.ToDictionary(key => key, key => defaultCount);
                 // TOOD: ---------
 
-                return types.ToDictionary(t => t, t => GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+                // return types.ToDictionary(t => t, t => GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+                var r = new ConcurrentDictionary<Type, List<BaseEntity>>();
+                types.ForEach(t => {
+                    r.Add(t, GetMockEntities(t, new Func<PropertyKey, bool>(p => p.Key.A.IsExternal), maxN));
+                });
+                return r;
             }
             var retval = SynchronizeInternal(db, result);
             if (retval.Count != types.Count) throw new InvalidCountException(retval.Count, types.Count,
                 "Found " + retval.KeysAsString() + ", expected " + string.Join(", ", types.Select(t => t.ToStringVeryShort())) + ".\r\n" +
                 "Resolution: Ensure that " + GetType() + "." + nameof(SynchronizeInternal) + " really returns data for all the types given in " + SynchronizerP.SynchronizerExternalType + ".");
+            db.UpdateProperty(Id, this, SynchronizerP.SynchronizerLastUpdate.A(), DateTime.Now);
             return retval;
         }
 
-        public abstract Dictionary<Type, List<BaseEntity>> SynchronizeInternal(BaseDatabase db, Result result);
+        public abstract ConcurrentDictionary<Type, List<BaseEntity>> SynchronizeInternal(BaseDatabase db, Result result);
 
         /// <summary>
         /// Reconciles <paramref name="externalEntities"/> of type <paramref name="type"/> 
@@ -163,7 +170,7 @@ namespace AgoRapide.Database {
         /// </summary>
         /// <param name="entities"></param>
         /// <param name="result"></param>
-        public void SynchronizeMapForeignKeys(Dictionary<Type, List<BaseEntity>> entities, Result result) {
+        public void SynchronizeMapForeignKeys(ConcurrentDictionary<Type, List<BaseEntity>> entities, Result result) {
             result.LogInternal("", GetType());
             var foreignPrimaryKeyToPrimaryKeyIndexes = new Dictionary<Type, Dictionary<object, long>>();
             entities.ForEach(e => {
@@ -246,12 +253,12 @@ namespace AgoRapide.Database {
         SynchronizerExternalType,
 
         [PropertyKey(
-            Description = "Last update against source.",
+            Description = "Time of last update against source database (time when last synchronization was performed).",
             Type = typeof(DateTime), DateTimeFormat = DateTimeFormat.DateHourMin,
             Parents = new Type[] { typeof(BaseSynchronizer) },
             AccessLevelRead = AccessLevel.Relation
         )]
-        SynchronizerLastUpdateAgainstSource,
+        SynchronizerLastUpdate,
     }
 
     public static class SynchronizerPExtensions {

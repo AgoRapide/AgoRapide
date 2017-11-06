@@ -47,6 +47,11 @@ namespace AgoRapide.Database {
         [ClassMember(Description = "Cache as relevant for -" + nameof(CacheUse.Dynamic) + "- and -" + nameof(CacheUse.All) + "-.")]
         public static ConcurrentDictionary<long, BaseEntity> EntityCache = new ConcurrentDictionary<long, BaseEntity>();
 
+        private static ConcurrentDictionary<Type, object> _entityCacheWhereIsCacheT = new ConcurrentDictionary<Type, object>();
+        public static List<T> EntityCacheWhereIs<T>() => (List<T>)(_entityCacheWhereIsCacheT.GetOrAdd(typeof(T), t => EntityCacheWhereIs(typeof(T)).Select(e => (T)(object)e).ToList()));
+        private static ConcurrentDictionary<Type, List<BaseEntity>> _entityCacheWhereIsCacheType = new ConcurrentDictionary<Type, List<BaseEntity>>();
+        public static List<BaseEntity> EntityCacheWhereIs(Type type) => _entityCacheWhereIsCacheType.GetOrAdd(type, t => EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList());
+
         /// <summary>
         /// Usually reset is done as a precaution when exceptions occur. 
         /// 
@@ -65,46 +70,8 @@ namespace AgoRapide.Database {
             InvalidTypeException.AssertAssignable(synchronizer, typeof(BaseSynchronizer));
             _synchronizerTypes.Add(synchronizer);
         }
-        private static Dictionary<Type, BaseSynchronizer> _synchronizersByType;
-        /// <summary>
-        /// Returns (cached) information about which <see cref="BaseSynchronizer"/> to use for which type.
-        /// 
-        /// TODO: Note some unresolved issues here. 
-        /// TODO: Should for instance a given type be restricted to only one <see cref="BaseSynchronizer"/> reading that type?
-        /// TODO: (see note in exceptioin message below)
-        /// TODO: Note that improvements are assumed to be possible to solve internally within <see cref="InMemoryCache"/>, that is without changing the external interface. 
-        /// </summary>
-        /// <param name="db">
-        /// Only used at first call. Ignored for subsequent calls.
-        /// </param>
-        /// <returns></returns>
-        private static Dictionary<Type, BaseSynchronizer> GetSyncronizers(BaseDatabase db) => _synchronizersByType ?? (_synchronizersByType = new Func<Dictionary<Type, BaseSynchronizer>>(() => {
-            var retval = new Dictionary<Type, BaseSynchronizer>();
-            if (_synchronizerTypes.Count == 0) throw new InMemoryCacheException("No calls made to -" + nameof(AddSynchronizerType) + "-. Should have been done at application startup.");
-            _synchronizerTypes.ForEach(t => {
-                db.GetAllEntities(t).ForEach(s => {
-                    s.PV(SynchronizerP.SynchronizerExternalType.A(), new List<Type>()).ForEach(et => {
-                        if (retval.TryGetValue(et, out var duplicate)) { /// Note how this problem is only caught at initial call to <see cref="GetSyncronizers"/>
-                            throw new InMemoryCacheException("More than one " + nameof(BaseSynchronizer) + " found for type " + et + ", both\r\n" +
-                                "1) " + s + "\r\n" +
-                                "and\r\n" +
-                                "2) " + duplicate + "\r\n" +
-                                "Possible resolution:\r\n" +
-                                API.APICommandCreator.JSONInstance.CreateAPIUrl(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(s.Id), PropertyOperation.SetInvalid) + "\r\n" +
-                                "or\r\n" +
-                                API.APICommandCreator.JSONInstance.CreateAPIUrl(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(duplicate.Id), PropertyOperation.SetInvalid) +
-                                (s.GetType().Equals(duplicate.GetType()) ? "" :
-                                    ("\r\n(The types are not equal. Possible TODO in AgoRapide is to actually allow multiple " + nameof(BaseSynchronizer) + " as long as they are of different types)"))
-                            );
-                        }
-                        retval.AddValue(et, (BaseSynchronizer)s);
-                    });
-                });
-            });
-            return retval;
-        })());
 
-        public static ConcurrentDictionary<
+        private static ConcurrentDictionary<
             Type,
             /// TRUE means <see cref="BaseSynchronizer"/> exists, FALSE means no <see cref="BaseSynchronizer"/> exists.
             /// TODO: Note how this is (as of Sep 2017) decided only once in application lifetime
@@ -115,7 +82,7 @@ namespace AgoRapide.Database {
         /// <summary>
         /// Used inside GetOrAdd for <see cref="_synchronizedTypes"/>
         /// </summary>
-        public static ConcurrentDictionary<Type, bool> _synchronizedTypesInternal = new ConcurrentDictionary<Type, bool>();
+        private static ConcurrentDictionary<Type, bool> _synchronizedTypesInternal = new ConcurrentDictionary<Type, bool>();
 
         /// <summary>
         /// Returns all entities of <paramref name="type"/> matching <paramref name="id"/>
@@ -137,51 +104,55 @@ namespace AgoRapide.Database {
             if (id == null) throw new ArgumentNullException(nameof(id));
             if (db == null) throw new ArgumentNullException(nameof(db));
 
+            // Note that other calls may be made "simultaneously" (on other threads) to this metod, either for same type or for
+            // another type within the same "synchronizer universe". 
             _synchronizedTypes.GetOrAdd(type, t => { // Note how actual return value, TRUE / FALSE, is ignored.
-                if (!GetSyncronizers(db).TryGetValue(t, out var s)) {
+                if (!GetSynchronizers(db).TryGetValue(t, out var s)) {
                     /// This is either because 
                     /// 1) Synchronizing is not relevant for this type, or
-                    /// 2) No synchronizers has been created in the database yet.
+                    /// 2) No synchronizers has been created in the database yet (note <see cref="ResetForType(Type)"/> which corrects against this (usually after first synchronization has been done)). 
                     /// 3) OR (IMPORTANT) You may just have forgotten to call <see cref="AddSynchronizerType"/> from your Startup.cs
-                    /// TODO: Note how this is (as of Sep 2017) decided permanently for the rest of the application lifetime. 
-                    /// TODO: But for case 2) above this is of course not good enough.
                     return false;
                 }
                 lock (_synchronizedTypesInternal) { // Ensure that this "universe" completes first
                     if (_synchronizedTypesInternal.TryGetValue(t, out _)) return true; // Already done by other call (possible on other thread) within same universe
 
                     var types = s.PV<List<Type>>(SynchronizerP.SynchronizerExternalType.A());
-                    var synchronizerWasCalled = false;
-                    var allEntities = new Dictionary<Type, List<BaseEntity>>();
+                    var allEntities = new ConcurrentDictionary<Type, List<BaseEntity>>();
 
                     var Log = new Action<string>(text => {
                         if (logger == null) return;
                         logger(typeof(InMemoryCache).ToStringVeryShort() + "." + nameof(GetMatchingEntities) + ": " + text);
                     });
-                    foreach (var st in types) {
+
+                    var tryEnrichFromDiskReturnedFalse = false;
+                    Parallel.ForEach(types, (st, state) => { // NOTE: Parallelization is considered very relevant here because reading from disk entails a lot of in-memory processing (that is, this process is CPU-bound, not disk-bound).
+                        if (state.IsStopped) return; /// This check / signal is almost meaningless for only a few types (more threads than types), because <see cref="FileCache.TryEnrichFromDisk"/> is what is time consuming.
                         Log("Calling " + nameof(FileCache.TryEnrichFromDisk) + " for " + st.ToStringVeryShort());
                         if (FileCache.Instance.TryEnrichFromDisk(s, st, db, out var entities, out _)) { // Note how "result" is ignored. 
                             allEntities.AddValue(st, entities);
                         } else {
-                            /// This call can be very time-consuming
-                            /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
-                            Log("Calling " + nameof(BaseSynchronizer.Synchronize2) + " for " + s.IdFriendly);
-                            s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
-                            synchronizerWasCalled = true;
-
-                            /// Now ALL ENTITIES in this synchronizer-"universe" have been place into memory. 
-                            /// In other words there is no more work that has to be done in this loop.
-                            break;
+                            state.Stop(); /// This check / signal is almost meaningless for only a few types (more threads than types), because <see cref="FileCache.TryEnrichFromDisk"/> is what is time consuming.
+                            tryEnrichFromDiskReturnedFalse = true;
                         }
-                    }
-                    if (synchronizerWasCalled) {
-                        /// No need for calling <see cref="BaseSynchronizer.SynchronizeMapForeignKeys"/>, because was done as part of <see cref="BaseSynchronizer.Synchronize2"/>
-                    } else {
+                    });
+
+                    if (!tryEnrichFromDiskReturnedFalse) {
                         Log("Calling " + nameof(BaseSynchronizer.SynchronizeMapForeignKeys) + " for " + s.IdFriendly);
                         s.SynchronizeMapForeignKeys(allEntities, new API.Result()); // Note how "result" is ignored. 
+                    } else {
+                        /// Note that <see cref="BaseSynchronizer.SynchronizeMapForeignKeys"/> will be called as part of <see cref="BaseSynchronizer.Synchronize2"/>
+                        /// 
+                        /// This call can be very time-consuming
+                        /// <see cref="FileCache.Instance"/> has made an attempt at explaining through logging, but it's <see cref="BaseCore.LogEvent"/> is most probably (as of Sep 2017) not subscribed to anyway.
+                        Log("Calling " + nameof(BaseSynchronizer.Synchronize2) + " for " + s.IdFriendly);
+                        s.Synchronize2(db, new API.Result()); // Note how we just discard interesting statistics now. 
+                        /// Now ALL ENTITIES in this synchronizer-"universe" have been place into memory. 
                     }
 
-                    // Now all keys have been read. Before injection, mark as read (this will stop recursivity)
+                    /// Now all keys have been read. 
+                    /// Before injection below, mark as read 
+                    /// (this will stop recursivity that would otherwise occur because injecting below will call <see cref="GetMatchingEntities"/>)
                     types.ForEach(st => {
                         _synchronizedTypesInternal.AddValue(st, true, () => "Expected all keys " + string.Join(", ", types.Select(temp => temp.ToStringVeryShort()) + " to be set at once, not " + st.ToStringVeryShort() + " to be set separately"));
                     });
@@ -190,19 +161,21 @@ namespace AgoRapide.Database {
                     /// therefore we have now through <see cref="_synchronizedTypesInternal"/> opened up for these recursive calls to return immediately, 
                     /// while we are still locking out other threads until we are completely finished)
 
+                    /// TODO: Move this code into <see cref="BaseInjector"/>
                     types.ForEach(st => {
-                        /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
-                        var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        var entities = EntityCacheWhereIs(st);
 
                         Log("Calling " + nameof(PropertyKeyExpansion) + "." + nameof(PropertyKeyExpansion.CalculateValues) + " for " + st.ToStringVeryShort());
                         PropertyKeyExpansion.CalculateValues(st, entities); /// Call this first, maybe some if these will also be percentile-evaluated and aggregated over foreign keys below.
 
                         Log("Calling " + nameof(PropertyKeyAggregate) + "." + nameof(PropertyKeyAggregate.CalculateValues) + " for " + st.ToStringVeryShort());
-                        PropertyKeyAggregate.CalculateValues(st, entities); 
+                        PropertyKeyAggregate.CalculateValues(st, entities);
 
                         Log("Calling " + nameof(PropertyKeyJoinTo) + "." + nameof(PropertyKeyJoinTo.CalculateValues) + " for " + st.ToStringVeryShort());
                         PropertyKeyJoinTo.CalculateValues(st, entities);
                     });
+
+                    /// TODO: Move this code into <see cref="BaseInjector"/>
 
                     /// TODO: Call all other Injector-classes relevant for this universe.
                     /// TODO: To be decided how to organise this. 
@@ -210,9 +183,10 @@ namespace AgoRapide.Database {
                     Log("Calling " + nameof(BaseSynchronizer.Inject) + " for " + s.IdFriendly);
                     s.Inject(db); // TODO: Will search for entities like already done here!
 
+                    /// TODO: Move this code into <see cref="BaseInjector"/>
+
                     types.ForEach(st => {
-                        /// TODO: THIS IS CALCULATED MULTIPLE TIMES (ALSO WITHIN <see cref="BaseSynchronizer.Inject"/>
-                        var entities = EntityCache.Values.Where(e => st.IsAssignableFrom(e.GetType())).ToList(); // TODO: Add some more indexing within entityCache.
+                        var entities = EntityCacheWhereIs(st);
 
                         // TOOD. Percentiles should most probably be called multiple times in a sort of iterative process.
                         // TODO: (both before and after injection)
@@ -228,20 +202,75 @@ namespace AgoRapide.Database {
             });
             switch (id) {
                 case QueryIdAll q:
-                    return EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(); // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
+                    return EntityCacheWhereIs(type);
                 case QueryIdKeyOperatorValue q:
-                    return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
-                        if (!type.IsAssignableFrom(e.GetType())) return false;
-                        return q.IsMatch(e);
-                    }).ToList();
+                    return EntityCacheWhereIs(type).Where(e => q.IsMatch(e)).ToList();
                 case QueryIdMultiple q:
-                    return EntityCache.Values.Where(e => { // TODO: Inefficient code, we could instead split cache into separate collections for each type without much trouble
-                        if (!type.IsAssignableFrom(e.GetType())) return false;
-                        return q.Ids.Any(i => i.IsMatch(e));
-                    }).ToList();
+                    return EntityCacheWhereIs(type).Where(e => q.Ids.Any(i => i.IsMatch(e))).ToList();
                 default:
                     throw new InvalidObjectTypeException(id);
             }
+        }
+
+        private static ConcurrentDictionary<Type, BaseSynchronizer> _synchronizersByType;
+        /// <summary>
+        /// TODO: Note some unresolved issues here. 
+        /// TODO: Should for instance a given type be restricted to only one <see cref="BaseSynchronizer"/> reading that type?
+        /// TODO: (see note in exception message below)
+        /// TODO: Note that improvements are assumed to be possible to solve internally within <see cref="InMemoryCache"/>, that is without changing the external interface. 
+        /// </summary>
+        /// <param name="db">
+        /// Only used at first call. Ignored for subsequent calls.
+        /// </param>
+        /// <returns></returns>
+        [ClassMember(Description = "Returns (cached) information about which -" + nameof(BaseSynchronizer) + "--instance to use for which type.")]
+        private static ConcurrentDictionary<Type, BaseSynchronizer> GetSynchronizers(BaseDatabase db) => _synchronizersByType ?? (_synchronizersByType = new Func<ConcurrentDictionary<Type, BaseSynchronizer>>(() => {
+            var retval = new ConcurrentDictionary<Type, BaseSynchronizer>();
+            if (_synchronizerTypes.Count == 0) throw new InMemoryCacheException("No calls made to -" + nameof(AddSynchronizerType) + "-. Should have been done at application startup.");
+            _synchronizerTypes.ForEach(t => {
+                db.GetAllEntities(t).ForEach(s => {
+                    s.PV(SynchronizerP.SynchronizerExternalType.A(), new List<Type>()).ForEach(et => {
+                        if (retval.TryGetValue(et, out var duplicate)) { /// Note how this problem is only caught at initial call to <see cref="GetSynchronizers"/>
+                            throw new InMemoryCacheException("More than one " + nameof(BaseSynchronizer) + " found for type " + et + ", both\r\n" +
+                                "1) " + s + "\r\n" +
+                                "and\r\n" +
+                                "2) " + duplicate + "\r\n" +
+                                "Possible resolution:\r\n" +
+                                API.APICommandCreator.JSONInstance.CreateAPIUrl(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(s.Id), PropertyOperation.SetInvalid) + "\r\n" +
+                                "or\r\n" +
+                                API.APICommandCreator.JSONInstance.CreateAPIUrl(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(duplicate.Id), PropertyOperation.SetInvalid) +
+                                (s.GetType().Equals(duplicate.GetType()) ? "" :
+                                    ("\r\n(The types are not equal. Possible TODO in AgoRapide is to actually allow multiple " + nameof(BaseSynchronizer) + " as long as they are of different types)"))
+                            );
+                        }
+                        retval.AddValue(et, (BaseSynchronizer)s);
+                    });
+                });
+            });
+            return retval;
+        })());
+
+        [ClassMember(Description = 
+            "Resets information about given type.\r\n" +
+            "Would typically be called from -" + nameof(BaseSynchronizer.Synchronize) + "-.\r\n" +
+            "Calling this method forces for instance -" + nameof(FileCache.TryEnrichFromDisk) + "- to be called the next time when for instance -" + nameof(GetMatchingEntities) + "- is called.")]
+        public static void ResetForType(Type type) {
+            EntityCache.Where(e => type.IsAssignableFrom(e.GetType())).ForEach(e => EntityCache.TryRemove(e.Key, out _));
+            // TODO: Work more on correct order of execution here in multi-thread scenarios.
+            _entityCacheWhereIsCacheType.TryRemove(type, out _);
+            _entityCacheWhereIsCacheT.TryRemove(type, out _);
+
+            /// Try to catch situations where synchronizer was added to database after last call to <see cref="GetSynchronizers"/> 
+            /// NOTE: Ideally this method should be called as soon as synchronizer was created, but as of Oct 2017 the call is done
+            /// NOTE: by <see cref="BaseSynchronizer.Synchronize"/>            
+            /// 
+            /// NOTE: This would not be correct
+            /// _synchronizersByType?.TryRemove(type, out _);
+            /// This is the correct approach.
+            _synchronizersByType = null;
+
+            _synchronizedTypesInternal.TryRemove(type, out _);
+            _synchronizedTypes.TryRemove(type, out _);
         }
     }
 

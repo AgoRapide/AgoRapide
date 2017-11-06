@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -73,7 +74,7 @@ namespace AgoRapide.API {
         /// </summary>
         public string SuggestedNextMethod { get; set; }
 
-        protected override Dictionary<CoreP, Property> GetProperties() {
+        protected override ConcurrentDictionary<CoreP, Property> GetProperties() {
             var p = Util.GetNewPropertiesParent();
             Func<string> d = () => ToString();
             /// Note how we are not adding None-values since they will be considered invalid at later reading from database.

@@ -8,13 +8,12 @@ using AgoRapide.Core;
 using System.Reflection;
 using AgoRapide.API;
 
-/// <summary>
-/// Note: <see cref="AgoRapide.Database.PropertyKeyForeignKeyAggregate"/> also resides in this file for the time being (see below). 
-/// </summary>
 namespace AgoRapide.Database {
 
     /// <summary>
     /// Note <see cref="BaseInjector"/> assumes <see cref="CacheUse.All"/> for all entities involved and therefore always queries <see cref="InMemoryCache"/> directly.
+    /// 
+    /// TODO: Move code from <see cref="InMemoryCache.GetMatchingEntities"/> into this class instead.
     /// </summary>
     [Class(
         Description =

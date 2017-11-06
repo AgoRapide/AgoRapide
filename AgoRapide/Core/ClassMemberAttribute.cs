@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -85,7 +86,7 @@ namespace AgoRapide.Core {
             parent: MemberInfo.ReflectedType.GetClassAttribute().Id.IdString
          );
 
-        protected override Dictionary<CoreP, Property> GetProperties() {
+        protected override ConcurrentDictionary<CoreP, Property> GetProperties() {
             var p = Util.GetNewPropertiesParent();
             Func<string> d = () => ToString();
             // Adds the full method information (in order to distinguish overloads from each other)

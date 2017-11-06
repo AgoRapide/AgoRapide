@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -578,7 +579,7 @@ namespace AgoRapide.API {
                     // }
                 }
             }
-            var parameters = new Dictionary<CoreP, Property>();
+            var parameters = new ConcurrentDictionary<CoreP, Property>();
 
             object errorResponseTemp = null;
             var checker = new Func<int, string, bool>((index, parameter) => {
