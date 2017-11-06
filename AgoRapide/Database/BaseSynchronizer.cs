@@ -42,7 +42,6 @@ namespace AgoRapide.Database {
         /// Split out from <see cref="Synchronize"/> in order to be able to call directly from <see cref="InMemoryCache"/>
         /// 
         /// TODO: Missing resetting of <see cref="InMemoryCache._synchronizedTypes"/> / <see cref="InMemoryCache._synchronizedTypesInternal"/>.
-        /// TODO: E
         /// </summary>
         /// <param name="db"></param>
         /// <param name="result"></param>
@@ -53,16 +52,17 @@ namespace AgoRapide.Database {
             SynchronizeMapForeignKeys(entities, result);
             entities.ForEach(e => {
                 result.LogInternal(nameof(FileCache.StoreToDisk) + ": " + e.Key, GetType());
-                FileCache.Instance.StoreToDisk(this, e.Key, e.Value); 
+                FileCache.Instance.StoreToDisk(this, e.Key, e.Value);
             });
-            // AddProperty(SynchronizerP.SynchronizerDataHasBeenReadIntoMemoryCache.A(), true);
+            PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>()).ForEach(t => InMemoryCache.ResetForType(t)); // Important in order to ensure that read information is actually utilized
             result.ResultCode = ResultCode.ok;
             result.LogInternal("Finished", GetType());
         }
-
+     
         private ConcurrentDictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {
             result.LogInternal("", GetType());
             var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
+            if (types.Count == 0) throw new BaseSynchronizerException("Property " + nameof(SynchronizerP.SynchronizerExternalType) + " has not been defined. Possible resolution: Add this property in " + GetType().ToStringVeryShort() + "." + nameof(GetStaticProperties) + ".");
             if (PV(SynchronizerP.SynchronizerUseMockData.A(), defaultValue: false)) { // Create mock-data.
 
                 // Note how this process is reproducable, the same result should be returned each time (given the same percentileValue)                    
