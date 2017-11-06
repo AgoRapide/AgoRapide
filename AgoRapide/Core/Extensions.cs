@@ -714,13 +714,6 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static ClassMemberAttribute GetClassMemberAttribute(this System.Reflection.MemberInfo memberInfo) => GetClassMemberAttributeNonStrict(memberInfo) ?? throw new NullReferenceException(System.Reflection.MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetClassMemberAttributeNonStrict) + " instead");
 
-        /// <summary>
-        /// TODO: Most probably not needed. Consider deleting.
-        /// 
-        /// NOTE THAT NOT IN USE AS OF Apr 2017
-        /// </summary>
-        /// <param name="memberInfo"></param>
-        /// <returns></returns>
         public static ClassMemberAttribute GetClassMemberAttributeNonStrict(this System.Reflection.MemberInfo memberInfo) {
             if (ApplicationPart.GetFromDatabaseInProgress) {
                 /// This typical happens when called from <see cref="ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates"/> because that one wants to
