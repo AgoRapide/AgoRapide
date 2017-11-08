@@ -131,10 +131,14 @@ namespace AgoRapide {
         /// 
         /// Note how <see cref="PropertyKeyAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="PropertyKeyAttribute.IsMany"/>-parent and
         /// the different properties as properties under that again with dictionary index equal to <see cref="int.MaxValue"/> minus index
+        ///
+        /// Type changed from <see cref="Dictionary{TKey, TValue}"/> to <see cref="ConcurrentDictionary{TKey, TValue}"/> 
+        /// 3 Nov 2017 because of introduction of parallell execution. 
+        /// Note how this led to a chain of changes, introducing <see cref="ConcurrentDictionary{TKey, TValue}"/> all over the system.
         /// 
-        // TODO: Initialize more deterministically for the different classes.
-        /// </summary>
-        public Dictionary<CoreP, Property> Properties { get; set; }
+        /// TODO: Initialize more deterministically for the different classes.
+        /// </summary>        
+        public ConcurrentDictionary<CoreP, Property> Properties { get; set; }
 
         public BaseEntity() {
         }
@@ -205,12 +209,25 @@ namespace AgoRapide {
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
+        /// 
+        /// NOTE: Use overload <see cref="PV{T}(PropertyKey, Func{T})"/> instead of <see cref="PV{T}(PropertyKey, T)"/> if default value is expensive to calculate and seldom used
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
         public T PV<T>(PropertyKey key, T defaultValue) => TryGetPV(key, out T retval) ? retval : defaultValue;
+
+        /// <summary>
+        /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValueGetter"/> if that fails.
+        /// 
+        /// NOTE: Use overload <see cref="PV{T}(PropertyKey, Func{T})"/> instead of <see cref="PV{T}(PropertyKey, T)"/> if default value is expensive to calculate and seldom used
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="key"></param>
+        /// <param name="defaultValueGetter"></param>
+        /// <returns></returns>
+        public T PV<T>(PropertyKey key, Func<T> defaultValueGetter) => TryGetPV(key, out T retval) ? retval : defaultValueGetter();
 
         /// <summary>
         /// Convenience method making it possible to call 
@@ -319,7 +336,7 @@ namespace AgoRapide {
         public void AddProperty<T>(PropertyKey key, T value, string strValue, BaseAttribute valueAttribute, Func<string> detailer) {
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (value == null) throw new ArgumentNullException(nameof(value));
-            if (Properties == null) Properties = new Dictionary<CoreP, Property>(); // TODO: Maybe structure better how Properties is initialized
+            if (Properties == null) Properties = new ConcurrentDictionary<CoreP, Property>(); // TODO: Maybe structure better how Properties is initialized
             if (detailer == null) detailer = () => ToString();
 
             if (!key.Key.A.IsMany) {
@@ -798,7 +815,7 @@ namespace AgoRapide {
             for (var n = 1; n <= maxT; n++) {
                 var e = Activator.CreateInstance(type) as BaseEntity ?? throw new InvalidTypeException(type, "Very unexpected since was just asserted OK");
                 // var e = new T() {
-                e.Properties = new Dictionary<CoreP, Property>();
+                e.Properties = new ConcurrentDictionary<CoreP, Property>();
                 // };
                 properties.ForEach(p => {
                     e.AddProperty(p.Key.GetSampleProperty(type, n, maxN));

@@ -220,16 +220,24 @@ namespace AgoRapide.Core {
                 }
                 var strLeftover = nextWord();
 
-                /// HACK: Ugly hack in order for <see cref="Money"/> to parse.
+                /// HACK: Ugly hack in order for <see cref="Money"/> to parse
+                /// HACK: Or something like WHERE VismaOrderLineProductGeneralName EQ 'GSM Unit Bosch'
                 /// TODO: Implement better parsing. Look for starting ' and ending '.
-                if (strLeftover != null && strLeftover.EndsWith("'")) {
-                    strValue = strValue + " " + strLeftover;
-                    strLeftover = null;
+                if (strLeftover != null) {
+                    if (strValue.StartsWith("'")) {
+                        while (strLeftover != null) {
+                            strValue = strValue + " " + strLeftover;
+                            strLeftover = nextWord();
+                        }
+                    }
                 }
+                if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
 
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
-                } else if (Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
+                } else if (
+                    !int.TryParse(strValue, out _) && // Important that "GT 5" is not parsed as "GT Quintile5", that is, do not accept integer as enum here.
+                    Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, quintile);
                 } else {
                     if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
@@ -241,7 +249,6 @@ namespace AgoRapide.Core {
                     }
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
-                if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
 
                 errorResponse = null;
                 return true;

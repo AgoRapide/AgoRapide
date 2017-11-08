@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent ;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,14 +27,14 @@ namespace AgoRapide {
         [ClassMember(Description = "Practical method for both communicating statistics to API client and for storing in database")]
         protected void SetAndStoreCount(PropertyKey key, long value, Result result, BaseDatabase db) {
             result.Count(key.Key.CoreP, value); // This assumes that has not already been counted. 
-            db.UpdateProperty(Id, this, key, value, null); // Keep result itself out of this operation
+            db.UpdateProperty(Id, this, key, value, result: null); // Keep result itself out of this operation
         }
 
         /// <summary>
         /// <see cref="IStaticProperties.GetStaticProperties"/>
         /// </summary>
         /// <returns></returns>
-        public abstract Dictionary<CoreP, Property> GetStaticProperties();
+        public abstract ConcurrentDictionary<CoreP, Property> GetStaticProperties();
     }
 
     /// <summary>
@@ -47,6 +48,6 @@ namespace AgoRapide {
     /// </summary>
     public interface IStaticProperties {
         [ClassMember(Description = "Usually added by -" + nameof(BaseDatabase.TryGetEntityById) + "-.")]
-        Dictionary<CoreP, Property> GetStaticProperties();
+        ConcurrentDictionary<CoreP, Property> GetStaticProperties();
     }
 }

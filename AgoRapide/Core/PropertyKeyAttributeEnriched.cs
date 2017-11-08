@@ -37,14 +37,16 @@ namespace AgoRapide.Core {
         /// </summary>
         public CoreP CoreP => _coreP ?? throw new NullReferenceException(nameof(_coreP) + ".\r\nDetails: " + ToString()); /// Set by methods like <see cref="PropertyKeyAttributeEnrichedT{T}.PropertyKeyAttributeEnrichedT"/>
 
-        private ConcurrentDictionary<Type, bool> _isParentForCache = new ConcurrentDictionary<Type, bool>();
+        private ConcurrentDictionary<Type, bool> _hasParentOfTypeCache = new ConcurrentDictionary<Type, bool>();
         /// <summary>
         /// Explains if this property belongs to the given entity type (based on <see cref="PropertyKeyAttribute.Parents"/>). 
         /// Used by <see cref="Extensions.GetObligatoryChildProperties(Type)"/>. 
+        /// 
+        /// TODO: Consider moving to <see cref="PropertyKeyAttribute"/>
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public bool IsParentFor(Type type) => _isParentForCache.GetOrAdd(type, t => A.Parents != null && A.Parents.Any(p => p.IsAssignableFrom(t)));
+        public bool HasParentOfType(Type type) => _hasParentOfTypeCache.GetOrAdd(type, t => A.Parents != null && A.Parents.Any(p => p.IsAssignableFrom(t)));
 
         /// <summary>
         /// Typically used by an <see cref="IGroupDescriber"/>.
@@ -52,6 +54,7 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         public void AddParent(Type type) {
+            Util.AssertCurrentlyStartingUp();
             InvalidTypeException.AssertAssignable(type, typeof(BaseEntity));
             if (A.Parents == null) {
                 A.Parents = new Type[] { type }; return;
@@ -296,7 +299,8 @@ namespace AgoRapide.Core {
             }
 
             if (A.AggregationTypes == null) A.AggregationTypes = new AggregationType[0];
-            if (A.ExpansionTypes == null) A.ExpansionTypes = new Database.ExpansionType[0];
+            if (A.ExpansionTypes == null) A.ExpansionTypes = new ExpansionType[0];
+            if (A.JoinTo == null) A.JoinTo = new Type[0];
 
             if (!A.HasLimitedRangeIsSet) {
                 if (
@@ -397,11 +401,11 @@ namespace AgoRapide.Core {
                         "Must be in one of the following formats:\r\n" +
                         string.Join(", ", validFormats) + "\r\n");
                 } else if (typeof(TimeSpan).Equals(A.Type)) {
-                    ValidatorAndParser = value => TimeSpan.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
-                        "Invalid as " + A.Type + ".\r\n" +
+                    ValidatorAndParser = value => TimeSpan.TryParseExact(value, new string[] { @"hh\:mm\:ss" , @"d\.hh\:mm\:ss" }, System.Globalization.CultureInfo.InvariantCulture, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        Util.BreakpointEnabler + "Invalid as " + A.Type + ".\r\n" +
                         "Must be in one of the following formats:\r\n" +
-                        "HH:mm:ss\r\n");
-                        // string.Join(", ", validFormats) + "\r\n");
+                        "'hh:mm:ss' or 'd.hh:mm:ss'\r\n"); /// Note corresponding code in <see cref="PropertyT{T}.PropertyT"/> and <see cref="PropertyKeyAttributeEnriched.Initialize"/>
+                    // string.Join(", ", validFormats) + "\r\n");
                 } else if (typeof(Type).Equals(A.Type)) {
                     ValidatorAndParser = value => Util.TryGetTypeFromString(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
                         "Invalid as " + A.Type + " (must be in a format understood by " + nameof(Util) + "." + nameof(Util.TryGetTypeFromString) + ").");

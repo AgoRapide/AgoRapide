@@ -17,7 +17,7 @@ namespace AgoRapide.Core {
         /// <param name="dict"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static Property GetOrAddIsManyParent(this Dictionary<CoreP, Property> dict, PropertyKey key) {
+        public static Property GetOrAddIsManyParent(this ConcurrentDictionary<CoreP, Property> dict, PropertyKey key) {
             key.Key.A.AssertIsMany(null);
             if (dict.TryGetValue(key.Key.CoreP, out var retval)) {
                 retval.AssertIsManyParent();
@@ -27,10 +27,35 @@ namespace AgoRapide.Core {
             return retval;
         }
 
+        /// <summary>
+        /// TODO: Most probably not needed anymore after switch to ConcurrentDictionary Nov 2017
+        /// </summary>
+        /// <param name="dict"></param>
+        /// <returns></returns>
         [ClassMember(Description =
             "Flattens (for one level only) any -" + nameof(PropertyKeyAttribute.IsMany) + "- found.\r\n" +
             "Useful before calling -" + nameof(BaseDatabase.CreateProperty) + "- / -" + nameof(BaseDatabase.UpdateProperty) + "-.")]
         public static List<Property> Flatten(this Dictionary<CoreP, Property> dict) {
+            var retval = new List<Property>();
+            dict.Values.ForEach(p => {
+                if (p.Key.Key.A.IsMany) {
+                    retval.AddRange(p.Properties.Values.ToList());
+                } else {
+                    retval.Add(p);
+                }
+            });
+            return retval;
+        }
+
+        /// <summary>
+        /// Introduced 3 Nov 2017 in connection with changing <see cref="BaseEntity.Properties"/> to <see cref="ConcurrentDictionary{TKey, TValue}"/>
+        /// </summary>
+        /// <param name="dict"></param>
+        /// <returns></returns>
+        [ClassMember(Description =
+            "Flattens (for one level only) any -" + nameof(PropertyKeyAttribute.IsMany) + "- found.\r\n" +
+            "Useful before calling -" + nameof(BaseDatabase.CreateProperty) + "- / -" + nameof(BaseDatabase.UpdateProperty) + "-.")]
+        public static List<Property> Flatten(this ConcurrentDictionary<CoreP, Property> dict) {
             var retval = new List<Property>();
             dict.Values.ForEach(p => {
                 if (p.Key.Key.A.IsMany) {
@@ -69,6 +94,8 @@ namespace AgoRapide.Core {
         /// Gives better error messages when adding a value to a directory if key already exists
         /// 
         /// Note how <see cref="AddValue2"/> is more preferable than <see cref="AddValue"/>
+        /// 
+        /// Introduced 3 Nov 2017 in connection with changing <see cref="BaseEntity.Properties"/> to <see cref="ConcurrentDictionary{TKey, TValue}"/>
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -98,6 +125,23 @@ namespace AgoRapide.Core {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + ", Key '" + key.GetEnumValueAttribute().EnumValueExplained.ToString() + detailer.Result("\r\nDetails: "));
             if (dictionary.ContainsKey(key)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
             dictionary.Add(key, value);
+        }
+
+        public static void AddValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : struct, IFormattable, IConvertible, IComparable => AddValue2(dictionary, key, value, null); // What we really would want is "where T : Enum"
+        /// <summary>
+        /// Gives better error messages when adding a value to a directory if key already exists
+        /// 
+        /// Note how <see cref="AddValue2"/> is more preferable than <see cref="AddValue"/>
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="detailer"></param>
+        public static void AddValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+            if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + ", Key '" + key.GetEnumValueAttribute().EnumValueExplained.ToString() + detailer.Result("\r\nDetails: "));
+            if (!dictionary.TryAdd(key, value)) throw new KeyAlreadyExistsException("Key " + key.GetEnumValueAttribute().EnumValueExplained + " does already exist in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
         /// <summary>
@@ -225,6 +269,28 @@ namespace AgoRapide.Core {
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
+        /// <summary>
+        /// Convenience method making <see cref="ConcurrentDictionary{TKey, TValue}"/> behave more like <see cref="Dictionary{TKey, TValue}"/>. 
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        public static void Add<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value) {
+            if (!dictionary.TryAdd(key, value)) throw new KeyAlreadyExistsException("Key '" + key + "' already exists. Unable to add value " + value.ToString());
+        }
+
+        /// <summary>
+        /// Convenience method making <see cref="ConcurrentDictionary{TKey, TValue}"/> behave more like <see cref="Dictionary{TKey, TValue}"/>. 
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <param name="key"></param>
+        public static void Remove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) {
+            if (!dictionary.TryRemove(key, out _)) throw new KeyNotFoundException("Key '" + key + "' does not exist. Unable to remove value");
+        }
 
         public static string ListAsString<T>(this List<T> list) {
             if (list.Count > 100) return nameof(list) + ".Count: " + list.Count;
@@ -655,8 +721,10 @@ namespace AgoRapide.Core {
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) => _childPropertiesCache.GetOrAdd(type, t =>
-            PropertyKeyMapper.AllCoreP.Where(key => key.Key.IsParentFor(type)).ToDictionary(key => key.Key.CoreP, key => key));
+        public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) {
+            PropertyKeyMapper.AssertMapEnumFinalizeHasCompleted(); // This assert is done in order to avoid invalid cache issues if called during startup.
+            return _childPropertiesCache.GetOrAdd(type, t => PropertyKeyMapper.AllCoreP.Where(key => key.Key.HasParentOfType(type)).ToDictionary(key => key.Key.CoreP, key => key));
+        }
 
         private static ConcurrentDictionary<Type, ClassAttribute> _classAttributeCache = new ConcurrentDictionary<Type, ClassAttribute>();
         /// <summary>
@@ -712,13 +780,6 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static ClassMemberAttribute GetClassMemberAttribute(this System.Reflection.MemberInfo memberInfo) => GetClassMemberAttributeNonStrict(memberInfo) ?? throw new NullReferenceException(System.Reflection.MethodBase.GetCurrentMethod().Name + ". Check for " + nameof(ApplicationPart.GetFromDatabaseInProgress) + ". Consider calling " + nameof(GetClassMemberAttributeNonStrict) + " instead");
 
-        /// <summary>
-        /// TODO: Most probably not needed. Consider deleting.
-        /// 
-        /// NOTE THAT NOT IN USE AS OF Apr 2017
-        /// </summary>
-        /// <param name="memberInfo"></param>
-        /// <returns></returns>
         public static ClassMemberAttribute GetClassMemberAttributeNonStrict(this System.Reflection.MemberInfo memberInfo) {
             if (ApplicationPart.GetFromDatabaseInProgress) {
                 /// This typical happens when called from <see cref="ReadAllPropertyValuesAndSetNoLongerCurrentForDuplicates"/> because that one wants to

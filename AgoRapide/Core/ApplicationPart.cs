@@ -208,7 +208,7 @@ namespace AgoRapide.Core {
                 e.Created = retval.Created;
                 e.RootProperty = retval.RootProperty;
                 if (e.Properties == null) {
-                    e.Properties = new Dictionary<CoreP, Property>();
+                    e.Properties = new ConcurrentDictionary<CoreP, Property>();
                 } else if (e.Properties.Count > 0) {
                     // This creates all kind of problems with synchronization and must therefore be avoided.
                 } else {

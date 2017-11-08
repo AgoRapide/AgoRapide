@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -85,18 +86,32 @@ namespace AgoRapide.API {
                         var max = request.CurrentUser == null ? 1000 : request.CurrentUser.PV<long>(PersonP.ConfigHTMLMaxCount.A(), 1000);
                         if (entitiesToShowAsHTML.Count > max) { // TODO: Create better algoritm here. Draw randomly between 0 and total count, until have 1000 entities. Look out for situation with close to 1000 entities.
                             var originalCount = entitiesToShowAsHTML.Count;
-                            entitiesToShowAsHTML = new List<BaseEntity>();
-                            var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue)); var step = (thisTypeSorted.Count / max) * 2;
-                            var i = 0; while (i < thisTypeSorted.Count && entitiesToShowAsHTML.Count < max) {
-                                entitiesToShowAsHTML.Add(thisTypeSorted[i]);
-                                i += r.Next((int)step) + 1;
+                            // TODO: Google what is most efficient. Sorting when adding as done here (probably not) or sorting afterwards (probably yes)
+                            var dict = new SortedDictionary<string, BaseEntity>();
+                            var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue));
+                            var iteration = 0;
+                            while (dict.Count < max) {
+                                var i = r.Next(thisTypeSorted.Count);
+                                if (dict.ContainsKey(thisTypeSorted[i].IdFriendly)) continue;
+                                dict.Add(thisTypeSorted[i].IdFriendly, thisTypeSorted[i]);
+                                if ((iteration++) > (max * 2)) break; // Give up, there are too many collisions. Most probably max is quite close to actual count, meaning it is "difficult" to draw new random entities for each iteration.
                             }
-                            retval.AppendLine("<p" +
-                                // "style=\"color:red\"" +  This is most probably only a distraction
+                            // TODO: Google what is most efficient. Sorting when adding as done here (probably not) or sorting afterwards (probably yes)
+                            entitiesToShowAsHTML = dict.Values.ToList(); // dict.Values.OrderBy(e => e.IdFriendly).ToList();
+
+                            // Old approach before 5 Oct 2017. Not optimal because would leave out entities at the end.
+                            //var step = (thisTypeSorted.Count / max) * 2;
+                            //var i = 0; var lastI = 0; while (i < thisTypeSorted.Count && entitiesToShowAsHTML.Count < max) {
+                            //    entitiesToShowAsHTML.Add(thisTypeSorted[i]);
+                            //    lastI = i;
+                            //    i += r.Next((int)step) + 1;
+                            //}
+                            retval.AppendLine("<p " +
+                                "style=\"color:red\"" +  // It is very important to emphasize this
                                 ">" + "NOTE: Limited selection shown.".HTMLEncloseWithinTooltip(
                                     "Too many entities for HTML-view (" + originalCount + "), " +
-                                    "showing approximately " + max + " entities (" + entitiesToShowAsHTML.Count + "), randomly chosen between 0 and " + i + ".\r\n" +
-                                    (request.CurrentUser==null ? "" : ("(the value of " + max + " may be changed through property -" + nameof(PersonP.ConfigHTMLMaxCount) + "- for " + request.CurrentUser.IdFriendly + ".)\r\n")) + 
+                                    "showing approximately " + max + " entities (" + entitiesToShowAsHTML.Count + "), randomly chosen.\r\n" +
+                                    (request.CurrentUser == null ? "" : ("(the value of " + max + " may be changed through property -" + nameof(PersonP.ConfigHTMLMaxCount) + "- for " + request.CurrentUser.IdFriendly + ".)\r\n")) +
                                     "Any sorting directly on HTML-page will only sort within limited selection, not from total result.\r\n" +
                                     "Drill down suggestions and CSV / JSON are based on complete dataset though.") +
                                 "</p>");
@@ -313,11 +328,14 @@ namespace AgoRapide.API {
         /// <summary>
         /// Extracts all distinct values 
         /// 
+        /// Result is <see cref="ConcurrentDictionary{TKey, TValue}"/> instead of <see cref="Dictionary{TKey, TValue}"/> because code 
+        /// executes in parallell.
+        /// 
         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
         /// </summary>
         /// <param name="entities">Alle objects are required to be of an identical type</param>
         /// <returns></returns>
-        public static Dictionary<
+        public static ConcurrentDictionary<
                 CoreP,
                 Dictionary<
                     Operator,
@@ -328,7 +346,7 @@ namespace AgoRapide.API {
                 >
              > CreateDrillDownUrls(Type type, IEnumerable<BaseEntity> entities) {
 
-            var retval = new Dictionary<
+            var retval = new ConcurrentDictionary<
                 CoreP,
                 Dictionary<
                     Operator,
@@ -344,7 +362,19 @@ namespace AgoRapide.API {
 
             /// Note how this code (in <see cref="Result.CreateDrillDownUrls"/>) only gives suggestions for existing values.
             /// If we want to implement some kind of surveillance (for what-if scenarios) we would also need to know all possible values in advance. 
-            type.GetChildProperties().Values.ForEach(key => { // Note how only properties explicitly defined for this type of entity are considered. 
+
+            //// For some information about parallellism see:
+            ///// http://download.microsoft.com/download/B/C/F/BCFD4868-1354-45E3-B71B-B851CD78733D/WhenToUseParallelForEachOrPLINQ.pdf
+
+            // NOTE: Inefficient / not working attempt at parallel execution.
+            //type.GetChildProperties().Values.
+            //    // AsParallel(). // NOTE: This was a naïve attempt of parallel exection, it has no effect.
+            //    ForEach(key => {
+
+            // NOTE: The level of parallelization here is quite coarse.
+            // NOTE: If for instance a given type has only one child property that is computationaly expensive, then
+            // NOTE: the parallelization here would have no little effect.
+            Parallel.ForEach(type.GetChildProperties().Values, key => { // Added use of Parallel.ForEach 3 Nov 2017.
 
                 if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
 
@@ -495,10 +525,18 @@ namespace AgoRapide.API {
                         /// NOTE: For <see cref="DateTime"/>, long and similar types that can be compared like <see cref="Operator.LT"/> and similar 
                         /// NOTE: 
                         if (objStrValues.Count > 10) {
-                            if (objStrValues[objStrValues.Count - 1].Item1 == null) { // (null, "NULL")
-                                /// We have too many values for using <see cref="Operator.EQ"/> against all of them, but we can check for null
-                                objStrValuesForThisOperator = new List<(object, string)> { (null, "NULL") };
-                            } else {
+                            /// We have too many values for using <see cref="Operator.EQ"/> against all of them, but we can check for null and 0
+                            objStrValuesForThisOperator = new List<(object, string)>();
+                            if (objStrValues[objStrValues.Count - 1].Item1 == null) {
+                                objStrValuesForThisOperator.Add((null, "NULL"));
+                            }
+                            if (typeof(long).Equals(key.Key.A.Type)) {
+                                if (objStrValues.Any(i => i.Item2 == "0")) { // TODO: Any-query IS NOT GOOD PERFORMANCE WISE
+                                    objStrValuesForThisOperator.Add(((long)0, "0"));
+                                }
+                            }
+
+                            if (objStrValuesForThisOperator.Count == 0) {
                                 return; // Give up altogether
                             }
                         }

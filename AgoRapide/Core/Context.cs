@@ -2,6 +2,7 @@
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -229,37 +230,44 @@ namespace AgoRapide.Core {
         /// <param name="db"></param>
         /// <param name="result">Will be populated with statistics only if <see cref="BaseSynchronizer.Synchronize{T}"/> had to be called</param>
         /// <returns></returns>
-        public static bool TryExecuteContextsQueries(BaseEntity currentUser, List<Context> allContexts, BaseDatabase db, Result result, out Dictionary<Type, Dictionary<long, BaseEntity>> entitiesByType, out ErrorResponse errorResponse) {
+        public static bool TryExecuteContextsQueries(BaseEntity currentUser, List<Context> allContexts, BaseDatabase db, Result result, out ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>> entitiesByType, out ErrorResponse errorResponse) {
             var contexts = allContexts;
             var types = contexts.
                 Where(c => c.SetOperator != SetOperator.Remove). // NOTE: Important point of waiting with Remove (because that may be the only one for a given type, meaning that nothing will result)
                 Select(c => c.Type).Distinct().ToList();
 
             /// Built up dictionary for each type based on <see cref="AgoRapide.SetOperator.Intersect"/> and <see cref="AgoRapide.SetOperator.Union"/>. 
-            var retval = types.Select(t => {
-                Dictionary<long, BaseEntity> retvalThisType = null;
+            var retval = new ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>>();
+            // types.Select(t => { 
+            Parallel.ForEach(types, t => {
+                ConcurrentDictionary<long, BaseEntity> retvalThisType = null;
                 /// Start with smallest sized set. TODO: <see cref="Context.Size"/> is not implemented as of June 2017.
                 contexts.Where(c => c.Type.Equals(t) && c.SetOperator == SetOperator.Intersect).OrderBy(c => c.Size.Value).Reverse().ToList().ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Intersect"/>
                     if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out _)) return;
-                    var foundNowDict = temp.ToDictionary(e => e.Id);
+                    // var foundNowDict =  temp.ToDictionary(e => e.Id);
+                    var foundNowDict = new ConcurrentDictionary<long, BaseEntity>();
+                    temp.ForEach(e => foundNowDict.Add(e.Id, e));
                     if (retvalThisType == null) {
                         retvalThisType = foundNowDict; // Initial set
                     } else { // Remove everything not found now.
                         retvalThisType.Where(e => !foundNowDict.ContainsKey(e.Key)).ToList().ForEach(e => retvalThisType.Remove(e.Key));
                     }
                 });
-                if (retvalThisType == null) retvalThisType = new Dictionary<long, BaseEntity>();
+                if (retvalThisType == null) retvalThisType = new ConcurrentDictionary<long, BaseEntity>();
                 contexts.Where(c => c.Type.Equals(t) && c.SetOperator == SetOperator.Union).ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Union"/>
                     if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, t, out var temp, out var _)) return;
                     temp.ForEach(e => retvalThisType[e.Id] = e); // Adds to dictionary (if not already there)
                 });
-                return (Type: t, Dictiomary: retvalThisType);
-            }).ToDictionary(tuple => tuple.Type, tuple => tuple.Dictiomary);
+                retval.Add(t, retvalThisType);
+                //    return (Type: t, Dictiomary: retvalThisType);
+                //}).ToDictionary(tuple => tuple.Type, tuple => tuple.Dictiomary);
+            });
 
-            var removes = new Dictionary<Type, Dictionary<long, BaseEntity>>();
+            // TODO: Introduce parallelization here. Create ConcurrentDictionaries as needed and watch out for threading issues!
+            var removes = new Dictionary<Type, ConcurrentDictionary<long, BaseEntity>>();
             contexts.Where(c => c.SetOperator == SetOperator.Remove).ForEach(c => { /// Do all <see cref="AgoRapide.SetOperator.Remove"/>
                 if (!db.TryGetEntities(currentUser, c.QueryId, AccessType.Read, c.Type, out var temp, out _)) return;
-                if (!removes.TryGetValue(c.Type, out var removesThisType)) removesThisType = (removes[c.Type] = new Dictionary<long, BaseEntity>());
+                if (!removes.TryGetValue(c.Type, out var removesThisType)) removesThisType = (removes[c.Type] = new ConcurrentDictionary<long, BaseEntity>());
                 temp.ForEach(e => {
                     // Save for cascade removal later
                     removesThisType[e.Id] = e; /// Note how may be set multiple times, if QueryId is duplicated, therefore do not use <see cref="Extensions.AddValue"/>
@@ -304,10 +312,6 @@ namespace AgoRapide.Core {
                                 }
                             });
 
-                            // Unuseable because O(n^2)
-                            // fromEntities.Values.Where(from => !toEntities.Values.Any(to => to.PV<long>(traversal.Key, 0) == from.Id)).ToList().ForEach(e => {
-
-                            // New variant with index created above
                             fromEntities.Values.Where(from => !toEntitiesIndex.ContainsKey(from.Id)).ToList().ForEach(e => {
                                 fromEntities.Remove(e.Id);
                             }); break;
@@ -324,17 +328,16 @@ namespace AgoRapide.Core {
             TraverseToAllEntities(currentUser, retval, db).ForEach(t => retval.AddValue(t.Key, t.Value));
 
             // Remove removes, first step, before cascade removal
-            removes.ForEach(t => {
-                if (!retval.TryGetValue(t.Key, out var dict)) return;
-                t.Value.ForEach(e => {
+            Parallel.ForEach(removes, r => {
+                if (!retval.TryGetValue(r.Key, out var dict)) return;
+                r.Value.ForEach(e => {
                     if (dict.ContainsKey(e.Value.Id)) dict.Remove(e.Value.Id);
                 });
             });
 
             // Remove removes, second step, cascade removal
-            // var removesAsBaseEntityDictionary = removes.ToDictionary(e => e.Key, e => e.Value.SelectMany(l => l.Value).ToDictionary(baseEntity => baseEntity.Id, baseEntity => baseEntity));
             removes.ForEach(r => { /// Feed value by value into <see cref="TraverseToAllEntities"/>
-                TraverseToAllEntities(currentUser, new Dictionary<Type, Dictionary<long, BaseEntity>> { { r.Key, r.Value } }, db).ForEach(t => {
+                TraverseToAllEntities(currentUser, new ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>> { { r.Key, r.Value } }, db).ForEach(t => {
                     if (!retval.TryGetValue(t.Key, out var dict)) return;
                     t.Value.ForEach(e => {
                         if (dict.ContainsKey(e.Value.Id)) dict.Remove(e.Value.Id);
@@ -347,11 +350,13 @@ namespace AgoRapide.Core {
             return true;
         }
 
-        public static Dictionary<Type, Dictionary<long, BaseEntity>> TraverseToAllEntities(BaseEntity currentUser, Dictionary<Type, Dictionary<long, BaseEntity>> fromEntities, BaseDatabase db) {
-            var retval = new Dictionary<Type, Dictionary<long, BaseEntity>>();
+        public static ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>> TraverseToAllEntities(BaseEntity currentUser, ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>> fromEntities, BaseDatabase db) {
+            var retval = new ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>>();
             fromEntities.Keys.ForEach(fromType => {
-                GetPossibleTraversalsFromType(fromType).ForEach(traversals => {
-                    if (fromEntities.ContainsKey(traversals.Key)) {
+                /// NOTE: This is the ONLY place inside this method (<see cref="TraverseToAllEntities"/>) 
+                /// NOTE: where it is safe to parallelize at the moment (Oct 2017).
+                Parallel.ForEach(GetPossibleTraversalsFromType(fromType), traversals => {
+                    if (fromEntities.ContainsKey(traversals.Key)) { 
                         // This is quite normal because if we can go from type A to type B we can also go the other way. Just ignore.
                         return;
                         // throw new NotImplementedException("Traversal from " + fromType + " to already known type " + traversals.Key + " not yet implemented"); // TODO. Decide how to handle this, maybe just ignore
@@ -362,7 +367,7 @@ namespace AgoRapide.Core {
                     var traversal = traversals.Value[0];
 
                     var fromValues = fromEntities.GetValue(fromType).Values;
-                    var toValues = new Dictionary<long, BaseEntity>();
+                    var toValues = new ConcurrentDictionary<long, BaseEntity>();
 
                     switch (traversal.Direction) {
                         case TraversalDirection.FromForeignKey:
@@ -379,8 +384,9 @@ namespace AgoRapide.Core {
 
                             /// Build index in order to avoid O(n^2) situation.
                             var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
-                            InMemoryCache.EntityCache.Values.
-                                Where(e => traversals.Key.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order no to repeat queries like this:
+                            //InMemoryCache.EntityCache.Values.
+                            //    Where(e => traversals.Key.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order no to repeat queries like this:
+                            InMemoryCache.EntityCacheWhereIs(traversals.Key).
                                 ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
                                     if (e.Properties.TryGetValue(traversal.Key.Key.CoreP, out var p)) {
                                         var foreignKeyValue = p.V<long>();
@@ -390,10 +396,6 @@ namespace AgoRapide.Core {
                                 });
 
                             fromValues.ForEach(from => {
-                                // Unuseable because O(n^2)
-                                // var toEntities = db.GetEntities(currentUser, new QueryIdKeyOperatorValue(traversal.Key.Key, Operator.EQ, from.Id), AccessType.Read, traversals.Key);
-
-                                // New variant with index created above
                                 if (toEntitiesIndex.TryGetValue(from.Id, out var toEntities)) {
                                     toEntities.ForEach(to => {
                                         if (toValues.ContainsKey(to.Id)) return;

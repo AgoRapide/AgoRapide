@@ -33,7 +33,7 @@ namespace AgoRapide {
     )]
     public abstract class BaseEntityWithLogAndCount : BaseEntity {
 
-        public BaseEntityWithLogAndCount() => Properties = new Dictionary<CoreP, Property>(); // TODO: Initialize more deterministically for the different classes.
+        public BaseEntityWithLogAndCount() => Properties = new ConcurrentDictionary<CoreP, Property>(); // TODO: Initialize more deterministically for the different classes.
         
         [ClassMember(Description = "In-memory only logging (often used for short-lived logging like with -" + nameof(Result) + "-).")]
         public void LogInternal(string text, Type callerType, [System.Runtime.CompilerServices.CallerMemberName] string caller = "") {
@@ -114,6 +114,13 @@ namespace AgoRapide {
     /// <summary>
     /// TODO: Move to separate file
     /// 
+    /// TODO: Give a better name. Maybe PropertyKeyAPIOperationAggregate for instance. Or merge into <see cref="PropertyKeyAggregate"/>
+    /// 
+    /// NOTE: <see cref="AggregationKey"/> is not to be confused with <see cref="PropertyKeyAggregate"/>
+    /// NOTE: The former is more associate with API-operations, the latter is associated with data.
+    /// TODO: The former should have a different name.
+    /// TODO: May be could merge the former into the latter? The concepts are VERY similar.
+    /// 
     /// Some examples of aggregation:
     /// (work on this just started summer 2017)
     /// 
@@ -124,7 +131,6 @@ namespace AgoRapide {
     ///    Used for instance for a given <see cref="Context"/>, giving statistics about the data seen.
     ///    TODO: NOT IMPLEMENTED AS OF SEP 2017!
     /// 
-    /// NOTE: <see cref="AggregationKey"/> is not to be confused with <see cref="PropertyKeyForeignKeyAggregate"/>
     /// </summary>
     public class AggregationKey : PropertyKey {
 
@@ -143,7 +149,7 @@ namespace AgoRapide {
         private static ConcurrentDictionary<string, AggregationKey> _aggregations = new ConcurrentDictionary<string, AggregationKey>();
         /// <summary>
         /// TODO: For PropertyKey (or similar), add method ExpandedTo with ExpansionType as parameter 
-        /// TODO: The purpose of this is now having to create code like
+        /// TODO: The purpose of this is not having to create code like
         /// TODO: PropertyKeyMapper.GetA(GatewayP.GatewayFirstSeenOnline + "_" + ExpansionType.DateAgeYears).PropertyKeyWithIndex
         /// TODO: 
         /// TODO: The principle is a little like <see cref="AggregationKey.Get"/>
@@ -190,16 +196,4 @@ namespace AgoRapide {
                 return retval;
             });
     }
-
-    /// <summary>
-    /// TODO: Move to separate file
-    /// </summary>
-    [Enum(AgoRapideEnumType = EnumType.EnumValue)]
-    public enum AggregationType {
-        None,
-        Count,
-        Sum,
-        Min,
-        Max
-    }
-}
+ }

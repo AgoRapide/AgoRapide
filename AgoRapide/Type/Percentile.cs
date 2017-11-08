@@ -130,13 +130,26 @@ namespace AgoRapide {
         /// 
         /// </summary>
         /// <param name="type"></param>
+        /// <param name="entities"></param>
+        /// <param name="db">TODO: REMOVE, NOT NEEDED</param>
+        public static void Calculate(Type type, List<BaseEntity> entities, BaseDatabase db) => 
+            // Introduced Parallel.ForEach 3 Nov 2017
+            Parallel.ForEach(type.GetChildProperties().Values.Where(key => key.Key.A.IsSuitableForPercentileCalculation), key => {
+            Calculate(type, entities, key);
+        });
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type"></param>
         /// <param name="queryid">Has to be <see cref="QueryIdAll"/> as of Sep 2017</param>
         /// <param name="key"></param>
         public static void Calculate(Type type, QueryId queryid, PropertyKey key) {
             switch (queryid) {
                 case QueryIdAll q:
                     /// Calculate and store directly within <see cref="Property.Percentile"/>
-                    Calculate(type, InMemoryCache.EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(), key); break;
+                    // Calculate(type, InMemoryCache.EntityCache.Values.Where(e => type.IsAssignableFrom(e.GetType())).ToList(), key); break;
+                    Calculate(type, InMemoryCache.EntityCacheWhereIs(type), key); break;
                 default:
                     /// TODO: Decide where to store this. 
                     /// TODO: Make a cache with <param name="queryid"/>.ToString() for instance.

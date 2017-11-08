@@ -28,9 +28,12 @@ namespace AgoRapide.Core {
         public static void AssertCurrentlyStartingUp() {
             if (!CurrentlyStartingUp) throw new SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException();
         }
-        private class SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException : ApplicationException {
-            // public SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException() : base("") { }
+        private class SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException : ApplicationException { }
+
+        public static void AssertNotCurrentlyStartingUp() {
+            if (CurrentlyStartingUp) throw new SomeCodeNotToBeRunAtStartupHasBeenCalledBeforeStartupFinishedException();
         }
+        private class SomeCodeNotToBeRunAtStartupHasBeenCalledBeforeStartupFinishedException : ApplicationException { }
 
         /// <summary>
         /// Note that the default instance is only meant for temporary use at application startup. 

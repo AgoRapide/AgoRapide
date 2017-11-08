@@ -87,7 +87,7 @@ namespace AgoRapide {
         [EnumValue(Description =
             "Calls -" + nameof(BaseDatabase.UpdateProperty) + "-. " +
             "Will create a new property if it did not exist already or if the old values was different.\r\n" +
-            "If property existed with same value then its -" + nameof(DBField.valid) + "- and -" + nameof(DBField.vid) + "- will be updated")]
+            "If property existed with same value then its -" + nameof(DBField.valid) + "- and -" + nameof(DBField.vid) + "- will normally be updated")]
         UpdateProperty,
 
         /// <summary>

@@ -155,13 +155,15 @@ namespace AgoRapide.Core {
                     _fromStringMaps[e + "CorrespondingInternalKey"] = correspondingInternalKey;
                 }
 
-                if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later in <see cref="AddA"/>)
-                    a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
-                        a.Key.A.Parents.ToList().ForEach(parent => {
-                            var dummy = AggregationKey.Get(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
-                        });
-                    });
-                }
+                /// Code moved into <see cref="MapEnumFinalize"/> as code below results in <see cref="_cache"/> being indexed before it is populated
+                //if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later in <see cref="AddA"/>)
+                //    a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
+                //        a.Key.A.Parents.ToList().ForEach(parent => {
+                //            var dummy = AggregationKey.Get(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
+                //        });
+                //    });
+                //}
+
                 var test = a.Key.A.EnumValueExplained;
             });
             mapOrders.Add(typeof(T));
@@ -180,6 +182,7 @@ namespace AgoRapide.Core {
             _propertyKeyLists.AddValue(description, keys);
         }
 
+        private static bool MapEnumFinalizeHasCompleted = false;
         /// <summary>
         /// To be called once at application initialization.
         /// </summary>
@@ -197,6 +200,18 @@ namespace AgoRapide.Core {
                     _fromStringMaps.GetValue(e.ToString(), () => nameof(o) + ": " + o)
                 );
                 _cache[o] = dict;
+
+                /// Code moved here from <see cref="MapEnum"/> as code below results in <see cref="_cache"/> being indexed (there we must wait until its population above).
+                dict.Values.ForEach(a => { // TODO: The rationale for creating these keys at all is a bit unclear as of Oct 2017.
+                    if (a.Key.A.Parents != null) { /// Create all actual <see cref="AggregationKey"/> now (reduces chances of conflict later on in <see cref="AddA"/>)
+                        a.Key.A.AggregationTypes.ToList().ForEach(aggregationType => {
+                            a.Key.A.Parents.ToList().ForEach(parent => {
+                                var dummy = AggregationKey.Get(aggregationType, parent, a); /// This will call back again to <see cref="AddA"/>, storing in <see cref="_fromStringMaps"/>
+                            });
+                        });
+                    }
+                });
+
             });
             var enumMapForCoreP = _cache.GetValue(typeof(CoreP), () => typeof(CoreP) + " expected to be in " + nameof(mapOrders) + " (" + string.Join(", ", mapOrders.Select(o => o.ToStringShort())) + ")");
 
@@ -215,21 +230,30 @@ namespace AgoRapide.Core {
             });
 
             var adder = new Action<string, PropertyKey>((description, key) => {
-                noticeLogger(nameof(description) + ": " + description + ", " + key.GetType().ToStringVeryShort() + ": " + key.Key.A.Description);
+                noticeLogger(nameof(description) + ": " + description + ", " + key.GetType().ToStringVeryShort() + ": " + key.Key.PToString + ": " + key.Key.A.Description);
                 allCoreP.AddValue(key.Key.CoreP, key); /// Store with <see cref="_allCoreP"/> in order for <see cref= "Extensions.GetChildProperties"/> for instance to catch these
                 _cache[typeof(CoreP)].AddValue((int)key.Key.CoreP, key); /// Important, for instance in order for <see cref="TryGetA{T}"/> to work.
                 _fromStringMaps.AddValue(key.Key.PToString, key); /// Important, for instance in order for parsing of API requests to work
             });
-            BaseInjector.GetForeignKeyAggregateKeys(allCoreP.Values.ToList()).ForEach(key => adder(nameof(BaseInjector.GetForeignKeyAggregateKeys), key)); /// Add <see cref="PropertyKeyForeignKeyAggregate"/> for automatic injection by <see cref="BaseInjector"/>                                                                                                          
-            BaseInjector.GetExpansionKeys(allCoreP.Values.ToList()).ForEach(key => adder(nameof(BaseInjector.GetExpansionKeys), key)); /// Add <see cref="PropertyKeyExpansion"/> for automatic injection by <see cref="BaseInjector"/>
+            PropertyKeyAggregate.GetKeys(allCoreP.Values.ToList()).ForEach(key => adder(nameof(PropertyKeyAggregate) + "." + nameof(PropertyKeyAggregate.GetKeys), key));
+            PropertyKeyExpansion.GetKeys(allCoreP.Values.ToList()).ForEach(key => adder(nameof(PropertyKeyExpansion) + "." + nameof(PropertyKeyExpansion.GetKeys), key));
+            PropertyKeyJoinTo.GetKeys(allCoreP.Values.ToList()).ForEach(key => adder(nameof(PropertyKeyJoinTo) + "." + nameof(PropertyKeyJoinTo.GetKeys), key));
             _propertyKeyLists.ForEach(e => e.Value.ForEach(v => adder(e.Key, v)));
 
             _allCoreP = allCoreP.Values.ToList();
+            MapEnumFinalizeHasCompleted = true;
         }
 
-        public static void MapEnumAssert(Action<string> noticeLogger) {
-
+        public static void AssertMapEnumFinalizeHasCompleted() {
+            if (!MapEnumFinalizeHasCompleted) throw new MapEnumFinalizeHasNotCompletedYesException();
         }
+        public class MapEnumFinalizeHasNotCompletedYesException : ApplicationException {
+            public MapEnumFinalizeHasNotCompletedYesException() : base("This exception is typically throw because a method like " + nameof(Extensions.GetChildProperties) + " was called prematurely") { }
+        }
+
+        //public static void MapEnumAssert(Action<string> noticeLogger) {
+
+        //}
 
         /// <summary>
         /// Preferred method when <paramref name="_enum"/> is known in the C# code

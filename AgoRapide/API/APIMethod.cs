@@ -194,13 +194,13 @@ namespace AgoRapide.API {
                     _entityType = s.Type;
                 } else if (s.Parameter != null) {
                     var p = s.Parameter.Key;
-                    if (p.A.Parents != null && EntityType != null && !p.IsParentFor(EntityType)) throw new MethodInitialisationException(
+                    if (p.A.Parents != null && EntityType != null && !p.HasParentOfType(EntityType)) throw new MethodInitialisationException(
                             "Incompatible types given for " +
                             p.GetType().ToString() + "-segment (" + EntityType + ") and " +
                             typeof(CoreP).ToString() + "." + p.CoreP.ToString() + " (" + p.A.Parents + ")\r\n" +
                             "You can not have " + typeof(CoreP).ToString() + "." + p.CoreP + " " +
                             "as parameter for operations involving entities of type " + EntityType + " " +
-                            "because !" + nameof(p.IsParentFor) + "(" + EntityType + ")" + detailer2());
+                            "because !" + nameof(p.HasParentOfType) + "(" + EntityType + ")" + detailer2());
 
                     if (restParameters.Count == 0) throw new MethodInitialisationException(
                         "Too few parameters defined in source code.\r\n" +
@@ -782,7 +782,7 @@ namespace AgoRapide.API {
             var classMembers = ApplicationPart.AllApplicationParts.Where(e => e.Value is ClassMember).Select(e => (ClassMember)e.Value).ToList();
             AllMethods.ForEach(method => {
                 void updater<T>(PropertyKey key, T value) { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
-                    db.UpdateProperty(cid, method, key, value, result: null);
+                    db.UpdateProperty(cid, method, key, value, result: null, SkipSetValid: TimeSpan.FromDays(1)); // Use of SkipSetValid reduces startup time of application, especially useful when developing.
                 }
                 var idFriendly = method.PV<string>(APIMethodP.ImplementatorIdFriendly.A());
                 var implementator = classMembers.FirstOrDefault(c => c.IdFriendly.Equals(idFriendly));
@@ -807,8 +807,7 @@ namespace AgoRapide.API {
                     return new Id(
                         idString: new QueryIdString(MA.GetType().ToStringShort().Replace("Attribute", "") + "_" + MA.CoreMethod.ToString()),
                         idFriendly: RouteTemplates[0],
-                        idDoc: new List<string> { RouteTemplates[0]
-} // Most probably little useful
+                        idDoc: new List<string> { RouteTemplates[0] } // Most probably little useful
                     );
                 default:
                     return new Id(
@@ -846,10 +845,10 @@ namespace AgoRapide.API {
 
             method.A.AssertToBeUsed();
 
-            if (method.Properties == null) method.Properties = new Dictionary<CoreP, Property>();
+            if (method.Properties == null) method.Properties = new ConcurrentDictionary<CoreP, Property>();
 
             void updater<T>(PropertyKey key, T value) { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
-                db.UpdateProperty(cid, method, key, value, result: null);
+                db.UpdateProperty(cid, method, key, value, result: null, SkipSetValid: TimeSpan.FromDays(1)); // Use of SkipSetValid reduces startup time of application, especially useful when developing.
             }
 
             if (method._entityType != null) {

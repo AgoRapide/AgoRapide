@@ -464,7 +464,7 @@ namespace AgoRapide.Database {
                         // Take into consideration that there may exist entity root properties without any properties at all
                         // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
                         Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
-                        var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>());
+                        var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new ConcurrentDictionary<CoreP, Property>());
                         retval.Add(e);
                         if (useCache) InMemoryCache.EntityCache[e.Id] = e;
                         rootPropertyIndex++;
@@ -504,7 +504,7 @@ namespace AgoRapide.Database {
                     // Take into consideration that there may exist entity root properties without any properties at all
                     // NOTE: THIS CODE IS COMPLICATED (SEE ALSO ABOVE)
                     Log("Found root property without any properties (" + rootProperties[rootPropertyIndex].Id + ")");
-                    var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new Dictionary<CoreP, Property>());
+                    var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new ConcurrentDictionary<CoreP, Property>());
                     retval.Add(e);
                     if (useCache) InMemoryCache.EntityCache[e.Id] = e;
                 } 
@@ -841,7 +841,7 @@ namespace AgoRapide.Database {
             return id;
         }
 
-        public override Dictionary<CoreP, Property> GetChildProperties(Property parentProperty) {
+        public override ConcurrentDictionary<CoreP, Property> GetChildProperties(Property parentProperty) {
             if (!parentProperty.Key.Key.A.CanHaveChildren) return null;
             Log(nameof(parentProperty.Id) + ": " + parentProperty.Id);
             // parentProperty.Key.Key.A.AssertCanHaveChildren();
@@ -958,7 +958,7 @@ namespace AgoRapide.Database {
             LongDescription =
                 "It is therefore important to always read properties in ASCending order from database before calling this method"
         )]
-        protected Dictionary<CoreP, Property> ReadAllPropertyValuesAndInvalidateDuplicates(Npgsql.NpgsqlCommand cmd) {
+        protected ConcurrentDictionary<CoreP, Property> ReadAllPropertyValuesAndInvalidateDuplicates(Npgsql.NpgsqlCommand cmd) {
             var properties = new List<Property>();
             var isManyCorrections = new List<string>();
             try {
@@ -1092,6 +1092,12 @@ CREATE INDEX " + _tableName + "_" + DBField.pid + @"
   ON public." + _tableName + @"
   USING btree
   (" + DBField.pid + @");
+<<<<<<< HEAD
+=======
+
+ALTER TABLE " + SEQUENCE_NAME + @"
+OWNER TO " + _objectsOwner + @";
+>>>>>>> 9d2833cab4452af6856161692aa2fc3a608569c1
 
 "; // TOOD: Add some configuration value for username here 
         })());
