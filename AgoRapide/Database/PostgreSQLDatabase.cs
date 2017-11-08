@@ -1079,6 +1079,9 @@ MAXVALUE 9223372036854775807
 START 1000  -- Starting with 1000 is a trick that makes it possible in API calls to have the range 1 to 999 signify entity specific id's (for instance like node-id's for an IoT gateway (like Z-Wave Node ID))
 CACHE 1; -- TODO: Use COMMENT ON for comment above!
 
+ALTER TABLE " + SEQUENCE_NAME + @"
+OWNER TO " + _objectsOwner + @";
+
 CREATE INDEX " + _tableName + @"_" + DBField.invalid + @"_is_null 
   ON public." + _tableName + @"
   USING btree
@@ -1088,10 +1091,7 @@ CREATE INDEX " + _tableName + @"_" + DBField.invalid + @"_is_null
 CREATE INDEX " + _tableName + "_" + DBField.pid + @"
   ON public." + _tableName + @"
   USING btree
-  (" + DBField.pid + @")
-
-ALTER TABLE " + SEQUENCE_NAME + @"
-OWNER TO " + _objectsOwner + @";
+  (" + DBField.pid + @");
 
 "; // TOOD: Add some configuration value for username here 
         })());
