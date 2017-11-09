@@ -1092,13 +1092,6 @@ CREATE INDEX " + _tableName + "_" + DBField.pid + @"
   ON public." + _tableName + @"
   USING btree
   (" + DBField.pid + @");
-<<<<<<< HEAD
-=======
-
-ALTER TABLE " + SEQUENCE_NAME + @"
-OWNER TO " + _objectsOwner + @";
->>>>>>> 9d2833cab4452af6856161692aa2fc3a608569c1
-
 "; // TOOD: Add some configuration value for username here 
         })());
 
