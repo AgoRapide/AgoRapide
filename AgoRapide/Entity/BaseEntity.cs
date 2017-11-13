@@ -410,7 +410,7 @@ namespace AgoRapide {
                         if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
                     }
                     retval = retval.Replace("_", " "); // Space means that browser will often replace with line breaks in display.                   
-                    var r2 = new System.Text.StringBuilder();
+                    var r2 = new StringBuilder();
                     for (var i = 0; i < retval.Length; i++) { // Insert space before each capital letter if preceding letter was not a capital letter.
                         if (i > 0 && retval[i].ToString().ToUpper() == retval[i].ToString() && retval[i - 1].ToString().ToUpper() != retval[i - 1].ToString()) {
                             r2.Append(" "); // Code is not necessary very efficient but the result is cached anyway so it really does not matter.

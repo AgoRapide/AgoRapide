@@ -87,14 +87,14 @@ namespace AgoRapide.API {
                         if (entitiesToShowAsHTML.Count > max) { // TODO: Create better algoritm here. Draw randomly between 0 and total count, until have 1000 entities. Look out for situation with close to 1000 entities.
                             var originalCount = entitiesToShowAsHTML.Count;
                             // TODO: Google what is most efficient. Sorting when adding as done here (probably not) or sorting afterwards (probably yes)
-                            var dict = new SortedDictionary<string, BaseEntity>();
+                            var dict = new SortedDictionary<long, BaseEntity>();
                             var r = new Random((int)(DateTime.Now.Ticks % int.MaxValue));
                             var iteration = 0;
                             while (dict.Count < max) {
+                                if ((iteration++) > (max * 3)) break; // Give up, there are too many collisions. Most probably max is quite close to actual count, meaning it is "difficult" to draw new random entities for each iteration.
                                 var i = r.Next(thisTypeSorted.Count);
-                                if (dict.ContainsKey(thisTypeSorted[i].IdFriendly)) continue;
-                                dict.Add(thisTypeSorted[i].IdFriendly, thisTypeSorted[i]);
-                                if ((iteration++) > (max * 2)) break; // Give up, there are too many collisions. Most probably max is quite close to actual count, meaning it is "difficult" to draw new random entities for each iteration.
+                                if (dict.ContainsKey(thisTypeSorted[i].Id)) continue;
+                                dict.Add(thisTypeSorted[i].Id, thisTypeSorted[i]);
                             }
                             // TODO: Google what is most efficient. Sorting when adding as done here (probably not) or sorting afterwards (probably yes)
                             entitiesToShowAsHTML = dict.Values.ToList(); // dict.Values.OrderBy(e => e.IdFriendly).ToList();
@@ -117,7 +117,7 @@ namespace AgoRapide.API {
                                 "</p>");
                         }
                         var tableId = t.ToStringVeryShort();
-                        retval.Append("<table id=\"sorttable" + tableId + "\">\r\n"); // Unsure if multiple tables are supported this way?                                        
+                        retval.Append("<table id=\"sorttable" + tableId + "\">\r\n"); // TOOD: Verify that multiple tables really are supported this way?                                        
                         retval.AppendLine(entitiesToShowAsHTML[0].ToHTMLTableRowHeading(request));
                         retval.AppendLine("<tbody>");
                         retval.AppendLine(string.Join("", entitiesToShowAsHTML.Select(e => e.ToHTMLTableRow(request))));
