@@ -35,12 +35,6 @@ namespace AgoRapide.API {
             AddProperty(CoreP.Description.A(), description);
         }
 
-
-        /// <summary>
-        /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
         public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
         public const string HTMLTableHeading = "<tr><th>Result</th></tr>";
 

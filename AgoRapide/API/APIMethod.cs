@@ -937,11 +937,6 @@ namespace AgoRapide.API {
             }
         }
 
-        /// <summary>
-        /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
         public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
         public const string HTMLTableHeading = "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreAPIMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th></tr>";
 

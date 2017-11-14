@@ -419,7 +419,6 @@ namespace AgoRapide {
                     }
                     return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
                 })() + "</th>")) +
-                // "<th>" + nameof(Created) + "</th>" +
                 "</tr></thead>";
         });
 
@@ -435,8 +434,6 @@ namespace AgoRapide {
             string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<td>" + (
                 Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;"
             ) + "</td>")) +
-            //"<td>" + 
-            //Created.ToString(DateTimeFormat.DateHourMin) + "</td>" +
             "</tr>\r\n";
 
         /// <summary>

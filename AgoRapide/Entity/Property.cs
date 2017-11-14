@@ -578,12 +578,6 @@ namespace AgoRapide {
         /// </summary>
         public bool IsChangeableByCurrentUser;
 
-        /// <summary>
-        /// Consider removing <paramref name="request"/> from <see cref="BaseEntity.ToHTMLTableRowHeading"/>
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="withinThisPriority">Ignored as of Sep 2017</param>
-        /// <returns></returns>
         public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
         public const string HTMLTableHeading = "<tr><th>" + nameof(Key) + "</th><th>" + nameof(Value) + "</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
 
