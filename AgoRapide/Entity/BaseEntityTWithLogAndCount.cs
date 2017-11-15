@@ -74,37 +74,37 @@ namespace AgoRapide {
             Description = "Entities created",
             AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        Created,
+        CountCreated, 
 
         [PropertyKey(
             Description = "Entities still valid (usually in connection with -" + nameof(PropertyOperation.SetValid) + "-).",
             AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        StillValid,
+        CountStillValid,
 
         [PropertyKey(
             Description = "Entities changed (usually in connection with -" + nameof(BaseDatabase.UpdateProperty) + "-).",
             AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        Changed,
+        CountChanged,
 
         [PropertyKey(
             Description = "Entities set invalid (usually in connection with -" + nameof(PropertyOperation.SetInvalid) + "-).",
             AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        SetInvalid,
+        CountSetInvalid,
 
         [PropertyKey(
             Description = "Entities affected (usually in connection with -" + nameof(PropertyOperation) + "-).",
             AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        Affected,
+        CountAffected,
 
         [PropertyKey(
             Description = "Total entities considered.",
             AggregationTypes = new AggregationType[] { AggregationType.Count },
             Type = typeof(long))]
-        Total,
+        CountTotal,
     }
 
     public static class ExtensionsCountP {
@@ -124,7 +124,7 @@ namespace AgoRapide {
     /// Some examples of aggregation:
     /// (work on this just started summer 2017)
     /// 
-    /// 1) <see cref="AggregationType.Count"/>, <see cref="Person"/>, <see cref="CountP.Created"/>
+    /// 1) <see cref="AggregationType.Count"/>, <see cref="Person"/>, <see cref="CountP.CountCreated"/>
     ///    Typically used for communicating result of API call to client. 
     ///    
     /// 2) <see cref="AggregationType.Sum"/>, <see cref="Person"/>, PersonP.Salary. 

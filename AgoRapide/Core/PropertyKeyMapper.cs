@@ -64,6 +64,7 @@ namespace AgoRapide.Core {
 
             MapEnum<DBField>(noticeLogger); /// This is a quasi <see cref="AgoRapide.Core.PropertyKeyAttribute"/>
             MapEnum<CoreP>(noticeLogger);
+            MapEnum<PropertyP>(noticeLogger);
             MapEnum<ConfigurationAttribute.ConfigurationP>(noticeLogger);
             MapEnum<CountP>(noticeLogger);
             MapEnum<API.APIMethodP>(noticeLogger);

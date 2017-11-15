@@ -209,18 +209,6 @@ namespace AgoRapide {
         QueryIdInteger,
 
         /// <summary>
-        /// Note how this is deliberately <see cref="PropertyKey"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to
-        /// allow <see cref="PropertyKeyAttribute.IsMany"/> without <see cref="PropertyKeyWithIndex.Index"/> (<see cref="CoreAPIMethod.UpdateProperty"/> for instance). 
-        /// </summary>
-        [PropertyKey(Type = typeof(PropertyKey))]
-        Key,
-
-        [PropertyKey(
-            Description = "General conveyor of information.",
-            Type = typeof(string))]
-        Value,
-
-        /// <summary>
         /// See <see cref="BaseDatabase.SwitchIfHasEntityToRepresent"/>
         /// 
         /// TODO: DO WE NEED THE AccessLevelWrite = AgoRapide.AccessLevel.Admin restriction here? Or can we

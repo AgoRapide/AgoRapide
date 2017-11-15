@@ -116,7 +116,7 @@ namespace AgoRapide.Database {
             /// Note how we cannot just do 
             ///   SetAndStoreCount(CountP.Total, externalEntities.Count, result, db);
             /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as we are called for different types, meaning value stored for last type would just be overridden)
-            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.Total.A()), externalEntities.Count, result, db);
+            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.CountTotal.A()), externalEntities.Count, result, db);
 
             /// If no keys are found here, a typical cause may be missing statements in your Startup.cs
             var externalPrimaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
@@ -124,7 +124,7 @@ namespace AgoRapide.Database {
             var internalEntities = db.GetAllEntities(type);
             // var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(externalPrimaryKey), e => e);
             var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary(e => e.Properties.GetValue(externalPrimaryKey.Key.CoreP, () => e.ToString()).Value, e => e);
-            result.Count(AggregationKey.Get(AggregationType.Count, typeof(Property), CountP.Total.A()).Key.CoreP, externalEntities.Aggregate(0L, (current, e) => current + e.Properties.Count));
+            result.Count(AggregationKey.Get(AggregationType.Count, typeof(Property), CountP.CountTotal.A()).Key.CoreP, externalEntities.Aggregate(0L, (current, e) => current + e.Properties.Count));
             var newCount = 0;
             externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
                 // if (internalEntitiesByExternalPrimaryKey.TryGetValue(e.PV<long>(externalPrimaryKey), out var internalEntity)) {
@@ -153,12 +153,12 @@ namespace AgoRapide.Database {
                 });
                 InMemoryCache.EntityCache[e.Id] = e; // Put into cache
             });
-            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.Created.A()), newCount, result, db);
+            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.CountCreated.A()), newCount, result, db);
             internalEntitiesByExternalPrimaryKey.ForEach(e => { // Remove any internal entities left.
                 db.OperateOnProperty(Id, e.Value.RootProperty, PropertyOperation.SetInvalid, result);
                 if (InMemoryCache.EntityCache.ContainsKey(e.Value.Id)) InMemoryCache.EntityCache.TryRemove(e.Value.Id, out _);
             });
-            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.SetInvalid.A()), internalEntitiesByExternalPrimaryKey.Count, result, db);
+            SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.CountSetInvalid.A()), internalEntitiesByExternalPrimaryKey.Count, result, db);
         }
 
         /// <summary>

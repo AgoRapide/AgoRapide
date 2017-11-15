@@ -270,7 +270,7 @@ namespace AgoRapide {
             return new Property(dummy: null) {
                 IsIsManyParent = true,
                 _key = strictKey,
-                Properties = new  ConcurrentDictionary<CoreP, Property>()
+                Properties = new ConcurrentDictionary<CoreP, Property>()
             };
         }
 
@@ -357,9 +357,9 @@ namespace AgoRapide {
         /// TODO: As of June 2017 we only have Percentiles based on the whole "universe" of same properties
         /// </summary>
         public Percentile Percentile {
-            get => _percentile ?? 
-                Percentile.Get(100); 
-                // throw new NullReferenceException(nameof(Percentile) + ". Details: " + ToString());
+            get => _percentile ??
+                Percentile.Get(100);
+            // throw new NullReferenceException(nameof(Percentile) + ". Details: " + ToString());
             set => _percentile = value ?? throw new ArgumentNullException(nameof(value) + ". Details: " + ToString());
         }
         public bool PercentileIsSet => _percentile != null;
@@ -578,8 +578,22 @@ namespace AgoRapide {
         /// </summary>
         public bool IsChangeableByCurrentUser;
 
-        public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
-        public const string HTMLTableHeading = "<tr><th>" + nameof(Key) + "</th><th>" + nameof(Value) + "</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
+        private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrderLimit (but the latter is not significant)
+            List<PropertyKey>> _HTMLTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        public override List<PropertyKey> ToHTMLTableColumns(Request request) => _HTMLTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => new List<PropertyKey> {
+            PropertyP.PropertyKey.A(),
+            PropertyP.PropertyValue.A(),
+            PropertyP.PropertySave.A(),
+            PropertyP.PropertyCreated.A(),
+            PropertyP.PropertyInvalid.A()
+        });
+
+        ///// <summary>
+        ///// NOTE: In principle this override is unnecessary as <see cref="ToHTMLTableColumns"/> communicates what is needed.
+        ///// </summary>
+        //public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
+        //public const string HTMLTableHeading = "<tr><th>" + nameof(Key) + "</th><th>" + nameof(Value) + "</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -609,7 +623,7 @@ namespace AgoRapide {
                     (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML.ToString())) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
                         (IsTemplateOnly || !ShowValueHTMLSeparate ? "" : (ValueHTML + "&nbsp;")) + /// Added <see cref="ValueHTML"/> 21 Jun 2017
-                        a.Size.ToHTMLStartTag() + 
+                        a.Size.ToHTMLStartTag() +
                             "id=\"input_" + KeyHTML + "\"" +
                             (!a.IsPassword ? "" : " type=\"password\"") +
                             " value=\"" + (IsTemplateOnly || a.IsPassword ? "" : V<string>().HTMLEncode()) + "\"" +
@@ -747,8 +761,22 @@ namespace AgoRapide {
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
 
-        public override string ToCSVTableRowHeading(Request request) => ToCSVTableRowHeadingStatic(request);
-        public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + "Unit" + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + "ValueDescription";
+        private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrderLimit
+            List<PropertyKey>> _CSVTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        public override List<PropertyKey> ToCSVTableColumns(Request request) => _CSVTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => new List<PropertyKey> {
+            PropertyP.PropertyKey.A(),
+            PropertyP.PropertyValue.A(),
+            PropertyP.PropertyUnit.A(),
+            PropertyP.PropertyCreated.A(),
+            PropertyP.PropertyInvalid.A(),
+            PropertyP.PropertyKeyDescription.A(),
+            PropertyP.PropertyValueDescription.A()
+        });
+
+        ///// NOTE: In principle this override is unnecessary as <see cref="ToCSVTableColumns"/> communicates what is needed.
+        //public override string ToCSVTableRowHeading(Request request) => ToCSVTableRowHeadingStatic(request);
+        //public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + "Unit" + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + "ValueDescription";
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -956,5 +984,69 @@ namespace AgoRapide {
         public JSONProperty1() {
         }
     }
-}
 
+    /// <summary>
+    /// Introduced Nov 2017 in connection with <see cref="BaseEntity.ToHTMLTableColumns"/> and <see cref="BaseEntity.ToCSVTableColumns"/>
+    /// NOTE: This <see cref="EnumType.PropertyKey"/>-enum is different from all others.
+    /// NOTE: Values here are not given with <see cref="PropertyKeyAttribute.Parents"/> set to <see cref="Property"/> because they are really
+    /// NOTE: not included in <see cref="BaseEntity.Properties"/> for <see cref="Property"/>-objects.
+    /// NOTE: (that is, for a given <see cref="Property"/>-instance you can not call methods like 
+    /// NOTE: <see cref="BaseEntity.PV{T}"/> with <see cref="PropertyP.PropertyKey"/> / <see cref="PropertyP.Value"/> 
+    /// NOTE: and similar in order to read properties, 
+    /// NOTE: instead you must call directly properties like 
+    /// NOTE: <see cref="Property.Key"/> / <see cref="Property.Value"/> and so on)
+    /// </summary>
+    [Enum(AgoRapideEnumType = EnumType.PropertyKey)]
+    public enum PropertyP {
+        None,
+
+        /// <summary>
+        /// Note how this is deliberately <see cref="Core.PropertyKey"/> (and not <see cref="PropertyKeyWithIndex"/>) since there are many situations where it is practical to
+        /// allow <see cref="PropertyKeyAttribute.IsMany"/> without <see cref="PropertyKeyWithIndex.Index"/> (<see cref="CoreAPIMethod.UpdateProperty"/> for instance). 
+        /// 
+        /// More often <see cref="Property.Key"/> is used directly instead of this enum.
+        /// </summary>
+        [PropertyKey(Type = typeof(PropertyKey))]
+        PropertyKey,
+
+        /// <summary>
+        /// More often <see cref="Property.Value"/> is used directly instead of this enum.
+        /// </summary>
+        [PropertyKey(
+            Description = "General conveyor of information.",
+            Type = typeof(object))] // Changed from string to object 15 Nov 2017
+        PropertyValue,
+
+        [PropertyKey(Description ="Designates the column in an HTML table in which a Save-button is placed if relevant")]
+        PropertySave,
+
+        [PropertyKey(Description = "Corresponds to -" + nameof(DBField.created) + "-.")]
+        PropertyCreated,
+
+        [PropertyKey(Description = "Corresponds to -" + nameof(DBField.invalid) + "-.")]
+        PropertyInvalid,
+
+        /// <summary>
+        /// Only used by <see cref="Property.ToCSVTableColumns"/> / <see cref="Property.ToCSVTableRow"/>
+        /// </summary>
+        [PropertyKey(Description = "Corresponds to -" + nameof(PropertyKeyAttribute.Unit) + "- for -" + nameof(Property.Key) + "-.")]
+        PropertyUnit,
+
+        /// <summary>
+        /// Only used by <see cref="Property.ToCSVTableColumns"/> / <see cref="Property.ToCSVTableRow"/>
+        /// </summary>
+        [PropertyKey(Description = "Corresponds to -" + nameof(PropertyKeyAttribute.WholeDescription) + "- for -" + nameof(Property.Key) + "-.")]
+        PropertyKeyDescription,
+
+        /// <summary>
+        /// Only used by <see cref="Property.ToCSVTableColumns"/> / <see cref="Property.ToCSVTableRow"/>
+        /// </summary>
+        [PropertyKey(Description = "Corresponds to -" + nameof(PropertyKeyAttribute.WholeDescription) + "- for -" + nameof(Property.Value) + "-.")]
+        PropertyValueDescription,
+
+    }
+
+    public static class PropertyPExtension {
+        public static PropertyKey A(this PropertyP propertyP) => PropertyKeyMapper.GetA(propertyP);
+    }
+}

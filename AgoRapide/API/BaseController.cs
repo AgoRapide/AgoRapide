@@ -327,7 +327,7 @@ namespace AgoRapide.API {
             request.Method.MA.AssertCoreMethod(CoreAPIMethod.UpdateProperty);
             var queryId = request.Parameters.PV<QueryId>(CoreP.QueryId.A());
             var propertyKeyNonStrict = request.Parameters.PVM<PropertyKey>();
-            var strValue = request.Parameters.PV<string>(CoreP.Value.A());
+            var strValue = request.Parameters.PV<string>(PropertyP.PropertyValue.A());
             /// Validate value. Note how TryGetRequest was only able to validate value as string 
             /// because <see cref="CoreAPIMethod.UpdateProperty"/> does not know anything about which values are valid for which keys.
             /// TODO: CONSIDER MAKING THIS EVEN SMARTER!

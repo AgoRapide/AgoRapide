@@ -534,14 +534,14 @@ namespace AgoRapide.Database {
                         } else {
                             OperateOnProperty(cid, existingProperty, PropertyOperation.SetValid, result);
                         }
-                        result?.Count(typeof(Property), CountP.StillValid);
+                        result?.Count(typeof(Property), CountP.CountStillValid);
                     } else { // Vanlig variant
                              // TODO: Use of default value.ToString() here is not optimal
                              // TODO: Implement AgoRapide extension method for ToString-representation of generic value?
                              // TODO: At least for presenting DateTime-objects and double in a preferred manner
                         Log(detailer() + ". Property changed from '" + existingValue + "' to '" + valueToUpdate + "'", result);
                         var changedProperty = creator(keyToUse, valueToUpdate);
-                        result?.Count(typeof(Property), CountP.Changed);
+                        result?.Count(typeof(Property), CountP.CountChanged);
                         entityOrIsManyParent.Properties[keyAsCoreP] = changedProperty; // TOOD: result-Property from creator has not been initialized properly now (with Parent for instance)
                     }
                 } else {
@@ -551,7 +551,7 @@ namespace AgoRapide.Database {
                     Log(detailer() + ". Property was not known. Initial value: '" + valueToUpdate + "'", result);
                     var newProperty = creator(keyToUse, valueToUpdate);
                     entityOrIsManyParent.Properties[keyAsCoreP] = newProperty; // TOOD: result-Property from creator has not been initialized properly now (with Parent for instance)
-                    result?.Count(typeof(Property), CountP.Total);
+                    result?.Count(typeof(Property), CountP.CountTotal);
                 }
             });
 

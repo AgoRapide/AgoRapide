@@ -118,7 +118,7 @@ namespace AgoRapide.API {
             "     log: true,\r\n" +
             "     url: entityType + '/" + CoreAPIMethod.UpdateProperty + "',\r\n" +
             "     type: '" + HTTPMethod.POST + "',\r\n" +
-            "     data: '" + CoreP.QueryId + "=' + entityId + '&" + CoreP.Key + "=' + encodeURIComponent(keyDB) + '&" + CoreP.Value + "=' + encodeURIComponent($(inputId).val()),\r\n" +
+            "     data: '" + CoreP.QueryId + "=' + entityId + '&" + PropertyP.PropertyKey + "=' + encodeURIComponent(keyDB) + '&" + PropertyP.PropertyValue + "=' + encodeURIComponent($(inputId).val()),\r\n" +
             "     success: function saveSuccess(data) {\r\n" +
             "        $('#generalQueryResult').html('');\r\n" +
             "        $(inputId).css({\"background-color\":\"lightgreen\"});\r\n" +

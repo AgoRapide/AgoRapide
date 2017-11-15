@@ -695,7 +695,8 @@ namespace AgoRapide.Core {
         /// All properties with <see cref="PropertyKeyAttribute.PriorityOrder"/> less than or equal to this value will be returned. 
         /// 
         /// Since result is cached, the values used for this parameter should have a limited range.
-        /// Use <see cref="int.MaxValue"/> if you want absolutely all properties (note that the <see cref="PriorityOrder"/>-enum is actually an int, so any int-value can be stored)
+        /// Use <see cref="PriorityOrder.Everything"/> (which corresponds to <see cref="int.MaxValue"/>) if you want absolutely all properties 
+        /// (note that the <see cref="PriorityOrder"/>-enum is actually an int, so any int-value can be stored)
         /// </param>
         /// <returns></returns>
         public static List<PropertyKey> GetChildPropertiesByPriority(this Type type, PriorityOrder withinThisPriority) => _childPropertiesByPriorityCache.GetOrAdd(type + "_" + withinThisPriority, key => {

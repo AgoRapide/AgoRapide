@@ -391,6 +391,16 @@ namespace AgoRapide {
         }
 
         private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrderLimit
+            List<PropertyKey>> _HTMLTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        /// <summary>
+        /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual List<PropertyKey> ToHTMLTableColumns(Request request) => _HTMLTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit));
+
+        private static ConcurrentDictionary<
             string, // Key is GetType + _ + PriorityOrder
             string> _tableRowHeadingCache = new ConcurrentDictionary<string, string>();
         /// <summary>
@@ -401,8 +411,9 @@ namespace AgoRapide {
         /// <returns></returns>
         public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
-            return "<thead><tr><th>" + nameof(IdFriendly) + "</th>" +
-                string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<th>" + new Func<string>(() => {
+            return "<thead><tr><th>" + 
+                nameof(IdFriendly) + "</th>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
+                string.Join("", ToHTMLTableColumns(request).Select(key => "<th>" + new Func<string>(() => {
                     var retval = key.Key.PToString;
                     if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
                         // TODO: Add mouseover for showing complete name here.
@@ -430,7 +441,7 @@ namespace AgoRapide {
         /// <param name="request"></param>
         /// <returns></returns>
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
-            (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td>" +
+            (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
             string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<td>" + (
                 Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;"
             ) + "</td>")) +
@@ -533,9 +544,7 @@ namespace AgoRapide {
                     var changeableProperties = GetType().GetChildPropertiesForAccessLevel(AccessType.Write, request.CurrentUser?.AccessLevelGiven ?? AccessLevel.Anonymous);
 
                     retval.AppendLine("<h2>Properties</h2>\r\n");
-                    // This would be the normal approach but we can use the const-value instead:
-                    // retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableHeading(request));
-                    retval.AppendLine("<table>" + Property.HTMLTableHeading);
+                    retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableRowHeading(request));
                     /// TODO: Implement a common comparer for use by both <see cref="CreateHTMLForExistingProperties"/> and <see cref="CreateCSVForExistingProperties"/>
                     retval.AppendLine(string.Join("", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
                         p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
@@ -602,7 +611,7 @@ namespace AgoRapide {
                     /// Do not give any explanation now. All relevant properties are already shown by <see cref="CreateHTMLForExistingProperties"/>
                 } else {
                     retval.AppendLine("<h2>Properties you may add</h2>");
-                    retval.AppendLine("<table>" + Property.HTMLTableHeading);
+                    retval.AppendLine("<table>" + Property.CreateTemplate(notExisting.First().Value.PropertyKeyAsIsManyParentOrTemplate, this).ToHTMLTableRowHeading(request));
                     retval.AppendLine(string.Join("", notExisting.Select(p => {
                         var property = Property.CreateTemplate(p.Value.PropertyKeyAsIsManyParentOrTemplate, this);
                         property.IsChangeableByCurrentUser = true; /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
@@ -615,6 +624,20 @@ namespace AgoRapide {
         }
 
         private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrderLimit (but the latter is not significant)
+            List<PropertyKey>> _CSVTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        /// <summary>
+        /// Note use of <see cref="PriorityOrder.Everything"/> meaning that all columns are always returned for CSV-format regardless of <see cref="Request.PriorityOrderLimit"/>
+        /// (this is in contrast to <see cref="ToHTMLTableColumns"/> for which <see cref="Request.PriorityOrderLimit"/> is significant). 
+        /// In other words, <paramref name="request"/> here is really ignored. 
+        /// 
+        /// Note that in addition to the columns returned by <see cref="ToCSVTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToCSVTableRowHeading"/> and <see cref="ToCSVTableRow"/>
+        /// </summary>
+        /// <param name="request">Not significant.</param>
+        /// <returns></returns>
+        public virtual List<PropertyKey> ToCSVTableColumns(Request request) => _CSVTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => GetType().GetChildPropertiesByPriority(PriorityOrder.Everything));
+
+        private static ConcurrentDictionary<
             string, // Key is GetType + _ + PriorityOrder
             string> _CSVTableRowHeadingCache = new ConcurrentDictionary<string, string>();
         /// <summary>
@@ -625,11 +648,8 @@ namespace AgoRapide {
         /// <returns></returns>
         public virtual string ToCSVTableRowHeading(Request request) => _CSVTableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
-            return nameof(Id) + request.CSVFieldSeparator +
-            string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
-                    /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
-                    PriorityOrder.Everything // We assume that all information is required for CSV
-                ).Select(key => new Func<string>(() => {
+            return nameof(Id) + request.CSVFieldSeparator + /// Note that in addition to the columns returned by <see cref="ToCSVTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToCSVTableRowHeading"/> and <see cref="ToCSVTableRow"/>
+            string.Join(request.CSVFieldSeparator, ToCSVTableColumns(request).Select(key => new Func<string>(() => {
                     var retval = key.Key.PToString;
                     if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
                         retval = retval.Substring(thisType.Length);
@@ -648,7 +668,8 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public virtual string ToCSVTableRow(Request request) => (Id <= 0 ? "" : Id.ToString()) + request.CSVFieldSeparator +
+        public virtual string ToCSVTableRow(Request request) => 
+            (Id <= 0 ? "" : Id.ToString()) + request.CSVFieldSeparator + /// Note that in addition to the columns returned by <see cref="ToCSVTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToCSVTableRowHeading"/> and <see cref="ToCSVTableRow"/>
             string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
                     /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
                     PriorityOrder.Everything // We assume that all information is required for CSV
@@ -753,7 +774,8 @@ namespace AgoRapide {
                 var existing = GetExistingProperties(request.CurrentUser, AccessType.Read);
                 if (existing.Count > 0) {
                     // retval.AppendLine("Properties:");
-                    retval.AppendLine(Property.ToCSVTableRowHeadingStatic(request));
+                    existing.First().Value.ToCSVTableRowHeading(request);
+                    // retval.AppendLine(Property.ToCSVTableRowHeadingStatic(request));
                     /// TODO: Implement a common comparer for use by both <see cref="CreateHTMLForExistingProperties"/> and <see cref="CreateCSVForExistingProperties"/>
                     retval.AppendLine(string.Join("\r\n", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
                         return p.ToCSVTableRow(request);

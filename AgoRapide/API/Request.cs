@@ -36,7 +36,8 @@ namespace AgoRapide.API {
         /// </summary>
         [ClassMember(
             Description =
-                "Used to adjust detail of information returned by -" + nameof(BaseEntity.ToHTMLTableRowHeading) + "- and -" + nameof(BaseEntity.ToHTMLTableRow) + "-.",
+                "Used to adjust detail of information returned by -" + nameof(BaseEntity.ToHTMLTableColumns) + "-, -" + nameof(BaseEntity.ToHTMLTableRowHeading) + "- and -" + nameof(BaseEntity.ToHTMLTableRow) + "-.\r\n" +
+                "(ignored by -" + nameof(BaseEntity.ToCSVTableColumns) + "-, -" + nameof(BaseEntity.ToCSVTableRowHeading) + "- and -" + nameof(BaseEntity.ToCSVTableRow) + "-.)",
             LongDescription =
                 "Only relevant for -" + nameof(CoreAPIMethod.EntityIndex) + "- when distinguishing between browsing like\r\n" +
                 "   api/Person/CurrentContext/HTML (see -" + nameof(QueryIdContext) + "-)\r\n" +
@@ -101,7 +102,7 @@ namespace AgoRapide.API {
 
         public object GetOKResponseAsText(string value, string message) {
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(CoreP.Value.A(), value); /// TODO: USE BETTER <see cref="CoreP"/> than this!
+            Result.AddProperty(PropertyP.PropertyValue.A(), value); 
             Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
