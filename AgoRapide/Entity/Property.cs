@@ -1011,7 +1011,12 @@ namespace AgoRapide {
         /// </summary>
         [PropertyKey(
             Description = "General conveyor of information.",
-            Type = typeof(object))] // Changed from string to object 15 Nov 2017
+            /// Changed from string to object 15 Nov 2017
+            /// Changed back to string 16 Nov 2017 because <see cref="PropertyKeyAttributeEnriched.Initialize"/> 
+            /// threw an exception because it can not set any <see cref="PropertyKeyAttributeEnriched.ValidatorAndParser"/> for object.
+            /// (the issue is really that the type of <see cref="PropertyP.PropertyValue"/> depends on <see cref="PropertyP.PropertyKey"/>, and by using
+            /// string <see cref="PropertyKeyAttributeEnriched.Initialize"/> is able to at least ensure the presence of a value (not null, not empty))
+            Type = typeof(string))] 
         PropertyValue,
 
         [PropertyKey(Description = "Designates the column in an HTML table in which a Save-button is placed if relevant")]

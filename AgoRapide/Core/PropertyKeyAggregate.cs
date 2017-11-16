@@ -67,56 +67,111 @@ namespace AgoRapide.Core {
             Description = "Calculates the actual aggregates based on keys returned by -" + nameof(GetKeys) + "-.",
             LongDescription = "Example: If we have Persons and Projects and every Project has a foreign key LeaderPersonId, then this method will aggregate Count_ProjectLeaderPersonid for every Person.")]
         public static void CalculateValues(Type type, List<BaseEntity> entities) =>
-            // Introduced Parallel.ForEach 3 Nov 2017
             Parallel.ForEach(type.GetChildProperties().Values.Select(key => key as PropertyKeyAggregate).Where(key => key != null), key => {
-            var hasLimitedRange = true; var valuesFound = new HashSet<long>(); // TODO: Support other types of aggregations.
+                var hasLimitedRange = true; var valuesFound = new HashSet<long>(); // TODO: Support other types of aggregations.
 
-            /// Build index in order to avoid O(n^2) situation.
-            var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
-            InMemoryCache.EntityCacheWhereIs(key.SourceEntityType).
-                ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
-                    if (e.Properties.TryGetValue(key.ForeignKeyProperty.Key.CoreP, out var p)) {
-                        var foreignKeyValue = p.V<long>();
-                        if (!toEntitiesIndex.TryGetValue(foreignKeyValue, out var list)) list = (toEntitiesIndex[foreignKeyValue] = new List<BaseEntity>());
-                        list.Add(e);
+                /// Build index in order to avoid O(n^2) situation. TODO: Put this into <see cref="InMemoryCache"/>
+                var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
+                InMemoryCache.EntityCacheWhereIs(key.SourceEntityType).
+                    ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
+                        if (e.Properties.TryGetValue(key.ForeignKeyProperty.Key.CoreP, out var p)) {
+                            var foreignKeyValue = p.V<long>();
+                            if (!toEntitiesIndex.TryGetValue(foreignKeyValue, out var list)) list = (toEntitiesIndex[foreignKeyValue] = new List<BaseEntity>());
+                            list.Add(e);
+                        }
+                    });
+
+                entities.ForEach(e => {
+                    InvalidObjectTypeException.AssertAssignable(e, type);
+                    // TODO: Note potential repeated calculations of sourceEntities here. We could have used LINQ GroupBy, but would then have to
+                    // TODO: take into account that the ForeignKeyProperty may actually also vary, not only the SourceEntityType
+                    var sourceEntities = toEntitiesIndex.TryGetValue(e.Id, out var temp) ? temp : new List<BaseEntity>();
+
+                    var av = CalculateSingleValue(key, sourceEntities);
+                    if (av == null) return;
+                    var lngAv = (long)av;
+
+                    e.AddProperty(key, lngAv);
+
+                    if (!valuesFound.Contains(lngAv)) {
+                        // TOOD: TURN LIMIT OF 30 INTO A CONFIGURATION-PARAMETER
+                        // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
+                        if (valuesFound.Count >= 30) { // Note how we allow up to 30 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
+                                                       // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
+                            hasLimitedRange = false;
+                        } else {
+                            valuesFound.Add(lngAv);
+                        }
                     }
                 });
-
-            entities.ForEach(e => {
-                InvalidObjectTypeException.AssertAssignable(e, type);
-                // TODO: Note potential repeated calculations of sourceEntities here. We could have used LINQ GroupBy, but would then have to
-                // TODO: take into account that the ForeignKeyProperty may actually also vary, not only the SourceEntityType
-                var sourceEntities = toEntitiesIndex.TryGetValue(e.Id, out var temp) ? temp : new List<BaseEntity>();
-                
-                long av; // Note how long is the preferred type for aggregations. 
-                // TODO: Support other types of aggregations.
-                if (key.ForeignKeyProperty.Key.CoreP == key.SourceProperty.Key.CoreP) {
-                    if (key.AggregationType != AggregationType.Count) throw new InvalidEnumException(key.AggregationType, "Because " + nameof(key.ForeignKeyProperty));
-
-                    av = sourceEntities.Count; 
-                } else {
-                    switch (key.AggregationType) {
-                        case AggregationType.Sum:
-                            InvalidTypeException.AssertEquals(key.Key.A.Type, typeof(long), () => key.ToString());
-                            av = sourceEntities.Aggregate(0L, (acc, se) => acc + se.PV<long>(key.SourceProperty, 0)); break;
-                        default: throw new NotImplementedException(key.SourceProperty.Key.PToString + " " + key.AggregationType + " for " + key.Key.A.Parents);
-                    }
-                }
-                e.AddProperty(key, av);
-
-                if (!valuesFound.Contains(av)) {
-                    // TOOD: TURN LIMIT OF 30 INTO A CONFIGURATION-PARAMETER
-                    // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
-                    if (valuesFound.Count >= 30) { // Note how we allow up to 30 DIFFERENT values, instead of values up to 20. This means that a distribution like 1,2,3,4,5,125,238,1048 still counts as limited.
-                                                   // TODO: Or rather, create a LimitedRange-limit for PropertyKeyAttribute
-                        hasLimitedRange = false;
-                    } else {
-                        valuesFound.Add(av);
-                    }
-                }
+                key.Key.A.HasLimitedRange = hasLimitedRange; /// If TRUE then important discovery making it possible for <see cref="Result.CreateDrillDownUrls"/> to make more suggestions.
             });
-            key.Key.A.HasLimitedRange = hasLimitedRange; /// If TRUE then important discovery making it possible for <see cref="Result.CreateDrillDownUrls"/> to make more suggestions.
-        });
+
+        /// <summary>
+        /// Note how long is the preferred type for aggregations. 
+        /// 
+        /// TODO: Support other types of aggregations.
+        /// 
+        /// TODO: This specific overload is most probably not much needed (only used from one place as of Nov 2017)
+        /// 
+        /// Returns null if value would be meaningless, for instance <see cref="AggregationType.Max"/> with no values present.
+        /// (or rather, will return null instead of <see cref="long.MinValue"/> or <see cref="long.MaxValue"/>)
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="entities"></param>
+        /// <returns></returns>
+        [ClassMember(Description = "Calculates single aggregate")]
+        public static long? CalculateSingleValue(PropertyKeyAggregate key, List<BaseEntity> entities) {
+            if (key.ForeignKeyProperty.Key.CoreP == key.SourceProperty.Key.CoreP) {
+                if (key.AggregationType != AggregationType.Count) throw new InvalidEnumException(key.AggregationType, "Because " + nameof(key.ForeignKeyProperty));
+                return entities.Count;
+            }
+            InvalidTypeException.AssertEquals(key.Key.A.Type, typeof(long), () => key.ToString());
+            return CalculateSingleValue(key.AggregationType, key.SourceProperty, entities);
+        }
+
+        /// <summary>
+        /// Returns null if value would be meaningless, for instance <see cref="AggregationType.Max"/> with no values present.
+        /// (or rather, will return null instead of <see cref="long.MinValue"/> or <see cref="long.MaxValue"/>)
+        /// </summary>
+        /// <param name="aggregationType"></param>
+        /// <param name="sourceProperty"></param>
+        /// <param name="entities"></param>
+        /// <returns></returns>
+        public static long? CalculateSingleValue(AggregationType aggregationType, PropertyKey sourceProperty, List<BaseEntity> entities) {
+            var retval = new Func<long?>(() => {
+                switch (aggregationType) {
+                    case AggregationType.Count:
+                        return entities.Where(e => e.Properties.ContainsKey(sourceProperty.Key.CoreP)).Count();
+                    case AggregationType.Sum:
+                        return entities.Aggregate(0L, (acc, e) => acc + e.PV<long>(sourceProperty, 0));
+                    case AggregationType.Min:
+                        return entities.Min(se => se.TryGetPV<long>(sourceProperty, out var l) ? l : long.MaxValue);
+                    case AggregationType.Max:
+                        return entities.Max(se => se.TryGetPV<long>(sourceProperty, out var l) ? l : long.MinValue);
+                    case AggregationType.Average:
+                        return (long)((entities.Aggregate(0L, (acc, e) => acc + e.PV<long>(sourceProperty, 0)) / (double)entities.Count) + .5);
+                    case AggregationType.Median:
+                        // Note that only entities with a value registered are included.
+                        // Note how we ask for the long-value first, in order to reduce that number of operations.
+                        var sorted1 = entities.Where(e => e.Properties.ContainsKey(sourceProperty.Key.CoreP)).Select(e => (e, e.PV<long>(sourceProperty)));
+                        var sorted2 = sorted1.OrderBy(e => e.Item2).ToList();
+                        if (sorted2.Count == 0) return null;
+                        var midPoint = sorted2.Count / 2;
+                        if ((sorted2.Count % 2 == 1)) return sorted2[midPoint].Item1.PV<long>(sourceProperty);
+                        return (long)((sorted2[midPoint - 1].Item1.PV<long>(sourceProperty) + sorted2[midPoint].Item1.PV<long>(sourceProperty) / 2) + .5);
+                    case AggregationType.Percent:
+                        return (long)(((entities.Where(e => e.Properties.ContainsKey(sourceProperty.Key.CoreP)).Count() / (double)entities.Count) * 100) + .5);
+                    default:
+                        // throw new NotImplementedException(key.SourceProperty.Key.PToString + " " + key.AggregationType + " for " + key.Key.A.Parents);
+                        throw new InvalidEnumException(aggregationType, "Not implemented");
+                }
+            })();
+            if (retval == null) return null;
+            if (retval == long.MinValue) return null;
+            if (retval == long.MaxValue) return null;
+            return retval;
+        }
 
         /// <summary>
         /// Called from <see cref="PropertyKeyMapper.MapEnumFinalize"/>
@@ -126,8 +181,9 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         [ClassMember(Description =
             "Generates -" + nameof(PropertyKeyAggregate) + "- for all aggregates that can automatically be deduced from standard AgoRapide information.\r\n" +
-            "Will generate keys for -" + nameof(AggregationType.Count) + "- directly against foreign keys, and also keys for aggregates for all properties " +
-            "for foreign entity which have -" + nameof(PropertyKeyAttribute.AggregationTypes) + "- set.\r\n")]
+            "Will generate keys for\r\n" +
+            "1) -" + nameof(AggregationType.Count) + "- directly against foreign keys, and also\r\n" +
+            "2) keys for aggregates for all properties for foreign entity which have -" + nameof(PropertyKeyAttribute.AggregationTypes) + "- set.\r\n")]
         public static List<PropertyKeyAggregate> GetKeys(List<PropertyKey> keys) {
             Util.AssertCurrentlyStartingUp();
             var retval = new List<PropertyKeyAggregate>();
@@ -139,12 +195,23 @@ namespace AgoRapide.Core {
                         Where(key => key.Key.HasParentOfType(p) && (key.Key.CoreP == k.Key.CoreP || (key.Key.A.AggregationTypes.Length > 0))).
                         ForEach(fp => { // Aggregate for all properties that are possible to aggregate over. 
 
-                            // Added 14 Sep 2017. May have to relax a bit here though. 
-                            InvalidTypeException.AssertEquals(fp.Key.A.Type, typeof(long), () => "Details: " + fp.ToString());
-                            //if (fp.Key.PToString.Equals("VismaOrderLineValueWithCosts")) {
-                            //    var a = 1;
-                            //}
                             var aggregationTypes = fp.Key.A.AggregationTypes.ToList();
+
+                            {
+                                foreach (var a in aggregationTypes) {
+                                    switch (a) {
+                                        case AggregationType.Count:
+                                        case AggregationType.Percent:
+                                            break; // Exempted counts and percentage from type restrictions 16 Nov 2017
+                                        default:
+                                            // Added 14 Sep 2017. May have to relax a bit here though. 
+                                            InvalidTypeException.AssertEquals(fp.Key.A.Type, typeof(long), () => "Details: " + fp.ToString());
+                                            goto finished;
+                                    }
+                                }
+                            }
+                            finished:
+
                             if (fp.Key.CoreP == k.Key.CoreP && !aggregationTypes.Contains(AggregationType.Count)) aggregationTypes.Add(AggregationType.Count); // Always count number of foreign entities
                             aggregationTypes.ForEach(a => {
                                 var foreignKeyAggregateKey = new PropertyKeyAggregate(
@@ -162,12 +229,40 @@ namespace AgoRapide.Core {
                                                     p.ToStringVeryShort() + "_" + fp.Key.PToString.Replace("CorrespondingInternalKey", "")). // Note removal of "CorrespondingInternalKey", resulting in shorter identification                                           
                                                     Replace(a + "_" + p.ToStringVeryShort() + "_" + p.ToStringVeryShort(), a + "_" + p.ToStringVeryShort() + "_"), // This replace will turn for instance Count_Project_ProjectLeaderPersonId into Count_Project_LeaderPersonId, that is, it shortens down aggregate keys when the P-enums repeat their parent-entity type.
                                                 description: "-" + k.Key.A.ForeignKeyOf.ToStringVeryShort() + "- -" + a + "- for -" + p.ToStringVeryShort() + "- -" + fp.Key.PToString.Replace("CorrespondingInternalKey", "") + "-." +
-                                                    (a != AggregationType.Count ? "" : "\r\n(count of " + p.ToStringVeryShort() + " related to " + k.Key.A.ForeignKeyOf.ToStringVeryShort() + ".)"),
+                                                    (a != AggregationType.Count ? "" : ("\r\n(count of " + p.ToStringVeryShort() + " related to " + k.Key.A.ForeignKeyOf.ToStringVeryShort() + ". NOTE: Includes ALL related entities regardless of current context.)")),
                                                 longDescription: "",
                                                 isMany: false
                                             ) {
                                             Parents = new Type[] { k.Key.A.ForeignKeyOf },
                                             Type = typeof(long), /// TODO: Maybe allow double also for aggregations?
+
+                                            AggregationTypes = new Func<AggregationType[]>(() => {
+                                                switch (a) {
+                                                    case AggregationType.Sum:
+                                                        return new AggregationType[] {
+                                                        // The following looks natural but could be misleading because the original aggregation would be a TOTAL
+                                                        // aggregations, for instance all orders for a product, while the aggregation done here would
+                                                        // typically be only relevant for the given context, for instance products sold last month.
+                                                        AggregationType.Min,
+                                                        AggregationType.Max,
+                                                        AggregationType.Average,
+                                                        AggregationType.Median,
+                                                        AggregationType.Sum // Sums are assumed to be possible to further aggregate
+                                                    };
+                                                    case AggregationType.Count:
+                                                        return new AggregationType[] {
+                                                        // The following looks natural but could be misleading because the original aggregation would be a TOTAL
+                                                        // aggregations, for instance all orders for a product, while the aggregation done here would
+                                                        // typically be only relevant for the given context, for instance products sold last month.
+                                                        AggregationType.Min,
+                                                        AggregationType.Max,
+                                                        AggregationType.Average,
+                                                        AggregationType.Median,
+                                                        AggregationType.Sum // Counts would be naturally to Sum in further aggregation
+                                                    };
+                                                    default: return null;
+                                                }
+                                            })(),
 
                                             /// TODO: Note how <see cref="BaseEntity.ToHTMLTableRowHeading"/> / <see cref="BaseEntity.ToHTMLTableRow"/> uses
                                             /// TODO: <see cref="Extensions.GetChildPropertiesByPriority(Type, PriorityOrder)"/> which as of Sep 2017

@@ -118,7 +118,42 @@ namespace AgoRapide.API {
                         }
                         var tableId = t.ToStringVeryShort();
                         retval.Append("<table id=\"sorttable" + tableId + "\">\r\n"); // TOOD: Verify that multiple tables really are supported this way?                                        
-                        retval.AppendLine(entitiesToShowAsHTML[0].ToHTMLTableRowHeading(request));
+
+
+                        var aggregationTypes = Util.EnumGetValues<AggregationType>();
+                        var heading = thisTypeSorted[0].ToHTMLTableRowHeading(request, aggregationTypes);
+                        // Insert aggregates as relevant
+                        aggregationTypes.ForEach(a => {
+                            thisTypeSorted[0].ToHTMLTableColumns(request).ForEach(key => {
+                                if (key.Key.A.AggregationTypes.Contains(a)) {
+                                    heading = heading.Replace("<!--" + key.Key.PToString + "_" + a + "-->", new Func<string>(() => {
+                                        var aggregate = PropertyKeyAggregate.CalculateSingleValue(a, key, thisTypeSorted);
+                                        if (aggregate == null) return "&nbsp;";
+                                        return aggregate.ToString() + (a == AggregationType.Percent ? "%" : "");
+                                    })());
+                                }
+                            });
+                        });
+
+                        // Insert Context information as relevant
+                        if (request.CurrentUser != null && request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var context)) {
+                            var contextsKeyOperatorValue = context.Properties.Values.Where(p => p.V<Context>().QueryId is QueryIdKeyOperatorValue);
+                            thisTypeSorted[0].ToHTMLTableColumns(request).ForEach(key => {
+                                var replacementThisKey = new StringBuilder();
+                                var contextsThisKey = contextsKeyOperatorValue.Where(p => ((QueryIdKeyOperatorValue)p.V<Context>().QueryId).Key.PToString.Equals(key.Key.PToString)).ToList();
+                                if (contextsThisKey.Count > 0) { // Add links for removing these contexts.
+                                    replacementThisKey.Append(string.Join("<br>", contextsThisKey.Select(p => {
+                                        var c = p.V<Context>();
+                                        var queryId = (QueryIdKeyOperatorValue)c.QueryId;
+                                        return request.API.CreateAPILink(request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(p.Id), PropertyOperation.SetInvalid), c.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
+                                    })));
+                                }
+                                if (replacementThisKey.Length > 0) heading = heading.Replace("<!--" + key.Key.PToString + "_Context-->", replacementThisKey.ToString());
+                            });
+                        }
+
+                        retval.AppendLine(heading);
+
                         retval.AppendLine("<tbody>");
                         retval.AppendLine(string.Join("", entitiesToShowAsHTML.Select(e => e.ToHTMLTableRow(request))));
                         retval.AppendLine("</tbody>");

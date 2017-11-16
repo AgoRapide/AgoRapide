@@ -16,6 +16,10 @@ namespace AgoRapide {
     public enum AggregationType {
         None,
         Count,
+
+        [EnumValue(Description = "Closely connected to -" + nameof(AggregationType.Count) + "-. Assumed to be that value as percentage of a total count.")]
+        Percent,
+
         Sum,
         Min,
         Max,

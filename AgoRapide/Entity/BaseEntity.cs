@@ -414,30 +414,45 @@ namespace AgoRapide {
         /// 
         /// No overrides exists in AgoRapide as of Nov 2017. 
         /// </summary>
+        /// <param name="request"></param>
+        /// <param name="aggregateRows">May be null. If given then will insert rows for each <see cref="AggregationType"/> with placemarkers like -Customer_Count_Order- as relevant according to keys found</param>
         /// <returns></returns>
-        public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
+        public virtual string ToHTMLTableRowHeading(Request request, List<AggregationType> aggregateRows) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
-            return "<thead><tr><th>" +
-                nameof(IdFriendly) + "</th>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
-                string.Join("", ToHTMLTableColumns(request).Select(key => "<th>" + new Func<string>(() => {
-                    var retval = key.Key.PToString;
-                    if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
-                        // TODO: Add mouseover for showing complete name here.
-                        retval = retval.Substring(thisType.Length);
-                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
-                    }
-                    retval = retval.Replace("_", " "); // Space means that browser will often replace with line breaks in display.                   
-                    var r2 = new StringBuilder();
-                    for (var i = 0; i < retval.Length; i++) { // Insert space before each capital letter if preceding letter was not a capital letter.
-                        if (i > 0 && retval[i].ToString().ToUpper() == retval[i].ToString() && retval[i - 1].ToString().ToUpper() != retval[i - 1].ToString()) {
-                            r2.Append(" "); // Code is not necessary very efficient but the result is cached anyway so it really does not matter.
+            return "<thead>" +
+                "<tr>" +
+                    "<th>" + nameof(IdFriendly) + "</th>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
+                    string.Join("", ToHTMLTableColumns(request).Select(key => "<th>" + new Func<string>(() => {
+                        var retval = key.Key.PToString;
+                        if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                            // TODO: Add mouseover for showing complete name here.
+                            retval = retval.Substring(thisType.Length);
+                            if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
                         }
-                        r2.Append(retval[i]);
-                    }
-                    return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
-                })() + "</th>")) +
+                        retval = retval.Replace("_", " "); // Space means that browser will often replace with line breaks in display.                   
+                        var r2 = new StringBuilder();
+                        for (var i = 0; i < retval.Length; i++) { // Insert space before each capital letter if preceding letter was not a capital letter.
+                            if (i > 0 && retval[i].ToString().ToUpper() == retval[i].ToString() && retval[i - 1].ToString().ToUpper() != retval[i - 1].ToString()) {
+                                r2.Append(" "); // Code is not necessary very efficient but the result is cached anyway so it really does not matter.
+                            }
+                            r2.Append(retval[i]);
+                        }
+                        return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
+                    })() + "</th>")) +
                 "</tr>" +
-                string.Join("",Util.EnumGetValues<AggregationType>().Select(a => "")) +
+                (aggregateRows == null || aggregateRows.Count == 0 ? "" :
+                    string.Join("", aggregateRows.Select(a => {
+                        if (ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() == 0) return "";
+                        return "<tr><th>" + a + "</th>" +
+                            string.Join("", ToHTMLTableColumns(request).Select(key => "<th align=\"right\">" +
+                                (key.Key.A.AggregationTypes.Contains(a) ? ("<!--" + key.Key.PToString + "_" + a + "-->") : "") +
+                                "</th>")) +
+                        "</tr>";
+                    }))
+                ) +
+                "<tr><th>Context</th>" +
+                    string.Join("", ToHTMLTableColumns(request).Select(key => "<th><!--" + key.Key.PToString + "_Context--></th>")) +
+                "</tr>" +
                 "</thead>";
         });
 
@@ -553,7 +568,7 @@ namespace AgoRapide {
                     var changeableProperties = GetType().GetChildPropertiesForAccessLevel(AccessType.Write, request.CurrentUser?.AccessLevelGiven ?? AccessLevel.Anonymous);
 
                     retval.AppendLine("<h2>Properties</h2>\r\n");
-                    retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableRowHeading(request));
+                    retval.AppendLine("<table>" + Properties.Values.First().ToHTMLTableRowHeading(request, null));
                     /// TODO: Implement a common comparer for use by both <see cref="CreateHTMLForExistingProperties"/> and <see cref="CreateCSVForExistingProperties"/>
                     retval.AppendLine(string.Join("", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
                         p.IsChangeableByCurrentUser = changeableProperties.ContainsKey(p.Key.Key.CoreP); /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
@@ -620,7 +635,7 @@ namespace AgoRapide {
                     /// Do not give any explanation now. All relevant properties are already shown by <see cref="CreateHTMLForExistingProperties"/>
                 } else {
                     retval.AppendLine("<h2>Properties you may add</h2>");
-                    retval.AppendLine("<table>" + Property.CreateTemplate(notExisting.First().Value.PropertyKeyAsIsManyParentOrTemplate, this).ToHTMLTableRowHeading(request));
+                    retval.AppendLine("<table>" + Property.CreateTemplate(notExisting.First().Value.PropertyKeyAsIsManyParentOrTemplate, this).ToHTMLTableRowHeading(request, null));
                     retval.AppendLine(string.Join("", notExisting.Select(p => {
                         var property = Property.CreateTemplate(p.Value.PropertyKeyAsIsManyParentOrTemplate, this);
                         property.IsChangeableByCurrentUser = true; /// Hack implemented because of difficulty of adding parameter to <see cref="Property.ToHTMLTableRow"/>
@@ -659,13 +674,13 @@ namespace AgoRapide {
             var thisType = GetType().ToStringVeryShort();
             return nameof(Id) + request.CSVFieldSeparator + /// Note that in addition to the columns returned by <see cref="ToCSVTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToCSVTableRowHeading"/> and <see cref="ToCSVTableRow"/>
             string.Join(request.CSVFieldSeparator, ToCSVTableColumns(request).Select(key => new Func<string>(() => {
-                    var retval = key.Key.PToString;
-                    if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
-                        retval = retval.Substring(thisType.Length);
-                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
-                    }
-                    return retval;
-                })())
+                var retval = key.Key.PToString;
+                if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                    retval = retval.Substring(thisType.Length);
+                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
+                }
+                return retval;
+            })())
             );
             /// request.CSVFieldSeparator + nameof(Created); // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
         });
@@ -677,7 +692,7 @@ namespace AgoRapide {
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public virtual string ToCSVTableRow(Request request) => 
+        public virtual string ToCSVTableRow(Request request) =>
             (Id <= 0 ? "" : Id.ToString()) + request.CSVFieldSeparator + /// Note that in addition to the columns returned by <see cref="ToCSVTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToCSVTableRowHeading"/> and <see cref="ToCSVTableRow"/>
             string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
                     /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
