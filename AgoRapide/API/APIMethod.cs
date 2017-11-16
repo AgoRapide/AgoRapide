@@ -951,24 +951,6 @@ namespace AgoRapide.API {
             CoreP.Description.A()
         });
 
-        ///// <summary>
-        ///// NOTE: In principle this override is unnecessary as <see cref="ToHTMLTableColumns"/> communicates what is needed.
-        ///// </summary>
-        //public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
-        //public const string HTMLTableHeading = "<tr><th>" + nameof(IdFriendly) + "</th><th>" + nameof(CoreAPIMethod) + "</th><th>" + nameof(CoreP.EntityType) + "</th><th>" + nameof(CoreP.AccessLevelUse) + "</th><th>" + nameof(CoreP.Description) + "</th></tr>";
-
-        ///// <summary>
-        ///// NOTE: In principle this override is unnecessary as <see cref="ToHTMLTableColumns"/> communicates what is needed.
-        ///// </summary>
-        ///// <param name="request"></param>
-        ///// <returns></returns>
-        //public override string ToHTMLTableRow(Request request) => "<tr><td>" +
-        //    (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td><td>" +
-        //    PV(APIMethodP.CoreAPIMethod.A(), Property.HTML.Default) + "</td><td>" +
-        //    PV(CoreP.EntityType.A(), Property.HTML.Default) + "</td><td>" +
-        //    PV(CoreP.AccessLevelUse.A(), Property.HTML.Default) + "</td><td>" + // TODO: Should always be present. Try to do without default value. BUT, will throw exception at first initializatio of a fresh database as of Sep 2017
-        //    PV(CoreP.Description.A(), Property.HTML.Default) + "</td></tr>\r\n";
-
         public class MethodAttributeInitialisationException : ApplicationException {
             public MethodAttributeInitialisationException(string message) : base(message) { }
         }

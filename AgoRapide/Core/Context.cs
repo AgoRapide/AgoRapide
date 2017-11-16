@@ -384,8 +384,6 @@ namespace AgoRapide.Core {
 
                             /// Build index in order to avoid O(n^2) situation.
                             var toEntitiesIndex = new Dictionary<long, List<BaseEntity>>();
-                            //InMemoryCache.EntityCache.Values.
-                            //    Where(e => traversals.Key.IsAssignableFrom(e.GetType())). /// TODO: Index entities by type in entity cache, in order no to repeat queries like this:
                             InMemoryCache.EntityCacheWhereIs(traversals.Key).
                                 ForEach(e => { /// TODO: Consider implementing indices like this in <see cref="InMemoryCache"/>
                                     if (e.Properties.TryGetValue(traversal.Key.Key.CoreP, out var p)) {

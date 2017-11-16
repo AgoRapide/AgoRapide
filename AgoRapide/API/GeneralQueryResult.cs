@@ -39,19 +39,14 @@ namespace AgoRapide.API {
         private static ConcurrentDictionary<
             string, // Key is GetType + _ + PriorityOrderLimit
             List<PropertyKey>> _tableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
-        public override List<PropertyKey> ToHTMLTableColumns(Request request) => _tableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => new List<PropertyKey> { CoreP.SuggestedUrl.A() } );
-
-        ///// <summary>
-        ///// NOTE: In principle this override is unnecessary as <see cref="ToHTMLTableColumns"/> communicates what is needed.
-        ///// </summary>
-        ///// <param name="request"></param>
-        ///// <returns></returns>
-        //public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
-        //public const string HTMLTableHeading = "<tr><th>Result</th></tr>";
-
+        public override List<PropertyKey> ToHTMLTableColumns(Request request) => _tableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => new List<PropertyKey> {
+            /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
+            /// We therefore skip this:
+            // CoreP.SuggestedUrl.A()
+        } );
+        
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
-            "<a href=\"" + PV<Uri>(CoreP.SuggestedUrl.A()) + "\">" + PV<string>(CoreP.Description.A()).HTMLEncode() + "</a>" +
+            "<a href=\"" + PV<Uri>(CoreP.SuggestedUrl.A()) + "\">" + PV<string>(CoreP.Description.A()).HTMLEncode() + "</a>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
             "</tr>\r\n";
-
     }
 }

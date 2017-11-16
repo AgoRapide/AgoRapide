@@ -18,6 +18,8 @@ namespace AgoRapide {
         Count,
         Sum,
         Min,
-        Max
+        Max,
+        Average,
+        Median
     }
 }

@@ -395,6 +395,11 @@ namespace AgoRapide {
             List<PropertyKey>> _HTMLTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
         /// <summary>
         /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
+        /// 
+        /// NOTE: If you want to override this method in your subclass then remember to always override correspondingly for 
+        /// NOTE: <see cref="ToHTMLTableColumns"/>, <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// 
+        /// For examples of overriding see <see cref="APIMethod.ToHTMLTableColumns"/>, <see cref="Property.ToHTMLTableColumns"/> and <see cref="GeneralQueryResult.ToHTMLTableColumns"/>
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -404,14 +409,15 @@ namespace AgoRapide {
             string, // Key is GetType + _ + PriorityOrder
             string> _tableRowHeadingCache = new ConcurrentDictionary<string, string>();
         /// <summary>
-        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToHTMLTableRowHeading"/>). 
+        /// NOTE: If you want to override this method in your subclass then remember to always override correspondingly for 
+        /// NOTE: <see cref="ToHTMLTableColumns"/>, <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
         /// 
-        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// No overrides exists in AgoRapide as of Nov 2017. 
         /// </summary>
         /// <returns></returns>
         public virtual string ToHTMLTableRowHeading(Request request) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
-            return "<thead><tr><th>" + 
+            return "<thead><tr><th>" +
                 nameof(IdFriendly) + "</th>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
                 string.Join("", ToHTMLTableColumns(request).Select(key => "<th>" + new Func<string>(() => {
                     var retval = key.Key.PToString;
@@ -430,19 +436,22 @@ namespace AgoRapide {
                     }
                     return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
                 })() + "</th>")) +
-                "</tr></thead>";
+                "</tr>" +
+                string.Join("",Util.EnumGetValues<AggregationType>().Select(a => "")) +
+                "</thead>";
         });
 
         /// <summary>
-        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToHTMLTableRow"/>).
+        /// NOTE: If you want to override this method in your subclass then remember to always override correspondingly for 
+        /// NOTE: <see cref="ToHTMLTableColumns"/>, <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
         /// 
-        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/>
+        /// For examples of overriding see <see cref="Property.ToHTMLTableRow"/> and <see cref="GeneralQueryResult.ToHTMLTableRow"/>
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
-            string.Join("", GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit).Select(key => "<td>" + (
+            string.Join("", ToHTMLTableColumns(request).Select(key => "<td>" + (
                 Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;"
             ) + "</td>")) +
             "</tr>\r\n";

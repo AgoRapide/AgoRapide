@@ -582,18 +582,15 @@ namespace AgoRapide {
             string, // Key is GetType + _ + PriorityOrderLimit (but the latter is not significant)
             List<PropertyKey>> _HTMLTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
         public override List<PropertyKey> ToHTMLTableColumns(Request request) => _HTMLTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => new List<PropertyKey> {
-            PropertyP.PropertyKey.A(),
+            /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
+            /// We therefore skip this:
+            // PropertyP.PropertyKey.A(), 
+
             PropertyP.PropertyValue.A(),
             PropertyP.PropertySave.A(),
             PropertyP.PropertyCreated.A(),
             PropertyP.PropertyInvalid.A()
         });
-
-        ///// <summary>
-        ///// NOTE: In principle this override is unnecessary as <see cref="ToHTMLTableColumns"/> communicates what is needed.
-        ///// </summary>
-        //public override string ToHTMLTableRowHeading(Request request) => HTMLTableHeading;
-        //public const string HTMLTableHeading = "<tr><th>" + nameof(Key) + "</th><th>" + nameof(Value) + "</th><th>Save</th><th>" + nameof(Created) + "</th><th>" + nameof(Invalid) + "</th></tr>";
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -612,7 +609,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 1, Key
                 // --------------------
-                (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) +
+                (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) + /// Note that in addition to the columns returned by<see cref="ToHTMLTableColumns"/> an extra column with<see cref="BaseEntity.Id" /> is also returned by<see cref="ToHTMLTableRowHeading" /> and <see cref="ToHTMLTableRow"/>
                 "</td><td>" +
 
                 // --------------------
@@ -1017,7 +1014,7 @@ namespace AgoRapide {
             Type = typeof(object))] // Changed from string to object 15 Nov 2017
         PropertyValue,
 
-        [PropertyKey(Description ="Designates the column in an HTML table in which a Save-button is placed if relevant")]
+        [PropertyKey(Description = "Designates the column in an HTML table in which a Save-button is placed if relevant")]
         PropertySave,
 
         [PropertyKey(Description = "Corresponds to -" + nameof(DBField.created) + "-.")]
