@@ -135,11 +135,20 @@ namespace AgoRapide.API {
                             });
                         });
 
+                        /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs
+                        /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
+                        /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
+                        var drillDownUrls = CreateDrillDownUrls(t, thisTypeSorted);
+
                         // Insert Context information as relevant
                         if (request.CurrentUser != null && request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var context)) {
                             var contextsKeyOperatorValue = context.Properties.Values.Where(p => p.V<Context>().QueryId is QueryIdKeyOperatorValue);
                             thisTypeSorted[0].ToHTMLTableColumns(request).ForEach(key => {
                                 var replacementThisKey = new StringBuilder();
+
+                                // ===================================
+                                // Context part 1, suggest removal of existing contexts
+                                // ===================================
                                 var contextsThisKey = contextsKeyOperatorValue.Where(p => ((QueryIdKeyOperatorValue)p.V<Context>().QueryId).Key.PToString.Equals(key.Key.PToString)).ToList();
                                 if (contextsThisKey.Count > 0) { // Add links for removing these contexts.
                                     replacementThisKey.Append(string.Join("<br>", contextsThisKey.Select(p => {
@@ -147,6 +156,36 @@ namespace AgoRapide.API {
                                         var queryId = (QueryIdKeyOperatorValue)c.QueryId;
                                         return request.API.CreateAPILink(request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(p.Id), PropertyOperation.SetInvalid), c.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
                                     })));
+                                }
+
+                                // ===================================
+                                // Context part 2, suggest new contexts
+                                // ===================================
+                                if (drillDownUrls.TryGetValue(key.Key.CoreP, out var operators)) {
+                                    // NOTE: Note that code here is almost a dupliate of code below
+                                    operators.ForEach(_operator => {
+                                        // Note how ordering by negative value should be more efficient then ordering and then reversing
+                                        // _operator.Value.OrderBy(s => s.Value.Count).Reverse().ForEach(suggestion => {
+                                        _operator.Value.OrderBy(s => -s.Value.Count).ForEach(suggestion => {
+                                            replacementThisKey.Append("<br><br>");
+                                            // Suggest both 
+                                            // 1) adding to context
+                                            new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
+                                                replacementThisKey.Append("&nbsp;" + request.API.CreateAPILink(
+                                                     CoreAPIMethod.UpdateProperty,
+                                                     s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
+                                                     request.CurrentUser.GetType(),
+                                                     new QueryIdInteger(request.CurrentUser.Id),
+                                                     CoreP.Context.A(),
+                                                     new Context(s, t, suggestion.Value.QueryId).ToString()
+                                                 ))
+                                            );
+                                            // and 
+                                            // 2) Showing all with this value (general query)
+                                            replacementThisKey.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>");
+                                        });
+                                    });
+                                    drillDownUrls.Remove(key.Key.CoreP); // Removed in order to see any left overs (we may have drill-down for fields that are not shown)
                                 }
                                 if (replacementThisKey.Length > 0) heading = heading.Replace("<!--" + key.Key.PToString + "_Context-->", replacementThisKey.ToString());
                             });
@@ -160,10 +199,13 @@ namespace AgoRapide.API {
                         retval.AppendLine("</table>");
                         retval.Append("<script>new Tablesort(document.getElementById('sorttable" + tableId + "'));</script>\r\n");
                         // retval.Append("<script>new Tablesort(document.getElementById('\"sort_" + tableId + "\"'));</script>\r\n");                                                
-                        /// Note somewhat similar code in <see cref="Result.ToHTMLDetailed"/> and <see cref="BaseController.HandleCoreMethodContext"/> for presenting drill-down URLs
-                        /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
-                        /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
-                        CreateDrillDownUrls(t, thisTypeSorted).OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
+
+                        // Add any remaining suggestions (we may have drill-down for fields that are not shown, and therefore not taken in code above)
+                        // Old variant, putting at end of html-document, not as head of table
+                        // NOTE: Note that code below is almost a dupliate of code above
+                        drillDownUrls.OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
+
+                            // TODO: CONSIDER FACTORING OUT COMMON ELEMENTS IN DUPLIATE CODE HERE AND ABOVE
                             var key = e.Key.A();
                             retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.Description) + "</b>: ");
                             e.Value.ForEach(_operator => {
@@ -174,6 +216,7 @@ namespace AgoRapide.API {
                                         // Only suggest general query
                                         retval.Append("<a href=\"" + suggestion.Value.Url + "\">" + suggestion.Value.Text.HTMLEncode() + "<a>&nbsp;");
                                     } else {
+                                        // TODO: CONSIDER FACTORING OUT COMMON ELEMENTS IN DUPLIATE CODE HERE AND ABOVE
                                         // Suggest both 
                                         // 1) adding to context
                                         new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).

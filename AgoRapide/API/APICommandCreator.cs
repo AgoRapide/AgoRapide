@@ -85,7 +85,7 @@ namespace AgoRapide.API {
         public string CreateAPILink(string apiCommand, string linkText) => CreateAPILink(apiCommand, linkText, null);
         public string CreateAPILink(string apiCommand, string linkText, string helpText) =>
             (string.IsNullOrEmpty(helpText) ? "" : "<span title=\"" + helpText.HTMLEncode() + "\">") +
-            "<a href=\"" + CreateAPIUrl(apiCommand) + "\">" + (string.IsNullOrEmpty(linkText) ? apiCommand : linkText).HTMLEncode() + "</a>" +
+            "<a href=\"" + CreateAPIUrl(apiCommand) + "\">" + (string.IsNullOrEmpty(linkText) ? apiCommand : linkText).HTMLEncode().Replace(" ","&nbsp") + "</a>" + /// Replacement of space with non-breaking space introduced 17 Nov 2017 in order to make Context-presentation by <see cref="Result.ToHTMLDetailed"/> better.
             (string.IsNullOrEmpty(helpText) ? "" : "</span>");
 
         public static APICommandCreator JSONInstance = new APICommandCreator(ResponseFormat.JSON);
