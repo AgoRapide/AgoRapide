@@ -139,6 +139,32 @@ namespace AgoRapide {
             }
         }
 
+        /// <summary>
+        /// Note how the return value is intentionally <see cref="IEnumerable{T}"/> and not <see cref="List{T}"/>, 
+        /// clarifying that caller must copy the result in order to make modifications (opening up for individual adjustments)
+        /// 
+        /// Returns null if no aggregationss are relevant.
+        /// 
+        /// Result will usually be put into <see cref="PropertyKeyAttribute.AggregationTypes"/>
+        /// </summary>
+        /// <param name="expansionType"></param>
+        /// <returns></returns>
+        public static IEnumerable<AggregationType> ToAggregationTypes(this ExpansionType expansionType) {
+            switch (expansionType) {
+                case ExpansionType.DateAgeDays:
+                case ExpansionType.DateAgeWeeks:
+                case ExpansionType.DateAgeMonths:
+                case ExpansionType.DateAgeYears:
+                case ExpansionType.TimeSpanHours:
+                case ExpansionType.TimeSpanDays:
+                case ExpansionType.TimeSpanWeeks:
+                case ExpansionType.TimeSpanMonths:
+                case ExpansionType.TimeSpanYears:
+                    return new List<AggregationType> { AggregationType.Sum, AggregationType.Min, AggregationType.Max, AggregationType.Average, AggregationType.Median };
+                default: return null;
+            }
+        }
+
         private static Type[] _sourceTypes;
         /// <summary>
         /// Returns either type of <see cref="DateTime"/> or type of <see cref="TimeSpan"/>.

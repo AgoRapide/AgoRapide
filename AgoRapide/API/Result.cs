@@ -166,23 +166,31 @@ namespace AgoRapide.API {
                                     operators.ForEach(_operator => {
                                         // Note how ordering by negative value should be more efficient then ordering and then reversing
                                         // _operator.Value.OrderBy(s => s.Value.Count).Reverse().ForEach(suggestion => {
-                                        _operator.Value.OrderBy(s => -s.Value.Count).ForEach(suggestion => {
-                                            replacementThisKey.Append("<br><br>");
-                                            // Suggest both 
-                                            // 1) adding to context
-                                            new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
+                                        var ordered = _operator.Value.OrderBy(s => -s.Value.Count);
+                                        new List<string> { "", "Local Quintile", "Quintile" }.ForEach(prefix => {
+                                            ordered.ForEach(suggestion => {
+                                                if (string.IsNullOrEmpty(prefix)) {
+                                                    if (suggestion.Value.Text.StartsWith("Local Quintile") || suggestion.Value.Text.StartsWith("Quintile")) return;
+                                                } else {
+                                                    if (!suggestion.Value.Text.StartsWith(prefix)) return;
+                                                }
+                                                replacementThisKey.Append("<br><br>");
+                                                // Suggest both 
+                                                // 1) adding to context
+                                                new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
                                                 replacementThisKey.Append("&nbsp;" + request.API.CreateAPILink(
-                                                     CoreAPIMethod.UpdateProperty,
-                                                     s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
-                                                     request.CurrentUser.GetType(),
-                                                     new QueryIdInteger(request.CurrentUser.Id),
-                                                     CoreP.Context.A(),
-                                                     new Context(s, t, suggestion.Value.QueryId).ToString()
-                                                 ))
-                                            );
-                                            // and 
-                                            // 2) Showing all with this value (general query)
-                                            replacementThisKey.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>");
+                                                         CoreAPIMethod.UpdateProperty,
+                                                         s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
+                                                         request.CurrentUser.GetType(),
+                                                         new QueryIdInteger(request.CurrentUser.Id),
+                                                         CoreP.Context.A(),
+                                                         new Context(s, t, suggestion.Value.QueryId).ToString()
+                                                     ))
+                                                );
+                                                // and 
+                                                // 2) Showing all with this value (general query)
+                                                replacementThisKey.Append("&nbsp;<a href=\"" + suggestion.Value.Url + "\">(All)<a>");
+                                            });
                                         });
                                     });
                                     drillDownUrls.Remove(key.Key.CoreP); // Removed in order to see any left overs (we may have drill-down for fields that are not shown)
@@ -201,11 +209,13 @@ namespace AgoRapide.API {
                         // retval.Append("<script>new Tablesort(document.getElementById('\"sort_" + tableId + "\"'));</script>\r\n");                                                
 
                         // Add any remaining suggestions (we may have drill-down for fields that are not shown, and therefore not taken in code above)
-                        // Old variant, putting at end of html-document, not as head of table
+                        // TODO: Include aggregations here.
+
                         // NOTE: Note that code below is almost a dupliate of code above
                         drillDownUrls.OrderBy(k => k.Key.A().Key.PToString).ForEach(e => { // k => k.Key.A().Key.PToString is somewhat inefficient                                                        
 
                             // TODO: CONSIDER FACTORING OUT COMMON ELEMENTS IN DUPLIATE CODE HERE AND ABOVE
+                            // TODO: Note how aggregations are not included here.
                             var key = e.Key.A();
                             retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.Description) + "</b>: ");
                             e.Value.ForEach(_operator => {

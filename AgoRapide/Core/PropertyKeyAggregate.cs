@@ -146,12 +146,16 @@ namespace AgoRapide.Core {
                     case AggregationType.Sum:
                         return entities.Aggregate(0L, (acc, e) => acc + e.PV<long>(sourceProperty, 0));
                     case AggregationType.Min:
+                        if (entities.Count == 0) return null;
                         return entities.Min(se => se.TryGetPV<long>(sourceProperty, out var l) ? l : long.MaxValue);
                     case AggregationType.Max:
+                        if (entities.Count == 0) return null;
                         return entities.Max(se => se.TryGetPV<long>(sourceProperty, out var l) ? l : long.MinValue);
                     case AggregationType.Average:
+                        if (entities.Count == 0) return null;
                         return (long)((entities.Aggregate(0L, (acc, e) => acc + e.PV<long>(sourceProperty, 0)) / (double)entities.Count) + .5);
                     case AggregationType.Median:
+                        if (entities.Count == 0) return null;
                         // Note that only entities with a value registered are included.
                         // Note how we ask for the long-value first, in order to reduce that number of operations.
                         var sorted1 = entities.Where(e => e.Properties.ContainsKey(sourceProperty.Key.CoreP)).Select(e => (e, e.PV<long>(sourceProperty)));

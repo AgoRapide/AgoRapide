@@ -143,6 +143,7 @@ namespace AgoRapide.Core {
                                 Parents = k.Key.A.Parents,
                                 PriorityOrder = k.Key.A.PriorityOrder, // Added 13 Oct 2017
                                 Type = e.ToExpandedType(),
+                                AggregationTypes= e.ToAggregationTypes()?.ToArray() ?? null,
                                 HasLimitedRange = e.HasLimitedRange(),
 
                                 /// TODO: Note how <see cref="BaseEntity.ToHTMLTableRowHeading"/> / <see cref="BaseEntity.ToHTMLTableRow"/> uses

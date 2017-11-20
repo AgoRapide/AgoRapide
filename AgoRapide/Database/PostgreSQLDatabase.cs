@@ -292,7 +292,7 @@ namespace AgoRapide.Database {
                         if (r.Read()) throw new ExactOnePropertyNotFoundException("Multiple properties found for id " + id);
                         r.Close();
                     }
-                    if (property.Key.Key.A.CanHaveChildren) property.Properties= GetChildProperties(property); // Added 13 Oct 2017, check that is correct.
+                    if (property.Key.Key.A.CanHaveChildren) property.Properties = GetChildProperties(property); // Added 13 Oct 2017, check that is correct.
                     ExecuteNonQuerySQLStatements(isManyCorrections);
                     return true;
                 }
@@ -416,10 +416,7 @@ namespace AgoRapide.Database {
 
         public override List<BaseEntity> GetAllEntities(Type type) {
             Log(nameof(type) + ": " + type.ToStringShort());
-            // Original naïve version, but too inefficient (result in too many calls against database).k
-            // var retval = GetRootPropertyIds(type).Select(id => GetEntityById(id, type)).ToList();
 
-            /// Better version from 19 Sep 2017, with just two calls towards database:
             /// Code corresponds to 
             /// <see cref="GetRootPropertyIds"/> and 
             /// <see cref="GetChildProperties"/> and
@@ -436,13 +433,9 @@ namespace AgoRapide.Database {
                     DBField.strv + " = '" + type.ToStringDB() + "' AND " +
                     DBField.invalid + " IS NULL" +
                 ") " +
-                "AND\r\n" +                                            // (that would result in lots of properties being set no-longer-current)
+                "AND\r\n" +
                 DBField.invalid + " IS NULL\r\n" +
-                "ORDER BY " + DBField.pid + ", " + DBField.id + " ASC", _cn1);
-
-            if (type.ToStringVeryShort().Equals("Usage")) {
-                var a = 1;
-            }
+                "ORDER BY " + DBField.pid + " ASC, " + DBField.id + " ASC", _cn1);
 
             var currentProperties = new List<Property>();
             var currentId = -1L;
@@ -452,14 +445,12 @@ namespace AgoRapide.Database {
             var rootPropertyIndex = -1;
 
             var creatorEntityFromCurrentProperties = new Action(() => {
-                // Take into account that root-properties may exist without any 
-
                 rootPropertyIndex++;
                 if (rootPropertyIndex >= (rootProperties.Count)) {
                     // TODO: Check this, happens if no properties for last entity???
                 } else if (currentProperties.Count == 0) {
                     // No properties for new entities(?)
-                } else { 
+                } else {
                     while (rootProperties[rootPropertyIndex].Id != currentProperties[0].ParentId) {
                         // Take into consideration that there may exist entity root properties without any properties at all
                         // NOTE: THIS CODE IS COMPLICATED (SEE ALSO BELOW)
@@ -473,12 +464,17 @@ namespace AgoRapide.Database {
                 }
 
                 {
-                    var properties = OrderIntoIntoBaseEntityPropertiesCollection(currentProperties, out var temp);
-                    temp.ForEach(p => noLongerCurrent.Add(p));
-                    var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], properties);
-                    retval.Add(e);
-                    if (useCache) InMemoryCache.EntityCache[e.Id] = e;
-                    currentProperties.Clear();
+                    if (rootPropertyIndex >= (rootProperties.Count)) { // Added this check 20 Nov 2017. Code still is presumed to contain bugs.
+                        // TODO: Check this, happens if no properties for last entity???
+                        if (currentProperties.Count > 0) throw new InvalidCountException("Found properties but no corresponding root-property. First property was " + currentProperties[0].Id);
+                    } else {
+                        var properties = OrderIntoIntoBaseEntityPropertiesCollection(currentProperties, out var thisNoLongerCurrent);
+                        thisNoLongerCurrent.ForEach(p => noLongerCurrent.Add(p));
+                        var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], properties);
+                        retval.Add(e);
+                        if (useCache) InMemoryCache.EntityCache[e.Id] = e;
+                        currentProperties.Clear();
+                    }
                 }
             });
 
@@ -507,7 +503,7 @@ namespace AgoRapide.Database {
                     var e = CreateEntityInMemory(type, rootProperties[rootPropertyIndex], new ConcurrentDictionary<CoreP, Property>());
                     retval.Add(e);
                     if (useCache) InMemoryCache.EntityCache[e.Id] = e;
-                } 
+                }
             } catch (Exception ex) {
                 throw new PostgreSQLDatabaseException(cmd, ex);
             }

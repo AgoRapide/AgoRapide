@@ -443,7 +443,7 @@ namespace AgoRapide {
 
             return "<thead>" +
                 (aggregateRows == null || aggregateRows.Count == 0 ? "" :
-                    headers + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
+                    headers.Replace(">" + nameof(IdFriendly) + "<", ">&nbsp;<") + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
                     string.Join("", aggregateRows.Select(a => {
                         if (ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() == 0) return "";
                         return "<tr><th>" + a + "</th>" +
@@ -451,9 +451,9 @@ namespace AgoRapide {
                                 (key.Key.A.AggregationTypes.Contains(a) ? ("<!--" + key.Key.PToString + "_" + a + "-->") : "") +
                                 "</th>")) +
                         "</tr>";
-                    }))
+                    })) // +
+                        // headers.Replace(">" + nameof(IdFriendly) + "<",">&nbsp;<") // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
                 ) +
-                headers + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
                 "<tr><th>Context</th>" +
                     string.Join("", ToHTMLTableColumns(request).Select(key => "<th  style=\"vertical-align:top\"><!--" + key.Key.PToString + "_Context--></th>")) +
                 "</tr>" +
