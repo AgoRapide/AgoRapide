@@ -163,7 +163,7 @@ namespace AgoRapide.Core {
                         if (sorted2.Count == 0) return null;
                         var midPoint = sorted2.Count / 2;
                         if ((sorted2.Count % 2 == 1)) return sorted2[midPoint].Item1.PV<long>(sourceProperty);
-                        return (long)((sorted2[midPoint - 1].Item1.PV<long>(sourceProperty) + sorted2[midPoint].Item1.PV<long>(sourceProperty) / 2) + .5);
+                        return (long)(((sorted2[midPoint - 1].Item1.PV<long>(sourceProperty) + sorted2[midPoint].Item1.PV<long>(sourceProperty)) / 2) + .5);
                     case AggregationType.Percent:
                         return (long)(((entities.Where(e => e.Properties.ContainsKey(sourceProperty.Key.CoreP)).Count() / (double)entities.Count) * 100) + .5);
                     default:
