@@ -277,8 +277,9 @@ namespace AgoRapide.Core {
                 dict.TryGetValue((int)(object)_enum, out key) :
                 throw new InvalidMappingException<T>(_enum, GetProbableCauseAndResolutionForInvalidMapping(typeof(T)));
 
-        public static PropertyKey GetA(string _enum) => GetA(_enum, null);
-        public static PropertyKey GetA(string _enum, Func<string> detailer = null) => _fromStringMaps.GetValue(_enum, detailer);
+        public static PropertyKey GetA(string _enum) => GetA(_enum, detailer: null); // NOTE: Overload can not be removed by defaulting "detailer = null" because it would then collide with generic overload
+        public static PropertyKey GetA(string _enum, Func<string> detailer) => _fromStringMaps.GetValue(_enum, detailer);
+        public static bool TryGetA(string _enum, out PropertyKey key) => _fromStringMaps.TryGetValue(_enum, out key);
 
         /// <summary>
         /// Called from <see cref="PostgreSQLDatabase"/>.ReadOneProperty.
@@ -358,7 +359,6 @@ namespace AgoRapide.Core {
             // TODO: READ AT STARTUP!!! (Take into consideration later adding to C# code of _enum)
         }
 
-        public static bool TryGetA(string _enum, out PropertyKey key) => _fromStringMaps.TryGetValue(_enum, out key);
 
         public static string GetProbableCauseAndResolutionForInvalidMapping(Type type) =>
             "Most probably because no corresponding call was made to " + nameof(PropertyKeyMapper) + "." + nameof(MapEnum) + " for " + type + ".\r\n" +

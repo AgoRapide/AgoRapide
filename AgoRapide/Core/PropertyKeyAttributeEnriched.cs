@@ -401,7 +401,7 @@ namespace AgoRapide.Core {
                         "Must be in one of the following formats:\r\n" +
                         string.Join(", ", validFormats) + "\r\n");
                 } else if (typeof(TimeSpan).Equals(A.Type)) {
-                    ValidatorAndParser = value => TimeSpan.TryParseExact(value, new string[] { @"hh\:mm\:ss" , @"d\.hh\:mm\:ss" }, System.Globalization.CultureInfo.InvariantCulture, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                    ValidatorAndParser = value => TimeSpan.TryParseExact(value, new string[] { @"hh\:mm\:ss", @"d\.hh\:mm\:ss" }, System.Globalization.CultureInfo.InvariantCulture, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
                         Util.BreakpointEnabler + "Invalid as " + A.Type + ".\r\n" +
                         "Must be in one of the following formats:\r\n" +
                         "'hh:mm:ss' or 'd.hh:mm:ss'\r\n"); /// Note corresponding code in <see cref="PropertyT{T}.PropertyT"/> and <see cref="PropertyKeyAttributeEnriched.Initialize"/>

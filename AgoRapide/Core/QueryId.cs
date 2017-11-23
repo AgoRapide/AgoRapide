@@ -146,26 +146,68 @@ namespace AgoRapide.Core {
         /// <param name="errorResponse"></param>
         /// <returns></returns>
         public static bool TryParse(string value, out QueryId id, out string errorResponse) {
-            if (long.TryParse(value, out var lngId)) {
+            if (long.TryParse(value, out var lngId)) { /// <see cref="QueryIdInteger"/>
                 id = new QueryIdInteger(lngId);
                 errorResponse = null;
                 return true;
             }
 
             var valueToLower = value.ToLower();
-            if (valueToLower.Equals("all")) {
+            if (valueToLower.Equals("all")) { /// <see cref="QueryIdAll"/>
                 id = new QueryIdAll();
                 errorResponse = null;
                 return true;
             }
 
-            if (valueToLower.Equals(QueryIdContext.AS_STRING_ToLower)) {
+            if (valueToLower.Equals(QueryIdContext.AS_STRING_ToLower)) { /// <see cref="QueryIdContext"/>
                 id = new QueryIdContext();
                 errorResponse = null;
                 return true;
             }
 
-            if (valueToLower.StartsWith("where")) {  // TODO: Improve on this parsing
+            if (valueToLower.StartsWith("iterate ")) { /// <see cref="QueryIdFieldIterator"/>
+                var syntaxHelp = ". Syntax: ITERATE {rowKey} BY {type}.{columnKey}: \"ITERATE Colour BY Car.Production_Year";
+                var t = value.Split(" ").Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
+                if (t.Count != 4) {
+                    id = null;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Not four items" + syntaxHelp;
+                    return false;
+                }
+                if (!PropertyKeyMapper.TryGetA(t[1], out var rowKey)) {
+                    id = null;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {rowKey} (" + t[1] + ") not recognized" + syntaxHelp;
+                    return false;
+                }
+                if ("by".Equals(t[2].ToLower())) {
+                    id = null;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Literal 'BY' not third element" + syntaxHelp;
+                    return false;
+                }
+                t = t[4].Split(".");
+                if (t.Count != 2) {
+                    /// TODO: Future expansion: We could allow {type} not to be given now, and let an external entity supply 
+                    /// TOOD: the created <see cref="QueryIdFieldIterator"/>-instance with the {type} afterwards.
+                    id = null;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Invalid syntax for {type}.{columnKey}. Single full stop not found, found " + (t.Count - 1) + "  full stops" + syntaxHelp;
+                    return false;
+                }
+
+                if (!Util.TryGetTypeFromString(t[0], out var columnType)) {
+                    id = null;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {type} (" + t[0] + ") not recognized" + syntaxHelp;
+                    return false;
+                }
+
+                if (!PropertyKeyMapper.TryGetA(t[1], out var columnKey)) {
+                    id = null;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {columnKey} (" + t[1] + ") not recognized" + syntaxHelp;
+                    return false;
+                }
+
+            }
+
+            if (valueToLower.StartsWith("where")) {  /// <see cref="QueryIdKeyOperatorValue"/>
+                // TODO: Improve on this parsing
                 value = value.Replace("%3D", "="); /// HACK: TODO: Fix decoding in <see cref="QueryId.TryParse"/> and <see cref="Context.TryParse
 
                 var pos = 0;
@@ -178,25 +220,26 @@ namespace AgoRapide.Core {
                     return word;
                 });
 
+                var syntaxHelp = ". Syntax: WHERE {key} {operator} {value}. Example: \"WHERE Colour = 'Red'\"";
                 nextWord(); var strKey = nextWord();
                 if (strKey == null) {
                     id = null;
-                    errorResponse = "No key given";
+                    errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: No {key} given" + syntaxHelp;
                     return false;
                 }
                 if (!PropertyKeyMapper.TryGetA(strKey, out var key)) {
                     id = null;
-                    errorResponse = "Invalid key (" + strKey + ")";
+                    errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: Invalid {key} (" + strKey + ")" + syntaxHelp;
                     return false;
                 }
 
-                var strOperator = nextWord(); Operator _operator;
+                var strOperator = nextWord();
                 if (strOperator == null) {
                     id = null;
-                    errorResponse = "No operator given";
+                    errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: No {operator} given" + syntaxHelp;
                     return false;
                 }
-                if (Util.EnumTryParse(strOperator, out _operator)) {
+                if (Util.EnumTryParse<Operator>(strOperator, out var _operator)) {
                     // OK
                 } else {
                     switch (strOperator) {
@@ -207,7 +250,7 @@ namespace AgoRapide.Core {
                         case ">": _operator = Operator.GT; break;
                         default:
                             id = null;
-                            errorResponse = "Invalid operator (" + strOperator + ")";
+                            errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: Invalid {operator} (" + strOperator + "). Use one of: " + string.Join(", ", Util.EnumGetValues<Operator>()) + syntaxHelp;
                             return false;
                     }
                 }
@@ -215,7 +258,7 @@ namespace AgoRapide.Core {
                 var strValue = nextWord();
                 if (strValue == null) {
                     id = null;
-                    errorResponse = "No value given";
+                    errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: No {value} given" + syntaxHelp;
                     return false;
                 }
                 var strLeftover = nextWord();
@@ -244,7 +287,7 @@ namespace AgoRapide.Core {
 
                     if (!key.Key.TryValidateAndParse(strValue, out var valueResult)) {
                         id = null;
-                        errorResponse = "Invalid value given for " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
+                        errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: Invalid {value} (" + strValue + ") given for {key} " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
                         return false;
                     }
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
@@ -255,11 +298,13 @@ namespace AgoRapide.Core {
 
             }
 
-            var t = value.ToLower().Split(",");
-            if (t.Count > 1) {
-                id = new QueryIdMultiple(t);
-                errorResponse = null;
-                return true;
+            {
+                var t = valueToLower.Split(","); /// <see cref="QueryIdMultiple"/>
+                if (t.Count > 1) {
+                    id = new QueryIdMultiple(t);
+                    errorResponse = null;
+                    return true;
+                }
             }
 
             if (Documentator.Keys.TryGetValue(value, out var list)) {
@@ -285,7 +330,7 @@ namespace AgoRapide.Core {
             }
 
             if (!InvalidIdentifierException.TryAssertValidIdentifier(value, out errorResponse)) {
-                errorResponse = "Unable to parse as " + nameof(QueryIdString) + ". Details:\r\n*" + errorResponse;
+                errorResponse = "Invalid as " + nameof(QueryIdString) + ". Details:\r\n*" + errorResponse;
                 id = null;
                 return false;
             }

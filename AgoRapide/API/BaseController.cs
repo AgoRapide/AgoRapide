@@ -425,7 +425,7 @@ namespace AgoRapide.API {
                     type.Key.ToStringVeryShort() + " (" + type.Value.Count + ")"
                 ));
 
-                var drilldown = Result.CreateDrillDownUrls(type.Key, type.Value.Values); // Present all drill-down suggestions. TODO: Find better way of organising this. 
+                var drilldown = DrillDownSuggestion.Create(type.Key, type.Value.Values); // Present all drill-down suggestions. TODO: Find better way of organising this. 
                 drilldown.ForEach(coreP => {
                     var corePAsString = coreP.Key.A().Key.PToString;
                     coreP.Value.ForEach(_operator => {
@@ -437,7 +437,7 @@ namespace AgoRapide.API {
                                 // SetOperator.Remove,
                                 // SetOperator.Union /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
                             }.ForEach(s => 
-                               request.Result.MultipleEntitiesResult.Add(suggestion.Value.ToContext(s, request, s == SetOperator.Intersect ? (s + " " + type.Key.ToStringVeryShort() + " " + corePAsString + " " + _operator.Key) : s.ToString(), useOnlyHeader: s != SetOperator.Intersect))
+                               request.Result.MultipleEntitiesResult.Add(suggestion.Value.ToAddToContextUrl(s, request, s == SetOperator.Intersect ? (s + " " + type.Key.ToStringVeryShort() + " " + corePAsString + " " + _operator.Key) : s.ToString(), useOnlyHeader: s != SetOperator.Intersect))
                             );
                         });
                     });

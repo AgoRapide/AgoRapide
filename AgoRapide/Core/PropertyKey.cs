@@ -114,7 +114,7 @@ namespace AgoRapide.Core {
                 return TryParse(value, out var retval, out string errorResponse) ?
                 ParseResult.Create(key, retval) :
                 ParseResult.Create(errorResponse);
-        });
+            });
 
         /// <summary>
         /// TODO: REMOVE COMMENT, WE REMOVE THE FORMER EXCEPTION
@@ -124,6 +124,40 @@ namespace AgoRapide.Core {
         public class InvalidPropertyKeyException : ApplicationException {
             public InvalidPropertyKeyException(string message) : base(message) { }
             public InvalidPropertyKeyException(string message, Exception inner) : base(message, inner) { }
+        }
+
+        /// <summary>
+        /// TODO: Consider caching (as of Nov 2017 little use of caching since is called either from within a cached context or 
+        /// TOOD: from a context where class itself i dynamically on-the-fly generated.
+        /// </summary>
+        /// <param name="excludeThisPrefix">
+        /// May be null.
+        /// 
+        /// If given then will be removed from result if key starts with this value. 
+        /// Typically use of this parameter is in avoiding for instance for Person to write 'Person First Name', 'Person Last Name', 
+        /// but instead only write 'First Name', 'Last Name' in the HTML table header row. 
+        /// </param>
+        /// <returns></returns>
+        [ClassMember(Description = "Returns an HTML description of this key suited as header cell in an HTML table complete with 'tool-tip' / help text.")]
+        public string ToHTMLTableHeader(string excludeThisPrefix = null) {
+            var key = this;
+            var retval = key.Key.PToString;
+            if (excludeThisPrefix != null) {
+                if (retval.StartsWith(excludeThisPrefix)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                                                            // TODO: Add mouseover for showing complete name here.
+                    retval = retval.Substring(excludeThisPrefix.Length);
+                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
+                }
+            }
+            retval = retval.Replace("_", " "); // Space means that browser will often replace with line breaks in display.                   
+            var r2 = new StringBuilder();
+            for (var i = 0; i < retval.Length; i++) { // Insert space before each capital letter if preceding letter was not a capital letter.
+                if (i > 0 && retval[i].ToString().ToUpper() == retval[i].ToString() && retval[i - 1].ToString().ToUpper() != retval[i - 1].ToString()) {
+                    r2.Append(" "); // Code is not necessary very efficient but the result is cached anyway so it really does not matter.
+                }
+                r2.Append(retval[i]);
+            }
+            return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
         }
 
         public override string ToString() => Key.PToString;

@@ -90,6 +90,8 @@
     <Compile Include="API\BaseController.cs" />
     <Compile Include="API\BasicAuthenticationAttribute.cs" />
     <Compile Include="API\CSVView.cs" />
+    <Compile Include="API\DrillDownSuggestion.cs" />
+    <Compile Include="API\FieldIterator.cs" />
     <Compile Include="API\GeneralQueryResult.cs" />
     <Compile Include="API\HTMLView.cs" />
     <Compile Include="API\JSONView.cs" />
@@ -134,6 +136,7 @@
     <Compile Include="Core\QueryId.cs" />
     <Compile Include="Core\QueryIdAll.cs" />
     <Compile Include="Core\QueryIdContext.cs" />
+    <Compile Include="Core\QueryIdFieldIterator.cs" />
     <Compile Include="Core\QueryIdInteger.cs" />
     <Compile Include="Core\QueryIdKeyOperatorValue.cs" />
     <Compile Include="Core\QueryIdMultiple.cs" />

@@ -7,6 +7,10 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
 
+    /// <summary>
+    /// TODO: Clarify. Is this ever meant for storing in database, or will it only exist in-memory?
+    /// TODO: If never stored in database then consider moving to API-namespace
+    /// </summary>
     [Class(Description = "Explicit mutable -" + nameof(Property) + "- for counting. Used by -" + nameof(BaseEntityWithLogAndCount) + "-.")]
     public class PropertyCounter : Property { 
 

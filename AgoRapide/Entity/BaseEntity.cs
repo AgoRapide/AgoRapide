@@ -415,30 +415,18 @@ namespace AgoRapide {
         /// No overrides exists in AgoRapide as of Nov 2017. 
         /// </summary>
         /// <param name="request"></param>
-        /// <param name="aggregateRows">May be null. If given then will insert rows for each <see cref="AggregationType"/> with placemarkers like -Customer_Count_Order- as relevant according to keys found</param>
+        /// <param name="aggregateRows">
+        /// May be null. 
+        /// 
+        /// If given then will insert rows for each <see cref="AggregationType"/> with placemarkers like -Customer_Count_Order- as relevant according to keys found
+        /// </param>
         /// <returns></returns>
         public virtual string ToHTMLTableRowHeading(Request request, List<AggregationType> aggregateRows) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
             var thisType = GetType().ToStringVeryShort();
             var headers =
                 "<tr>" +
                 "<th>" + nameof(IdFriendly) + "</th>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
-                string.Join("", ToHTMLTableColumns(request).Select(key => "<th>" + new Func<string>(() => {
-                    var retval = key.Key.PToString;
-                    if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
-                        // TODO: Add mouseover for showing complete name here.
-                        retval = retval.Substring(thisType.Length);
-                        if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
-                    }
-                    retval = retval.Replace("_", " "); // Space means that browser will often replace with line breaks in display.                   
-                    var r2 = new StringBuilder();
-                    for (var i = 0; i < retval.Length; i++) { // Insert space before each capital letter if preceding letter was not a capital letter.
-                        if (i > 0 && retval[i].ToString().ToUpper() == retval[i].ToString() && retval[i - 1].ToString().ToUpper() != retval[i - 1].ToString()) {
-                            r2.Append(" "); // Code is not necessary very efficient but the result is cached anyway so it really does not matter.
-                        }
-                        r2.Append(retval[i]);
-                    }
-                    return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
-                })() + "</th>")) +
+                string.Join("", ToHTMLTableColumns(request).Select(key => "<th>" + key.ToHTMLTableHeader(excludeThisPrefix: thisType) + "</th>")) +
             "</tr>";
 
             return "<thead>" +

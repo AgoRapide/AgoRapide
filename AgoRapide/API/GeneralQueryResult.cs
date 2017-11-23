@@ -23,9 +23,8 @@ namespace AgoRapide.API {
     )]
     public class GeneralQueryResult : BaseEntity {
 
-        public GeneralQueryResult() {
-        }
-
+        public GeneralQueryResult() => throw new NotImplementedException("Not relevant, use constructor with url and description");
+        
         /// <summary>
         /// Convenience constructor.
         /// </summary>
