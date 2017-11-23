@@ -90,6 +90,10 @@ namespace AgoRapide.Database {
                     entities = thisType.Values.ToList();
                     errorResponse = null;
                     return true;
+                case QueryIdFieldIterator q:
+                    Log(logger());
+                    if (currentUser == null) throw new NullReferenceException(nameof(currentUser));
+                    throw new NotImplementedException(nameof(QueryIdFieldIterator));
                 case QueryIdInteger q: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
                     if (!TryGetEntityById(q.Id, requiredType, out BaseEntity temp)) { // TOOD: Move this code into BaseDatabase
                         entities = null;

@@ -48,6 +48,15 @@ namespace AgoRapide.API {
         )]
         public PriorityOrder PriorityOrderLimit { get; set; } = PriorityOrder.Important;
 
+        /// <summary>
+        /// HACK: 
+        /// </summary>
+        [ClassMember(Description =
+            "Communicates the different types involved in a current context. " +
+            "Found by -" + nameof(Context.TryExecuteContextsQueries) + "-). " +
+            "Used by -" + nameof(Result.ToHTMLDetailed) + "-.")]
+        public List<Type> TypesInvolvedInCurrentContext { get; set; }
+
         /// <summary>   
         /// TODO: This is just a preparation for a more dynamic approach.
         /// 
@@ -102,7 +111,7 @@ namespace AgoRapide.API {
 
         public object GetOKResponseAsText(string value, string message) {
             Result.ResultCode = ResultCode.ok;
-            Result.AddProperty(PropertyP.PropertyValue.A(), value); 
+            Result.AddProperty(PropertyP.PropertyValue.A(), value);
             Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }

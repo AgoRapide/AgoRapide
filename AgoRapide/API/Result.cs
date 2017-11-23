@@ -140,20 +140,21 @@ namespace AgoRapide.API {
                         var drillDownUrls = DrillDownSuggestion.Create(t, thisTypeSorted);
 
                         // Insert Context information as relevant
-                        if (request.CurrentUser != null && request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var context)) {
-                            var contextsKeyOperatorValue = context.Properties.Values.Where(p => p.V<Context>().QueryId is QueryIdKeyOperatorValue);
+                        if (request.CurrentUser != null && request.CurrentUser.TryGetPV<List<Context>>(CoreP.Context.A(), out var contexts)) {
+                            // var contexts = context.Properties.Values.Select(p => p.V<Context>());
+                            var contextsKeyOperatorValue = contexts.Where(c => c.QueryId is QueryIdKeyOperatorValue);
                             thisTypeSorted[0].ToHTMLTableColumns(request).ForEach(key => {
                                 var replacementThisKey = new StringBuilder();
 
                                 // ===================================
                                 // Context part 1, suggest removal of existing contexts
                                 // ===================================
-                                var contextsThisKey = contextsKeyOperatorValue.Where(p => ((QueryIdKeyOperatorValue)p.V<Context>().QueryId).Key.PToString.Equals(key.Key.PToString)).ToList();
+                                var contextsThisKey = contextsKeyOperatorValue.Where(c => ((QueryIdKeyOperatorValue)c.QueryId).Key.PToString.Equals(key.Key.PToString)).ToList();
                                 if (contextsThisKey.Count > 0) { // Add links for removing these contexts.
-                                    replacementThisKey.Append(string.Join("<br>", contextsThisKey.Select(p => {
-                                        var c = p.V<Context>();
+                                    replacementThisKey.Append(string.Join("<br>", contextsThisKey.Select(c => {
                                         var queryId = (QueryIdKeyOperatorValue)c.QueryId;
-                                        return request.API.CreateAPILink(request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(p.Id), PropertyOperation.SetInvalid), c.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
+                                        // TODO: Fix compile error here!
+                                        return request.API.CreateAPILink(request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(c.Id), PropertyOperation.SetInvalid), c.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
                                     })));
                                 }
 
@@ -194,6 +195,22 @@ namespace AgoRapide.API {
                                     });
                                     drillDownUrls.Remove(key.Key.CoreP); // Removed in order to see any left overs (we may have drill-down for fields that are not shown)
                                 }
+
+                                // ===================================
+                                // Context part 3, suggest iterations
+                                // ===================================
+                                var contextTypes =
+                                    request.TypesInvolvedInCurrentContext ??  // Preferred value. TODO: Consider throwing exception if not found TODO: Value not implemented as of 23 Nov 2017.
+                                    contexts.Select(c => c.Type).Distinct().ToList(); /// Not preferred value. We now only know about types already in use in context, not those found by <see cref="Context.TraverseToAllEntities"/>. 
+                                types.ForEach(columnType => {
+                                    columnType.GetChildProperties().Values.ForEach(columnKey => {
+                                        if (columnType.Equals(t) && columnKey.Key.PToString.Equals(key.Key.PToString)) return; // Do not iterate on key itself.
+                                        replacementThisKey.Append("<br>" + APICommandCreator.HTMLInstance.CreateAPILink(
+                                            CoreAPIMethod.EntityIndex, (columnType.Equals(t) ? "" : (columnType.ToStringVeryShort() + ".")) + columnKey.Key.PToString, t,
+                                            new QueryIdFieldIterator(key, columnType, columnKey)));
+                                    });
+                                });
+
                                 if (replacementThisKey.Length > 0) heading = heading.Replace("<!--" + key.Key.PToString + "_Context-->", replacementThisKey.ToString());
                             });
                         }
