@@ -888,11 +888,34 @@ namespace AgoRapide.Core {
 
         /// <summary>
         /// Encloses <paramref name="html"/> within a HTML span with title <paramref name="tooltip"/>
+        /// 
+        /// TODO: Consider switching parameter ordering or renaming method. 
         /// </summary>
         /// <param name="html">Already encoded as HTML</param>
-        /// <param name="tooltip">May be null or empty in which case only <paramref name="html"/> will be returned</param>
+        /// <param name="tooltip">Not to be encoded as HTML. May be null or empty in which case only <paramref name="html"/> will be returned</param>
         /// <returns></returns>
         public static string HTMLEncloseWithinTooltip(this string html, string tooltip) => string.IsNullOrEmpty(tooltip) ? html : "<span title=\"" + tooltip.HTMLEncode() + "\">" + html + " (+)</span>";
+
+        /// <summary>
+        /// Encloses <paramref name="html"/> within toogle-click to show / hide. 
+        /// 
+        /// TODO: Consider switching parameter ordering or renaming method. 
+        /// </summary>
+        /// <param name="title">Not to be encoded as HTML</param>
+        /// <param name="html">Already encoded as HTML</param>
+        /// <returns></returns>
+        public static string HTMLEncloseWithInVisibilityToggle(this string title, string html) {
+            var id = Util.GetNextId();
+            return 
+                "<div id=\"header_" + id + "\" name=\"header_" + id + "\" onclick=\"try { " +
+                    "$('#inner_" + id + "').toggle(); " +
+                    "} catch (err) { console.log(err.toString()); } return false;\">" +
+                    title.HTMLEncode() + " ...<br>" +
+                "</div>\r\n" + /// First div-tag must be terminated here, because <param name="html"/> may contain links which would be deactived if the onclick-event was valid here also
+                "<div id=\"inner_" + id + "\" name=\"inner_" + id + "\" style=\"display:none\">\r\n" +
+                    html + "\r\n" +
+                "</div>\r\n";
+        }
 
         /// <summary>
         /// Convenience method that shortens down code in cases where an instance of an object must be 

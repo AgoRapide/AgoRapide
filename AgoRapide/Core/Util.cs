@@ -546,6 +546,13 @@ namespace AgoRapide.Core {
         /// At regular intervals you can remove all uses of this method in the code.
         /// </summary>
         public static string BreakpointEnabler => ""; // <--- Place breakpoint here <---
+
+        private static long lastId;
+        /// <summary>
+        /// Generic provider of unique ids. Use on HTML-pages for instance.
+        /// </summary>
+        /// <returns></returns>
+        public static long GetNextId() => System.Threading.Interlocked.Increment(ref lastId);
     }
 
     public class InvalidPasswordException : Exception {

@@ -65,49 +65,67 @@ namespace AgoRapide.Database {
         public override bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
             var logger = new Func<string>(() => nameof(currentUser) + ": " + (currentUser?.IdFriendly ?? "[NULL]") + ", " + nameof(id) + ": " + (id?.ToString() ?? throw new ArgumentNullException(nameof(id))) + ", " + nameof(accessTypeRequired) + ": " + accessTypeRequired + ", " + nameof(requiredType) + ": " + (requiredType?.ToStringShort() ?? throw new ArgumentNullException(nameof(requiredType))));
 
+            // TOOD: Move this code into BaseDatabase
             switch (id) { /// First, check for <see cref="QueryIdContext"/> and <see cref="QueryIdInteger"/>, these can be treated directly.
-                case QueryIdContext q: // TOOD: Move this code into BaseDatabase
-                    Log(logger());
-                    if (currentUser == null) {
-                        entities = null;
-                        errorResponse = new ErrorResponse(ResultCode.client_error,
-                            "Unable to execute " + nameof(QueryIdContext) + " (" + q.ToString() + ") because no " + nameof(currentUser) + ". " +
-                            "Possible cause: " + nameof(APIMethod.RequiresAuthorization) + " = FALSE for current method"); // TODO: Known weakness in AgoRapide as of June 2017
-                        return false;
+                case QueryIdContext dummy1:  // TOOD: Move this code into BaseDatabase
+                case QueryIdFieldIterator dummy2: {
+                        Log(logger());
+                        if (currentUser == null) {
+                            entities = null;
+                            errorResponse = new ErrorResponse(ResultCode.client_error,
+                                "Unable to execute " + nameof(QueryIdContext) + " (" + id.ToString() + ") because no " + nameof(currentUser) + ". " +
+                                "Possible cause: " + nameof(APIMethod.RequiresAuthorization) + " = FALSE for current method"); // TODO: Known weakness in AgoRapide as of June 2017
+                            return false;
+                        }
+                        var result = new Result();
+                        if (!Context.TryExecuteContextsQueries(currentUser, currentUser.PV(CoreP.Context.A(), new List<Context>()), this, result, out var contextEntities, out errorResponse)) {
+                            entities = null;
+                            return false;
+                        }
+                        // Note that "result" is now discarded.
+                        // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
+                        if (!contextEntities.TryGetValue(requiredType, out var thisType) || thisType.Count == 0) {
+                            entities = null;
+                            errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + requiredType + " contained within current context for " + currentUser.GetType().ToStringVeryShort() + " " + currentUser.IdFriendly);
+                            return false;
+                        }
+
+                        switch (id) {
+                            case QueryIdContext q:
+                                entities = thisType.Values.ToList();
+                                errorResponse = null;
+                                return true;
+                            case QueryIdFieldIterator q:
+                                /// For each suggested drill-down for <see cref="QueryIdFieldIterator.ColumnKey"/>, 
+                                /// add that one to context, 
+                                /// calculate the new context and 
+                                /// ask for drill-down suggestions against <see cref="QueryIdFieldIterator.RowKey"/>
+                                /// Collect all drill-down suggestions by ???
+                                DrillDownSuggestion.Create(requiredType, thisType.Values.ToList(), q.RowKey);
+                                throw new NotImplementedException();
+                                //entities = null;
+                                //errorResponse = null;
+                                //return true;
+                            default:
+                                throw new InvalidObjectTypeException(id);
+                        }
                     }
-                    var result = new Result();
-                    if (!Context.TryExecuteContextsQueries(currentUser, currentUser.PV(CoreP.Context.A(), new List<Context>()), this, result, out var contextEntities, out errorResponse)) {
-                        entities = null;
-                        return false;
+                case QueryIdInteger q: { // TOOD: Move this code into BaseDatabase
+                                         /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
+                        if (!TryGetEntityById(q.Id, requiredType, out BaseEntity temp)) { // TOOD: Move this code into BaseDatabase
+                            entities = null;
+                            errorResponse = new ErrorResponse(ResultCode.data_error, requiredType.ToStringVeryShort() + " with " + nameof(id) + " " + id + " not found");
+                            return false;
+                        }
+                        if (!TryVerifyAccess(currentUser, temp, accessTypeRequired, out var strErrorResponse)) {
+                            entities = null;
+                            errorResponse = new ErrorResponse(ResultCode.access_error, strErrorResponse);
+                            return false;
+                        }
+                        entities = new List<BaseEntity> { temp };
+                        errorResponse = null;
+                        return true;
                     }
-                    // Note that "result" is now discarded.
-                    // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
-                    if (!contextEntities.TryGetValue(requiredType, out var thisType) || thisType.Count == 0) {
-                        entities = null;
-                        errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + requiredType + " contained within current context for " + currentUser.GetType().ToStringVeryShort() + " " + currentUser.IdFriendly);
-                        return false;
-                    }
-                    entities = thisType.Values.ToList();
-                    errorResponse = null;
-                    return true;
-                case QueryIdFieldIterator q:
-                    Log(logger());
-                    if (currentUser == null) throw new NullReferenceException(nameof(currentUser));
-                    throw new NotImplementedException(nameof(QueryIdFieldIterator));
-                case QueryIdInteger q: /// Note how <see cref="QueryId.SQLWhereStatement"/> is not used in this case. 
-                    if (!TryGetEntityById(q.Id, requiredType, out BaseEntity temp)) { // TOOD: Move this code into BaseDatabase
-                        entities = null;
-                        errorResponse = new ErrorResponse(ResultCode.data_error, requiredType.ToStringVeryShort() + " with " + nameof(id) + " " + id + " not found");
-                        return false;
-                    }
-                    if (!TryVerifyAccess(currentUser, temp, accessTypeRequired, out var strErrorResponse)) {
-                        entities = null;
-                        errorResponse = new ErrorResponse(ResultCode.access_error, strErrorResponse);
-                        return false;
-                    }
-                    entities = new List<BaseEntity> { temp };
-                    errorResponse = null;
-                    return true;
             }
 
             List<BaseEntity> allEntities;
@@ -190,7 +208,7 @@ namespace AgoRapide.Database {
             var cmd = p == null ?
                 new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.pid + " = " + entity.Id + " ORDER BY " + DBField.id + " DESC", _cn1) : // All history for the entity
                 new Npgsql.NpgsqlCommand(PropertySelect + " WHERE " + DBField.pid + " = " + p.ParentId + " AND " + DBField.key + " = '" + p.KeyDB + "' ORDER BY " + DBField.id + " DESC", _cn1); // History for property only
-            /// TODO: For p == null consider verifying access for each and every property.
+                                                                                                                                                                                                 /// TODO: For p == null consider verifying access for each and every property.
             return ReadAllPropertyValues(cmd);
         }
 
@@ -469,7 +487,7 @@ namespace AgoRapide.Database {
 
                 {
                     if (rootPropertyIndex >= (rootProperties.Count)) { // Added this check 20 Nov 2017. Code still is presumed to contain bugs.
-                        // TODO: Check this, happens if no properties for last entity???
+                                                                       // TODO: Check this, happens if no properties for last entity???
                         if (currentProperties.Count > 0) throw new InvalidCountException("Found properties but no corresponding root-property. First property was " + currentProperties[0].Id);
                     } else {
                         var properties = OrderIntoIntoBaseEntityPropertiesCollection(currentProperties, out var thisNoLongerCurrent);

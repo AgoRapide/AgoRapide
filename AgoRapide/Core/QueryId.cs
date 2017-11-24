@@ -165,7 +165,8 @@ namespace AgoRapide.Core {
                 return true;
             }
 
-            if (valueToLower.StartsWith("iterate ")) { /// <see cref="QueryIdFieldIterator"/>
+            if (valueToLower.StartsWith("iterate ")) { /// TODO: Move code here into <see cref="QueryIdFieldIterator"/>
+
                 var syntaxHelp = ". Syntax: ITERATE {rowKey} BY {type}.{columnKey}: \"ITERATE Colour BY Car.Production_Year";
                 var t = value.Split(" ").Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
                 if (t.Count != 4) {
@@ -178,12 +179,12 @@ namespace AgoRapide.Core {
                     errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {rowKey} (" + t[1] + ") not recognized" + syntaxHelp;
                     return false;
                 }
-                if ("by".Equals(t[2].ToLower())) {
+                if (!"by".Equals(t[2].ToLower())) {
                     id = null;
-                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Literal 'BY' not third element" + syntaxHelp;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Literal 'BY' not found as third element, found '" + t[2] +"'" + syntaxHelp;
                     return false;
                 }
-                t = t[4].Split(".");
+                t = t[3].Split(".");
                 if (t.Count != 2) {
                     /// TODO: Future expansion: We could allow {type} not to be given now, and let an external entity supply 
                     /// TOOD: the created <see cref="QueryIdFieldIterator"/>-instance with the {type} afterwards.
@@ -204,9 +205,12 @@ namespace AgoRapide.Core {
                     return false;
                 }
 
+                id = new QueryIdFieldIterator(rowKey, columnType, columnKey);
+                errorResponse = null;
+                return true;
             }
 
-            if (valueToLower.StartsWith("where")) {  /// <see cref="QueryIdKeyOperatorValue"/>
+            if (valueToLower.StartsWith("where")) {  /// TODO: Move code here into <see cref="QueryIdKeyOperatorValue"/>
                 // TODO: Improve on this parsing
                 value = value.Replace("%3D", "="); /// HACK: TODO: Fix decoding in <see cref="QueryId.TryParse"/> and <see cref="Context.TryParse
 

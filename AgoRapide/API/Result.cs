@@ -140,27 +140,32 @@ namespace AgoRapide.API {
                         var drillDownUrls = DrillDownSuggestion.Create(t, thisTypeSorted);
 
                         // Insert Context information as relevant
-                        if (request.CurrentUser != null && request.CurrentUser.TryGetPV<List<Context>>(CoreP.Context.A(), out var contexts)) {
-                            // var contexts = context.Properties.Values.Select(p => p.V<Context>());
-                            var contextsKeyOperatorValue = contexts.Where(c => c.QueryId is QueryIdKeyOperatorValue);
+                        // if (request.CurrentUser != null && request.CurrentUser.TryGetPV<List<Context>>(CoreP.Context.A(), out var contexts)) {
+                        if (request.CurrentUser != null && request.CurrentUser.Properties.TryGetValue(CoreP.Context, out var context)) {
+                            var contexts = context.Properties.Values.Select(p => (Id: p.Id, Context: p.V<Context>()));
+                            var contextsKeyOperatorValue = contexts.Where(c => c.Context.QueryId is QueryIdKeyOperatorValue);
                             thisTypeSorted[0].ToHTMLTableColumns(request).ForEach(key => {
                                 var replacementThisKey = new StringBuilder();
 
+                                var part = new StringBuilder();
                                 // ===================================
                                 // Context part 1, suggest removal of existing contexts
                                 // ===================================
-                                var contextsThisKey = contextsKeyOperatorValue.Where(c => ((QueryIdKeyOperatorValue)c.QueryId).Key.PToString.Equals(key.Key.PToString)).ToList();
+                                var contextsThisKey = contextsKeyOperatorValue.Where(c => ((QueryIdKeyOperatorValue)c.Context.QueryId).Key.PToString.Equals(key.Key.PToString)).ToList();
                                 if (contextsThisKey.Count > 0) { // Add links for removing these contexts.
-                                    replacementThisKey.Append(string.Join("<br>", contextsThisKey.Select(c => {
-                                        var queryId = (QueryIdKeyOperatorValue)c.QueryId;
+                                    part.Append(string.Join("<br>", contextsThisKey.Select(c => {
+                                        var queryId = (QueryIdKeyOperatorValue)c.Context.QueryId;
                                         // TODO: Fix compile error here!
-                                        return request.API.CreateAPILink(request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(c.Id), PropertyOperation.SetInvalid), c.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
+                                        return request.API.CreateAPILink(request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(c.Id), PropertyOperation.SetInvalid), c.Context.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
                                     })));
                                 }
+                                if (part.Length > 0) replacementThisKey.Append(part.ToString());
 
+                                part = new StringBuilder();
                                 // ===================================
                                 // Context part 2, suggest new contexts
                                 // ===================================
+                                var foundNonQuintileSuggestion = false;
                                 if (drillDownUrls.TryGetValue(key.Key.CoreP, out var operators)) {
                                     // NOTE: Note that code here is almost a dupliate of code below
                                     operators.ForEach(_operator => {
@@ -171,14 +176,15 @@ namespace AgoRapide.API {
                                             ordered.ForEach(suggestion => {
                                                 if (string.IsNullOrEmpty(prefix)) {
                                                     if (suggestion.Value.Text.StartsWith("Local Quintile") || suggestion.Value.Text.StartsWith("Quintile")) return;
+                                                    foundNonQuintileSuggestion = true;
                                                 } else {
                                                     if (!suggestion.Value.Text.StartsWith(prefix)) return;
                                                 }
-                                                replacementThisKey.Append("<br><br>");
+                                                part.Append("<br><br>");
                                                 // Suggest both 
                                                 // 1) adding to context
                                                 new List<SetOperator> { SetOperator.Intersect, SetOperator.Remove, SetOperator.Union }.ForEach(s => /// Note how <see cref="SetOperator.Union"/> is a bit weird. It will only have effect if some context properties are later removed (see suggestions below).
-                                                replacementThisKey.Append("&nbsp;" + request.API.CreateAPILink(
+                                                part.Append("&nbsp;" + request.API.CreateAPILink(
                                                          CoreAPIMethod.UpdateProperty,
                                                          s == SetOperator.Intersect ? suggestion.Value.Text : s.ToString().Substring(0, 1),
                                                          request.CurrentUser.GetType(),
@@ -189,27 +195,36 @@ namespace AgoRapide.API {
                                                 );
                                                 // and 
                                                 // 2) Showing all with this value (general query)
-                                                replacementThisKey.Append("&nbsp;<a href=\"" + suggestion.Value.ToQueryUrl + "\">(All)<a>");
+                                                part.Append("&nbsp;<a href=\"" + suggestion.Value.ToQueryUrl + "\">(All)<a>");
                                             });
                                         });
                                     });
                                     drillDownUrls.Remove(key.Key.CoreP); // Removed in order to see any left overs (we may have drill-down for fields that are not shown)
                                 }
+                                // TODO: Add span with click for visible / invisible here
+                                if (part.Length > 0) replacementThisKey.Append("D".HTMLEncloseWithInVisibilityToggle(part.ToString()));
 
+                                part = new StringBuilder();
                                 // ===================================
-                                // Context part 3, suggest iterations
+                                /// Context part 3, suggest iterations (<see cref="QueryIdFieldIterator"/>, resulting in a <see cref="FieldIterator"/>-result)
                                 // ===================================
-                                var contextTypes =
-                                    request.TypesInvolvedInCurrentContext ??  // Preferred value. TODO: Consider throwing exception if not found TODO: Value not implemented as of 23 Nov 2017.
-                                    contexts.Select(c => c.Type).Distinct().ToList(); /// Not preferred value. We now only know about types already in use in context, not those found by <see cref="Context.TraverseToAllEntities"/>. 
-                                types.ForEach(columnType => {
-                                    columnType.GetChildProperties().Values.ForEach(columnKey => {
-                                        if (columnType.Equals(t) && columnKey.Key.PToString.Equals(key.Key.PToString)) return; // Do not iterate on key itself.
-                                        replacementThisKey.Append("<br>" + APICommandCreator.HTMLInstance.CreateAPILink(
-                                            CoreAPIMethod.EntityIndex, (columnType.Equals(t) ? "" : (columnType.ToStringVeryShort() + ".")) + columnKey.Key.PToString, t,
-                                            new QueryIdFieldIterator(key, columnType, columnKey)));
+                                if (!foundNonQuintileSuggestion) {
+                                    /// (NOTE: This part is only suggested if there where drill-down suggestions from last part)
+                                } else {
+                                    var contextTypes =
+                                        request.TypesInvolvedInCurrentContext ??  // Preferred value. TODO: Consider throwing exception if not found TODO: Value not implemented as of 23 Nov 2017.
+                                        contexts.Select(c => c.Context.Type).Distinct().ToList(); /// Not preferred value. We now only know about types already in use in context, not those found by <see cref="Context.TraverseToAllEntities"/>. 
+                                    types.ForEach(columnType => {
+                                        columnType.GetChildProperties().Values.ForEach(columnKey => {
+                                            if (columnType.Equals(t) && columnKey.Key.PToString.Equals(key.Key.PToString)) return; // Do not iterate on key itself.
+                                            part.Append("<br>" + APICommandCreator.HTMLInstance.CreateAPILink(
+                                                CoreAPIMethod.EntityIndex, (columnType.Equals(t) ? "" : (columnType.ToStringVeryShort() + ".")) + columnKey.Key.PToString, t,
+                                                new QueryIdFieldIterator(key, columnType, columnKey)));
+                                        });
                                     });
-                                });
+                                }
+                                // TODO: Add span with click for visible / invisible here
+                                if (part.Length > 0) replacementThisKey.Append("RC".HTMLEncloseWithInVisibilityToggle(part.ToString()));
 
                                 if (replacementThisKey.Length > 0) heading = heading.Replace("<!--" + key.Key.PToString + "_Context-->", replacementThisKey.ToString());
                             });
