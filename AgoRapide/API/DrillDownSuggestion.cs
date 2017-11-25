@@ -74,6 +74,8 @@ namespace AgoRapide.API {
         /// <summary>
         /// Result is <see cref="ConcurrentDictionary{TKey, TValue}"/> instead of <see cref="Dictionary{TKey, TValue}"/> because code 
         /// executes in parallell.
+        /// 
+        /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
         /// </summary>
         /// <param name="type"></param>
         /// <param name="entities">Alle objects most be assignable to <paramref name="type"/></param>

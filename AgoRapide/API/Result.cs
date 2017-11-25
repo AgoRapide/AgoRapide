@@ -138,6 +138,7 @@ namespace AgoRapide.API {
                         /// TOOD: Consider using <see cref="GeneralQueryResult"/> in order to communicate drill down URLs
                         /// TODO: Add CreateDrillDownUrls also to <see cref="ToJSONDetailed"/> (in addition to <see cref="ToHTMLDetailed"/>)
                         var drillDownUrls = DrillDownSuggestion.Create(t, thisTypeSorted);
+                        /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
 
                         // Insert Context information as relevant
                         // if (request.CurrentUser != null && request.CurrentUser.TryGetPV<List<Context>>(CoreP.Context.A(), out var contexts)) {
