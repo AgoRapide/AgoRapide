@@ -62,7 +62,7 @@ namespace AgoRapide.API {
 
         public override string ToHTMLTableRowHeading(Request request, List<AggregationType> aggregateRows) {
             /// TODO: Why "deny" use of <param name="aggregateRows"/> here?
-            if (aggregateRows != null) throw new NotNullReferenceException(nameof(aggregateRows));
+            if (aggregateRows != null && aggregateRows.Count > 0) throw new NotNullReferenceException(nameof(aggregateRows));
             return "<tr><th>&nbsp;</th>" + string.Join("", Columns.Select(p => "<th>" + p.Key.ToHTMLTableHeader() + "</th>")) + "</tr>";
         }
 

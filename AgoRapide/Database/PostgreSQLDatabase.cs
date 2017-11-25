@@ -150,18 +150,22 @@ namespace AgoRapide.Database {
                                                 });
                                             });
 
-                                            allColumns.Add((
-                                                new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                                            var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
                                                     property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
                                                     description: "Drill-down suggestion for " + q.ColumnType.ToStringVeryShort() + "." + q.ColumnKey.Key.PToString + ": " + suggestionColumn.Value.Text,
                                                     longDescription: null,
                                                     isMany: false
                                                 ) {
-                                                    Type = typeof(long),
-                                                    /// TODO: Consider adding <see cref="AggregationType.Count"/> and <see cref="AggregationType.Percent"/> here.
-                                                    AggregationTypes = new AggregationType[] { AggregationType.Sum, AggregationType.Min, AggregationType.Max, AggregationType.Average, AggregationType.Median }
-                                                },
-                                                (CoreP)(nextCoreP--))), // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                                                Type = typeof(long),
+                                                /// TODO: Consider adding <see cref="AggregationType.Count"/> and <see cref="AggregationType.Percent"/> here.
+                                                /// 
+                                                // TOOD: PUT BACK AGGREGATION TYPES HERE WHEN SUPPORTING THIS IN XXX
+                                                // AggregationTypes = new AggregationType[] { AggregationType.Sum, AggregationType.Min, AggregationType.Max, AggregationType.Average, AggregationType.Median }
+                                            },
+                                                (CoreP)(nextCoreP--))); // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                                            pk.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
+                                            allColumns.Add((
+                                                pk,
                                                 thisColumn
                                             ));
                                         });
