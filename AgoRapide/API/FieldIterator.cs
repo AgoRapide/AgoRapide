@@ -61,9 +61,29 @@ namespace AgoRapide.API {
         public override List<PropertyKey> ToHTMLTableColumns(Request request) => Columns.Select(p => (PropertyKey)p.Key).ToList();
 
         public override string ToHTMLTableRowHeading(Request request, List<AggregationType> aggregateRows) {
-            /// TODO: Why "deny" use of <param name="aggregateRows"/> here?
-            if (aggregateRows != null && aggregateRows.Count > 0) throw new NotNullReferenceException(nameof(aggregateRows));
-            return "<tr><th>&nbsp;</th>" + string.Join("", Columns.Select(p => "<th>" + p.Key.ToHTMLTableHeader() + "</th>")) + "</tr>";
+            // Note how this has no cache because the columns will differ between instances.
+            var headers= "<tr><th>&nbsp;</th>" + string.Join("", Columns.Select(p => "<th>" + p.Key.ToHTMLTableHeader() + "</th>")) + "</tr>";
+            ///// TODO: Why "deny" use of <param name="aggregateRows"/> here?
+            //if (aggregateRows != null && aggregateRows.Count > 0) throw new NotNullReferenceException(nameof(aggregateRows));
+
+            return "<thead>" +
+                (aggregateRows == null || aggregateRows.Count == 0 ? "" :
+                    headers + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
+                    string.Join("", aggregateRows.Select(a => {
+                        if (ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() == 0) return "";
+                        return "<tr><th>" + a + "</th>" +
+                            string.Join("", ToHTMLTableColumns(request).Select(key => "<th align=\"right\">" +
+                                (key.Key.A.AggregationTypes.Contains(a) ? ("<!--" + key.Key.PToString + "_" + a + "-->") : "") +
+                                "</th>")) +
+                        "</tr>";
+                    })) // +
+                        // headers.Replace(">" + nameof(IdFriendly) + "<",">&nbsp;<") // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
+                ) +
+                "<tr><th>Context</th>" +
+                    string.Join("", ToHTMLTableColumns(request).Select(key => "<th  style=\"vertical-align:top\"><!--" + key.Key.PToString + "_Context--></th>")) +
+                "</tr>" +
+                headers + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
+                "</thead>";
         }
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +

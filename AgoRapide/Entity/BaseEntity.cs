@@ -418,7 +418,9 @@ namespace AgoRapide {
         /// <param name="aggregateRows">
         /// May be null. 
         /// 
-        /// If given then will insert rows for each <see cref="AggregationType"/> with placemarkers like -Customer_Count_Order- as relevant according to keys found
+        /// If given then will insert rows for each <see cref="AggregationType"/> with placemarkers like -Customer_Count_Order- as relevant according to keys found. 
+        /// TODO: As of Nov 2017 the value given at first call will decide result for later calls also 
+        /// TODO: (that is, the value given at second and subsequent calls will be ignored.)
         /// </param>
         /// <returns></returns>
         public virtual string ToHTMLTableRowHeading(Request request, List<AggregationType> aggregateRows) => _tableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {

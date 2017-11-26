@@ -142,17 +142,17 @@ namespace AgoRapide.Database {
                                                 return;
                                             }
 
-                                            DrillDownSuggestion.Create(q.ColumnType, columnTypeEntities.Values, q.ColumnKey).Values.ForEach(operatorsRow => {
-                                                operatorsColumn.ForEach(operatorRow => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
-                                                    operatorColumn.Value.ForEach(suggestionRow => {
-                                                        thisColumn.Add(suggestionRow.Value.Text, suggestionRow.Value.Count);
+                                            DrillDownSuggestion.Create(requiredType, newRequiredTypeEntities.Values, q.RowKey).Values.ForEach(operatorsRow => {
+                                                operatorsRow.ForEach(operatorRow => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
+                                                    operatorRow.Value.ForEach(suggestionRow => {
+                                                        thisColumn.Add(suggestionRow.Value.QueryId.ToString(), suggestionRow.Value.Count);
                                                     });
                                                 });
                                             });
 
                                             var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
                                                     property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
-                                                    description: "Drill-down suggestion for " + q.ColumnType.ToStringVeryShort() + "." + q.ColumnKey.Key.PToString + ": " + suggestionColumn.Value.Text,
+                                                    description: "Drill-down suggestion for " + q.ColumnType.ToStringVeryShort() + "/" + suggestionColumn.Value.QueryId.ToString(), //  "." + q.ColumnKey.Key.PToString + ": " + suggestionColumn.Value.Text,
                                                     longDescription: null,
                                                     isMany: false
                                                 ) {
@@ -171,9 +171,15 @@ namespace AgoRapide.Database {
                                         });
                                     });
                                 });
-                                entities = 
+                                entities =
                                     allColumns.SelectMany(e => e.Item2.Keys).Distinct(). // Find all unique rows
-                                    Select(r => (BaseEntity)(new FieldIterator(r, allColumns.Select(c => (Property)(c.Values.TryGetValue(r, out var v) ? new PropertyT<long>(c.PropertyKey.PropertyKeyWithIndex, v) : null)).ToList()))).ToList();
+                                    Select(r => (BaseEntity)(new FieldIterator(r, allColumns.Select(c => (Property)(c.Values.TryGetValue(r, out var v) ?
+                                             new PropertyT<long>(c.PropertyKey.PropertyKeyWithIndex, v) :
+                                             /// null) // This does not work because methods like <see cref="FieldIterator.ToHTMLTableRowHeading"/> will not have enough information
+                                             new PropertyT<long>(c.PropertyKey.PropertyKeyWithIndex, 0) /// TODO: An alternative would be to use null as value here (and typeof(long?)) as type above, but then we must watch out for methods like <see cref="PropertyKeyAggregate.CalculateSingleValue"/>
+                                           )
+                                        ).ToList()))
+                                    ).ToList();
                                 errorResponse = null;
                                 return true;
                             default:
