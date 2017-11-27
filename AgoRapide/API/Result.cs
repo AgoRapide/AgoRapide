@@ -220,7 +220,7 @@ namespace AgoRapide.API {
                                             if (columnType.Equals(t) && columnKey.Key.PToString.Equals(key.Key.PToString)) return; // Do not iterate on key itself.
                                             part.Append("<br>" + APICommandCreator.HTMLInstance.CreateAPILink(
                                                 CoreAPIMethod.EntityIndex, (columnType.Equals(t) ? "" : (columnType.ToStringVeryShort() + ".")) + columnKey.Key.PToString, t,
-                                                new QueryIdFieldIterator(key, columnType, columnKey)));
+                                                new QueryIdFieldIterator(key, columnType, columnKey, AggregationType.Count, aggregationKey: null)));
                                         });
                                     });
                                 }
@@ -249,7 +249,7 @@ namespace AgoRapide.API {
                             // TODO: CONSIDER FACTORING OUT COMMON ELEMENTS IN DUPLIATE CODE HERE AND ABOVE
                             // TODO: Note how aggregations are not included here.
                             var key = e.Key.A();
-                            retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.Description) + "</b>: ");
+                            retval.Append("<p><b>" + key.Key.PToString.HTMLEncloseWithinTooltip(key.Key.A.WholeDescription) + "</b>: ");
                             e.Value.ForEach(_operator => {
                                 // Note how ordering by negative value should be more efficient then ordering and then reversing
                                 // _operator.Value.OrderBy(s => s.Value.Count).Reverse().ForEach(suggestion => {

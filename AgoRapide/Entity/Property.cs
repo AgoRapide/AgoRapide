@@ -609,7 +609,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 1, Key
                 // --------------------
-                (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.Description) + /// Note that in addition to the columns returned by<see cref="ToHTMLTableColumns"/> an extra column with<see cref="BaseEntity.Id" /> is also returned by<see cref="ToHTMLTableRowHeading" /> and <see cref="ToHTMLTableRow"/>
+                (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.WholeDescription) + /// Note that in addition to the columns returned by<see cref="ToHTMLTableColumns"/> an extra column with<see cref="BaseEntity.Id" /> is also returned by<see cref="ToHTMLTableRowHeading" /> and <see cref="ToHTMLTableRow"/>
                 "</td><td>" +
 
                 // --------------------
@@ -630,7 +630,7 @@ namespace AgoRapide {
                         ">" +
                         "</label>"
                     )
-                ).HTMLEncloseWithinTooltip(IsTemplateOnly ? "" : ValueA.Description) +
+                ).HTMLEncloseWithinTooltip(IsTemplateOnly ? "" : ValueA.WholeDescription) +
                 "</td><td>" +
 
                 // --------------------

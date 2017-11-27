@@ -167,11 +167,13 @@ namespace AgoRapide.Core {
 
             if (valueToLower.StartsWith("iterate ")) { /// TODO: Move code here into <see cref="QueryIdFieldIterator"/>
 
-                var syntaxHelp = ". Syntax: ITERATE {rowKey} BY {type}.{columnKey}: \"ITERATE Colour BY Car.Production_Year";
+                var syntaxHelp = ". Syntax: Either\r\n" +
+                    "1) ITERATE {rowKey} BY {type}.{columnKey}: \"ITERATE Colour BY Car.Production_Year\" or " +
+                    "2) ITERATE {rowKey} BY {type}.{columnKey} {aggregationType} {aggregationKey}: \"ITERATE Colour BY Car.Production_Year SUM Price\"";
                 var t = value.Split(" ").Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
-                if (t.Count != 4) {
+                if (t.Count != 4 && t.Count != 6) {
                     id = null;
-                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Not four items" + syntaxHelp;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Not four items or six items" + syntaxHelp;
                     return false;
                 }
                 if (!PropertyKeyMapper.TryGetA(t[1], out var rowKey)) {
@@ -181,33 +183,52 @@ namespace AgoRapide.Core {
                 }
                 if (!"by".Equals(t[2].ToLower())) {
                     id = null;
-                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Literal 'BY' not found as third element, found '" + t[2] +"'" + syntaxHelp;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Literal 'BY' not found as third element, found '" + t[2] + "'" + syntaxHelp;
                     return false;
                 }
-                t = t[3].Split(".");
-                if (t.Count != 2) {
+                var t2 = t[3].Split(".");
+                if (t2.Count != 2) {
                     /// TODO: Future expansion: We could allow {type} not to be given now, and let an external entity supply 
                     /// TOOD: the created <see cref="QueryIdFieldIterator"/>-instance with the {type} afterwards.
                     id = null;
-                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Invalid syntax for {type}.{columnKey}. Single full stop not found, found " + (t.Count - 1) + "  full stops" + syntaxHelp;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Invalid syntax for {type}.{columnKey}. Single full stop not found, found " + (t2.Count - 1) + "  full stops" + syntaxHelp;
                     return false;
                 }
 
-                if (!Util.TryGetTypeFromString(t[0], out var columnType)) {
+                if (!Util.TryGetTypeFromString(t2[0], out var columnType)) {
                     id = null;
-                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {type} (" + t[0] + ") not recognized" + syntaxHelp;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {type} (" + t2[0] + ") not recognized" + syntaxHelp;
                     return false;
                 }
 
-                if (!PropertyKeyMapper.TryGetA(t[1], out var columnKey)) {
+                if (!PropertyKeyMapper.TryGetA(t2[1], out var columnKey)) {
                     id = null;
-                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {columnKey} (" + t[1] + ") not recognized" + syntaxHelp;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {columnKey} (" + t2[1] + ") not recognized" + syntaxHelp;
                     return false;
                 }
 
-                id = new QueryIdFieldIterator(rowKey, columnType, columnKey);
-                errorResponse = null;
-                return true;
+                if (t.Count == 4) { // We are finished
+                    id = new QueryIdFieldIterator(rowKey, columnType, columnKey, AggregationType.Count, aggregationKey: null);
+                    errorResponse = null;
+                    return true;
+                } else if (t.Count == 6) { // Continue with parsing last two parameters. 
+                    // Continue parsing
+                    if (!Util.EnumTryParse<AggregationType>(t[4], out var aggregationType)) {
+                        id = null;
+                        errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: Invalid {aggregationType} (" + t[4] + "). Use one of " + string.Join(", ",Util.EnumGetValues<AggregationType>()) + syntaxHelp;
+                        return false;
+                    }
+                    if (!PropertyKeyMapper.TryGetA(t[5], out var aggregationKey)) {
+                        id = null;
+                        errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {aggregationKey} (" + t[5] + ") not recognized" + syntaxHelp;
+                        return false;
+                    }
+                    id = new QueryIdFieldIterator(rowKey, columnType, columnKey, aggregationType, aggregationKey);
+                    errorResponse = null;
+                    return true;
+                } else {
+                    throw new InvalidCountException("Found  " + t.Count + ", expected 4 or 6");
+                }
             }
 
             if (valueToLower.StartsWith("where")) {  /// TODO: Move code here into <see cref="QueryIdKeyOperatorValue"/>

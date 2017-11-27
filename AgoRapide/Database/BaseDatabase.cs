@@ -178,6 +178,151 @@ namespace AgoRapide.Database {
         public abstract bool TryGetEntities(BaseEntity currentUser, QueryId id, AccessType accessTypeRequired, Type requiredType, out List<BaseEntity> entities, out ErrorResponse errorResponse);
 
         /// <summary>
+        /// Returns result of first querying against <paramref name="contexts"/> and then more specific <paramref name="id"/>
+        /// </summary>
+        /// <param name="currentUser"></param>
+        /// <param name="id">Must be either <see cref="QueryIdContext"/> or <see cref="QueryIdFieldIterator"/></param>
+        /// <param name="requiredType"></param>
+        /// <param name="contexts"></param>
+        /// <param name="entities"></param>
+        /// <param name="errorResponse"></param>
+        /// <returns></returns>
+        public bool TryGetContext(BaseEntity currentUser, QueryId id, Type requiredType, List<Context> contexts, out List<BaseEntity> entities, out ErrorResponse errorResponse) {
+            // Note that "result" is in general discarded.
+            // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
+            var result = new Result();
+
+            if (!Context.TryExecuteContextsQueries(currentUser, contexts, this, result, out var contextEntities, out errorResponse)) {
+                entities = null;
+                return false;
+            }
+            if (!contextEntities.TryGetValue(requiredType, out var requiredTypeEntities) || requiredTypeEntities.Count == 0) {
+                entities = null;
+                errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + requiredType + " contained within current context for " + currentUser.GetType().ToStringVeryShort() + " " + currentUser.IdFriendly);
+                return false;
+            }
+
+            switch (id) {
+                case QueryIdContext q:
+                    entities = requiredTypeEntities.Values.ToList();
+                    errorResponse = null;
+                    return true;
+                case QueryIdFieldIterator q:
+                    /// Note how <param name="requiredType"/> now is really ignored, as <see cref="FieldIterator"/> will be returned instead.
+                    if (!contextEntities.TryGetValue(q.ColumnType, out var columnTypeEntities) || columnTypeEntities.Count == 0) {
+                        entities = null;
+                        errorResponse = new ErrorResponse(ResultCode.data_error, "No entities of type " + q.ColumnType + " contained within current context for " + currentUser.GetType().ToStringVeryShort() + " " + currentUser.IdFriendly);
+                        return false;
+                    }
+
+                    /// For each suggested drill-down for <see cref="QueryIdFieldIterator.ColumnKey"/>, 
+                    /// add that one to context, 
+                    /// calculate the new context and 
+                    /// ask for drill-down suggestions against <param name="requiredType"/> / <see cref="QueryIdFieldIterator.RowKey"/> 
+                    /// (each such iteration will give us a new column in the final result)
+                    /// Collect all drill-down suggestions thus found before creating <see cref="FieldIterator"/>-instances
+                    /// (because <see cref="FieldIterator"/>-instances are row-based)
+                    /// Note how <param name="requiredType"/> now is really ignored, as <see cref="FieldIterator"/> will be returned instead.
+                    entities = new List<BaseEntity>();
+                    var nextCoreP = int.MaxValue;
+                    var allColumns = new List<(
+                        PropertyKey PropertyKey,      /// Dynamically generated here based on <see cref="DrillDownSuggestion.Text"/> for <see cref="QueryIdFieldIterator.ColumnKey"/>)
+                                    Dictionary<
+                            string,  /// Key is left-most column in table (<see cref="FieldIterator.LeftmostColumn"/> (the <see cref="DrillDownSuggestion.Text"/> for / <see cref="QueryIdFieldIterator.RowKey"/>)
+                                        long     /// The actual count for the given combination
+                                    > Values
+                    )>();
+                    DrillDownSuggestion.Create(q.ColumnType, columnTypeEntities.Values, q.ColumnKey).Values.ForEach(operatorsColumn => {
+                        operatorsColumn.ForEach(operatorColumn => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
+                            operatorColumn.Value.ForEach(suggestionColumn => {
+                                Log(suggestionColumn.Value.QueryId.ToString());
+                                var thisColumn = new Dictionary<string, long>();
+
+                                var newContext = contexts.ToList();
+                                newContext.Add(new Context(SetOperator.Intersect, q.ColumnType, suggestionColumn.Value.QueryId));
+
+                                result = new Result();
+                                if (!Context.TryExecuteContextsQueries(currentUser, newContext, this, result, out var newContextEntities, out var newErrorResponse)) {
+                                    // We do not expect the call to fail here
+                                    throw new Exception(nameof(Context.TryExecuteContextsQueries) + " failed (very unexpectedly) for " + q.ColumnType + " " + suggestionColumn.Value.QueryId + ". Details: " + nameof(newErrorResponse) + ": " + newErrorResponse);
+                                }
+                                // Note that "result" is now discarded.
+                                // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
+                                if (!newContextEntities.TryGetValue(requiredType, out var newRequiredTypeEntities) || newRequiredTypeEntities.Count == 0) {
+                                    // Consider "normal". Corresponding column in final result will just be blank.
+                                    return;
+                                }
+
+                                DrillDownSuggestion.Create(requiredType, newRequiredTypeEntities.Values, q.RowKey).Values.ForEach(operatorsRow => {
+                                    operatorsRow.ForEach(operatorRow => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
+                                        operatorRow.Value.ForEach(suggestionRow => {
+                                            if (q.AggregationType == AggregationType.Count) {
+                                                // 1) The simple case, we alredy know the answer
+                                                thisColumn.Add(suggestionRow.Value.QueryId.ToString(), suggestionRow.Value.Count);
+                                            } else {
+                                                // 2) A more complicated case, we have to execute the actual context, and do the aggregate calculation
+                                                var aggregateContext = newContext.ToList();
+                                                aggregateContext.Add(new Context(SetOperator.Intersect, requiredType, suggestionRow.Value.QueryId));
+
+                                                if (!Context.TryExecuteContextsQueries(currentUser, aggregateContext, this, result, out var aggregateContextEntities, out var aggregateErrorResponse)) {
+                                                    // We do not expect the call to fail here
+                                                    throw new Exception(nameof(Context.TryExecuteContextsQueries) + " failed (very unexpectedly) for " + requiredType + " " + suggestionRow.Value.QueryId + ". Details: " + nameof(aggregateErrorResponse) + ": " + aggregateErrorResponse);
+                                                }
+                                                // Note that "result" is now discarded.
+                                                // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
+                                                if (!aggregateContextEntities.TryGetValue(requiredType, out var aggregateRequiredTypeEntities) || aggregateRequiredTypeEntities.Count == 0) {
+                                                    // Consider "normal". Corresponding column in final result will just be blank.
+                                                    return;
+                                                }
+                                                // Aggregate values
+                                                var value = PropertyKeyAggregate.CalculateSingleValue(q.AggregationType, q.AggregationKey, aggregateRequiredTypeEntities.Values.ToList());
+                                                if (value != null) thisColumn.Add(suggestionRow.Value.QueryId.ToString(), (long)value);
+                                            }
+                                        });
+                                    });
+                                });
+
+                                var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+
+                                        // Replaced text with only value 27 Nov 2017.
+                                        // property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
+                                        property: suggestionColumn.Value.QueryId.Value.ToString(),
+                                        description: "Drill-down suggestion for " + q.ColumnType.ToStringVeryShort() + "/" + suggestionColumn.Value.QueryId.ToString(), //  "." + q.ColumnKey.Key.PToString + ": " + suggestionColumn.Value.Text,
+                                        longDescription: suggestionColumn.Value.QueryId.Key.A.WholeDescription,
+                                        isMany: false
+                                    ) {
+                                    Type = typeof(long),
+                                    /// TODO: Consider adding <see cref="AggregationType.Count"/> and <see cref="AggregationType.Percent"/> here.
+                                    /// 
+                                    // TOOD: PUT BACK AGGREGATION TYPES HERE WHEN SUPPORTING THIS IN XXX
+                                    // AggregationTypes = new AggregationType[] { AggregationType.Sum, AggregationType.Min, AggregationType.Max, AggregationType.Average, AggregationType.Median }
+                                },
+                                    (CoreP)(nextCoreP--))); // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                                pk.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
+                                allColumns.Add((
+                                    pk,
+                                    thisColumn
+                                ));
+                            });
+                        });
+                    });
+                    entities =
+                        allColumns.SelectMany(e => e.Item2.Keys).Distinct(). // Find all unique rows
+                        Select(r => (BaseEntity)(new FieldIterator(r, allColumns.Select(c => (Property)(c.Values.TryGetValue(r, out var v) ?
+                                 new PropertyT<long>(c.PropertyKey.PropertyKeyWithIndex, v) :
+                                             /// null) // This does not work because methods like <see cref="FieldIterator.ToHTMLTableRowHeading"/> will not have enough information
+                                             new PropertyT<long>(c.PropertyKey.PropertyKeyWithIndex, 0) /// TODO: An alternative would be to use null as value here (and typeof(long?)) as type above, but then we must watch out for methods like <see cref="PropertyKeyAggregate.CalculateSingleValue"/>
+                                           )
+                            ).ToList()))
+                        ).ToList();
+                    errorResponse = null;
+                    return true;
+                default:
+                    throw new InvalidObjectTypeException(id);
+            }
+        }
+
+        /// <summary>
         /// See <see cref="CoreAPIMethod.History"/>. 
         /// Implementator should return results with ORDER BY <see cref="DBField.id"/> DESC
         /// 

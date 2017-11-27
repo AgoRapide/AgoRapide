@@ -49,6 +49,36 @@ namespace AgoRapide {
             // request.Result.AddProperty(CoreP.Message.A(), "xxx"); // Probably unnecessary
             return request.GetResponse();
         }
+
+        /// <summary>
+        /// <see cref="CoreAPIMethod.BaseEntityMethod"/>. 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="request"></param>
+        [APIMethod(
+            Description = "Show result of report as identified by {QueryId}. Depends on -" + nameof(ReportP.ReportEntityType) + "- (and optionally -" + nameof(ReportP.ReportQueryIdFieldIterator) + "-).",
+            S1 = nameof(ShowResult), S2 = "DUMMY", // TODO: REMOVE "DUMMY". Added Summer 2017 because of bug in routing mechanism.
+            AccessLevelUse = AccessLevel.Relation,
+            ShowDetailedResult = true)]
+        public object ShowResult(BaseDatabase db, ValidRequest request) {
+
+            if (!TryGetPV<Type>(ReportP.ReportEntityType.A(), out var requiredType)) {
+                return request.GetErrorResponse(ResultCode.data_error, "Property " + ReportP.ReportEntityType + " not set for this report (" + IdFriendly + "). Must be set in order for this method to execute.");
+            }
+            QueryId queryId;
+            if (TryGetPV<QueryIdFieldIterator>(ReportP.ReportQueryIdFieldIterator.A(), out var temp)) {
+                queryId = temp;
+            } else {
+                queryId = new QueryIdContext();
+            }
+
+            if (!db.TryGetContext(request.CurrentUser, queryId, requiredType, PV(CoreP.Context.A(), new List<Context>()), out var entities, out var errorResponse)) {
+                return request.GetErrorResponse(errorResponse);
+            }
+
+            if (queryId is QueryIdContext) request.PriorityOrderLimit = PriorityOrder.Neutral; /// Include more data since default is only <see cref="PriorityOrder.Important"/>
+            return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
+        }
     }
 
     /// <summary>
@@ -71,6 +101,16 @@ namespace AgoRapide {
 
         [PropertyKey(PriorityOrder = PriorityOrder.Important, Size = InputFieldSize.MultilineMedium, Group = typeof(ReportPropertiesDescriber))]
         ReportDescription,
+
+        [PropertyKey( // TODO: IMPROVE ON DOCUMENTATION
+            Description = "Specifies for which type API-method -" + nameof(Report.ShowResult) + "- should show data (may be combined with -" + nameof(ReportQueryIdFieldIterator) + "-).",
+            Type = typeof(Type), Group = typeof(ReportPropertiesDescriber))]
+        ReportEntityType,
+
+        [PropertyKey( // TODO: IMPROVE ON DOCUMENTATION
+            Description = "Specifies result of API-method -" + nameof(Report.ShowResult) + "- (must be combined with -" + nameof(ReportEntityType) + "-).",
+            Type = typeof(QueryIdFieldIterator), Size = InputFieldSize.Big, Group = typeof(ReportPropertiesDescriber))]
+        ReportQueryIdFieldIterator,
 
         [PropertyKey(
             Description = "Fields to be excluded from presentation (can not be combined with -" + nameof(ReportIncludeFields) + "-).",
