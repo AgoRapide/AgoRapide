@@ -286,7 +286,7 @@ namespace AgoRapide.Database {
 
                                         // Replaced text with only value 27 Nov 2017.
                                         // property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
-                                        property: suggestionColumn.Value.QueryId.Value.ToString(),
+                                        property: suggestionColumn.Value.QueryId.Value?.ToString() ?? "[NULL]",
                                         description: "Drill-down suggestion for " + q.ColumnType.ToStringVeryShort() + "/" + suggestionColumn.Value.QueryId.ToString(), //  "." + q.ColumnKey.Key.PToString + ": " + suggestionColumn.Value.Text,
                                         longDescription: suggestionColumn.Value.QueryId.Key.A.WholeDescription,
                                         isMany: false

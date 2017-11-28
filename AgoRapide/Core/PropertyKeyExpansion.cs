@@ -71,6 +71,10 @@ namespace AgoRapide.Core {
                             case ExpansionType.DateQuarter: { var v = (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateMonth: { var v = (long)dtmValue.Month; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateWeekday: { var v = dtmValue.DayOfWeek; strValue = v.ToString(); e.AddProperty(key, v); break; }
+
+                            /// TODO: Correct this to DateTime when <see cref="QueryIdKeyOperatorValue.ToString"/> / <see cref="QueryId.TryParse"/> are compatible with each other.
+                            case ExpansionType.DateDate: { var v = dtmValue.Date.ToString(DateTimeFormat.DateOnly); strValue = v; e.AddProperty(key, v); break; }
+
                             case ExpansionType.DatePeriodOfDay: { var v = (PeriodOfDay)((dtmValue.Hour / 6) + 1); strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateHour: { var v = (long)dtmValue.Hour; strValue = v.ToString(); e.AddProperty(key, v); break; }
                             case ExpansionType.DateYearQuarter: { var v = dtmValue.Year + "_" + (Quarter)(((dtmValue.Month - 1) / 3) + 1); strValue = v; e.AddProperty(key, v); break; }
@@ -143,6 +147,7 @@ namespace AgoRapide.Core {
                                 Parents = k.Key.A.Parents,
                                 PriorityOrder = k.Key.A.PriorityOrder, // Added 13 Oct 2017
                                 Type = e.ToExpandedType(),
+                                DateTimeFormat = e == ExpansionType.DateDate ? DateTimeFormat.DateOnly : DateTimeFormat.None,
                                 AggregationTypes= e.ToAggregationTypes()?.ToArray() ?? null,
                                 HasLimitedRange = e.HasLimitedRange(),
 

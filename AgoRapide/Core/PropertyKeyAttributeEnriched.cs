@@ -301,6 +301,7 @@ namespace AgoRapide.Core {
             if (A.AggregationTypes == null) A.AggregationTypes = new AggregationType[0];
             if (A.ExpansionTypes == null) A.ExpansionTypes = new ExpansionType[0];
             if (A.JoinTo == null) A.JoinTo = new Type[0];
+            if (A.JoinAggregatesTo == null) A.JoinAggregatesTo = new Type[0];
 
             if (!A.HasLimitedRangeIsSet) {
                 if (

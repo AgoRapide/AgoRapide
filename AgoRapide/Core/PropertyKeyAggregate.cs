@@ -186,8 +186,12 @@ namespace AgoRapide.Core {
         [ClassMember(Description =
             "Generates -" + nameof(PropertyKeyAggregate) + "- for all aggregates that can automatically be deduced from standard AgoRapide information.\r\n" +
             "Will generate keys for\r\n" +
-            "1) -" + nameof(AggregationType.Count) + "- directly against foreign keys, and also\r\n" +
-            "2) keys for aggregates for all properties for foreign entity which have -" + nameof(PropertyKeyAttribute.AggregationTypes) + "- set.\r\n")]
+            "1) -" + nameof(AggregationType.Count) + "- directly against foreign keys (like Customer.Order_Count), and also\r\n" +
+            "2) keys for aggregates for all properties for foreign entity which have both\r\n" +
+            "   a) -" + nameof(PropertyKeyAttribute.JoinAggregatesTo) + "- set to the relevant type, AND " +
+            "   b) -" + nameof(PropertyKeyAttribute.AggregationTypes) + "- set\r\n" +
+            "   (like for property Order.Amount " + nameof(PropertyKeyAttribute.JoinAggregatesTo) + " set to Customer and " + nameof(PropertyKeyAttribute.AggregationTypes) + " set to Sum"
+        )]
         public static List<PropertyKeyAggregate> GetKeys(List<PropertyKey> keys) {
             Util.AssertCurrentlyStartingUp();
             var retval = new List<PropertyKeyAggregate>();
@@ -196,7 +200,10 @@ namespace AgoRapide.Core {
                 k.Key.A.Parents.ForEach(p => { /// Note how multiple parents may share same foreign key. (Parents is guaranteed to be set now by <see cref="PropertyKeyAttributeEnriched.Initialize"/>.)
                                                /// IMPORTANT: DO NOT CALL p.GetChildProperties (That is, <see cref="Extensions.GetChildProperties"/> as value will be cached, making changes done her invisible)
                     keys.
-                        Where(key => key.Key.HasParentOfType(p) && (key.Key.CoreP == k.Key.CoreP || (key.Key.A.AggregationTypes.Length > 0))).
+                        Where(key => key.Key.HasParentOfType(p) && (
+                            key.Key.CoreP == k.Key.CoreP ||                                                                    // 1) from documentation above, aggrgate Count of all foreign-keys
+                            (key.Key.A.IsJoinAggregatesToFor(k.Key.A.ForeignKeyOf) && key.Key.A.AggregationTypes.Length > 0)   // 2) from documentation above, join to aggregates
+                        )).
                         ForEach(fp => { // Aggregate for all properties that are possible to aggregate over. 
 
                             var aggregationTypes = fp.Key.A.AggregationTypes.ToList();
@@ -216,14 +223,17 @@ namespace AgoRapide.Core {
                             }
                             finished:
 
-                            if (fp.Key.CoreP == k.Key.CoreP && !aggregationTypes.Contains(AggregationType.Count)) aggregationTypes.Add(AggregationType.Count); // Always count number of foreign entities
+                            if (fp.Key.CoreP == k.Key.CoreP && !aggregationTypes.Contains(AggregationType.Count)) {
+                                aggregationTypes.Add(AggregationType.Count); // Always count number of foreign entities
+                            }
+
                             aggregationTypes.ForEach(a => {
                                 var foreignKeyAggregateKey = new PropertyKeyAggregate(
-                                    a,
-                                    p,
-                                    k,
-                                    fp,
-                                    new PropertyKeyAttributeEnrichedDyn(
+                                    aggregationType: a,
+                                    sourceEntityType: p,
+                                    foreignKeyProperty: k,
+                                    sourceProperty: fp,
+                                    key: new PropertyKeyAttributeEnrichedDyn(
                                         new PropertyKeyAttribute(
                                                 // Note that if there is only ONE foreignKey pointing towards entity, then identification for the foreign key can be shortened further.
                                                 // (we can have (for Person) Count_Project instead of Count_Project_PersonId for instance)

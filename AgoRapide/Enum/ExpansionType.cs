@@ -27,6 +27,9 @@ namespace AgoRapide {
         [EnumValue(Description = "Only weekday of date, like 2018-09-12 becoming -" + nameof(DayOfWeek.Sunday) + "-.")]
         DateWeekday,
 
+        [EnumValue(Description = "Only date of date, like 2018-09-12 09:00 becoming 2018-09-12.")]
+        DateDate,
+
         [EnumValue(Description = "Only period of day, like 2018-09-12 09:00 becoming -" + nameof(PeriodOfDay.Morning) + "-.")]
         DatePeriodOfDay,
 
@@ -103,6 +106,10 @@ namespace AgoRapide {
                 case ExpansionType.DateQuarter: return typeof(Quarter);
                 case ExpansionType.DateMonth: return typeof(long);
                 case ExpansionType.DateWeekday: return typeof(DayOfWeek);
+
+                /// TODO: Correct this to DateTime when <see cref="QueryIdKeyOperatorValue.ToString"/> / <see cref="QueryId.TryParse"/> are compatible with each other.
+                case ExpansionType.DateDate: return typeof(string);
+
                 case ExpansionType.DatePeriodOfDay: return typeof(PeriodOfDay);
                 case ExpansionType.DateHour: return typeof(long);
                 case ExpansionType.DateYearQuarter: return typeof(string);

@@ -453,6 +453,23 @@ namespace AgoRapide.Core {
         public bool IsJoinToFor(Type type) => _isJoinToCache.GetOrAdd(type, t => JoinTo.Any(p => p.IsAssignableFrom(t)));
 
         /// <summary>
+        /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.
+        /// </summary>
+        [ClassMember(Description =
+            "List of entity types for which aggregates of this property is to be copied into " +
+            "like Order.Amount being aggregated into Customer."
+        )]
+        public Type[] JoinAggregatesTo { get; set; }
+
+        private ConcurrentDictionary<Type, bool> _isJoinAggregatesToCache = new ConcurrentDictionary<Type, bool>();
+        /// <summary>
+        /// True if this key should be aggregated for the given entity.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public bool IsJoinAggregatesToFor(Type type) => _isJoinAggregatesToCache.GetOrAdd(type, t => JoinAggregatesTo.Any(p => p.IsAssignableFrom(t)));
+
+        /// <summary>
         /// TODO: Implement so that may also be given for Type string (string will be converted to int, and checked for value. Useful for postal codes)
         /// 
         /// TODO: Not implemented in <see cref="PropertyKeyAttributeEnriched.ValidatorAndParser"/> as of March 2017
