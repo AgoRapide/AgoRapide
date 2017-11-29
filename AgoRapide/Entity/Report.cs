@@ -16,39 +16,41 @@ namespace AgoRapide {
         AccessLevelWrite = AccessLevel.Relation
     )]
     public class Report : APIDataObject {
-        /// <summary>
-        /// <see cref="CoreAPIMethod.BaseEntityMethod"/>. 
-        /// </summary>
-        /// <param name="db"></param>
-        /// <param name="request"></param>
-        [APIMethod(
-            Description = "Sets -" + nameof(CoreP.Context) + "- for the current user to -" + nameof(CoreP.Context) + "- for report as identified by {QueryId}.",
-            S1 = nameof(Use), S2 = "DUMMY", // TODO: REMOVE "DUMMY". Added Summer 2017 because of bug in routing mechanism.
-            AccessLevelUse = AccessLevel.Relation,
-            ShowDetailedResult = true)]
-        public object Use(BaseDatabase db, ValidRequest request) {
-            var properties = new List<(PropertyKeyWithIndex, object)>();
-            if (!Properties.TryGetValue(CoreP.Context.A().Key.CoreP, out var _new)) { // Note how we assume that Context will always contain at least one property once defined.k
-                return request.GetErrorResponse(ResultCode.data_error, "No " + nameof(CoreP.Context) + " properties found for this report");
-            }
-            if (request.CurrentUser.Properties.TryGetValue(CoreP.Context.A().Key.CoreP, out var old)) {
-                old.Properties.ForEach(p => db.OperateOnProperty(request.CurrentUser.Id, p.Value, PropertyOperation.SetInvalid, null));
-            }
 
-            // Naïve approach. Will only set one context-value.
-            //c.Properties.ForEach(p => db.UpdateProperty(request.CurrentUser.Id, request.CurrentUser, 
-            //    // NOTE: No need for specifying PropertyKeyWithIndex here. Most probably it would only result in an obscure exception anyway.
-            //    // p.Value.Key.PropertyKeyWithIndex,
-            //    p.Value.Key,
-            //    p.Value.V<Context>()));
+        /// Merged into <see cref="ShowResult"/> 29 Nov 2017.
+        ///// <summary>
+        ///// <see cref="CoreAPIMethod.BaseEntityMethod"/>. 
+        ///// </summary>
+        ///// <param name="db"></param>
+        ///// <param name="request"></param>
+        //[APIMethod(
+        //    Description = "Sets -" + nameof(CoreP.Context) + "- for the current user to -" + nameof(CoreP.Context) + "- for report as identified by {QueryId}.",
+        //    S1 = nameof(Use), S2 = "DUMMY", // TODO: REMOVE "DUMMY". Added Summer 2017 because of bug in routing mechanism.
+        //    AccessLevelUse = AccessLevel.Relation,
+        //    ShowDetailedResult = true)]
+        //public object Use(BaseDatabase db, ValidRequest request) {
+        //    var properties = new List<(PropertyKeyWithIndex, object)>();
+        //    if (!Properties.TryGetValue(CoreP.Context.A().Key.CoreP, out var _new)) { // Note how we assume that Context will always contain at least one property once defined.k
+        //        return request.GetErrorResponse(ResultCode.data_error, "No " + nameof(CoreP.Context) + " properties found for this report");
+        //    }
+        //    if (request.CurrentUser.Properties.TryGetValue(CoreP.Context.A().Key.CoreP, out var old)) {
+        //        old.Properties.ForEach(p => db.OperateOnProperty(request.CurrentUser.Id, p.Value, PropertyOperation.SetInvalid, null));
+        //    }
 
-            db.UpdateProperty(request.CurrentUser.Id, request.CurrentUser, CoreP.Context.A(), _new.V<List<Context>>());
+        //    // Naïve approach. Will only set one context-value.
+        //    //c.Properties.ForEach(p => db.UpdateProperty(request.CurrentUser.Id, request.CurrentUser, 
+        //    //    // NOTE: No need for specifying PropertyKeyWithIndex here. Most probably it would only result in an obscure exception anyway.
+        //    //    // p.Value.Key.PropertyKeyWithIndex,
+        //    //    p.Value.Key,
+        //    //    p.Value.V<Context>()));
 
-            request.Result.ResultCode = ResultCode.ok;
-            request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(CoreAPIMethod.Context));
-            // request.Result.AddProperty(CoreP.Message.A(), "xxx"); // Probably unnecessary
-            return request.GetResponse();
-        }
+        //    db.UpdateProperty(request.CurrentUser.Id, request.CurrentUser, CoreP.Context.A(), _new.V<List<Context>>());
+
+        //    request.Result.ResultCode = ResultCode.ok;
+        //    request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(CoreAPIMethod.Context));
+        //    // request.Result.AddProperty(CoreP.Message.A(), "xxx"); // Probably unnecessary
+        //    return request.GetResponse();
+        //}
 
         /// <summary>
         /// <see cref="CoreAPIMethod.BaseEntityMethod"/>. 
@@ -62,8 +64,40 @@ namespace AgoRapide {
             ShowDetailedResult = true)]
         public object ShowResult(BaseDatabase db, ValidRequest request) {
 
+            /// ====================================================
+            /// Step 1, set context to the context of the report
+            /// ====================================================
+            /// (this will simplify understanding of system)
+            /// Note that step 1 and step 2 are really independent of each other.
+            var properties = new List<(PropertyKeyWithIndex, object)>();
+            if (!Properties.TryGetValue(CoreP.Context.A().Key.CoreP, out var _new)) { // Note how we assume that Context will always contain at least one property once defined.k
+                return request.GetErrorResponse(ResultCode.data_error, "No " + nameof(CoreP.Context) + " properties found for this report");
+            }
+            if (request.CurrentUser.Properties.TryGetValue(CoreP.Context.A().Key.CoreP, out var old)) {
+                old.Properties.ForEach(p => db.OperateOnProperty(request.CurrentUser.Id, p.Value, PropertyOperation.SetInvalid, null));
+                request.CurrentUser.Properties.Remove(CoreP.Context.A().Key.CoreP); //( Hack because OperateOnProperty above will not remove property, resulting in UpdateProperty below not doing any change.
+            }
+            // Naïve approach. Will only set one context-value.
+            //c.Properties.ForEach(p => db.UpdateProperty(request.CurrentUser.Id, request.CurrentUser, 
+            //    // NOTE: No need for specifying PropertyKeyWithIndex here. Most probably it would only result in an obscure exception anyway.
+            //    // p.Value.Key.PropertyKeyWithIndex,
+            //    p.Value.Key,
+            //    p.Value.V<Context>()));
+            db.UpdateProperty(request.CurrentUser.Id, request.CurrentUser, CoreP.Context.A(), _new.V<List<Context>>());
+
+            /// ====================================================
+            /// Step 2, show actual result of report
+            /// ====================================================
+            /// Note that step 1 and step 2 are really independent of each other.
             if (!TryGetPV<Type>(ReportP.ReportEntityType.A(), out var requiredType)) {
-                return request.GetErrorResponse(ResultCode.data_error, "Property " + ReportP.ReportEntityType + " not set for this report (" + IdFriendly + "). Must be set in order for this method to execute.");
+                request.Result.ResultCode = ResultCode.ok;
+                request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(CoreAPIMethod.Context));
+                request.Result.AddProperty(CoreP.Message.A(), 
+                    "Context has been set to Context of report, " +
+                    "but no actual result is shown because Property " + ReportP.ReportEntityType + " is not set for this report (" + IdFriendly + "). " +
+                    "Set this Property if you want some actual results shown");
+                return request.GetResponse();
+                // return request.GetErrorResponse(ResultCode.data_error, "Property " + ReportP.ReportEntityType + " not set for this report (" + IdFriendly + "). Must be set in order for this method to execute.");
             }
             QueryId queryId;
             if (TryGetPV<QueryIdFieldIterator>(ReportP.ReportQueryIdFieldIterator.A(), out var temp)) {
@@ -77,7 +111,7 @@ namespace AgoRapide {
             }
 
             if (queryId is QueryIdContext) request.PriorityOrderLimit = PriorityOrder.Neutral; /// Include more data since default is only <see cref="PriorityOrder.Important"/>
-            return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities);
+            return request.GetOKResponseAsSingleEntityOrMultipleEntities(queryId, entities, PV(ReportP.ReportName.A(),"") + "\r\n" + PV(ReportP.ReportDescription.A(),""));
         }
     }
 
@@ -104,6 +138,7 @@ namespace AgoRapide {
 
         [PropertyKey( // TODO: IMPROVE ON DOCUMENTATION
             Description = "Specifies for which type API-method -" + nameof(Report.ShowResult) + "- should show data (may be combined with -" + nameof(ReportQueryIdFieldIterator) + "-).",
+            PriorityOrder = PriorityOrder.Important,
             Type = typeof(Type), Group = typeof(ReportPropertiesDescriber))]
         ReportEntityType,
 

@@ -168,7 +168,8 @@ namespace AgoRapide.Core {
             if (valueToLower.StartsWith("iterate ")) { /// TODO: Move code here into <see cref="QueryIdFieldIterator"/>
 
                 var syntaxHelp = ". Syntax: Either\r\n" +
-                    "1) ITERATE {rowKey} BY {type}.{columnKey}: \"ITERATE Colour BY Car.Production_Year\" or " +
+                    "1) ITERATE {rowKey} BY {type}.{columnKey}: \"ITERATE Colour BY Car.Production_Year\"\r\n" +
+                    "or\r\n" +
                     "2) ITERATE {rowKey} BY {type}.{columnKey} {aggregationType} {aggregationKey}: \"ITERATE Colour BY Car.Production_Year SUM Price\"";
                 var t = value.Split(" ").Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
                 if (t.Count != 4 && t.Count != 6) {
@@ -181,6 +182,12 @@ namespace AgoRapide.Core {
                     errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {rowKey} (" + t[1] + ") not recognized" + syntaxHelp;
                     return false;
                 }
+                // Unnecessary limitation. NULL / NOT NULL is also useful to iterate over.
+                //if (!rowKey.Key.A.HasLimitedRange) {
+                //    id = null;
+                //    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {rowKey} (" + rowKey.Key.PToString + ") " + nameof(rowKey.Key.A.HasLimitedRange) + " = FALSE" + syntaxHelp;
+                //    return false;
+                //}
                 if (!"by".Equals(t[2].ToLower())) {
                     id = null;
                     errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Literal 'BY' not found as third element, found '" + t[2] + "'" + syntaxHelp;
@@ -194,19 +201,28 @@ namespace AgoRapide.Core {
                     errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Invalid syntax for {type}.{columnKey}. Single full stop not found, found " + (t2.Count - 1) + "  full stops" + syntaxHelp;
                     return false;
                 }
-
                 if (!Util.TryGetTypeFromString(t2[0], out var columnType)) {
                     id = null;
                     errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {type} (" + t2[0] + ") not recognized" + syntaxHelp;
                     return false;
                 }
-
                 if (!PropertyKeyMapper.TryGetA(t2[1], out var columnKey)) {
-                    id = null;
-                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {columnKey} (" + t2[1] + ") not recognized" + syntaxHelp;
-                    return false;
+                    /// Note second attempt, which will accept situations where type-name prefix was excluded.
+                    /// This takes into consideration the common practise in AgoRapide of using type-name prefixes for enums like
+                    /// <see cref="ReportP.ReportEntityType"/> but since they are often not shown in HTML-view 
+                    /// (<see cref="PropertyKey.ToHTMLTableHeader"/>) they are easy to forget when constructing URLs manually.
+                    if (!PropertyKeyMapper.TryGetA(columnType.ToStringVeryShort() + t2[1], out columnKey)) {
+                        id = null;
+                        errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {columnKey} (" + t2[1] + ") not recognized" + syntaxHelp;
+                        return false;
+                    }
                 }
-
+                // Unnecessary limitation. NULL / NOT NULL is also useful to iterate over.
+                //if (!columnKey.Key.A.HasLimitedRange) {
+                //    id = null;
+                //    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {columnKey} (" + columnKey.Key.PToString + ") " + nameof(columnKey.Key.A.HasLimitedRange) + " = FALSE" + syntaxHelp;
+                //    return false;
+                //}
                 if (t.Count == 4) { // We are finished
                     id = new QueryIdFieldIterator(rowKey, columnType, columnKey, AggregationType.Count, aggregationKey: null);
                     errorResponse = null;
@@ -214,9 +230,13 @@ namespace AgoRapide.Core {
                 } else if (t.Count == 6) { // Continue with parsing last two parameters. 
                     // Continue parsing
                     if (!Util.EnumTryParse<AggregationType>(t[4], out var aggregationType)) {
-                        id = null;
-                        errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: Invalid {aggregationType} (" + t[4] + "). Use one of " + string.Join(", ",Util.EnumGetValues<AggregationType>()) + syntaxHelp;
-                        return false;
+                        /// Note second attempt, which will accept all-upper case like SUM, MEDIAN (assuming only the first letter is upper case in the actual enum-string). 
+                        /// (this gives a more natural syntax)
+                        if (!Util.EnumTryParse(t[4].Substring(0, 1) + t[4].Substring(1).ToLower(), out aggregationType)) {
+                            id = null;
+                            errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: Invalid {aggregationType} (" + t[4] + "). Use one of " + string.Join(", ", Util.EnumGetValues<AggregationType>()) + syntaxHelp;
+                            return false;
+                        }
                     }
                     if (!PropertyKeyMapper.TryGetA(t[5], out var aggregationKey)) {
                         id = null;

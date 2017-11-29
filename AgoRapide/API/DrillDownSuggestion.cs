@@ -36,7 +36,24 @@ namespace AgoRapide.API {
         public string Text { get; private set; }
         public QueryIdKeyOperatorValue QueryId { get; private set; }
 
-        public DrillDownSuggestion(Type entityType, long count, string text, QueryIdKeyOperatorValue queryId) {
+        /// <summary>
+        /// TODO: Explain what is actually the purpose / meaning of this
+        /// </summary>
+        [Enum(Description = "Introduced in order to avoid some -" + nameof(DrillDownSuggestion) + "- being used in conjunction with -" + nameof(QueryIdFieldIterator) + "-")]
+        public enum DrillDownSuggestionType {
+            None,
+            GlobalQuantile,
+            LocalQuantile,
+            /// <summary>
+            /// TODO: Explain what is actually the purpose / meaning of this
+            /// </summary>
+            Ordinary,
+        }
+
+        public DrillDownSuggestionType Type { get; private set; }
+
+        public DrillDownSuggestion(DrillDownSuggestionType type, Type entityType, long count, string text, QueryIdKeyOperatorValue queryId) {
+            Type = type;
             EntityType = entityType;
             Count = count;
             Text = text;
@@ -72,16 +89,30 @@ namespace AgoRapide.API {
         public Uri ToQueryUrl => _queryUrl ?? (_queryUrl = APICommandCreator.HTMLInstance.CreateAPIUrl(CoreAPIMethod.EntityIndex, EntityType, QueryId));
 
         /// <summary>
-        /// Result is <see cref="ConcurrentDictionary{TKey, TValue}"/> instead of <see cref="Dictionary{TKey, TValue}"/> because code 
+        /// TODO: From Nov 2017 this method is also use in combination with <see cref="QueryIdFieldIterator"/> 
+        /// TODO: (therefore the introduction of <paramref name="includeAllSuggestions"/>
+        /// TOOD: but there may be some subtle bugs remaining which could lead to suggestions being omitted 
+        /// TOOD: (this would again lead to a "0"-value in the corresponding <see cref="FieldIterator"/> row / column).
+        /// 
+        /// Note that result is <see cref="ConcurrentDictionary{TKey, TValue}"/> instead of <see cref="Dictionary{TKey, TValue}"/> because code 
         /// executes in parallell.
         /// 
         /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
         /// </summary>
         /// <param name="type"></param>
         /// <param name="entities">Alle objects most be assignable to <paramref name="type"/></param>
+        /// <param name="maxSuggestionsPerKey">
+        /// Practical method when only some ideas about possible suggestions are needed
+        /// (typical when called from <see cref="BaseController.HandleCoreMethodContext"/> (<see cref="CoreAPIMethod.Context"/>).
+        /// </param>
         /// <param name="limitToSingleKey">
         /// May be null. 
         /// If null then suggestions for all keys as found by <see cref="Extensions.GetChildProperties"/> will be returned. 
+        /// </param>
+        /// <param name="excludeQuantileSuggestions">Useful in combination with <see cref="QueryIdFieldIterator"/> for which quantiles will mostly be confusing</param>
+        /// <param name="includeAllSuggestions">
+        /// If TRUE then drill-down suggestion will be given even if ALL <paramref name="entities"/> satisfy the suggestion. 
+        /// Essentially to set to TRUE when used in combination with <see cref="QueryIdFieldIterator"/>
         /// </param>
         /// <returns></returns>
         [ClassMember(Description = "Returns all relevant drill-down suggestions")]
@@ -94,7 +125,7 @@ namespace AgoRapide.API {
                         DrillDownSuggestion
                     >
                 >
-             > Create(Type type, IEnumerable<BaseEntity> entities, PropertyKey limitToSingleKey = null) {
+             > Create(Type type, IEnumerable<BaseEntity> entities, long? maxSuggestionsPerKey = null, PropertyKey limitToSingleKey = null, bool excludeQuantileSuggestions = false, bool includeAllSuggestions = false) {
 
             var retval = new ConcurrentDictionary<
                 CoreP,
@@ -115,7 +146,7 @@ namespace AgoRapide.API {
             /// NOTE: The level of parallelization here is quite coarse.
             /// NOTE: If for instance <param name="type"/> has only one child property that is computationaly expensive, then
             /// NOTE: the parallelization here would have no effect.
-            Parallel.ForEach(type.GetChildProperties().Values, key => { 
+            Parallel.ForEach(type.GetChildProperties().Values, key => {
 
                 if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
                 if (limitToSingleKey != null && key.Key.CoreP != limitToSingleKey.Key.CoreP) return;
@@ -130,52 +161,54 @@ namespace AgoRapide.API {
                         DrillDownSuggestion
                 >();
 
-                if (key.Key.A.IsSuitableForPercentileCalculation) {
-                    // Offer percentile evaluations for these.
+                if (!excludeQuantileSuggestions) {
+                    if (key.Key.A.IsSuitableForPercentileCalculation) {
+                        // Offer percentile evaluations for these.
 
-                    // NOTE: Hardcoded use of quantile Quintile as of Sep 2017
-                    // TODO: Add preferred quantile to PropertyKeyAttribute.
+                        // NOTE: Hardcoded use of quantile Quintile as of Sep 2017
+                        // TODO: Add preferred quantile to PropertyKeyAttribute.
 
-                    // Quintile calculated based on ALL properties within "universe".
-                    Util.EnumGetValues<Quintile>().ForEach(q => {
-                        var count = propertiesNotNull.Count(p => p.Percentile.AsQuintile == q);
-                        if (count == 0) return; // No point in suggesting
-                        if (count == totalCount) return; // No point in suggesting
-                        var query = new QueryIdKeyOperatorValue(key.Key, Operator.EQ, q);
-                        percentileDrilldowns.Add("Global " + q.ToString(), // TODO: Works fine until we have a value Global Quintile1 or similar (will give us key-collision below)
-                            new DrillDownSuggestion(type, count, q + " (" + count + ")", query)
-                        );
-                    });
+                        // Quintile calculated based on ALL properties within "universe".
+                        Util.EnumGetValues<Quintile>().ForEach(q => {
+                            var count = propertiesNotNull.Count(p => p.Percentile.AsQuintile == q);
+                            if (count == 0) return; // No point in suggesting
+                            if (count == totalCount) return; // No point in suggesting
+                            var query = new QueryIdKeyOperatorValue(key.Key, Operator.EQ, q);
+                            percentileDrilldowns.Add("Global " + q.ToString(), // TODO: Works fine until we have a value Global Quintile1 or similar (will give us key-collision below)
+                                new DrillDownSuggestion(DrillDownSuggestionType.GlobalQuantile, type, count, q + " (" + count + ")", query)
+                            );
+                        });
 
-                    // Lowest and highest quintile based on only properties within selection
+                        // Lowest and highest quintile based on only properties within selection
 
-                    if (!key.Key.A.OperatorsAsHashSet.Contains(Operator.GT)) {
-                        /// LT, LEQ, GEQ, GT considered equivalant. Most probably we could also ask for if Type implements <see cref="IComparable"/>
-                    } else if (propertiesNotNull.Count < 10) {
-                        // Offering quintiles now considered irrelevant
-                    } else {
-                        var sortedProperties = propertiesNotNull.OrderBy(p => p.Value).ToList();
-                        var oneFifth = sortedProperties.Count / 5;
+                        if (!key.Key.A.OperatorsAsHashSet.Contains(Operator.GT)) {
+                            /// LT, LEQ, GEQ, GT considered equivalant. Most probably we could also ask for if Type implements <see cref="IComparable"/>
+                        } else if (propertiesNotNull.Count < 10) {
+                            // Offering quintiles now considered irrelevant
+                        } else {
+                            var sortedProperties = propertiesNotNull.OrderBy(p => p.Value).ToList();
+                            var oneFifth = sortedProperties.Count / 5;
 
-                        // TODO: Go over algorithm here. May be off by one element!
-                        var quintileValue = sortedProperties[oneFifth - 1].Value; /// Calculate value for local <see cref="Quintile.Quintile1"/>
-                        // Count as efficient as possible, based on the fact that the list is already sorted.
-                        var count = oneFifth; while (count < sortedProperties.Count && sortedProperties[count].Value == quintileValue) count++;
-                        var query = new QueryIdKeyOperatorValue(key.Key, Operator.LEQ, quintileValue);
-                        // TODO: Find better term than "Local" (confer with "Global above).
-                        percentileDrilldowns.Add("Local " + Quintile.Quintile1, // TODO: Works fine until we have a value Local Quintile1 or similar (will give us key-collision below)
-                            new DrillDownSuggestion(type, count, "Local " + Quintile.Quintile1 + " (" + count + ")", query)
-                        );
+                            // TODO: Go over algorithm here. May be off by one element!
+                            var quintileValue = sortedProperties[oneFifth - 1].Value; /// Calculate value for local <see cref="Quintile.Quintile1"/>
+                            // Count as efficient as possible, based on the fact that the list is already sorted.
+                            var count = oneFifth; while (count < sortedProperties.Count && sortedProperties[count].Value == quintileValue) count++;
+                            var query = new QueryIdKeyOperatorValue(key.Key, Operator.LEQ, quintileValue);
+                            // TODO: Find better term than "Local" (confer with "Global above).
+                            percentileDrilldowns.Add("Local " + Quintile.Quintile1, // TODO: Works fine until we have a value Local Quintile1 or similar (will give us key-collision below)
+                                new DrillDownSuggestion(DrillDownSuggestionType.LocalQuantile, type, count, "Local " + Quintile.Quintile1 + " (" + count + ")", query)
+                            );
 
-                        // TODO: Go over algorithm here. May be off by one element!
-                        quintileValue = sortedProperties[sortedProperties.Count - oneFifth].Value; /// Calculate value for local <see cref="Quintile.Quintile5"/>
-                        // Count as efficient as possible, based on the fact that the list is already sorted.
-                        count = oneFifth; while ((sortedProperties.Count - count) >= 0 && sortedProperties[sortedProperties.Count - count].Value == quintileValue) count++;
-                        query = new QueryIdKeyOperatorValue(key.Key, Operator.GEQ, quintileValue);
-                        // TODO: Find better term than "Local" (confer with "Global above).
-                        percentileDrilldowns.Add("Local " + Quintile.Quintile5, // TODO: Works fine until we have a value Local Quintile5 or similar (will give us key-collision below)
-                            new DrillDownSuggestion(type, count, "Local " + Quintile.Quintile5 + " (" + count + ")", query)
-                        );
+                            // TODO: Go over algorithm here. May be off by one element!
+                            quintileValue = sortedProperties[sortedProperties.Count - oneFifth].Value; /// Calculate value for local <see cref="Quintile.Quintile5"/>
+                            // Count as efficient as possible, based on the fact that the list is already sorted.
+                            count = oneFifth; while ((sortedProperties.Count - count) >= 0 && sortedProperties[sortedProperties.Count - count].Value == quintileValue) count++;
+                            query = new QueryIdKeyOperatorValue(key.Key, Operator.GEQ, quintileValue);
+                            // TODO: Find better term than "Local" (confer with "Global above).
+                            percentileDrilldowns.Add("Local " + Quintile.Quintile5, // TODO: Works fine until we have a value Local Quintile5 or similar (will give us key-collision below)
+                                new DrillDownSuggestion(DrillDownSuggestionType.LocalQuantile, type, count, "Local " + Quintile.Quintile5 + " (" + count + ")", query)
+                            );
+                        }
                     }
                 }
 
@@ -186,6 +219,7 @@ namespace AgoRapide.API {
                     return;
                 }
 
+                /// Can also be true if <paramref name="includeAllSuggestions"/> is set.
                 var mixOfNullsAndNotNullFound = false; // Found either directly (see direct below) or as "side effect" in lambda (see further below)
 
                 /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
@@ -197,7 +231,7 @@ namespace AgoRapide.API {
                         }
                         return; // None are set.
                     }
-                    if (entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) {
+                    if (!includeAllSuggestions && entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) {
                         if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
                             retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                         }
@@ -266,7 +300,7 @@ namespace AgoRapide.API {
                         /// NOTE: Note that for only <see cref="Operator.EQ"/> this will only happen with Count == 1 because of filtering out above for HasLimitedRange
                         /// NOTE: For <see cref="DateTime"/>, long and similar types that can be compared like <see cref="Operator.LT"/> and similar 
                         /// NOTE: 
-                        if (objStrValues.Count > 10) {
+                        if (objStrValues.Count > 50) { // Increased from 10 to 50 29 Nov 2017 because we now have much better HTML-presentation of drill-down suggestions.
                             /// We have too many values for using <see cref="Operator.EQ"/> against all of them, but we can check for null and 0
                             objStrValuesForThisOperator = new List<(object, string)>();
                             if (objStrValues[objStrValues.Count - 1].Item1 == null) {
@@ -289,13 +323,15 @@ namespace AgoRapide.API {
                         DrillDownSuggestion
                     >();
                     objStrValuesForThisOperator.ForEach(t => {
+                        if (maxSuggestionsPerKey != null && r2.Count >= maxSuggestionsPerKey) return;
+
                         var query = new QueryIdKeyOperatorValue(key.Key, o, t.Item1); // Now how it is "random" which object value (out of several with identical string-representation) is chosen now. But we assume that all of them have the same predicate effect
                         var count = entities.Where(query.IsMatch).Count();
 
-                        if (count > 0 && count != totalCount) { // Note how we do not offer drill down if all entities match
+                        if (count > 0 && (includeAllSuggestions || count != totalCount)) { /// Note how we do not offer drill down if all entities match (except when <paramref name="includeAllSuggestions"/> is set.
                             r2.AddValue(
                                 t.Item2,
-                                new DrillDownSuggestion(type, count, t.Item2 + " (" + count + ")", query)
+                                new DrillDownSuggestion(DrillDownSuggestionType.Ordinary, type, count, t.Item2 + " (" + count + ")", query)
                            );
                         }
                     });

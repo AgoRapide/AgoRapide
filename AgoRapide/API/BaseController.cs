@@ -425,8 +425,9 @@ namespace AgoRapide.API {
                     type.Key.ToStringVeryShort() + " (" + type.Value.Count + ")"
                 ));
 
-                DrillDownSuggestion.Create(type.Key, type.Value.Values).ForEach(coreP => { // Present all drill-down suggestions. TODO: Find better way of organising this. 
-
+                DrillDownSuggestion.Create(type.Key, type.Value.Values, 
+                    maxSuggestionsPerKey: 5 // Present some drill-down suggestions. TODO: Find better way of organising this. 
+                ).ForEach(coreP => { 
                     /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
                     var corePAsString = coreP.Key.A().Key.PToString;
                     coreP.Value.ForEach(_operator => {

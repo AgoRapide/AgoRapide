@@ -894,7 +894,7 @@ namespace AgoRapide.Core {
         /// <param name="html">Already encoded as HTML</param>
         /// <param name="tooltip">Not to be encoded as HTML. May be null or empty in which case only <paramref name="html"/> will be returned</param>
         /// <returns></returns>
-        public static string HTMLEncloseWithinTooltip(this string html, string tooltip) => string.IsNullOrEmpty(tooltip) ? html : "<span title=\"" + tooltip.HTMLEncode() + "\">" + html + " (+)</span>";
+        public static string HTMLEncloseWithinTooltip(this string html, string tooltip, bool excludeHintThatTooltipExists=false) => string.IsNullOrEmpty(tooltip) ? html : "<span title=\"" + tooltip.HTMLEncode() + "\">" + html + (excludeHintThatTooltipExists ? "" : " (+)") + "</span>";
 
         /// <summary>
         /// Encloses <paramref name="html"/> within toogle-click to show / hide. 

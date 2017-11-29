@@ -123,25 +123,23 @@ namespace AgoRapide.API {
         /// <param name="id"></param>
         /// <param name="entities"></param>
         /// <returns></returns>
-        public object GetOKResponseAsSingleEntityOrMultipleEntities(QueryId id, List<BaseEntity> entities) {
+        public object GetOKResponseAsSingleEntityOrMultipleEntities(QueryId id, List<BaseEntity> entities, string message = null) {
             if (id.IsSingle) {
                 if (entities.Count != 1) throw new InvalidCountException(nameof(id.IsSingle) + " && Count != 1 (" + entities.Count + ")");
-                return GetOKResponseAsSingleEntity(entities[0]);
+                return GetOKResponseAsSingleEntity(entities[0], message);
             } else {
-                return GetOKResponseAsMultipleEntities(entities);
+                return GetOKResponseAsMultipleEntities(entities, message);
             }
         }
 
-        public object GetOKResponseAsSingleEntity(BaseEntity entity) => GetOKResponseAsSingleEntity(entity, null);
-        public object GetOKResponseAsSingleEntity(BaseEntity entity, string message) {
+        public object GetOKResponseAsSingleEntity(BaseEntity entity, string message = null) {
             Result.ResultCode = ResultCode.ok;
             Result.SingleEntityResult = entity ?? throw new ArgumentNullException(nameof(entity));
             if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreP.Message.A(), message);
             return GetResponse();
         }
 
-        public object GetOKResponseAsMultipleEntities(List<BaseEntity> entities) => GetOKResponseAsMultipleEntities(entities, null);
-        public object GetOKResponseAsMultipleEntities(List<BaseEntity> entities, string message) {
+        public object GetOKResponseAsMultipleEntities(List<BaseEntity> entities, string message = null) {
             Result.ResultCode = ResultCode.ok;
             Result.MultipleEntitiesResult = entities ?? throw new ArgumentNullException(nameof(entities));
             if (!string.IsNullOrEmpty(message)) Result.AddProperty(CoreP.Message.A(), message);

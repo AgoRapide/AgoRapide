@@ -157,7 +157,7 @@ namespace AgoRapide.Core {
                 }
                 r2.Append(retval[i]);
             }
-            return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription);
+            return r2.ToString().HTMLEncloseWithinTooltip(key.Key.A.WholeDescription, excludeHintThatTooltipExists: true);
         }
 
         public override string ToString() => Key.PToString;

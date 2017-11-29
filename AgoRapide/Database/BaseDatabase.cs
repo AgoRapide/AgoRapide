@@ -226,88 +226,132 @@ namespace AgoRapide.Database {
                     entities = new List<BaseEntity>();
                     var nextCoreP = int.MaxValue;
                     var allColumns = new List<(
-                        PropertyKey PropertyKey,      /// Dynamically generated here based on <see cref="DrillDownSuggestion.Text"/> for <see cref="QueryIdFieldIterator.ColumnKey"/>)
-                                    Dictionary<
+                        PropertyKey PropertyKey,  /// Dynamically generated here based on <see cref="DrillDownSuggestion.Text"/> for <see cref="QueryIdFieldIterator.ColumnKey"/>)
+                        Dictionary<
                             string,  /// Key is left-most column in table (<see cref="FieldIterator.LeftmostColumn"/> (the <see cref="DrillDownSuggestion.Text"/> for / <see cref="QueryIdFieldIterator.RowKey"/>)
-                                        long     /// The actual count for the given combination
-                                    > Values
+                            long     /// The actual count for the given combination
+                        > Values
                     )>();
-                    DrillDownSuggestion.Create(q.ColumnType, columnTypeEntities.Values, q.ColumnKey).Values.ForEach(operatorsColumn => {
+                    DrillDownSuggestion.Create(q.ColumnType, columnTypeEntities.Values, limitToSingleKey: q.ColumnKey, excludeQuantileSuggestions: true,
+                        includeAllSuggestions: true /// Extremely important, if not some data will be left out.
+                    ).Values.ForEach(operatorsColumn => {
                         operatorsColumn.ForEach(operatorColumn => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
-                            operatorColumn.Value.ForEach(suggestionColumn => {
-                                Log(suggestionColumn.Value.QueryId.ToString());
-                                var thisColumn = new Dictionary<string, long>();
+                            operatorColumn.Value.
+                                Where(s => s.Value.Type == DrillDownSuggestion.DrillDownSuggestionType.Ordinary). /// It is in principle unnecessary to filter after introduction of excludeQuantileSuggestions above.
+                                ForEach(suggestionColumn => {
+                                    Log(suggestionColumn.Value.QueryId.ToString());
+                                    var thisColumn = new Dictionary<string, long>();
+                                    var sumThisColumn = 0L; // TODO: Expand this to Min, Max and so on.
 
-                                var newContext = contexts.ToList();
-                                newContext.Add(new Context(SetOperator.Intersect, q.ColumnType, suggestionColumn.Value.QueryId));
+                                    var newContext = contexts.ToList();
+                                    newContext.Add(new Context(SetOperator.Intersect, q.ColumnType, suggestionColumn.Value.QueryId));
 
-                                result = new Result();
-                                if (!Context.TryExecuteContextsQueries(currentUser, newContext, this, result, out var newContextEntities, out var newErrorResponse)) {
-                                    // We do not expect the call to fail here
-                                    throw new Exception(nameof(Context.TryExecuteContextsQueries) + " failed (very unexpectedly) for " + q.ColumnType + " " + suggestionColumn.Value.QueryId + ". Details: " + nameof(newErrorResponse) + ": " + newErrorResponse);
-                                }
-                                // Note that "result" is now discarded.
-                                // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
-                                if (!newContextEntities.TryGetValue(requiredType, out var newRequiredTypeEntities) || newRequiredTypeEntities.Count == 0) {
-                                    // Consider "normal". Corresponding column in final result will just be blank.
-                                    return;
-                                }
+                                    result = new Result();
+                                    if (!Context.TryExecuteContextsQueries(currentUser, newContext, this, result, out var newContextEntities, out var newErrorResponse)) {
+                                        // We do not expect the call to fail here
+                                        throw new Exception(nameof(Context.TryExecuteContextsQueries) + " failed (very unexpectedly) for " + q.ColumnType + " " + suggestionColumn.Value.QueryId + ". Details: " + nameof(newErrorResponse) + ": " + newErrorResponse);
+                                    }
+                                    // Note that "result" is now discarded.
+                                    // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
+                                    if (!newContextEntities.TryGetValue(requiredType, out var newRequiredTypeEntities) || newRequiredTypeEntities.Count == 0) {
+                                        // Consider "normal". Corresponding column in final result will just be blank.
+                                        return;
+                                    }
 
-                                DrillDownSuggestion.Create(requiredType, newRequiredTypeEntities.Values, q.RowKey).Values.ForEach(operatorsRow => {
-                                    operatorsRow.ForEach(operatorRow => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
-                                        operatorRow.Value.ForEach(suggestionRow => {
-                                            if (q.AggregationType == AggregationType.Count) {
-                                                // 1) The simple case, we alredy know the answer
-                                                thisColumn.Add(suggestionRow.Value.QueryId.ToString(), suggestionRow.Value.Count);
-                                            } else {
-                                                // 2) A more complicated case, we have to execute the actual context, and do the aggregate calculation
-                                                var aggregateContext = newContext.ToList();
-                                                aggregateContext.Add(new Context(SetOperator.Intersect, requiredType, suggestionRow.Value.QueryId));
+                                    DrillDownSuggestion.Create(requiredType, newRequiredTypeEntities.Values, limitToSingleKey: q.RowKey, excludeQuantileSuggestions: true,
+                                        includeAllSuggestions: true /// Extremely important, if not some data will be left out.
+                                    ).Values.ForEach(operatorsRow => {
+                                        operatorsRow.ForEach(operatorRow => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
+                                            operatorRow.Value.
+                                                Where(s => s.Value.Type == DrillDownSuggestion.DrillDownSuggestionType.Ordinary). /// It is in principle unnecessary to filter after introduction of excludeQuantileSuggestions above.
+                                            ForEach(suggestionRow => {
+                                                if (q.AggregationType == AggregationType.Count) {
+                                                    // 1) The simple case, we alredy know the answer
+                                                    thisColumn.Add(suggestionRow.Value.QueryId.ToString(), suggestionRow.Value.Count);
+                                                } else {
+                                                    // 2) A more complicated case, we have to execute the actual context, and do the aggregate calculation
+                                                    var aggregateContext = newContext.ToList();
+                                                    aggregateContext.Add(new Context(SetOperator.Intersect, requiredType, suggestionRow.Value.QueryId));
 
-                                                if (!Context.TryExecuteContextsQueries(currentUser, aggregateContext, this, result, out var aggregateContextEntities, out var aggregateErrorResponse)) {
-                                                    // We do not expect the call to fail here
-                                                    throw new Exception(nameof(Context.TryExecuteContextsQueries) + " failed (very unexpectedly) for " + requiredType + " " + suggestionRow.Value.QueryId + ". Details: " + nameof(aggregateErrorResponse) + ": " + aggregateErrorResponse);
+                                                    if (!Context.TryExecuteContextsQueries(currentUser, aggregateContext, this, result, out var aggregateContextEntities, out var aggregateErrorResponse)) {
+                                                        // We do not expect the call to fail here
+                                                        throw new Exception(nameof(Context.TryExecuteContextsQueries) + " failed (very unexpectedly) for " + requiredType + " " + suggestionRow.Value.QueryId + ". Details: " + nameof(aggregateErrorResponse) + ": " + aggregateErrorResponse);
+                                                    }
+                                                    // Note that "result" is now discarded.
+                                                    // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
+                                                    if (!aggregateContextEntities.TryGetValue(requiredType, out var aggregateRequiredTypeEntities) || aggregateRequiredTypeEntities.Count == 0) {
+                                                        // Consider "normal". Corresponding column in final result will just be blank.
+                                                        return;
+                                                    }
+                                                    // Aggregate values
+                                                    var value = PropertyKeyAggregate.CalculateSingleValue(q.AggregationType, q.AggregationKey, aggregateRequiredTypeEntities.Values.ToList());
+                                                    if (value != null) {
+                                                        thisColumn.Add(suggestionRow.Value.QueryId.ToString(), (long)value);
+                                                        switch (q.AggregationType) {
+                                                            case AggregationType.Count:
+                                                            case AggregationType.Sum:
+                                                                sumThisColumn += (long)value; break;
+                                                        }
+                                                    }
                                                 }
-                                                // Note that "result" is now discarded.
-                                                // TODO: Communicate "result" somehow since it may contain useful information when the call above took a long time (because a new synchronization had to be made).
-                                                if (!aggregateContextEntities.TryGetValue(requiredType, out var aggregateRequiredTypeEntities) || aggregateRequiredTypeEntities.Count == 0) {
-                                                    // Consider "normal". Corresponding column in final result will just be blank.
-                                                    return;
-                                                }
-                                                // Aggregate values
-                                                var value = PropertyKeyAggregate.CalculateSingleValue(q.AggregationType, q.AggregationKey, aggregateRequiredTypeEntities.Values.ToList());
-                                                if (value != null) thisColumn.Add(suggestionRow.Value.QueryId.ToString(), (long)value);
-                                            }
+                                            });
                                         });
                                     });
+                                    if (sumThisColumn != 0) thisColumn.Add("SUM", sumThisColumn);
+
+                                    var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+
+                                            // Replaced text with only value 27 Nov 2017.
+                                            // property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
+                                            property: suggestionColumn.Value.QueryId.Value?.ToString() ?? "[NULL]",
+                                            description: "Drill-down suggestion for " + q.ColumnType.ToStringVeryShort() + "/" + suggestionColumn.Value.QueryId.ToString(), //  "." + q.ColumnKey.Key.PToString + ": " + suggestionColumn.Value.Text,
+                                            longDescription: suggestionColumn.Value.QueryId.Key.A.WholeDescription,
+                                            isMany: false
+                                        ) {
+                                        Type = typeof(long),
+                                        /// TODO: Consider adding <see cref="AggregationType.Count"/> and <see cref="AggregationType.Percent"/> here.
+                                        /// 
+                                        // TOOD: PUT BACK AGGREGATION TYPES HERE WHEN SUPPORTING THIS IN XXX
+                                        // AggregationTypes = new AggregationType[] { AggregationType.Sum, AggregationType.Min, AggregationType.Max, AggregationType.Average, AggregationType.Median }
+                                    },
+                                        (CoreP)(nextCoreP--))); // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                                    pk.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
+                                    allColumns.Add((
+                                        pk,
+                                        thisColumn
+                                    ));
                                 });
-
-                                var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
-
-                                        // Replaced text with only value 27 Nov 2017.
-                                        // property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
-                                        property: suggestionColumn.Value.QueryId.Value?.ToString() ?? "[NULL]",
-                                        description: "Drill-down suggestion for " + q.ColumnType.ToStringVeryShort() + "/" + suggestionColumn.Value.QueryId.ToString(), //  "." + q.ColumnKey.Key.PToString + ": " + suggestionColumn.Value.Text,
-                                        longDescription: suggestionColumn.Value.QueryId.Key.A.WholeDescription,
-                                        isMany: false
-                                    ) {
-                                    Type = typeof(long),
-                                    /// TODO: Consider adding <see cref="AggregationType.Count"/> and <see cref="AggregationType.Percent"/> here.
-                                    /// 
-                                    // TOOD: PUT BACK AGGREGATION TYPES HERE WHEN SUPPORTING THIS IN XXX
-                                    // AggregationTypes = new AggregationType[] { AggregationType.Sum, AggregationType.Min, AggregationType.Max, AggregationType.Average, AggregationType.Median }
-                                },
-                                    (CoreP)(nextCoreP--))); // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
-                                pk.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
-                                allColumns.Add((
-                                    pk,
-                                    thisColumn
-                                ));
-                            });
                         });
                     });
-                    entities =
-                        allColumns.SelectMany(e => e.Item2.Keys).Distinct(). // Find all unique rows
+                    allColumns.Sort((a, b) => a.PropertyKey.Key.PToString.CompareTo(b.PropertyKey.Key.PToString)); // Order columns alfabetically
+                    var uniqueRows = allColumns.SelectMany(e => e.Item2.Keys).Distinct(); // Find all unique rows
+                    switch (q.AggregationType) {
+                        case AggregationType.Count:
+                        case AggregationType.Sum:
+                            // Sum all rows.
+                            var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+
+                                    // Replaced text with only value 27 Nov 2017.
+                                    // property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
+                                    property: "Sum",
+                                    description: "Column sum",
+                                    longDescription: null,
+                                    isMany: false
+                                ) {
+                                Type = typeof(long),
+                            },
+                                (CoreP)(nextCoreP--))); // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                            pk.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
+                            //var rowSums = new Dictionary<string, long>();
+                            //uniqueRows.ForEach(r => {
+                            //    rowSums.Add(r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v));
+                            //});
+                            allColumns.Add((pk, uniqueRows.Select(r => (r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v))).ToDictionary(e => e.Item1, e => e.Item2)));
+                            break;
+                    }
+
+                    entities = uniqueRows.
+                        OrderBy(s => "SUM".Equals(s) ? "ZZZ" : s). // Order rows alfabetically
                         Select(r => (BaseEntity)(new FieldIterator(r, allColumns.Select(c => (Property)(c.Values.TryGetValue(r, out var v) ?
                                  new PropertyT<long>(c.PropertyKey.PropertyKeyWithIndex, v) :
                                              /// null) // This does not work because methods like <see cref="FieldIterator.ToHTMLTableRowHeading"/> will not have enough information

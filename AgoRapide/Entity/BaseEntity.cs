@@ -430,12 +430,12 @@ namespace AgoRapide {
                 "<th>" + nameof(IdFriendly) + "</th>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
                 string.Join("", ToHTMLTableColumns(request).Select(key => "<th>" + key.ToHTMLTableHeader(excludeThisPrefix: thisType) + "</th>")) +
             "</tr>";
-
+            aggregateRows = aggregateRows?.Where(a => ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() > 0).ToList() ?? null;
             return "<thead>" +
-                (aggregateRows == null || aggregateRows.Count == 0 ? "" :
+                (aggregateRows == null || aggregateRows.Count == 0 ? "" : (
                     headers.Replace(">" + nameof(IdFriendly) + "<", ">&nbsp;<") + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
                     string.Join("", aggregateRows.Select(a => {
-                        if (ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() == 0) return "";
+                        // if (ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() == 0) return "";
                         return "<tr><th>" + a + "</th>" +
                             string.Join("", ToHTMLTableColumns(request).Select(key => "<th align=\"right\">" +
                                 (key.Key.A.AggregationTypes.Contains(a) ? ("<!--" + key.Key.PToString + "_" + a + "-->") : "") +
@@ -443,7 +443,7 @@ namespace AgoRapide {
                         "</tr>";
                     })) // +
                         // headers.Replace(">" + nameof(IdFriendly) + "<",">&nbsp;<") // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
-                ) +
+                )) +
                 "<tr><th>Context</th>" +
                     string.Join("", ToHTMLTableColumns(request).Select(key => "<th  style=\"vertical-align:top\"><!--" + key.Key.PToString + "_Context--></th>")) +
                 "</tr>" +

@@ -10,7 +10,13 @@ namespace AgoRapide.Core {
     /// <summary>
     /// TODO: Consider merging AggregationType and AggregationKey into <see cref="AgoRapide.AggregationKey"/>
     /// </summary>
-    [Class(Description = "Querying within a specific context by iterating over two keys like ITERATE Product BY Year. See -" + nameof(FieldIterator) + "- for details.")]
+    [Class(Description =
+        "Querying within a specific context by iterating over two keys like\r\n" +
+        "ITERATE Product BY OrderLine.Year.\r\n" +
+        "or\r\n" +
+        "ITERATE Product BY OrderLine.Year SUM OrderLine.Amount.\r\n" +
+        "See -" + nameof(FieldIterator) + "- for details.\r\n" +
+        "Both keys must have -" + nameof(PropertyKeyAttribute.HasLimitedRange) + "-")]
     public class QueryIdFieldIterator : QueryId {
 
         /// <summary>
@@ -38,8 +44,10 @@ namespace AgoRapide.Core {
         /// <param name="aggregationKey"></param>
         public QueryIdFieldIterator(PropertyKey rowKey, Type columnType, PropertyKey columnKey, AggregationType aggregationType, PropertyKey aggregationKey) {
             RowKey = rowKey ?? throw new NullReferenceException(nameof(rowKey));
+            // rowKey.Key.A.AssertHasLimitedRange();
             ColumnType = columnType ?? throw new NullReferenceException(nameof(columnType));
             ColumnKey = columnKey ?? throw new NullReferenceException(nameof(columnKey));
+            // columnKey.Key.A.AssertHasLimitedRange();
             AggregationType = aggregationType;
             if (aggregationKey == null && aggregationType != AggregationType.Count) throw new ArgumentNullException(nameof(aggregationKey) + ". (null is only allowed for -" + nameof(aggregationType) + "- " + nameof(AggregationType.Count) + ", not " + aggregationType);
             AggregationKey = aggregationKey;
@@ -49,7 +57,7 @@ namespace AgoRapide.Core {
 
         public override bool IsMatch(BaseEntity entity) => throw new NotImplementedException("Not relevant for " + GetType());
         public override string ToString() => "ITERATE " + RowKey.Key.PToString + " BY " + ColumnType.ToStringVeryShort() + "." + ColumnKey.Key.PToString +
-           (AggregationKey == null ? "" : (" " + AggregationType + " " + AggregationKey.Key.PToString));
+           (AggregationKey == null ? "" : (" " + AggregationType.ToString().ToUpper() + " " + AggregationKey.Key.PToString)); /// Note upper-case for field <see cref="AggregationType"/>
 
         public static new void EnrichKey(PropertyKeyAttributeEnriched key) => QueryId.EnrichKey(key);
     }
