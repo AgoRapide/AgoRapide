@@ -208,6 +208,10 @@ namespace AgoRapide.Database {
                     errorResponse = null;
                     return true;
                 case QueryIdFieldIterator q:
+                    var aggregateTotalExpected = q.AggregationType == AggregationType.Count ?
+                        requiredTypeEntities.Values.Count :
+                        PropertyKeyAggregate.CalculateSingleValue(q.AggregationType, q.AggregationKey, requiredTypeEntities.Values.ToList()) ?? 0L;
+
                     /// Note how <param name="requiredType"/> now is really ignored, as <see cref="FieldIterator"/> will be returned instead.
                     if (!contextEntities.TryGetValue(q.ColumnType, out var columnTypeEntities) || columnTypeEntities.Count == 0) {
                         entities = null;
@@ -232,8 +236,11 @@ namespace AgoRapide.Database {
                             long     /// The actual count for the given combination
                         > Values
                     )>();
+
+                    var aggregateTotalAllColums = 0L;
+
                     DrillDownSuggestion.Create(q.ColumnType, columnTypeEntities.Values, limitToSingleKey: q.ColumnKey, excludeQuantileSuggestions: true,
-                        includeAllSuggestions: true /// Extremely important, if not some data will be left out.
+                        includeAllSuggestions: true /// Extremely important, if not given then some data will be left out.
                     ).Values.ForEach(operatorsColumn => {
                         operatorsColumn.ForEach(operatorColumn => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
                             operatorColumn.Value.
@@ -266,8 +273,9 @@ namespace AgoRapide.Database {
                                                 Where(s => s.Value.Type == DrillDownSuggestion.DrillDownSuggestionType.Ordinary). /// It is in principle unnecessary to filter after introduction of excludeQuantileSuggestions above.
                                             ForEach(suggestionRow => {
                                                 if (q.AggregationType == AggregationType.Count) {
-                                                    // 1) The simple case, we alredy know the answer
+                                                    // 1) The simple case, we alredy know the answer since the mechanismk giving the drill-down suggestions has already counted for us
                                                     thisColumn.Add(suggestionRow.Value.QueryId.ToString(), suggestionRow.Value.Count);
+                                                    sumThisColumn += suggestionRow.Value.Count;
                                                 } else {
                                                     // 2) A more complicated case, we have to execute the actual context, and do the aggregate calculation
                                                     var aggregateContext = newContext.ToList();
@@ -289,15 +297,21 @@ namespace AgoRapide.Database {
                                                         thisColumn.Add(suggestionRow.Value.QueryId.ToString(), (long)value);
                                                         switch (q.AggregationType) {
                                                             case AggregationType.Count:
+                                                                throw new InvalidEnumException(q.AggregationType); // Already checked above
                                                             case AggregationType.Sum:
                                                                 sumThisColumn += (long)value; break;
+                                                            default:
+                                                                break; // Other types are difficult to aggregate
                                                         }
                                                     }
                                                 }
                                             });
                                         });
                                     });
-                                    if (sumThisColumn != 0) thisColumn.Add("SUM", sumThisColumn);
+                                    if (sumThisColumn != 0) {
+                                        thisColumn.Add("SUM", sumThisColumn);
+                                        aggregateTotalAllColums += (long)sumThisColumn;
+                                    }
 
                                     var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
 
@@ -323,6 +337,8 @@ namespace AgoRapide.Database {
                                 });
                         });
                     });
+                    if (aggregateTotalAllColums != aggregateTotalExpected) throw new InvalidCountException(aggregateTotalAllColums, aggregateTotalExpected, nameof(aggregateTotalAllColums));
+
                     allColumns.Sort((a, b) => a.PropertyKey.Key.PToString.CompareTo(b.PropertyKey.Key.PToString)); // Order columns alfabetically
                     var uniqueRows = allColumns.SelectMany(e => e.Item2.Keys).Distinct(); // Find all unique rows
                     switch (q.AggregationType) {
@@ -346,7 +362,10 @@ namespace AgoRapide.Database {
                             //uniqueRows.ForEach(r => {
                             //    rowSums.Add(r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v));
                             //});
-                            allColumns.Add((pk, uniqueRows.Select(r => (r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v))).ToDictionary(e => e.Item1, e => e.Item2)));
+                            var newColumn = uniqueRows.Select(r => (r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v))).ToDictionary(e => e.Item1, e => e.Item2);
+                            var aggregateTotalAllRows = newColumn.Aggregate(0L, (s, v) => "SUM".Equals(v.Key) ? s : s + v.Value); // Careful not sum SUM calculated above
+                            if (aggregateTotalAllRows != aggregateTotalExpected) throw new InvalidCountException(aggregateTotalAllRows, aggregateTotalExpected, nameof(aggregateTotalAllRows));
+                            allColumns.Add((pk, newColumn));
                             break;
                     }
 

@@ -217,6 +217,11 @@ namespace AgoRapide.Core {
                         return false;
                     }
                 }
+                if (!columnKey.Key.HasParentOfType(columnType)) {
+                    id = null;
+                    errorResponse = "Invalid as " + nameof(QueryIdFieldIterator) + ". Details: {columnKey} (" + t2[1] + ") is recognized but does not belong to {columnType} " + columnType.ToStringVeryShort() + " (it belongs to " + (columnKey.Key.A.Parents == null ? "[NONE]" : string.Join(", ", columnKey.Key.A.Parents.Select(p => p.ToStringVeryShort()))) + ")" + syntaxHelp;
+                    return false;
+                }
                 // Unnecessary limitation. NULL / NOT NULL is also useful to iterate over.
                 //if (!columnKey.Key.A.HasLimitedRange) {
                 //    id = null;

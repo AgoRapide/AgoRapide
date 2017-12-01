@@ -10,6 +10,9 @@ namespace AgoRapide.API {
 
     /// <summary>
     /// See <see cref="Create"/>
+    /// 
+    /// TODO: Move somewhere else because also referenced from <see cref="AgoRapide.Database.BaseDatabase.TryGetContext"/>
+    /// TODO: Most probably it belongs in AgoRapide.Core
     /// </summary>
     [Class(Description =
         "Contains a drill-down suggestion within some -" + nameof(Context) + "-.\r\n" +
