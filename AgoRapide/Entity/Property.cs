@@ -771,9 +771,7 @@ namespace AgoRapide {
             PropertyP.PropertyValueDescription.A()
         });
 
-        ///// NOTE: In principle this override is unnecessary as <see cref="ToCSVTableColumns"/> communicates what is needed.
-        //public override string ToCSVTableRowHeading(Request request) => ToCSVTableRowHeadingStatic(request);
-        //public static string ToCSVTableRowHeadingStatic(Request request) => nameof(Key) + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + "Unit" + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + "ValueDescription";
+        public override string ToCSVTableRowHeading(Request request) => nameof(Key) + request.CSVFieldSeparator + nameof(Value) + request.CSVFieldSeparator + "Unit" + request.CSVFieldSeparator + nameof(Created) + request.CSVFieldSeparator + nameof(Invalid) + request.CSVFieldSeparator + "KeyDescription" + request.CSVFieldSeparator + "ValueDescription";
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -796,7 +794,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 2, Value
                 // --------------------
-                (a.IsPassword ? "[SET]" : V<string>()) + request.CSVFieldSeparator +
+                (a.IsPassword ? "[SET]" : V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ")) +request.CSVFieldSeparator + // Note replacement here with : and //. TODO: Document better / create alternatives
 
                 a.Unit + request.CSVFieldSeparator +
 
@@ -810,9 +808,9 @@ namespace AgoRapide {
                 // --------------------
                 (Invalid == null ? "" : ((DateTime)Invalid).ToString(DateTimeFormat.DateHourMin)) + request.CSVFieldSeparator +
 
-                (a.Description == null ? "" : (a.Description.Replace("\r\n", " // "))) + request.CSVFieldSeparator +
+                (a.Description == null ? "" : (a.Description.Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // "))) + request.CSVFieldSeparator + // Note replacement here with : and //. TODO: Document better / create alternatives
 
-                (ValueA.Description == null ? "" : (ValueA.Description.Replace("\r\n", " // "))) + request.CSVFieldSeparator +
+                (ValueA.Description == null ? "" : (ValueA.Description.Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // "))) + request.CSVFieldSeparator + // Note replacement here with : and //. TODO: Document better / create alternatives
 
                 ""; // No line-ending here
         }

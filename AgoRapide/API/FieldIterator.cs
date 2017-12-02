@@ -12,7 +12,9 @@ namespace AgoRapide.API {
     /// Note how care has been taken in order to ensure that this class can behave just like any another <see cref="BaseEntity"/>-class regarding
     /// presentation as HTML / JSON / CSV.
     /// 
-    /// TODO: Add presentation as JSON / CSV.
+    /// TODO: Note that <see cref="ResponseFormat.JSON"/> is currently missing <see cref="LeftmostColumn"/>
+    /// TOOD: Consider adding it to <see cref="BaseEntity.Properties"/> in <see cref="FieldIterator.FieldIterator"/>
+    /// TODO: in order to NOT having to override <see cref="BaseEntity.ToJSONEntity"/>
     /// </summary>
     [Class(Description =
         "Contains functionality for two-dimensional iteration over fields (as given by -" + nameof(QueryIdFieldIterator) + "-), like Sales per Product per Year.\r\n" +
@@ -94,9 +96,13 @@ namespace AgoRapide.API {
 
         public override string ToHTMLDetailed(Request request) => throw new NotImplementedException("Would be rather meaningless to implement anyway.");
 
-        public override List<PropertyKey> ToCSVTableColumns(Request request) => throw new NotImplementedException();
-        public override string ToCSVTableRowHeading(Request request) => throw new NotImplementedException();
-        public override string ToCSVTableRow(Request request) => throw new NotImplementedException();
+        public override List<PropertyKey> ToCSVTableColumns(Request request) => ToHTMLTableColumns(request);
+        // public override string ToCSVTableRowHeading(Request request) => throw new NotImplementedException(); // There is no need for overriding this
+        public override string ToCSVTableRow(Request request) =>
+            LeftmostColumn + request.CSVFieldSeparator + string.Join(request.CSVFieldSeparator, Columns.Select(p =>
+                p.V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ") // Note replacement here with : and //. TODO: Document better / create alternatives
+            )) + "\r\n";
+
         public override string ToCSVDetailed(Request request) => throw new NotImplementedException("Would be rather meaningless to implement anyway.");
     }
 

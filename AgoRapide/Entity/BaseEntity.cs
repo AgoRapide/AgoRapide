@@ -693,7 +693,7 @@ namespace AgoRapide {
                     /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
                     PriorityOrder.Everything // We assume that all information is required for CSV
                 ).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ?
-                p.V<string>().Replace(request.CSVFieldSeparator, ":") :  // Note replacement here with colon. TODO: Document better / create alternatives
+                p.V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ") : // Note replacement here with : and //. TODO: Document better / create alternatives
                 "")
             ) +
             // request.CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) + // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
@@ -759,18 +759,6 @@ namespace AgoRapide {
                 t.type.ToStringVeryShort() + request.CSVFieldSeparator + request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id))))
             );
 
-            // NOT NECESSARY FOR CSV. REMOVE!
-            //// TODO: Add heading here?
-            //Context.GetPossibleContextOperationsForCurrentUserAndEntity(request, this, strict: false).ForEach(c => {
-            //    // TODO: Maybe switch positions for these two
-            //    retval.AppendLine(c.PV<Uri>(CoreP.SuggestedUrl.A()) + request.CSVFieldSeparator + c.PV<string>(CoreP.Description.A()));
-            //});
-
-            // NOT NECESSARY FOR CSV. REMOVE!
-            //// TODO: Add heading here?
-            //// Suggested URLs for this specific entity
-            //if (Id > 0) retval.AppendLine(string.Join("\r\n", BaseEntityUrls));
-
             // TODO: REPLACE WITH SOMETHING BETTER, PREFERABLE SOMETHING INVISIBLE IN A TYPICAL SPREADSHEET PROGRAM
             retval.AppendLine();
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
@@ -792,9 +780,7 @@ namespace AgoRapide {
             if (Properties != null) {
                 var existing = GetExistingProperties(request.CurrentUser, AccessType.Read);
                 if (existing.Count > 0) {
-                    // retval.AppendLine("Properties:");
-                    existing.First().Value.ToCSVTableRowHeading(request);
-                    // retval.AppendLine(Property.ToCSVTableRowHeadingStatic(request));
+                    retval.AppendLine(existing.First().Value.ToCSVTableRowHeading(request));
                     /// TODO: Implement a common comparer for use by both <see cref="CreateHTMLForExistingProperties"/> and <see cref="CreateCSVForExistingProperties"/>
                     retval.AppendLine(string.Join("\r\n", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
                         return p.ToCSVTableRow(request);
