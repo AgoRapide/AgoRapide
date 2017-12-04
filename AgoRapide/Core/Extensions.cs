@@ -526,13 +526,6 @@ namespace AgoRapide.Core {
         });
 
 
-        /// <summary>
-        /// Convenience method for presenting decimal numbers. Facilitates easy use of decimal point consequently throughout the application
-        /// </summary>
-        /// <param name="_double"></param>
-        /// <returns></returns>
-        public static string ToString2(this double _double) => _double.ToString("0.00").Replace(",", ".");
-
         public static string ToString(this DateTime dateTime, DateTimeFormat resolution) {
             switch (resolution) {
                 case DateTimeFormat.None:
@@ -540,6 +533,35 @@ namespace AgoRapide.Core {
                 case DateTimeFormat.DateHourMinSec: return dateTime.ToString(Util.Configuration.C.DateAndHourMinSecFormat);
                 case DateTimeFormat.DateHourMin: return dateTime.ToString(Util.Configuration.C.DateAndHourMinFormat);
                 case DateTimeFormat.DateOnly: return dateTime.ToString(Util.Configuration.C.DateOnlyFormat);
+                default: throw new InvalidEnumException(resolution);
+            }
+        }
+
+        public static string ToString(this long number, NumberFormat resolution) { 
+            switch (resolution) {
+                case NumberFormat.None:
+                case NumberFormat.Id: return number.ToString(Util.Configuration.C.NumberIdFormat);
+                case NumberFormat.Integer: return number.ToString(Util.Configuration.C.NumberIntegerFormat);
+                case NumberFormat.Decimal: return number.ToString(Util.Configuration.C.NumberDecimalFormat); // A little strange but plausible
+                default: throw new InvalidEnumException(resolution);
+            }
+        }
+
+        /// <summary>
+        /// Convenience method for presenting decimal numbers. Facilitates easy use of decimal point consequently throughout the application
+        /// TODO: Reduce use of this now that <see cref="PropertyKeyAttribute.NumberFormat"/> has been introduced 
+        /// TODO: (use <see cref="ToString(double, NumberFormat)"/> more instead.
+        /// </summary>
+        /// <param name="number"></param>
+        /// <returns></returns>
+        public static string ToString2(this double number) => number.ToString("0.00").Replace(",", ".");
+
+        public static string ToString(this double number, NumberFormat resolution) {
+            switch (resolution) {
+                case NumberFormat.None:
+                case NumberFormat.Decimal: return number.ToString(Util.Configuration.C.NumberDecimalFormat);
+                case NumberFormat.Integer: return number.ToString(Util.Configuration.C.NumberIntegerFormat); // A little strange but plausible
+                case NumberFormat.Id: return number.ToString(Util.Configuration.C.NumberIdFormat); // Quite strange / irrelevant
                 default: throw new InvalidEnumException(resolution);
             }
         }

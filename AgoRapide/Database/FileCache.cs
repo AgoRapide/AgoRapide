@@ -91,9 +91,15 @@ namespace AgoRapide.Database {
                 filepath,
                 GetFingerprint(type) + RECORD_SEPARATOR +
                 string.Join(RECORD_SEPARATOR, entities.Select(e =>
-                    string.Join(FIELD_SEPARATOR, propertiesOrder.Select(p =>
-                        e.PV(p, "")
-                    ))
+                    string.Join(FIELD_SEPARATOR, propertiesOrder.Select(p => {
+                        if (typeof(long).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
+                            return e.TryGetPV<long>(p, out var t) ? t.ToString() : "";
+                        } else if (typeof(double).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
+                            return e.TryGetPV<double>(p, out var t) ? t.ToString2() : "";
+                        } else {
+                            return e.PV(p, "");
+                        }
+                    }))
                 )),
                 Encoding.Default
             );
@@ -121,7 +127,7 @@ namespace AgoRapide.Database {
                 entities = null;
                 errorResponse = "File " + filepath + " not found";
                 return false;
-            }            
+            }
             var recordsFromDisk = System.IO.File.ReadAllText(filepath, Encoding.Default).Split(RECORD_SEPARATOR);
             var first = true;
             var propertiesOrder = GetProperties(type);
@@ -159,7 +165,7 @@ namespace AgoRapide.Database {
                         i++; return;
                     }
                     if (!o.Key.TryValidateAndParse(properties[i], out var result)) throw new InvalidFileException(filepath, r, o, properties[i], result.ErrorResponse);
-                    if (i == 0) { 
+                    if (i == 0) {
                         /// The primary key (<see cref="DBField.id"/>) is stored as first property. 
                         if (!entitiesFromDatabase.TryGetValue(result.Result.V<long>(), out entity)) throw new InvalidFileException(filepath, r, o, properties[i], "Not found in " + nameof(entitiesFromDatabase));
                         /// Only get entity, continue with next property

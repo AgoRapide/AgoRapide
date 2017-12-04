@@ -90,6 +90,16 @@ namespace AgoRapide.Core {
             // TODO: Improve parser, there may be ; within QueryId
             var strQueryId = nextWord(); if (string.IsNullOrEmpty(strQueryId)) { id = null; errorResponse = "No " + nameof(QueryId) + " found"; return false; }
             if (!QueryId.TryParse(strQueryId, out var queryId, out errorResponse)) { id = null; return false; };
+            switch (queryId) {
+                case QueryIdKeyOperatorValue q:
+                    if (!q.Key.HasParentOfType(type)) {
+                        id = null;
+                        errorResponse = "Key (" + q.Key.PToString  + ") is recognized but does not belong to type " + type.ToStringVeryShort() + " (it belongs to " + (q.Key.A.Parents == null ? "[NONE]" : string.Join(", ", q.Key.A.Parents.Select(p => p.ToStringVeryShort()))) + ")";
+                        return false;
+                    }
+                    break;
+                default: break; // TODO: Add more types here as relevant
+            }
             var strLeftover = nextWord(); if (strLeftover != null) { id = null; errorResponse = nameof(strLeftover) + ": " + strLeftover; return false; }
             id = new Context(setOperator, type, queryId);
             errorResponse = null;

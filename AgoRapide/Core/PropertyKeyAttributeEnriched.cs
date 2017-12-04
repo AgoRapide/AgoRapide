@@ -82,7 +82,7 @@ namespace AgoRapide.Core {
             if (A.Type.Equals(typeof(string))) { // Added 2 Jun 2017 (equivalent to code at end of method)
                 switch (obj) {
                     case DateTime dtm: return dtm.ToString(DateTimeFormat.DateHourMin);
-                    case double dbl: return dbl.ToString2();
+                    case double dbl: return dbl.ToString2(); /// Note how <see cref="NumberFormat"/> is NOT use here.
                     default: return obj.ToString(); // int and enums for instance should work quite OK now.
                 }
             }
@@ -295,6 +295,18 @@ namespace AgoRapide.Core {
                 }
                 if (A.ExternalForeignKeyOf != null) {
                     // OK, any type of external foreign key is accepted. 
+                }
+            }
+
+            if (A.NumberFormat == NumberFormat.None) {
+                if (A.Type.Equals(typeof(long))) {
+                    if (A.ExternalPrimaryKeyOf != null || A.ForeignKeyOf != null || A.ExternalForeignKeyOf != null) {
+                        A.NumberFormat = NumberFormat.Id;
+                    } else {
+                        A.NumberFormat = NumberFormat.Integer;
+                    }
+                } else if (A.Type.Equals(typeof(double))) {
+                    A.NumberFormat = NumberFormat.Decimal;
                 }
             }
 

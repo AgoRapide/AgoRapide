@@ -68,7 +68,7 @@ namespace AgoRapide.API {
             ///// TODO: Why "deny" use of <param name="aggregateRows"/> here?
             //if (aggregateRows != null && aggregateRows.Count > 0) throw new NotNullReferenceException(nameof(aggregateRows));
             aggregateRows = aggregateRows?.Where(a => ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() > 0).ToList() ?? null;
-            
+
             return "<thead>" +
                 (aggregateRows == null || aggregateRows.Count == 0 ? "" : (
                     headers + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
@@ -91,11 +91,11 @@ namespace AgoRapide.API {
         }
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
-            LeftmostColumn.HTMLEncode() + "</td>" + string.Join("", Columns.Select(p => "<td>" +
+            LeftmostColumn.HTMLEncode() + "</td>" + string.Join("", Columns.Select(p => "<td" + (p.Key.Key.A.NumberFormat == NumberFormat.None ? "" : " align=\"right\"") + ">" +
                 p.V<Property.HTML>() + "</td>"));
 
         public override string ToHTMLDetailed(Request request) => throw new NotImplementedException("Would be rather meaningless to implement anyway.");
-
+    
         public override List<PropertyKey> ToCSVTableColumns(Request request) => ToHTMLTableColumns(request);
         // public override string ToCSVTableRowHeading(Request request) => throw new NotImplementedException(); // There is no need for overriding this
         public override string ToCSVTableRow(Request request) =>

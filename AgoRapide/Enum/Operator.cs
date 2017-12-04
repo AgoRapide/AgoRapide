@@ -24,7 +24,7 @@ namespace AgoRapide {
     public enum Operator {
         None,
         IN,
-        NEQ, /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
+        NEQ, 
         EQ,
         GT,
         LT,
@@ -39,22 +39,23 @@ namespace AgoRapide {
     public static class OperatorExtension {
         public static string ToMathSymbol(this Operator _operator) {
             switch (_operator) {
+                case Operator.EQ: return "=";
                 case Operator.NEQ: return "!=";
                 case Operator.LT: return "<";
-                case Operator.LEQ: return "<=";
-                case Operator.EQ: return "=";
-                case Operator.GEQ: return ">=";
                 case Operator.GT: return ">";
+                case Operator.LEQ: return "<=";
+                case Operator.GEQ: return ">=";
                 default: return _operator.ToString(); // TODO: Decide if this approach is good enough
             }
         }
         public static string ToSQLString(this Operator _operator) {
             switch (_operator) {
                 case Operator.EQ: return "=";
-                case Operator.GT: return ">";
+                case Operator.NEQ: return "<>";
                 case Operator.LT: return "<";
-                case Operator.GEQ: return ">=";
+                case Operator.GT: return ">";
                 case Operator.LEQ: return "<=";
+                case Operator.GEQ: return ">=";
                 case Operator.LIKE: return "LIKE";
                 case Operator.ILIKE: return "ILIKE";
                 // TODO: Support IS (like IS NULL)
@@ -62,11 +63,11 @@ namespace AgoRapide {
             }
         }
         public static Dictionary<Type, HashSet<Operator>> ValidOperatorsForType = new Dictionary<Type, HashSet<Operator>> {
-            { typeof(long), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(double), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(DateTime), new HashSet<Operator> { Operator.EQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
-            { typeof(bool), new HashSet<Operator> { Operator.EQ } },
-            { typeof(string), new HashSet<Operator> { Operator.EQ, Operator.LIKE, Operator.ILIKE } },
+            { typeof(long), new HashSet<Operator> { Operator.EQ, Operator.NEQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
+            { typeof(double), new HashSet<Operator> { Operator.EQ, Operator.NEQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
+            { typeof(DateTime), new HashSet<Operator> { Operator.EQ, Operator.NEQ, Operator.GT, Operator.LT, Operator.GEQ, Operator.LEQ } },
+            { typeof(bool), new HashSet<Operator> { Operator.EQ, Operator.NEQ } },
+            { typeof(string), new HashSet<Operator> { Operator.EQ, Operator.NEQ, Operator.LIKE, Operator.ILIKE } },
             { typeof(List<long>), new HashSet<Operator> { Operator.IN } },
             { typeof(List<double>), new HashSet<Operator> { Operator.IN } },
             { typeof(List<DateTime>), new HashSet<Operator> { Operator.IN } },

@@ -139,7 +139,7 @@ namespace AgoRapide {
         [PropertyKey(
             Description = "-" + nameof(DBField.id) + "- of entity as stored in AgoRapide database.",
             LongDescription = "See also -" + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "- relevant to -" + nameof(PropertyKeyAttribute.IsExternal) + "-.",
-            Type = typeof(long))]
+            Type = typeof(long), NumberFormat = NumberFormat.Id)]
         DBId,
 
         [PropertyKey(

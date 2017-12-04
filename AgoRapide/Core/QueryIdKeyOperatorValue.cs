@@ -241,6 +241,8 @@ namespace AgoRapide.Core {
                     switch (Operator) {
                         case Operator.EQ:
                             return p.Value.Equals(Value);
+                        case Operator.NEQ:
+                            return !p.Value.Equals(Value);
                         default:
                             var lngValue = Value as long?;
                             if (lngValue != null) {

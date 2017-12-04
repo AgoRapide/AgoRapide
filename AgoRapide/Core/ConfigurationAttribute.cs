@@ -150,6 +150,8 @@ namespace AgoRapide.Core {
         /// </summary>
         public System.Globalization.CultureInfo Culture { get; set; } = System.Globalization.CultureInfo.CreateSpecificCulture("en-US");
 
+        // ----------------------------------------------- DateTime formats ------------------------------------------------ //
+
         private const string _defaultDateAndHourMinSecMsFormat = "yyyy-MM-dd HH:mm:ss.fff";
         private const string _defaultDateAndHourMinSecFormat = "yyyy-MM-dd HH:mm:ss";
         private const string _defaultDateAndHourMinFormat = "yyyy-MM-dd HH:mm";
@@ -211,6 +213,58 @@ namespace AgoRapide.Core {
         /// <see cref="ConfigurationAttribute.DateOnlyFormat"/> corresponds to <see cref="DateTimeFormat.DateOnly"/> 
         /// </summary>
         public string DateOnlyFormat { get; set; } = _defaultDateOnlyFormat;
+
+        // ----------------------------------------------- Number formats ------------------------------------------------ //
+
+        private const string _defaultNumberIdFormat = "#";
+        private const string _defaultNumberIntegerFormat = "n0";
+        private const string _defaultNumberDecimalFormat = "n";
+
+        /// <summary>
+        /// TODO: Considering deleting. Modelled on <see cref="ValidDateFormats"/> but since <see cref="PropertyKeyAttribute.NumberFormat"/> does not affect parsing
+        /// TODO: so is most probably uneeded here.
+        /// 
+        /// Note: <see cref="ValidNumberFormats"/> must be a superset of { <see cref="NumberIdFormat"/>, <see cref="NumberIntegerFormat"/>, <see cref="NumberDecimalFormat"/>
+        /// </summary>
+        public string[] ValidNumberFormats { get; set; } = new string[] {
+            _defaultDateAndHourMinSecMsFormat,
+            _defaultDateAndHourMinSecFormat,
+            _defaultDateAndHourMinFormat,
+            _defaultDateOnlyFormat
+        };
+
+        /// <summary>
+        /// TODO: Considering deleting. Modelled on <see cref="ValidDateFormatsByResolution"/> but since <see cref="PropertyKeyAttribute.NumberFormat"/> does not affect parsing
+        /// TODO: so is most probably uneeded here.
+        /// </summary>
+        public Dictionary<NumberFormat, string[]> ValidNumberFormatsByResolution { get; set; } = new Dictionary<NumberFormat, string[]> {
+            { NumberFormat.None, new string[] {
+                _defaultNumberIdFormat,
+                _defaultNumberIntegerFormat,
+                _defaultNumberDecimalFormat,
+                }
+            },
+            { NumberFormat.Id, new string[] { _defaultNumberIdFormat } },
+            { NumberFormat.Integer, new string[] { _defaultNumberIntegerFormat } },
+            { NumberFormat.Decimal, new string[] { _defaultNumberDecimalFormat } }
+        };
+
+        /// <summary>
+        /// TODO: Considering deleting. Modelled on <see cref="DateFormatsByResolution"/> but since <see cref="PropertyKeyAttribute.NumberFormat"/> does not affect parsing
+        /// TODO: so is most probably uneeded here.
+        /// </summary>
+        public Dictionary<NumberFormat, string> NumberFormatsByResolution { get; set; } = new Dictionary<NumberFormat, string> {
+            { NumberFormat.None, _defaultNumberDecimalFormat },
+            { NumberFormat.Id, _defaultNumberIdFormat },
+            { NumberFormat.Integer, _defaultNumberIntegerFormat },
+            { NumberFormat.Decimal, _defaultNumberDecimalFormat }
+        };
+
+        public string NumberIdFormat { get; set; } = _defaultNumberIdFormat;
+        public string NumberIntegerFormat { get; set; } = _defaultNumberIntegerFormat;
+        public string NumberDecimalFormat { get; set; } = _defaultNumberDecimalFormat;
+
+        // ------------------------------------------------------------------------------------------------------------- //
 
         /// <summary>
         /// Background colour for this environment. 

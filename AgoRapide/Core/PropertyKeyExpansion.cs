@@ -148,6 +148,7 @@ namespace AgoRapide.Core {
                                 PriorityOrder = k.Key.A.PriorityOrder, // Added 13 Oct 2017
                                 Type = e.ToExpandedType(),
                                 DateTimeFormat = e == ExpansionType.DateDate ? DateTimeFormat.DateOnly : DateTimeFormat.None,
+                                NumberFormat = e == ExpansionType.DateYear ? NumberFormat.Id : NumberFormat.None, /// For those with type long the actual format given here will normally not matter as long as no value exceeds 1000.
                                 AggregationTypes= e.ToAggregationTypes()?.ToArray() ?? null,
                                 HasLimitedRange = e.HasLimitedRange(),
 

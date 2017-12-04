@@ -38,6 +38,7 @@ namespace AgoRapide.Database {
             return request.GetResponse();
         }
 
+        private static ConcurrentDictionary<long, bool> SynchronizationsInProgress = new ConcurrentDictionary<long, bool>();
         /// <summary>
         /// Split out from <see cref="Synchronize"/> in order to be able to call directly from <see cref="InMemoryCache"/>
         /// 
@@ -46,17 +47,26 @@ namespace AgoRapide.Database {
         /// <param name="db"></param>
         /// <param name="result"></param>
         public void Synchronize2(BaseDatabase db, Result result) {
-            result.LogInternal("Starting", GetType());
-            var entities = SynchronizeGetEntities(db, result);
-            entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, result));
-            SynchronizeMapForeignKeys(entities, result);
-            entities.ForEach(e => {
-                result.LogInternal(nameof(FileCache.StoreToDisk) + ": " + e.Key, GetType());
-                FileCache.Instance.StoreToDisk(this, e.Key, e.Value);
-            });
-            PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>()).ForEach(t => InMemoryCache.ResetForType(t)); // Important in order to ensure that read information is actually utilized
-            result.ResultCode = ResultCode.ok;
-            result.LogInternal("Finished", GetType());
+            if (!SynchronizationsInProgress.TryAdd(Id, true)) { // If we are not guarding against simultaneous synchronizations then we risk duplicates of
+                result.ResultCode = ResultCode.data_error;      // foreign entities in the database.
+                result.LogInternal(nameof(SynchronizationsInProgress) + " for " + Id, GetType());
+                return;
+            }
+            try {
+                result.LogInternal("Starting", GetType());
+                var entities = SynchronizeGetEntities(db, result);
+                entities.ForEach(e => SynchronizeReconcileWithDatabase(e.Key, e.Value, db, result));
+                SynchronizeMapForeignKeys(entities, result);
+                entities.ForEach(e => {
+                    result.LogInternal(nameof(FileCache.StoreToDisk) + ": " + e.Key, GetType());
+                    FileCache.Instance.StoreToDisk(this, e.Key, e.Value);
+                });
+                PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>()).ForEach(t => InMemoryCache.ResetForType(t)); // Important in order to ensure that read information is actually utilized
+                result.ResultCode = ResultCode.ok;
+                result.LogInternal("Finished", GetType());
+            } finally {
+                SynchronizationsInProgress.TryRemove(Id, out _);
+            }
         }
      
         private ConcurrentDictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {

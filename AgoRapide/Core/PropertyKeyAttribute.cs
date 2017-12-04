@@ -403,6 +403,16 @@ namespace AgoRapide.Core {
         public DateTimeFormat DateTimeFormat { get; set; }
 
         /// <summary>
+        /// Only relevant when <see cref="Type"/> is <see cref="long"/> or <see cref="double"/>. 
+        /// If not set "manually" then will be set automatically by <see cref="PropertyKeyAttributeEnriched.Initialize"/> as follows:
+        /// 1) <see cref="NumberFormat.Id"/> for <see cref="ExternalPrimaryKeyOf"/> and <see cref="ExternalForeignKeyOf"/>
+        /// 2) In other cases <see cref="NumberFormat.Integer"/> / <see cref="NumberFormat.Decimal"/> will be chosen for <see cref="long"/> and <see cref="double"/> respectively 
+        /// 
+        /// Mostly relevant for <see cref="ResponseFormat.HTML"/>. In contrast to <see cref="DateTimeFormat"/>, <see cref="NumberFormat"/> does not affect parsing.
+        /// </summary>
+        public NumberFormat NumberFormat { get; set; }
+
+        /// <summary>
         /// Often relevant when <see cref="Type"/> is <see cref="DateTime"/>
         /// 
         /// Will always be set by <see cref="PropertyKeyAttributeEnriched.Initialize"/> if not given.

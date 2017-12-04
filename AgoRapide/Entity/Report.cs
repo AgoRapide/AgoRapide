@@ -130,7 +130,7 @@ namespace AgoRapide {
         )]
         ReportAuthor,
 
-        [PropertyKey(PriorityOrder = (PriorityOrder.Important - 1), Size = InputFieldSize.Medium, Group = typeof(ReportPropertiesDescriber))]
+        [PropertyKey(PriorityOrder = (PriorityOrder.Important - 1), Size = InputFieldSize.Big, Group = typeof(ReportPropertiesDescriber))]
         ReportName,
 
         [PropertyKey(PriorityOrder = PriorityOrder.Important, Size = InputFieldSize.MultilineMedium, Group = typeof(ReportPropertiesDescriber))]
