@@ -94,7 +94,7 @@ namespace AgoRapide.Core {
                 case QueryIdKeyOperatorValue q:
                     if (!q.Key.HasParentOfType(type)) {
                         id = null;
-                        errorResponse = "Key (" + q.Key.PToString  + ") is recognized but does not belong to type " + type.ToStringVeryShort() + " (it belongs to " + (q.Key.A.Parents == null ? "[NONE]" : string.Join(", ", q.Key.A.Parents.Select(p => p.ToStringVeryShort()))) + ")";
+                        errorResponse = "Key (" + q.Key.PToString + ") is recognized but does not belong to type " + type.ToStringVeryShort() + " (it belongs to " + (q.Key.A.Parents == null ? "[NONE]" : string.Join(", ", q.Key.A.Parents.Select(p => p.ToStringVeryShort()))) + ")";
                         return false;
                     }
                     break;
@@ -360,18 +360,26 @@ namespace AgoRapide.Core {
             return true;
         }
 
+        [ClassMember(Description = "Note how entity types towards which multiple traversals are found are just silently ignored from result")]
         public static ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>> TraverseToAllEntities(BaseEntity currentUser, ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>> fromEntities, BaseDatabase db) {
             var retval = new ConcurrentDictionary<Type, ConcurrentDictionary<long, BaseEntity>>();
+            var multipleTraversals = new ConcurrentDictionary<Type, bool>();
             fromEntities.Keys.ForEach(fromType => {
                 /// NOTE: This is the ONLY place inside this method (<see cref="TraverseToAllEntities"/>) 
                 /// NOTE: where it is safe to parallelize at the moment (Oct 2017).
                 Parallel.ForEach(GetPossibleTraversalsFromType(fromType), traversals => {
-                    if (fromEntities.ContainsKey(traversals.Key)) { 
+                    if (fromEntities.ContainsKey(traversals.Key)) {
                         // This is quite normal because if we can go from type A to type B we can also go the other way. Just ignore.
                         return;
                         // throw new NotImplementedException("Traversal from " + fromType + " to already known type " + traversals.Key + " not yet implemented"); // TODO. Decide how to handle this, maybe just ignore
                     }
-                    if (retval.ContainsKey(traversals.Key)) throw new NotImplementedException("Multiple traversals to " + traversals.Key + " (one of them from " + fromType + ") not yet implemented"); // TODO. Decide how to handle this, maybe just add from what already found
+                    if (retval.ContainsKey(traversals.Key)) {
+                        // Old code before 12 Dec 2017
+                        // throw new NotImplementedException("Multiple traversals to " + traversals.Key + " (one of them from " + fromType + ") not yet implemented"); // TODO. Decide how to handle this, maybe just add from what already found
+                        // New code after 12 Dec 2017, silently ignore
+                        multipleTraversals.TryAdd(traversals.Key, true); // See removal code at end of method.
+                        return; // TODO: Decide better solution than this. 
+                    }
                     if (traversals.Value.Count > 1) throw new NotImplementedException("Traversals over multiple levels not supported (from " + fromType + " to " + traversals.Key + " via " + string.Join(",", traversals.Value.Select(t => t.ToString())));
 
                     var traversal = traversals.Value[0];
@@ -417,6 +425,7 @@ namespace AgoRapide.Core {
                     retval.Add(traversals.Key, toValues);
                 });
             });
+            multipleTraversals.Keys.ForEach(k => retval.Remove(k)); // TODO: Decide better solution than this. 
             return retval;
         }
 
