@@ -167,6 +167,7 @@
     <Compile Include="Enum\CacheUse.cs" />
     <Compile Include="Enum\CoreAPIMethod.cs" />
     <Compile Include="Enum\CoreP.cs" />
+    <Compile Include="Enum\DateTimeComparer.cs" />
     <Compile Include="Enum\DateTimeFormat.cs" />
     <Compile Include="Enum\DBField.cs" />
     <Compile Include="Enum\EntityTypeCategory.cs" />

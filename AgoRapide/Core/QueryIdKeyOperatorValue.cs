@@ -237,6 +237,13 @@ namespace AgoRapide.Core {
                         case Operator.GT: return percentile.Value > p.Percentile.Value;
                         default: throw new InvalidEnumException(Operator);
                     }
+                case DateTimeComparer dateTimeComparer:
+                    var dateTime = p.V<DateTime>();
+                    switch (Operator) {
+                        case Operator.EQ: return dateTime >= DateTimeComparerGEQ && dateTime < DateTimeComparerLT;
+                        case Operator.NEQ: return dateTime < DateTimeComparerGEQ || dateTime >= DateTimeComparerLT;
+                        default: throw new NotImplementedException(nameof(Operator) + ": " + Operator + " for " + Value.GetType());
+                    }
                 default:
                     switch (Operator) {
                         case Operator.EQ:
@@ -259,6 +266,52 @@ namespace AgoRapide.Core {
                     }
             }
         }
+
+        private DateTime? _dateTimeComparerGEQ;
+        /// <summary>
+        /// Note that once value has been calculated it is cached. The object instance in itself should therefore 
+        /// only be used in short-lived scenarios.
+        /// </summary>
+        private DateTime DateTimeComparerGEQ => _dateTimeComparerGEQ ?? (DateTime)(_dateTimeComparerGEQ = new Func<DateTime>(() => {
+            var now = DateTime.Now; var d = Value as DateTimeComparer? ?? throw new InvalidObjectTypeException(Value, typeof(DateTimeComparer));
+            switch (d) {
+                case DateTimeComparer.ThisHour: return new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0);
+                case DateTimeComparer.LastHour: return new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(-1);
+                case DateTimeComparer.Today: return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
+                case DateTimeComparer.Yesterday: return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0).AddDays(-1);
+                case DateTimeComparer.ThisMonth: return new DateTime(now.Year, now.Month, 1, 0, 0, 0);
+                case DateTimeComparer.LastMonth: return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddMonths(-1);
+                case DateTimeComparer.ThisYear: return new DateTime(now.Year, 1, 1, 0, 0, 0);
+                case DateTimeComparer.LastYear: return new DateTime(now.Year, 1, 1, 0, 0, 0).AddYears(-1);
+                default:
+                    throw new InvalidEnumException(d, "Not yet implemented");
+            }
+        })());
+
+        private DateTime? _dateTimeComparerLT;
+        /// <summary>
+        /// Note that once value has been calculated it is cached. The object instance in itself should therefore 
+        /// only be used in short-lived scenarios.
+        /// </summary>
+        private DateTime DateTimeComparerLT => _dateTimeComparerLT ?? (DateTime)(_dateTimeComparerLT = new Func<DateTime>(() => {
+            var now = DateTime.Now; var d = Value as DateTimeComparer? ?? throw new InvalidObjectTypeException(Value, typeof(DateTimeComparer));
+            switch (d) {
+                case DateTimeComparer.ThisHour:
+                case DateTimeComparer.LastHour:
+                    return DateTimeComparerGEQ.AddHours(1);
+                case DateTimeComparer.Today: 
+                case DateTimeComparer.Yesterday:
+                    return DateTimeComparerGEQ.AddDays(1);
+                case DateTimeComparer.ThisMonth:
+                case DateTimeComparer.LastMonth:
+                    return DateTimeComparerGEQ.AddMonths(1);
+                case DateTimeComparer.ThisYear:
+                case DateTimeComparer.LastYear:
+                    return DateTimeComparerGEQ.AddYears(1);
+                default:
+                    throw new InvalidEnumException(d, "Not yet implemented");
+            }
+        })());
 
         /// <summary>
         /// Improve on use of <see cref="QueryId.ToString"/> (value is meant to be compatible with parser)

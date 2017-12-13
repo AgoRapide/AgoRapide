@@ -328,19 +328,33 @@ namespace AgoRapide.Core {
 
                 if ("NULL".Equals(strValue)) {
                     id = new QueryIdKeyOperatorValue(key.Key, _operator, null);
-                } else if (
-                    !int.TryParse(strValue, out _) && // Important that "GT 5" is not parsed as "GT Quintile5", that is, do not accept integer as enum here.
-                    Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
-                    id = new QueryIdKeyOperatorValue(key.Key, _operator, quintile);
                 } else {
-                    if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
+                    var isValidInt = int.TryParse(strValue, out _); /// Note that int are parsed as valid enums, therefore this check before looking for <see cref="Quintile"/> or <see cref="DateTimeComparer"/>
 
-                    if (!key.Key.TryValidateAndParse(strValue, out var valueResult)) {
-                        id = null;
-                        errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: Invalid {value} (" + strValue + ") given for {key} " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
-                        return false;
+                    if (!isValidInt && Util.EnumTryParse<Quintile>(strValue, out var quintile)) { // TODO: ADD OTHER QUANTILES HERE!
+                        id = new QueryIdKeyOperatorValue(key.Key, _operator, quintile);
+                    } else if (!isValidInt && Util.EnumTryParse<DateTimeComparer>(strValue, out var dateTimeComparer)) {
+                        if (key.Key.A.Type != typeof(DateTime)) {
+                            id = null;
+                            errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: " + nameof(DateTimeComparer) + " (" + dateTimeComparer + ") can only be used against " + typeof(DateTime) + ", not " + key.Key.A.Type.ToStringVeryShort() + " ({key} = " + key.Key.PToString + ").";
+                            return false;
+                        }
+                        if (_operator != Operator.EQ && _operator != Operator.NEQ) { /// TODO: Add more operators here when <see cref="QueryIdKeyOperatorValue.IsMatch"/> has been updated correspondingly
+                            id = null;
+                            errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: " + nameof(DateTimeComparer) + " (" + dateTimeComparer + ") can only be used against " + nameof(Operator) + "." + Operator.EQ + " / " + Operator.NEQ + ", not " + _operator;
+                            return false;
+                        }
+                        id = new QueryIdKeyOperatorValue(key.Key, _operator, dateTimeComparer);
+                    } else {
+                        if (strValue.StartsWith("'") && strValue.EndsWith("'")) strValue = strValue.Substring(1, strValue.Length - 2);
+
+                        if (!key.Key.TryValidateAndParse(strValue, out var valueResult)) {
+                            id = null;
+                            errorResponse = "Invalid as " + nameof(QueryIdKeyOperatorValue) + ". Details: Invalid {value} (" + strValue + ") given for {key} " + key.Key.PToString + ".\r\nDetails: " + valueResult.ErrorResponse;
+                            return false;
+                        }
+                        id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                     }
-                    id = new QueryIdKeyOperatorValue(key.Key, _operator, valueResult.Result.Value);
                 }
 
                 errorResponse = null;
