@@ -154,8 +154,6 @@ namespace AgoRapide.API {
                 if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
                 if (limitToSingleKey != null && key.Key.CoreP != limitToSingleKey.Key.CoreP) return;
 
-                List<(object, string)> objStrValues;
-
                 var properties = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null));
                 var propertiesNotNull = properties.Where(p => p != null).ToList(); // Used for Percentile-evaluation
 
@@ -224,18 +222,23 @@ namespace AgoRapide.API {
 
                 /// Can also be true if <paramref name="includeAllSuggestions"/> is set.
                 var mixOfNullsAndNotNullFound = false; // Found either directly (see direct below) or as "side effect" in lambda (see further below)
+                List<(object, string)> objStrValues = null; // This are the actual values that we will offer for drill-down, like "Monday", "42", "John", "Smith" or similar.
+
+                var addDateTimeComparer = key.Key.A.Type == typeof(DateTime);
 
                 /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
                 if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) {
                     // Our only choice is limiting to NULL or NOT NULL values.  
-                    if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) {
+                    if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) { // None are set.
+                        if (addDateTimeComparer) goto calculate_objStrValues;
                         if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
                             retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                         }
                         return; // None are set.
                     }
-                    if (!includeAllSuggestions && entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) {
-                        if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
+                    if (!includeAllSuggestions && entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) { // All are set.
+                        if (addDateTimeComparer) goto calculate_objStrValues;
+                        if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER! 
                             retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                         }
                         return; // All are set.
@@ -285,6 +288,8 @@ namespace AgoRapide.API {
                     objStrValues.Add((null, "NULL"));
                 }
 
+                calculate_objStrValues:
+
                 var r1 = new Dictionary<
                     Operator,
                     Dictionary<
@@ -299,11 +304,11 @@ namespace AgoRapide.API {
 
                     var objStrValuesForThisOperator = objStrValues;
                     if (o == Operator.EQ && !key.Key.A.HasLimitedRange) {
-                        /// NOTE: Count > 10 is arbitrarily chosen.
+                        /// NOTE: Count > 50 is arbitrarily chosen.
                         /// NOTE: Note that for only <see cref="Operator.EQ"/> this will only happen with Count == 1 because of filtering out above for HasLimitedRange
                         /// NOTE: For <see cref="DateTime"/>, long and similar types that can be compared like <see cref="Operator.LT"/> and similar 
                         /// NOTE: 
-                        if (objStrValues.Count > 50) { // Increased from 10 to 50 29 Nov 2017 because we now have much better HTML-presentation of drill-down suggestions.
+                        if (objStrValuesForThisOperator.Count > 50) { // Increased from 10 to 50 29 Nov 2017 because we now have much better HTML-presentation of drill-down suggestions.
                             /// We have too many values for using <see cref="Operator.EQ"/> against all of them, but we can check for null and 0
                             objStrValuesForThisOperator = new List<(object, string)>();
                             if (objStrValues[objStrValues.Count - 1].Item1 == null) {
@@ -314,11 +319,20 @@ namespace AgoRapide.API {
                                     objStrValuesForThisOperator.Add(((long)0, "0"));
                                 }
                             }
-
-                            if (objStrValuesForThisOperator.Count == 0) {
-                                return; // Give up altogether
-                            }
+                            // Note, result now may quite well be null suggestions
+                        } else if (limitToSingleKey != null) {
+                            /// HACK: For situation where <see cref="Database.BaseDatabase.TryGetContext"/> iterates over a column
+                            /// HACK: we do not want spurious extra rows due to some columns values giving few row elements 
+                            objStrValuesForThisOperator = new List<(object, string)>();
                         }
+                    }
+                    if (addDateTimeComparer && o == Operator.EQ) {
+                        objStrValuesForThisOperator = objStrValuesForThisOperator.ToList(); // IMPORTANT, copy object, in order not to affect original liste (in case we have more than one operator)
+                        Util.EnumGetValues<DateTimeComparer>().ForEach(c => objStrValuesForThisOperator.Add((c, c.ToString())));
+                    }
+
+                    if (objStrValuesForThisOperator.Count == 0) {
+                        return; // Give up altogether
                     }
 
                     var r2 = new Dictionary<

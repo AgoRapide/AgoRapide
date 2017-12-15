@@ -208,6 +208,7 @@ namespace AgoRapide.Database {
                     errorResponse = null;
                     return true;
                 case QueryIdFieldIterator q:
+                    /// TODO: Consider moving this code to <see cref="DrillDownSuggestion"/> 
                     var aggregateTotalExpected = q.AggregationType == AggregationType.Count ?
                         requiredTypeEntities.Values.Count :
                         PropertyKeyAggregate.CalculateSingleValue(q.AggregationType, q.AggregationKey, requiredTypeEntities.Values.ToList()) ?? 0L;
@@ -239,6 +240,9 @@ namespace AgoRapide.Database {
 
                     var aggregateTotalAllColums = 0L;
 
+                    var foundDateTimeComparerAmongColumns = false; // TRUE means that sums across columns are not relevant because they would probably be meaningless (adding ThisYear to ThisMonth for instance)
+                    var foundDateTimeComparerAmongRows = false;  // TRUE means that sums across rows are not relevant because they would probably be meaningless (adding ThisYear to ThisMonth for instance)
+
                     DrillDownSuggestion.Create(q.ColumnType, columnTypeEntities.Values, limitToSingleKey: q.ColumnKey, excludeQuantileSuggestions: true,
                         includeAllSuggestions: true /// Extremely important, if not given then some data will be left out.
                     ).Values.ForEach(operatorsColumn => {
@@ -247,11 +251,23 @@ namespace AgoRapide.Database {
                                 Where(s => s.Value.Type == DrillDownSuggestion.DrillDownSuggestionType.Ordinary). /// It is in principle unnecessary to filter after introduction of excludeQuantileSuggestions above.
                                 ForEach(suggestionColumn => {
                                     Log(suggestionColumn.Value.QueryId.ToString());
+                                    if (suggestionColumn.Value.QueryId.Value is DateTimeComparer) foundDateTimeComparerAmongColumns = true;
                                     var thisColumn = new Dictionary<string, long>();
                                     var sumThisColumn = 0L; // TODO: Expand this to Min, Max and so on.
 
                                     var newContext = contexts.ToList();
                                     newContext.Add(new Context(SetOperator.Intersect, q.ColumnType, suggestionColumn.Value.QueryId));
+
+                                    newContext.                                     // Remove all corresponding Union with the same key
+                                        Where(c =>                                  // because Intersect in combination with Union would be meaningless.
+                                            c.SetOperator == SetOperator.Union &&   // TODO: Is this a HACK? Should it be improved somehow?Æ
+                                            c.Type == q.ColumnType &&
+                                            c.QueryId is QueryIdKeyOperatorValue &&
+                                            ((QueryIdKeyOperatorValue)c.QueryId).Key.PToString == suggestionColumn.Value.QueryId.Key.PToString).
+                                        ToList().
+                                        ForEach(c => {
+                                            newContext.Remove(c);
+                                        });
 
                                     result = new Result();
                                     if (!Context.TryExecuteContextsQueries(currentUser, newContext, this, result, out var newContextEntities, out var newErrorResponse)) {
@@ -272,6 +288,7 @@ namespace AgoRapide.Database {
                                             operatorRow.Value.
                                                 Where(s => s.Value.Type == DrillDownSuggestion.DrillDownSuggestionType.Ordinary). /// It is in principle unnecessary to filter after introduction of excludeQuantileSuggestions above.
                                             ForEach(suggestionRow => {
+                                                if (suggestionRow.Value.QueryId.Value is DateTimeComparer) foundDateTimeComparerAmongRows = true;
                                                 if (q.AggregationType == AggregationType.Count) {
                                                     // 1) The simple case, we alredy know the answer since the mechanismk giving the drill-down suggestions has already counted for us
                                                     thisColumn.Add(suggestionRow.Value.QueryId.ToString(), suggestionRow.Value.Count);
@@ -308,9 +325,15 @@ namespace AgoRapide.Database {
                                             });
                                         });
                                     });
-                                    if (sumThisColumn != 0) {
-                                        thisColumn.Add("SUM", sumThisColumn);
-                                        aggregateTotalAllColums += (long)sumThisColumn;
+
+                                    if (foundDateTimeComparerAmongRows) {
+                                        // Sum would probably be meaningless (adding ThisYear to ThisMonth for instance)
+                                    } else {
+
+                                        if (sumThisColumn != 0) {
+                                            thisColumn.Add("SUM", sumThisColumn);
+                                            aggregateTotalAllColums += (long)sumThisColumn;
+                                        }
                                     }
 
                                     var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
@@ -337,36 +360,52 @@ namespace AgoRapide.Database {
                                 });
                         });
                     });
-                    if (aggregateTotalAllColums != aggregateTotalExpected) throw new InvalidCountException(aggregateTotalAllColums, aggregateTotalExpected, nameof(aggregateTotalAllColums));
+                    if (aggregateTotalAllColums != aggregateTotalExpected) {
+                        if (foundDateTimeComparerAmongColumns || foundDateTimeComparerAmongRows) {
+                            // Normal situation
+                        } else {
+                            throw new InvalidCountException(aggregateTotalAllColums, aggregateTotalExpected, nameof(aggregateTotalAllColums));
+                        }
+                    }
 
                     allColumns.Sort((a, b) => a.PropertyKey.Key.PToString.CompareTo(b.PropertyKey.Key.PToString)); // Order columns alfabetically
                     var uniqueRows = allColumns.SelectMany(e => e.Item2.Keys).Distinct(); // Find all unique rows
-                    switch (q.AggregationType) {
-                        case AggregationType.Count:
-                        case AggregationType.Sum:
-                            // Sum all rows.
-                            var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                    if (foundDateTimeComparerAmongColumns) {
+                        // Sum would probably be meaningless (adding ThisYear to ThisMonth for instance)
+                    } else {
+                        switch (q.AggregationType) {
+                            case AggregationType.Count:
+                            case AggregationType.Sum:
+                                // Sum all rows.
+                                var pk = new PropertyKey(new PropertyKeyAttributeEnrichedDyn(new PropertyKeyAttribute( // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
 
-                                    // Replaced text with only value 27 Nov 2017.
-                                    // property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
-                                    property: "Sum",
-                                    description: "Column sum",
-                                    longDescription: null,
-                                    isMany: false
-                                ) {
-                                Type = typeof(long),
-                            },
-                                (CoreP)(nextCoreP--))); // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
-                            pk.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
-                            //var rowSums = new Dictionary<string, long>();
-                            //uniqueRows.ForEach(r => {
-                            //    rowSums.Add(r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v));
-                            //});
-                            var newColumn = uniqueRows.Select(r => (r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v))).ToDictionary(e => e.Item1, e => e.Item2);
-                            var aggregateTotalAllRows = newColumn.Aggregate(0L, (s, v) => "SUM".Equals(v.Key) ? s : s + v.Value); // Careful not sum SUM calculated above
-                            if (aggregateTotalAllRows != aggregateTotalExpected) throw new InvalidCountException(aggregateTotalAllRows, aggregateTotalExpected, nameof(aggregateTotalAllRows));
-                            allColumns.Add((pk, newColumn));
-                            break;
+                                        // Replaced text with only value 27 Nov 2017.
+                                        // property: suggestionColumn.Value.Text, // TOOD: REMOVE CHARACTERS OTHER THAN A-Z, 0-9, _ here
+                                        property: "Sum",
+                                        description: "Column sum",
+                                        longDescription: null,
+                                        isMany: false
+                                    ) {
+                                    Type = typeof(long),
+                                },
+                                    (CoreP)(nextCoreP--))); // Note how this is a "throw-away" instance only meant to be used within the context of the current API request.
+                                pk.SetPropertyKeyWithIndexAndPropertyKeyAsIsManyParentOrTemplate();
+                                //var rowSums = new Dictionary<string, long>();
+                                //uniqueRows.ForEach(r => {
+                                //    rowSums.Add(r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v));
+                                //});
+                                var newColumn = uniqueRows.Select(r => (r, allColumns.Select(c => c.Values.TryGetValue(r, out var v) ? (long?)v : null).Where(v => v != null).Aggregate(0L, (s, v) => s + (long)v))).ToDictionary(e => e.Item1, e => e.Item2);
+                                var aggregateTotalAllRows = newColumn.Aggregate(0L, (s, v) => "SUM".Equals(v.Key) ? s : s + v.Value); // Careful not sum SUM calculated above
+                                if (aggregateTotalAllRows != aggregateTotalExpected) {
+                                    if (foundDateTimeComparerAmongColumns || foundDateTimeComparerAmongRows) {
+                                        // Normal situation
+                                    } else {
+                                        throw new InvalidCountException(aggregateTotalAllRows, aggregateTotalExpected, nameof(aggregateTotalAllRows));
+                                    }
+                                }
+                                allColumns.Add((pk, newColumn));
+                                break;
+                        }
                     }
 
                     entities = uniqueRows.

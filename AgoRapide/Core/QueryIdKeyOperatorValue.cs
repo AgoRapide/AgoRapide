@@ -275,14 +275,26 @@ namespace AgoRapide.Core {
         private DateTime DateTimeComparerGEQ => _dateTimeComparerGEQ ?? (DateTime)(_dateTimeComparerGEQ = new Func<DateTime>(() => {
             var now = DateTime.Now; var d = Value as DateTimeComparer? ?? throw new InvalidObjectTypeException(Value, typeof(DateTimeComparer));
             switch (d) {
-                case DateTimeComparer.ThisHour: return new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0);
-                case DateTimeComparer.LastHour: return new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(-1);
-                case DateTimeComparer.Today: return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
-                case DateTimeComparer.Yesterday: return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0).AddDays(-1);
-                case DateTimeComparer.ThisMonth: return new DateTime(now.Year, now.Month, 1, 0, 0, 0);
-                case DateTimeComparer.LastMonth: return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddMonths(-1);
-                case DateTimeComparer.ThisYear: return new DateTime(now.Year, 1, 1, 0, 0, 0);
-                case DateTimeComparer.LastYear: return new DateTime(now.Year, 1, 1, 0, 0, 0).AddYears(-1);
+                case DateTimeComparer.HourThis: return new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0);
+                case DateTimeComparer.HourLast: return new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(-1);
+                case DateTimeComparer.DayToday: return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
+                case DateTimeComparer.Day_Yesterday: return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0).AddDays(-1);
+                case DateTimeComparer.Day2DaysAgo: return new DateTime(now.Year, now.Month, now.Day, 0, 0, 0).AddDays(-2);
+                case DateTimeComparer.MonthThisMonth: return new DateTime(now.Year, now.Month, 1, 0, 0, 0);
+                case DateTimeComparer.MonthThisLastYear: return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddYears(-1);
+                case DateTimeComparer.MonthThis2YearsYearAgo: return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddYears(-2);
+                case DateTimeComparer.MonthLastMonth: return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddMonths(-1);
+                case DateTimeComparer.MonthLastLastYear: return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddMonths(-1).AddYears(-1);
+                case DateTimeComparer.MonthLast2YearsAgo: return new DateTime(now.Year, now.Month, 1, 0, 0, 0).AddMonths(-1).AddYears(-2);
+                case DateTimeComparer.QuarterThisQuarter: return new DateTime(now.Year, (((now.Month - 1) / 3) * 3) + 1, 1, 0, 0, 0);
+                case DateTimeComparer.QuarterThisLastYear: return new DateTime(now.Year, (((now.Month - 1) / 3) * 3) + 1, 1, 0, 0, 0).AddYears(-1);
+                case DateTimeComparer.QuarterThis2YearsAgo: return new DateTime(now.Year, (((now.Month - 1) / 3) * 3) + 1, 1, 0, 0, 0).AddYears(-2);
+                case DateTimeComparer.QuarterLastQuarter: return new DateTime(now.Year, (((now.Month - 1) / 3) * 3) + 1, 1, 0, 0, 0).AddMonths(-3);
+                case DateTimeComparer.QuarterLastLastYear: return new DateTime(now.Year, (((now.Month - 1) / 3) * 3) + 1, 1, 0, 0, 0).AddMonths(-3).AddYears(-1);
+                case DateTimeComparer.QuarterLast2YearsAgo: return new DateTime(now.Year, (((now.Month - 1) / 3) * 3) + 1, 1, 0, 0, 0).AddMonths(-3).AddYears(-2);
+                case DateTimeComparer.YearThis: return new DateTime(now.Year, 1, 1, 0, 0, 0);
+                case DateTimeComparer.YearLast: return new DateTime(now.Year, 1, 1, 0, 0, 0).AddYears(-1);
+                case DateTimeComparer.Year2YearsAgo: return new DateTime(now.Year, 1, 1, 0, 0, 0).AddYears(-2);
                 default:
                     throw new InvalidEnumException(d, "Not yet implemented");
             }
@@ -296,17 +308,30 @@ namespace AgoRapide.Core {
         private DateTime DateTimeComparerLT => _dateTimeComparerLT ?? (DateTime)(_dateTimeComparerLT = new Func<DateTime>(() => {
             var now = DateTime.Now; var d = Value as DateTimeComparer? ?? throw new InvalidObjectTypeException(Value, typeof(DateTimeComparer));
             switch (d) {
-                case DateTimeComparer.ThisHour:
-                case DateTimeComparer.LastHour:
+                case DateTimeComparer.HourThis:
+                case DateTimeComparer.HourLast:
                     return DateTimeComparerGEQ.AddHours(1);
-                case DateTimeComparer.Today: 
-                case DateTimeComparer.Yesterday:
+                case DateTimeComparer.DayToday:
+                case DateTimeComparer.Day_Yesterday:
+                case DateTimeComparer.Day2DaysAgo:
                     return DateTimeComparerGEQ.AddDays(1);
-                case DateTimeComparer.ThisMonth:
-                case DateTimeComparer.LastMonth:
+                case DateTimeComparer.MonthThisMonth:
+                case DateTimeComparer.MonthThisLastYear:
+                case DateTimeComparer.MonthThis2YearsYearAgo:
+                case DateTimeComparer.MonthLastMonth:
+                case DateTimeComparer.MonthLastLastYear:
+                case DateTimeComparer.MonthLast2YearsAgo:
                     return DateTimeComparerGEQ.AddMonths(1);
-                case DateTimeComparer.ThisYear:
-                case DateTimeComparer.LastYear:
+                case DateTimeComparer.QuarterThisQuarter:
+                case DateTimeComparer.QuarterThisLastYear:
+                case DateTimeComparer.QuarterThis2YearsAgo:
+                case DateTimeComparer.QuarterLastQuarter:
+                case DateTimeComparer.QuarterLastLastYear:
+                case DateTimeComparer.QuarterLast2YearsAgo:
+                    return DateTimeComparerGEQ.AddMonths(3);
+                case DateTimeComparer.YearThis:
+                case DateTimeComparer.YearLast:
+                case DateTimeComparer.Year2YearsAgo:
                     return DateTimeComparerGEQ.AddYears(1);
                 default:
                     throw new InvalidEnumException(d, "Not yet implemented");

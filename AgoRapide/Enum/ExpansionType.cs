@@ -9,7 +9,12 @@ using AgoRapide.Core;
 
 namespace AgoRapide {
     /// <summary>
-    /// TODO: Move to separate file
+    /// TODO: Enum <see cref="DateTimeComparer"/> is candidate for expansion. 
+    /// TODO: For instance as a separate concept called DisjointQuery or similar.
+    /// TODO: Also note how <see cref="DateTimeComparer"/> and <see cref="ExpansionType"/> attack the same type of
+    /// TODO: problem from two opposite directions. 
+    /// TODO: The former changes automatically with time while the latter changes data statically (the point of reference is different).
+    /// TODO: The former is considered more much more efficient (we could add elements like "Last30Days" for instance).
     /// </summary>
     [Enum(AgoRapideEnumType = EnumType.EnumValue)]
     public enum ExpansionType {
