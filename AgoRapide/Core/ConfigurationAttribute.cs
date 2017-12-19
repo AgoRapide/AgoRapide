@@ -50,6 +50,7 @@ namespace AgoRapide.Core {
         public Uri RootUrl { get; private set; }
 
         /// <summary>
+        /// Returns a new instance of <see cref="BaseDatabase"/> for every call. 
         /// Note the useless default value offered in the default instance of <see cref="ConfigurationAttribute"/> offered through <see cref="Util.Configuration"/>
         /// </summary>
         public Func<Type, BaseDatabase> DatabaseGetter { get; private set; }
@@ -59,6 +60,7 @@ namespace AgoRapide.Core {
         /// All other properties have sensible default values.
         /// </summary>
         /// <param name="rootUrl"></param>
+        /// <param name="databaseGetter">This is supposed to return a new instance of <see cref="BaseDatabase"/> for every call.</param>
         public ConfigurationAttribute(string logPath, Uri rootUrl, Func<Type, BaseDatabase> databaseGetter) {
             Description = "Contains all Configuration information for AgoRapide";
             LogPath = logPath ?? throw new ArgumentNullException(nameof(logPath));
