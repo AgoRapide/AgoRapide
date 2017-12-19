@@ -23,8 +23,9 @@ namespace AgoRapide.API {
 
         public Task AuthenticateAsync(System.Web.Http.Filters.HttpAuthenticationContext context, System.Threading.CancellationToken cancellationToken) {
             var errorResultGenerator = new Func<System.Web.Http.Results.UnauthorizedResult>(() => new System.Web.Http.Results.UnauthorizedResult(new System.Net.Http.Headers.AuthenticationHeaderValue[0], context.Request));
+            Database.BaseDatabase database = null;
             try {
-                var database = Util.Configuration.C.DatabaseGetter(GetType());
+                database = Util.Configuration.C.DatabaseGetter(GetType());
 
                 var generatePrincipal = new Action<BaseEntity>(currentUser => {
                     context.Principal = new System.Security.Claims.ClaimsPrincipal(new[] {
@@ -95,6 +96,8 @@ namespace AgoRapide.API {
                 // TODO: instead of returning UnauthorizedResult like below:
                 context.ErrorResult = errorResultGenerator();
                 return Task.FromResult(0);
+            } finally {
+                database?.Dispose();
             }
         }
 
