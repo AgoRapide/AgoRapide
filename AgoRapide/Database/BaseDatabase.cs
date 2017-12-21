@@ -851,7 +851,7 @@ namespace AgoRapide.Database {
                                         toBeDeleted.Add(e.Key);
                                     }
                                 });
-                                toBeDeleted.ForEach(c => isManyParent.Properties.Remove(c));
+                                toBeDeleted.ForEach(c => isManyParent.Properties.TryRemove(c, out _)); /// May already have been removed by <see cref="OperateOnProperty"/>
                                 remainingToAdd.ForEach(s => {
                                     var keyWithIndex = isManyParent.GetNextIsManyId();
                                     isManyParent.Properties[keyWithIndex.IndexAsCoreP] = creator(keyWithIndex, s);

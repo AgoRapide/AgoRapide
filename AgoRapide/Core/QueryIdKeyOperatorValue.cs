@@ -204,7 +204,7 @@ namespace AgoRapide.Core {
                     switch (Operator) {
                         case Operator.NEQ: return false;
                         case Operator.EQ: return true;
-                        default: throw new InvalidEnumException(Operator);
+                            default: throw new InvalidEnumException(Operator, nameof(Operator) + ": " + Operator + " for NULL");
                     }
                 }
                 return false;
@@ -213,7 +213,7 @@ namespace AgoRapide.Core {
                 switch (Operator) {
                     case Operator.NEQ: return true;
                     case Operator.EQ: return false;
-                    default: throw new InvalidEnumException(Operator);
+                    default: throw new InvalidEnumException(Operator, nameof(Operator) + ": " + Operator + " for NULL");
                 }
             }
             switch (Value) {
@@ -225,7 +225,8 @@ namespace AgoRapide.Core {
                         case Operator.EQ: return quintile == p.Percentile.AsQuintile;
                         case Operator.GEQ: return quintile >= p.Percentile.AsQuintile;
                         case Operator.GT: return quintile > p.Percentile.AsQuintile;
-                        default: throw new InvalidEnumException(Operator);
+                        case Operator.NEQ: return quintile != p.Percentile.AsQuintile;
+                        default: throw new InvalidEnumException(Operator, nameof(Operator) + ": " + Operator + " for " + Value.GetType());
                     }
                 case Percentile percentile:
                     if (!p.PercentileIsSet) throw new Property.InvalidPropertyException("!" + nameof(p.PercentileIsSet) + " for " + p.ToString() + ".\r\n" + nameof(entity) + ": " + entity.ToString());
@@ -235,14 +236,27 @@ namespace AgoRapide.Core {
                         case Operator.EQ: return percentile.Value == p.Percentile.Value;
                         case Operator.GEQ: return percentile.Value >= p.Percentile.Value;
                         case Operator.GT: return percentile.Value > p.Percentile.Value;
-                        default: throw new InvalidEnumException(Operator);
+                        case Operator.NEQ: return percentile.Value != p.Percentile.Value;
+                        default: throw new InvalidEnumException(Operator, nameof(Operator) + ": " + Operator + " for " + Value.GetType());
                     }
-                case DateTimeComparer dateTimeComparer:
-                    var dateTime = p.V<DateTime>();
+                case DateTimeComparer dateTimeComparer: {
+                        var dateTime = p.V<DateTime>();
+                        switch (Operator) {
+                            case Operator.EQ: return dateTime >= DateTimeComparerGEQ && dateTime < DateTimeComparerLT;
+                            case Operator.NEQ: return dateTime < DateTimeComparerGEQ || dateTime >= DateTimeComparerLT;
+                            default: throw new InvalidEnumException(Operator, nameof(Operator) + ": " + Operator + " for " + Value.GetType());
+                        }
+                    }
+                case DateTime dateTime:
+                    var entityDateTime = p.V<DateTime>();
                     switch (Operator) {
-                        case Operator.EQ: return dateTime >= DateTimeComparerGEQ && dateTime < DateTimeComparerLT;
-                        case Operator.NEQ: return dateTime < DateTimeComparerGEQ || dateTime >= DateTimeComparerLT;
-                        default: throw new NotImplementedException(nameof(Operator) + ": " + Operator + " for " + Value.GetType());
+                        case Operator.LT: return entityDateTime < dateTime;
+                        case Operator.LEQ: return entityDateTime <= dateTime;
+                        case Operator.EQ: return entityDateTime == dateTime;
+                        case Operator.GEQ: return entityDateTime >= dateTime;
+                        case Operator.GT: return entityDateTime > dateTime;
+                        case Operator.NEQ: return entityDateTime != dateTime;
+                        default: throw new InvalidEnumException(Operator, nameof(Operator) + ": " + Operator + " for " + Value.GetType());
                     }
                 default:
                     switch (Operator) {
@@ -347,7 +361,12 @@ namespace AgoRapide.Core {
         public override string ToString() => "WHERE " + Key.PToString + " " +
             // Operator.ToMathSymbol()  // NOTE: This would be preferred method. More human readable.
             Operator +                  // NOTE: This is chosen method, makes the resulting URL IIS-safe in order to avoid System.Web.HttpException "A potentially dangerous Request.Path value was detected from the client (<)."
-            (Value == null ? " NULL" : (Value.GetType().IsEnum ? (" " + Value) : (" '" + Value + "'")));
+            (Value == null ? " NULL" :
+            (Value.GetType().IsEnum ? (" " + Value) :
+            (" '" +
+            (Value.GetType().Equals(typeof(DateTime)) ? ((DateTime)Value).ToString(Key.A.DateTimeFormat) :
+            Value) +
+            "'"))); // TODO: Add more object types here (or (even better) find a more generic approach to the general issue of converting objects to string in AgoRapide)
 
         /// <summary>
         /// TODO: USE ONE COMMON GENERIC METHOD FOR EnrichKey for all QueryId-classes!!!

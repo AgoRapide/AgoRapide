@@ -327,8 +327,9 @@ namespace AgoRapide.Database {
                             // And also remove from parent's property collection in case object exists somewhere (as a singleton class or similar)
                             if (entity.Properties != null) {
                                 if (property.Key.Key.A.IsMany) {
-                                    if (entity.Properties.GetOrAddIsManyParent(property.Key).Properties.ContainsKey(property.Key.IndexAsCoreP)) {
-                                        entity.Properties.Remove(property.Key.IndexAsCoreP); break;
+                                    var isManyParent = entity.Properties.GetOrAddIsManyParent(property.Key);
+                                    if (isManyParent.Properties.ContainsKey(property.Key.IndexAsCoreP)) {
+                                        isManyParent.Properties.Remove(property.Key.IndexAsCoreP); break;
                                     }
                                 } else if (entity.Properties.ContainsKey(property.Key.Key.CoreP)) {
                                     entity.Properties.Remove(property.Key.Key.CoreP); break;
