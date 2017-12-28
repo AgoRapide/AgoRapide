@@ -132,10 +132,6 @@ namespace AgoRapide {
         /// Note how <see cref="PropertyKeyAttribute.IsMany"/>-properties (#x-properties) are stored in-memory with a <see cref="PropertyKeyAttribute.IsMany"/>-parent and
         /// the different properties as properties under that again with dictionary index equal to <see cref="int.MaxValue"/> minus index
         ///
-        /// Type changed from <see cref="Dictionary{TKey, TValue}"/> to <see cref="ConcurrentDictionary{TKey, TValue}"/> 
-        /// 3 Nov 2017 because of introduction of parallell execution. 
-        /// Note how this led to a chain of changes, introducing <see cref="ConcurrentDictionary{TKey, TValue}"/> all over the system.
-        /// 
         /// TODO: Initialize more deterministically for the different classes.
         /// </summary>        
         public ConcurrentDictionary<CoreP, Property> Properties { get; set; }

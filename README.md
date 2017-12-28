@@ -1,5 +1,5 @@
 # AgoRapide
-Lightweight pragmatic integrated library for creation of .NET REST APIs offering JSON and HTML views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
+Lightweight pragmatic integrated library for creation of .NET REST APIs offering JSON, HTML and CSV views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
 
 &#x1F53A; PLEASE NOTE: AgoRapide is currently in the alpha-stage of development. Do not use it for any production purposes yet. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document! 
 
@@ -8,7 +8,7 @@ Lightweight pragmatic integrated library for creation of .NET REST APIs offering
 # What is AgoRapide?
 (Note: For code examples please scroll further down)
 
-AgoRapide is a .NET library for creation of REST APIs offering JSON and HTML views.
+AgoRapide is a .NET library for creation of REST APIs offering JSON, HTML and CSV views.
 
 AgoRapide is open sourced and MIT-licensed 
 
@@ -18,7 +18,7 @@ AgoRapide is about avoiding repetition. By repetition we mean all kinds of tasks
 
 AgoRapide is an integrated solution encompassing API, documentation, unit-testing and an administrative HTML5-based interface all in one single integrated package.
 
-Through an ingenious URL-mechanism the API is discoverable both through JSON queries and HTML5. A small cost administrative interface integrates easily, eliminating the need for expensive development of separate systems. Documentation and unit-testing is tightly coupled with the code facilitating efficient updates of both.
+Through an ingenious URL-mechanism the API is discoverable both through JSON queries, HTML5 and CSV (Comma Separated Values). A small cost administrative interface integrates easily, eliminating the need for expensive development of separate systems. Documentation and unit-testing is tightly coupled with the code facilitating efficient updates of both.
 
 AgoRapide is also (optionally) a model for backend storage in a single table based on the key-value principle (you do not need to implement this in order to use AgoRapide but may chose a more traditional database approach). AgoRapide "as is" supports PostgreSQL / PostGIS. The backend storage implements automatic history record of all changes to the database.
 

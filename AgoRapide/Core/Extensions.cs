@@ -47,11 +47,6 @@ namespace AgoRapide.Core {
             return retval;
         }
 
-        /// <summary>
-        /// Introduced 3 Nov 2017 in connection with changing <see cref="BaseEntity.Properties"/> to <see cref="ConcurrentDictionary{TKey, TValue}"/>
-        /// </summary>
-        /// <param name="dict"></param>
-        /// <returns></returns>
         [ClassMember(Description =
             "Flattens (for one level only) any -" + nameof(PropertyKeyAttribute.IsMany) + "- found.\r\n" +
             "Useful before calling -" + nameof(BaseDatabase.CreateProperty) + "- / -" + nameof(BaseDatabase.UpdateProperty) + "-.")]
@@ -94,8 +89,6 @@ namespace AgoRapide.Core {
         /// Gives better error messages when adding a value to a directory if key already exists
         /// 
         /// Note how <see cref="AddValue2"/> is more preferable than <see cref="AddValue"/>
-        /// 
-        /// Introduced 3 Nov 2017 in connection with changing <see cref="BaseEntity.Properties"/> to <see cref="ConcurrentDictionary{TKey, TValue}"/>
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>

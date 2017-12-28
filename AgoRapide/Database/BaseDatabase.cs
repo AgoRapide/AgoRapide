@@ -538,6 +538,7 @@ namespace AgoRapide.Database {
         public long CreateEntity<T>(long cid, IEnumerable<(PropertyKeyWithIndex key, object value)> properties, Result result) => CreateEntity(cid, typeof(T), properties, result);
         public long CreateEntity<T>(long cid, Dictionary<CoreP, Property> properties, Result result) => CreateEntity(cid, typeof(T), properties.Values.Select(p => (p.Key, p.Value)), result);
         public long CreateEntity(long cid, Type entityType, Dictionary<CoreP, Property> properties, Result result) => CreateEntity(cid, entityType, properties.Values.Select(p => (p.Key, p.Value)), result);
+        public long CreateEntity(long cid, Type entityType, ConcurrentDictionary<CoreP, Property> properties, Result result) => CreateEntity(cid, entityType, properties.Values.Select(p => (p.Key, p.Value)), result);
         /// <summary>
         /// Returns <see cref="DBField.id"/>
         /// </summary>

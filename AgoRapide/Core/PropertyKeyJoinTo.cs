@@ -48,7 +48,6 @@ namespace AgoRapide.Core {
         /// <param name="entities"></param>
         [ClassMember(Description = "Calculates (or rather copies) properties based on keys returned by -" + nameof(GetKeys) + "-.")]
         public static void CalculateValues(Type type, List<BaseEntity> entities) =>
-            // Introduced Parallel.ForEach 3 Nov 2017
             Parallel.ForEach(type.GetChildProperties().Values.Select(key => key as PropertyKeyJoinTo).Where(key => key != null), key => {
                 entities.ForEach(e => {
                     InvalidObjectTypeException.AssertAssignable(e, type);

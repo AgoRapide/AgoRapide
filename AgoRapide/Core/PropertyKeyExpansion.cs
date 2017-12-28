@@ -52,7 +52,6 @@ namespace AgoRapide.Core {
             Description = "Calculates the actual aggregates based on keys returned by -" + nameof(GetKeys) + "-.",
             LongDescription = "Example: If we have Persons and Projects and every Project has a foreign key LeaderPersonId, then this method will aggregate Count_ProjectLeaderPersonid for every Person.")]
         public static void CalculateValues(Type type, List<BaseEntity> entities) =>
-            // Introduced Parallel.ForEach 3 Nov 2017
             Parallel.ForEach(type.GetChildProperties().Values.Select(key => key as PropertyKeyExpansion).Where(key => key != null), key => {
             var hasLimitedRange = true; var valuesFound = new HashSet<string>();
 

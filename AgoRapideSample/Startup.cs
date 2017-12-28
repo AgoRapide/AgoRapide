@@ -64,7 +64,7 @@ namespace AgoRapideSample {
                 // Note how we set AgoRapide.Core.Util.Configuration twice, first in order to be able to log, second in order to set rootUrl, rootPath and databaseGetter
                 AgoRapide.Core.Util.Configuration = new AgoRapide.Core.Configuration(new AgoRapide.Core.ConfigurationAttribute(
                     logPath: logPath,
-                    rootUrl: environment.rootUrl.ToString(),
+                    rootUrl: environment.rootUrl,
                     databaseGetter: ownersType => BaseController.GetDatabase(ownersType)
                 ) {
                     // Change to different version of JQuery by adding this line:
@@ -114,7 +114,7 @@ namespace AgoRapideSample {
 
                 Log(nameof(AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE), nameof(AgoRapide.Database.PostgreSQLDatabase.SQL_CREATE_TABLE) + ":\r\n\r\n" + new AgoRapide.Database.PostgreSQLDatabase(BaseController.DATABASE_OBJECTS_OWNER, null, BaseController.DATABASE_TABLE_NAME, typeof(Startup)).SQL_CREATE_TABLE + "\r\n");
 
-                var httpConfiguration = new AgoRapide.Core.Startup().Initialize<AgoRapide.Person>(
+                var httpConfiguration = new AgoRapide.Core.CoreStartup().Initialize<AgoRapide.Person>(
                     attributeClassesSignifyingRequiresAuthorization: new List<Type> {
                         typeof(System.Web.Http.AuthorizeAttribute),
                         typeof(AgoRapide.API.BasicAuthenticationAttribute)
