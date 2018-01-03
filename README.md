@@ -14,7 +14,7 @@ AgoRapide is open sourced and MIT-licensed
 
 AgoRapide is a lightweight library with untraditional ideas for specially interested people. In some areas we reinvent the wheel with happy abandon, in other we are more traditional. We hope everything is easily understood. 
 
-AgoRapide is about avoiding repetition. By repetition we mean all kinds of tasks that are similar to each other. Like creating tables, API-methods, objects, properties for objects, populating objects, validating properties. Every time that we see a pattern of repetition we try factor out the common component. See further down for more details about repetition.
+AgoRapide is about avoiding repetition. By repetition we mean all kinds of tasks that are similar to each other. Like creating tables, API-methods, objects, properties for objects, populating objects, validating properties, naming of properties. Every time that we see a pattern of repetition we try to factor out the common component. See further down for more details about repetition.
 
 AgoRapide is an integrated solution encompassing API, documentation, unit-testing and an administrative HTML5-based interface all in one single integrated package.
 
@@ -217,7 +217,7 @@ Example: By choosing a set of persons you automatically gets functionality for d
 
 You may use a traditional database and still leverage all of the API functionality of AgoRapide).
 
-AgoRapide's data storage uses the Entity-Attribute-Value (EAV) table concept, meaning everything is stored as a single table. It still supports relations and some relational integrity through the database layer though, but there are of course obvious tradeoffs to consider. 
+AgoRapide's default data storage uses the Entity-Attribute-Value (EAV) table concept, meaning everything is stored as a single table. It still supports relations and some relational integrity through the database layer though, but there are of course obvious tradeoffs to consider. 
 
 ## Populating object properties is a repetition:
 AgoRapide populates object properties through a general Property collection eliminating the need for specific setters and getters for each and every property. 
@@ -231,6 +231,8 @@ In general the validating logic is given as [System.Attribute](https://msdn.micr
 
 ## Writing unit tests, examples, tool tips and documentation is a repetition:
 AgoRapide combines all these tasks into one. Once you have documented your enums then everything else follows automatically. 
+
+NOTE: As of January 2018 unit tests are not yet implemented. This is due to there being very little to test because an AgoRapide-based application becomes data driven to a high degree. We have not forgotten about unit tests however and we strongly want to add it in future releases.
 
 ## Branches is a repetition:
 (optional for you to apply). 
@@ -268,10 +270,16 @@ api/Customer/WHERE first_name LIKE 'John%'/Property/phone_number. This would cor
 
 With AgoRapide anybody can "write" such reports and yet still the access is controlled through the APIs general access control mechanism.
 
+With the concept of "Contexts" you can create cuts and unions between different sets like:
+Context1: Intersect;Person;WHERE country = 'France'
+Context2: Intersect;Car;WHERE color = 'Red'
+Assuming there being a relationship between Person and Car queries like api/Person/CurrentContext or api/Car/CurrentContext will only show the relevant entities.
+The "Context" concept can also be wrapped up into Reports with basic aggregates being suggested automatically.
+
 ## Easy change of entity model. 
 The entity model can be changed very rapidly. The database schema will usually not change as you change the entity model by using simple SELECT UPDATE statements instead of the more complex CREATE TABLE / ALTER TABLE.
 
-Example: UPDATE p SET name = 'colour' WHERE name = 'color' together with a simple rename of enum P.color to P.colour in the C# code. 
+Example: UPDATE p SET key = 'colour' WHERE key = 'color' together with a simple rename of enum P.color to P.colour in the C# code. 
 
 You do not need to implement specific accessors in your objects. Properties are accessed in a strongly static typed fashion like car.PAs&lt;Colour&gt; (PAs is shorthand for "property as..."). 
 
