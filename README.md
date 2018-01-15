@@ -220,7 +220,7 @@ You may use a traditional database and still leverage all of the API functionali
 AgoRapide's default data storage uses the Entity-Attribute-Value (EAV) table concept, meaning everything is stored as a single table. It still supports relations and some relational integrity through the database layer though, but there are of course obvious tradeoffs to consider. 
 
 ## Populating object properties is a repetition:
-AgoRapide populates object properties through a general Property collection eliminating the need for specific setters and getters for each and every property. 
+AgoRapide populates object properties through a general Property collection eliminating the need for specific setters and getters in C# for each and every property. 
 
 ## Validating properties is a repetition:
 Validation (and cleaning up user input) in AgoRapide is data driven and may be be injected at any stage, 
