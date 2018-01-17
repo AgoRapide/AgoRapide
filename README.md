@@ -1,9 +1,9 @@
 # AgoRapide
 Lightweight pragmatic integrated library for creation of .NET REST APIs offering JSON, HTML and CSV views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
 
-&#x1F53A; PLEASE NOTE: AgoRapide is currently in the alpha-stage of development. Do not use it for any production purposes yet. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document! 
+&#x1F53A; PLEASE NOTE: AgoRapide is currently in the beta-stage of development. Do not use it for any production purposes yet. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document! 
 
-&#9650; Branch v0.1 is the stable one (as of March 2017) to use if you want something that easily compiles and runs locally. The model in use by this branch is a bit outdated however. Feel free to contact author for information about the current (Master) branch.
+Please feel free to contact author for more information.
 
 # What is AgoRapide?
 (Note: For code examples please scroll further down)
@@ -232,7 +232,7 @@ In general the validating logic is given as [System.Attribute](https://msdn.micr
 ## Writing unit tests, examples, tool tips and documentation is a repetition:
 AgoRapide combines all these tasks into one. Once you have documented your enums then everything else follows automatically. 
 
-NOTE: As of January 2018 unit tests are not yet implemented. This is due to there being very little to test because an AgoRapide-based application becomes data driven to a high degree. We have not forgotten about unit tests however and we strongly want to add it in future releases.
+NOTE: As of January 2018 unit tests are not yet implemented. This is due to there being very little to test because an AgoRapide-based application becomes data driven to a high degree. We have not forgotten about unit tests however and we strongly want to add it in future releases (some of the unit tests should be possible to generate 100% automatically since the basic annotation model is very rich in its ability to explain about valid and invalid data). 
 
 ## Branches is a repetition:
 (optional for you to apply). 
@@ -324,14 +324,16 @@ AgoRapide is more C# centric than database centric in the sense that the databas
 
 The database engine, although still a relational one, is thereby utilized in quite a simple manner.
 
-# Has AgoRapide been used for real?
-A philosophy similar to AgoRapide has been used with success in multiple projects where:
+# Where is AgoRapide in use now?
+AgoRapide as a business intelligence system is being used now with great success within companies owned by main developer Bjørn Erling Fløtten.
+
+A philosophy similar to AgoRapide's REST API architecture has also been used with success in multiple other projects where:
 
 The entity model is relatively simple (10-20 types of entities). 
 
 Each entity has lots of field associated with it and the fields change over time (since there is no need to implement accessors for each and every field there is little code to keep updated). 
 
-Entity fields rapidly change name or character as you develop (changing names is extremely simple for instance). 
+Entity fields rapidly change name or character as you develop / specifications changes (changing names is extremely simple for instance). 
 
 The total number of fields is around one thousand. 
 
@@ -340,7 +342,6 @@ The database contains from thousands up to tens of millions of rows.
 Data is more often read from database than written. 
 
 Most of the data fits inside the servers RAM making the aggresive cache mechanism very effective. 
-
 
 # When should I not use AgoRapide?
 AgoRapide is probably less useful if:
@@ -366,11 +367,7 @@ TODO: As of March 2017 we have not worked out how to automate this yet. Contribu
 
 AgoRapide and AgoRapideSample as Nuget packages.
 
-Doing security more "right" while the library is still quite small and easy to change.
-
-Support for OAuth 2.0 in AgoRapideSample. 
-
-Support for relations in user interface (everything is thought through, only time is needed for implementation)
+More security functionality (like OAuth 2.0 for instance, at the moment HTTPS with Basic authentication is implemented)
 
 Unit testing (data driven based on existing annotations). 
 
@@ -384,6 +381,8 @@ Inbuilt support for "traditional" database tables (multiple tables instead of th
 A rudimentary interface useful for administrering your backend, API, and doing support for your customers. 
 
 Example: [HTML interface](http://sample.agorapide.com/api/Car/5109/HTML)&nbsp;&nbsp;[(correspondig data as JSON)](http://sample.agorapide.com/api/Car/5109)
+
+(use credentials 'a' / 'a' for these links)
 
 As you can see the HTML interface is like a clone of the JSON interface with the addition of useful links and documentation. 
 (the current functionality is quite limited but we assume that you get the idea. Similar philosophies has been used to a great extent with success in other applications)
@@ -410,7 +409,7 @@ Yes, of course!
 
 A particular useful feature is impersonating users through the "entity-to-represent" and "represented-by-entity" concept. With this concept the API can give the view of one API client (user) based on the credentials of another API-client (administrative user). 
 
-In practice this means that your support department may see exactly the same data as your customer sees in your application, without the customer having to give away his / her / its password. 
+In practice this means that your support department may see exactly the same data as your customer sees in your application, without the customer having to give away his / her / its password (this also goes for logging into apps using the AgoRapide API).
 
 ## What is AgoRapide.com?
 Old [AgoRapide.com](http://AgoRapide.com) is our earlier implementation of the same idea as our new AgoRapide C# library. 
@@ -419,7 +418,7 @@ AgoRapide.com uses a schema language (see [panSL.org](http://panSL.org)) from wh
 
 AgoRapide.com is also able to generate C# code. The properties as given in the schema language corresponds closely to the "P"-enums in AgoRapide in the sense that as much as possible of the application logic is stored there.
 
-But AgoRapide.com is much more limited since you would totally depend on our server and infrastructure. Neither can the autogenerated C# code from AgoRapide.com be modified and fed back in the schema generator. 
+But AgoRapide.com is much more limited since you would totally depend on our server and infrastructure. Neither can the autogenerated C# code from AgoRapide.com be modified and fed back into the schema generator. 
 
 With the new AgoRapide C# library you write and control your own code. In addition the MIT license of AgoRapide gives you great flexibility in how to deploy your application.
 
