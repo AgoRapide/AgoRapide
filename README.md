@@ -3,7 +3,7 @@ Lightweight pragmatic integrated library for creation of .NET REST APIs offering
 
 &#x1F53A; PLEASE NOTE: AgoRapide is currently in the beta-stage of development. Do not use it for any production purposes yet. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document! 
 
-Please feel free to contact author for more information.
+Please feel free to contact the author for more information.
 
 # What is AgoRapide?
 (Note: For code examples please scroll further down)
@@ -36,7 +36,7 @@ AgoRapide consists of two main areas of functionality, the API and the key-value
 The objects in the entity model consist of a general collection of properties, together with functionality for strongly tagging these properties with meta data. 
 You could use AgoRapideSample as a super light framework for getting started with the AgoRapide library.
 
-AgoRapide is written all-new in C# 7.0 targettng .NET framework 4.5.2 (using Visual Studio 2017). 
+AgoRapide is written all-new in C# 7.0 targettng .NET framework 4.7 (using Visual Studio 2017). 
 
 The compiled DLLs should be possible to reference in older environments (like Visual Studio 2015 
 and C# 6.0 for instance, or something even older, but it has not been tested yet)
