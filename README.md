@@ -1,3 +1,6 @@
+"The shape of a program should reflect only the problem it needs to solve." Source: [Revenge of the Nerds - Paul Graham](http://www.paulgraham.com/icad.html)
+
+
 # AgoRapide
 Lightweight pragmatic integrated library for creation of .NET REST APIs offering JSON, HTML and CSV views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
 
