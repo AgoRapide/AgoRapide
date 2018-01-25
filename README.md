@@ -1,4 +1,4 @@
-"The shape of a program should reflect only the problem it needs to solve." Source: [Revenge of the Nerds - Paul Graham](http://www.paulgraham.com/icad.html)
+"The shape of a program should reflect only the problem it needs to solve" - [Paul Graham - Revenge of the Nerds](http://www.paulgraham.com/icad.html).
 
 
 # AgoRapide
