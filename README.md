@@ -306,11 +306,11 @@ This "Context" concept can also be wrapped up into Reports with basic aggregates
 In general AgoRapide is quite suitable as a basis for a lightweight business intelligence / reporting system. There is a lot more functionality inbuilt like fast synchronization against other data sources. This can again be combined with in-memory tagging of data which makes for a very fast efficient drill-down interface.
 
 ## Easy change of entity model
-The entity model can be changed very rapidly. The database schema will usually not change as you change the entity model by using simple SELECT UPDATE statements instead of the more complex CREATE TABLE / ALTER TABLE.
+The entity model can be changed very rapidly. The database schema will usually not change since you change the entity model by using simple UPDATE statements instead of the more complex CREATE TABLE / ALTER TABLE.
 
 Example: UPDATE p SET key = 'colour' WHERE key = 'color' together with a simple rename of enum P.color to P.colour in the C# code. 
 
-You do not need to implement specific accessors in your objects. Properties are accessed in a strongly static typed fashion like car.PAs&lt;Colour&gt; (PAs is shorthand for "property as..."). 
+You do not need to implement specific accessors in your objects. Properties are accessed in a strongly static typed fashion like car.PV&lt;Colour&gt; (PV is shorthand for "property value"). 
 
 Changes in relations can likewise be adjusted through UPDATE statements. 
 
