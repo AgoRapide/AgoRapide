@@ -399,11 +399,11 @@ namespace AgoRapide.Core {
                     ValidatorAndParser = value => long.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
                         "Invalid as " + A.Type + ".");
                 } else if (typeof(double).Equals(A.Type)) {
-                    ValidatorAndParser = value => {
-                        throw new NotImplementedException(
-                            "Validator for type " + A.Type.ToStringShort() + " is NotYetImplemented.\r\n" +
-                            "Details: " + A.ToString());
-                    };
+                    ValidatorAndParser = value => Util.DoubleTryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
+                        "Invalid as " + A.Type + ".");
+                    //throw new NotImplementedException(
+                    //        "Validator for type " + A.Type.ToStringShort() + " is NotYetImplemented.\r\n" +
+                    //        "Details: " + A.ToString());
                 } else if (typeof(bool).Equals(A.Type)) {
                     ValidatorAndParser = value => bool.TryParse(value, out var temp) ? ParseResult.Create(this, temp) : ParseResult.Create(
                         "Invalid as " + A.Type + ", use '" + true.ToString() + "' or '" + false.ToString() + "'");
