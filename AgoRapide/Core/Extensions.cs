@@ -219,7 +219,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static TValue GetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer = null) {
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
-            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
+            return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException(Util.BreakpointEnabler + "Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
         public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null); // What we really would want is "where T : Enum"
