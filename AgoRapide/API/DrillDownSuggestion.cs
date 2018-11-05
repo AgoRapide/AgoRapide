@@ -227,7 +227,7 @@ namespace AgoRapide.API {
                 var addDateTimeComparer = key.Key.A.Type == typeof(DateTime);
 
                 /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
-                if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange) {
+                if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange && !includeAllSuggestions) {
                     // Our only choice is limiting to NULL or NOT NULL values.  
                     if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) { // None are set.
                         if (addDateTimeComparer) goto calculate_objStrValues;
@@ -237,7 +237,9 @@ namespace AgoRapide.API {
                         return; // None are set.
                     }
                     if (!includeAllSuggestions && entities.All(e => e.Properties != null && e.Properties.TryGetValue(key.Key.CoreP, out _))) { // All are set.
-                        if (addDateTimeComparer) goto calculate_objStrValues;
+                        if (addDateTimeComparer) {
+                            goto calculate_objStrValues;
+                        }
                         if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER! 
                             retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                         }
@@ -303,7 +305,7 @@ namespace AgoRapide.API {
                     if (!key.Key.A.OperatorsAsHashSet.Contains(o)) return;
 
                     var objStrValuesForThisOperator = objStrValues;
-                    if (o == Operator.EQ && !key.Key.A.HasLimitedRange) {
+                    if (o == Operator.EQ && !key.Key.A.HasLimitedRange && !includeAllSuggestions) {
                         /// NOTE: Count > 50 is arbitrarily chosen.
                         /// NOTE: Note that for only <see cref="Operator.EQ"/> this will only happen with Count == 1 because of filtering out above for HasLimitedRange
                         /// NOTE: For <see cref="DateTime"/>, long and similar types that can be compared like <see cref="Operator.LT"/> and similar 
