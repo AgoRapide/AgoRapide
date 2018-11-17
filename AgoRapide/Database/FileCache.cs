@@ -47,7 +47,7 @@ namespace AgoRapide.Database {
         /// <summary>
         /// TODO: Improve in this. Enable storing of strings containing linefeeds for instead. 
         /// </summary>
-        private const string FIELD_SEPARATOR = "\r\n";
+        private const string FIELD_SEPARATOR = "\\\\\r\n";
 
         private static ConcurrentDictionary<Type, List<PropertyKey>> _propertyKeyCache = new ConcurrentDictionary<Type, List<PropertyKey>>();
         [ClassMember(
