@@ -350,6 +350,9 @@ namespace AgoRapide.Core {
         private string _HTMLPostfixIndicatorWithoutLeadingSlashToLower;
         public string HTMLPostfixIndicatorWithoutLeadingSlashToLower => _HTMLPostfixIndicatorWithoutLeadingSlashToLower ?? (_HTMLPostfixIndicatorWithoutLeadingSlashToLower = HTMLPostfixIndicatorWithoutLeadingSlash.ToLower());
 
+        [ClassMember(Description = "Maximum length that will be shown for strings in -" + nameof(BaseEntity.ToHTMLTableRow) + "- representation")]
+        public int HTMLTableRowStringMaxLength { get; set; } = 80;
+
         [ClassMember(Description = "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.CSV) + "- is desired by client.")]
         public string CSVPostfixIndicator { get; set; } = "/CSV";
 
