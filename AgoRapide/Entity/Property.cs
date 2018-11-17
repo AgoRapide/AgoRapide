@@ -389,42 +389,58 @@ namespace AgoRapide {
         /// Public accessible from outside as <see cref="V{T}"/> (as V[HTML]), that is, made private on purpose.
         /// </summary>
         /// <returns></returns>
-        private HTML ValueHTML => _valueHTML ?? (_valueHTML = new HTML(new Func<string>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
+        private HTML ValueHTML => _valueHTML ?? (_valueHTML = new Func<HTML>(() => {  // => _valueHTMLCache.GetOrAdd(request.ResponseFormat, dummy => {
             _showValueHTMLSeparate = true;
             switch (Key.Key.CoreP) {
                 case CoreP.QueryId: {
                         var v = V<QueryId>();
-                        return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v.ToString(), (Parent != null ? Parent.GetType() : typeof(BaseEntity)), v);
+                        return new HTML(
+                            APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v.ToString(), (Parent != null ? Parent.GetType() : typeof(BaseEntity))), 
+                            originalString: null
+                        );
                     }
                 case CoreP.DBId: {
                         var v = V<string>();
-                        return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
-                           (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
+                        return new HTML(
+                            APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
+                               (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
                                 Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
                                 typeof(BaseEntity)
-                           ), new QueryIdInteger(V<long>()));
+                           ), new QueryIdInteger(V<long>())),
+                            originalString: null
+                        );
                     }
                 default: {
                         var v = V<string>();
                         if (Key.Key.A.ForeignKeyOf != null) {
                             var foreignKey = V<long>();
-                            return APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex,
-                                InMemoryCache.EntityCache.TryGetValue(foreignKey, out var foreignEntity) ? foreignEntity.IdFriendly : v,
-                                Key.Key.A.ForeignKeyOf, new QueryIdInteger(foreignKey));
+                            return new HTML(
+                                APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex,
+                                    InMemoryCache.EntityCache.TryGetValue(foreignKey, out var foreignEntity) ? foreignEntity.IdFriendly : v,
+                                    Key.Key.A.ForeignKeyOf, new QueryIdInteger(foreignKey)), 
+                                originalString: null
+                            );
                         }
                         if (Key.Key.A.IsDocumentation) {
-                            return Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>");
-                            // TODO: REMOVE COMMENTED OUT CODE. 12 Sep 2017: Removed check for !ValueA.IsDefault
-                            // } else if (!ValueA.IsDefault && Documentator.Keys.TryGetValue(v, out var list)) {
+                            return new HTML(
+                                Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>"), 
+                                originalString: v /// Important, add original string in order to show a shorter version in <see cref="BaseEntity.ToHTMLTableRow"/>
+                            );
                         } else if (Documentator.Keys.TryGetValue(v, out var list)) {
-                            return Documentator.GetSingleReplacement(v, list);
+                            return new HTML(
+                                Documentator.GetSingleReplacement(v, list), 
+                                originalString: null
+                            );
                         } else {
                             _showValueHTMLSeparate = false;
-                            return v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance) + (Key.Key.A.Unit == null ? "" : ("&nbsp;" + Key.Key.A.Unit.HTMLEncode()));
+                            return new HTML(
+                                v.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance) + (Key.Key.A.Unit == null ? "" : ("&nbsp;" + Key.Key.A.Unit.HTMLEncode())),
+                                originalString: v /// Important, add original string in order to show a shorter version in <see cref="BaseEntity.ToHTMLTableRow"/>
+                            );
                         }
                     }
             }
-        })()));
+        })());
 
         public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + _stringValue + "' to " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
         /// <summary>
@@ -449,7 +465,9 @@ namespace AgoRapide {
 
             if (IsIsManyParent) {
                 if (typeof(HTML).Equals(t)) {
-                    value = (T)(_value = new HTML(string.Join(", ", Properties.Select(p => p.Value.V<HTML>())))); // Note caching in _value
+                    value = (T)(_value = new HTML( // Note caching in _value
+                        string.Join(", ", Properties.Select(p => p.Value.V<HTML>())),
+                        originalString: string.Join(", ", Properties.Select(p => p.Value.V<string>())))); 
                     return true;
                 } else if (typeof(string).Equals(t)) {
                     value = (T)(_value = string.Join(", ", Properties.Select(p => p.Value.V<string>()))); // Note caching in _value
@@ -619,7 +637,7 @@ namespace AgoRapide {
                     // Note how passwords are not shown (although they are stored salted and hashed and therefore kind of "protected" we still do not want to show them)
                     (a.IsPassword ? "[SET]" : (IsTemplateOnly ? "" : ValueHTML.ToString())) : /// TODO: Add support for both <see cref="ValueHTML"/> AND <see cref="IsChangeableByCurrentUser"/>"/>
                     (
-                        (IsTemplateOnly || !ShowValueHTMLSeparate ? "" : (ValueHTML + "&nbsp;")) + /// Added <see cref="ValueHTML"/> 21 Jun 2017
+                        (IsTemplateOnly || !ShowValueHTMLSeparate ? "" : (ValueHTML.ToString() + "&nbsp;")) + /// Added <see cref="ValueHTML"/> 21 Jun 2017
                         a.Size.ToHTMLStartTag() +
                             "id=\"input_" + KeyHTML + "\"" +
                             (!a.IsPassword ? "" : " type=\"password\"") +
@@ -740,8 +758,13 @@ namespace AgoRapide {
             // TODO: Add helptext for this (or remove it).
             retval.AppendLine("<tr><td>Index</td><td>" + (Key.Key.A.IsMany ? Key.Index.ToString() : "&nbsp;") + "</td></tr>\r\n");
 
+            // TODO: REMOVE COMMENTED OUT CODE:
+            // Old (somewhat confusing) method for showing value (from before 17 Nov 2018)
             /// TODO: Maybe keep information about from which <see cref="DBField"/> <see cref="_stringValue"/> originated?
-            retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? Value : "[NULL]") + "</td></tr>\r\n");
+            // retval.AppendLine("<tr><td>Value</td><td>" + (_stringValue != null ? Value : "[NULL]") + "</td></tr>\r\n");
+
+            retval.AppendLine("<tr><td>Value</td><td>" + (TryGetV<HTML>(out var html) ? html.ToString() : "[N/A]") + "</td></tr>\r\n");
+
             if (_percentile != null) retval.AppendLine("<tr><td>" + nameof(Percentile) + "</td><td>" + _percentile + "</td></tr>\r\n");
 
             adder(DBField.valid, Valid?.ToString(DateTimeFormat.DateHourMinSec));
@@ -794,7 +817,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 2, Value
                 // --------------------
-                (a.IsPassword ? "[SET]" : V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ")) +request.CSVFieldSeparator + // Note replacement here with : and //. TODO: Document better / create alternatives
+                (a.IsPassword ? "[SET]" : V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ")) + request.CSVFieldSeparator + // Note replacement here with : and //. TODO: Document better / create alternatives
 
                 a.Unit + request.CSVFieldSeparator +
 
@@ -925,13 +948,44 @@ namespace AgoRapide {
         /// </summary>
         public class HTML {
             public string HTMLString { get; private set; }
+            private string _originalString;
             /// <summary>
             /// </summary>
             /// <param name="_html">NOTE: This should already have been HTML encoded</param>
-            public HTML(string _html) => HTMLString = _html ?? throw new ArgumentNullException(nameof(_html));
+            /// <param name="originalString">
+            /// Should be given when <paramref name="_html"/> is somewhat long 
+            /// (compared to <see cref="ConfigurationAttribute.HTMLTableRowStringMaxLength"/>) 
+            /// in order for <see cref="ToString(int, bool)"/> to be able to shorten it down. 
+            /// 
+            /// Should be null if the original string does not lend itself well to shortening.
+            /// 
+            /// (note that shortening the original string is considered safer than trying to shorten 
+            /// something already HTML-encoded)
+            /// </param>
+            public HTML(string _html, string originalString) {
+                HTMLString = _html ?? throw new ArgumentNullException(nameof(_html));
+                _originalString = originalString;
+            }
             public override string ToString() => HTMLString;
 
-            public static HTML Default = new HTML("");
+            /// <summary>
+            /// Overload suitable for use by <see cref="Property.ToHTMLTableRow"/> where we often want
+            /// to show only part of the full value. 
+            /// 
+            /// If only part of the full value is shown then 
+            /// the rest will be hidden through <see cref="Extensions.HTMLEncloseWithinTooltip"/>
+            /// (but only if constructor was called with value for original string originally, if not the full value will be shown anyway)
+            /// </summary>
+            /// <param name="maxLength"></param>
+            /// <returns></returns>
+            public string ToString(int maxLength) {
+                if (_originalString == null || _originalString.Length <= maxLength) return ToString();
+                /// (note that shortening the original string is considered safer than trying to shorten 
+                /// something already HTML-encoded)
+                return _originalString.HTMLEncodeAndEnrich(APICommandCreator.HTMLInstance, maxLength);
+            }
+
+            public static HTML Default = new HTML("", null);
         }
     }
 
@@ -1014,7 +1068,7 @@ namespace AgoRapide {
             /// threw an exception because it can not set any <see cref="PropertyKeyAttributeEnriched.ValidatorAndParser"/> for object.
             /// (the issue is really that the type of <see cref="PropertyP.PropertyValue"/> depends on <see cref="PropertyP.PropertyKey"/>, and by using
             /// string <see cref="PropertyKeyAttributeEnriched.Initialize"/> is able to at least ensure the presence of a value (not null, not empty))
-            Type = typeof(string))] 
+            Type = typeof(string))]
         PropertyValue,
 
         [PropertyKey(Description = "Designates the column in an HTML table in which a Save-button is placed if relevant")]
