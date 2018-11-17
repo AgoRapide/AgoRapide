@@ -132,8 +132,8 @@ namespace AgoRapide.Database {
             var externalPrimaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
 
             var internalEntities = db.GetAllEntities(type);
-            // var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary(e => e.PV<long>(externalPrimaryKey), e => e);
-            var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary(e => e.Properties.GetValue(externalPrimaryKey.Key.CoreP, () => e.ToString()).Value, e => e);
+            var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary2(e => e.Properties.GetValue(externalPrimaryKey.Key.CoreP, () => e.ToString()).Value, e => e);
+
             result.Count(AggregationKey.Get(AggregationType.Count, typeof(Property), CountP.CountTotal.A()).Key.CoreP, externalEntities.Aggregate(0L, (current, e) => current + e.Properties.Count));
             var newCount = 0;
             externalEntities.ForEach(e => { /// Reconcile through <see cref="PropertyKeyAttribute.ExternalPrimaryKeyOf"/>
