@@ -395,7 +395,12 @@ namespace AgoRapide {
                 case CoreP.QueryId: {
                         var v = V<QueryId>();
                         return new HTML(
-                            APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v.ToString(), (Parent != null ? Parent.GetType() : typeof(BaseEntity))), 
+                            APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v.ToString(), 
+                            (Parent != null ? 
+                                Parent.GetType() : 
+                                typeof(BaseEntity)),
+                                parameters: v.ToString() // Added 17 Nov 2018 as bug-fix.
+                            ), 
                             originalString: null
                         );
                     }
@@ -403,10 +408,12 @@ namespace AgoRapide {
                         var v = V<string>();
                         return new HTML(
                             APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v,
-                               (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
+                                (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
                                 Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
                                 typeof(BaseEntity)
-                           ), new QueryIdInteger(V<long>())),
+                                ), 
+                                new QueryIdInteger(V<long>())
+                            ),
                             originalString: null
                         );
                     }
