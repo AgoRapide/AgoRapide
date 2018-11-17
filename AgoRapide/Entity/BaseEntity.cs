@@ -171,8 +171,8 @@ namespace AgoRapide {
         /// entity.PVM{Money}()
         /// instead of
         /// entity.PV{Money}(P.money). 
-        /// 
         /// Calls <see cref="PV{T}(TProperty)"/> vith help of <see cref="Util.MapTToTProperty{T, TProperty}"/> (which throws Exception if no mapping exists).
+        /// (in other words, the 'M' in 'PVM' stands for Map)
         /// 
         /// Note that this is intentionally called PVM instead of PV because there is too great risk of confusion between these two in practical use.
         /// </summary>
@@ -187,6 +187,7 @@ namespace AgoRapide {
         /// entity.PV(P.money, Money.Zero). 
         /// 
         /// Calls <see cref="PV{T}(TProperty, T)"/> vith help of <see cref="Util.MapTToTProperty{T, TProperty}"/> (which throws Exception if no mapping exists).
+        /// (in other words, the 'M' in 'PVM' stands for Map)
         /// 
         /// Note that this is intentionally called PVM instead of PV because there is too great risk of confusion between these two in practical use.
         /// </summary>
@@ -232,6 +233,7 @@ namespace AgoRapide {
         /// entity.TryGetPV(P.money, out Money money). 
         /// 
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/> vith help of <see cref="Util.MapTToTProperty{T, TProperty}"/> (which throws Exception if no mapping exists).
+        /// (in other words, the 'M' in 'TryGetPVM' stands for Map)
         /// 
         /// Note that this is intentionally called TryGetPVM instead of TryGetPV because there is too great risk of confusion between these two in practical use.
         /// </summary>
@@ -301,6 +303,7 @@ namespace AgoRapide {
         /// entity.AddProperty(P.money, new Money("EUR 42")). 
         /// 
         /// Calls <see cref="AddProperty{T}"/> vith help of <see cref="Util.MapTToTProperty{T, TProperty}"/> (which throws Exception if no mapping exists).
+        /// (in other words, the 'M' in 'AddPropertyM' stands for Map)
         /// 
         /// Note that this is intentionally called AddPropertyM instead of AddProperty because there is too great risk of confusion between these two in practical use.
         /// </summary>
@@ -458,7 +461,7 @@ namespace AgoRapide {
         public virtual string ToHTMLTableRow(Request request) => "<tr><td>" +
             (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)) + "</td>" + /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
             string.Join("", ToHTMLTableColumns(request).Select(key => "<td" + (key.Key.A.NumberFormat == NumberFormat.None ? "" : " align=\"right\"") + ">" + (
-                Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString() : "&nbsp;"
+                Properties.TryGetValue(key.Key.CoreP, out var p) ? p.V<Property.HTML>().ToString(Util.Configuration.C.HTMLTableRowStringMaxLength) : "&nbsp;"
             ) + "</td>")) +
             "</tr>\r\n";
 
