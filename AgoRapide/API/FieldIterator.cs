@@ -92,7 +92,7 @@ namespace AgoRapide.API {
 
         public override string ToHTMLTableRow(Request request) => "<tr><td>" +
             LeftmostColumn.HTMLEncode() + "</td>" + string.Join("", Columns.Select(p => "<td" + (p.Key.Key.A.NumberFormat == NumberFormat.None ? "" : " align=\"right\"") + ">" +
-                p.V<Property.HTML>() + "</td>"));
+                p.V<Property.HTML>().ToString() + "</td>"));
 
         public override string ToHTMLDetailed(Request request) => throw new NotImplementedException("Would be rather meaningless to implement anyway.");
     
