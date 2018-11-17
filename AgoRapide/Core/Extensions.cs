@@ -530,7 +530,7 @@ namespace AgoRapide.Core {
             }
         }
 
-        public static string ToString(this long number, NumberFormat resolution) { 
+        public static string ToString(this long number, NumberFormat resolution) {
             switch (resolution) {
                 case NumberFormat.None:
                 case NumberFormat.Id: return number.ToString(Util.Configuration.C.NumberIdFormat);
@@ -883,7 +883,13 @@ namespace AgoRapide.Core {
 
         public static List<string> Split(this string _string, string separator) => _string.Split(new string[] { separator }, StringSplitOptions.None).ToList();
 
-        public static string HTMLEncode(this string _string) => System.Net.WebUtility.HtmlEncode(_string);
+        public static string HTMLEncode(this string _string, int? maxLength = null) {
+            if (maxLength != null && _string.Length > maxLength) {
+                return System.Net.WebUtility.HtmlEncode(_string.Substring(0, (int)maxLength) + "...").
+                    HTMLEncloseWithinTooltip(_string);
+            }
+            return System.Net.WebUtility.HtmlEncode(_string);
+        }
         /// <summary>
         /// 1) Adds {br} to every new line
         /// 2) Turns into hyperlinks if <paramref name="_string"/>.StartsWith "http?//"
@@ -891,14 +897,26 @@ namespace AgoRapide.Core {
         /// TODO: Add other enhancements
         /// </summary>
         /// <param name="_string"></param>
+        /// <param name="api"></param>
+        /// <param name="maxLength">
+        /// Maximum length of <paramref name="_string"/> to show. The rest will be handled by <see cref="HTMLEncloseWithinTooltip"/>. 
+        /// Note that applies to each separate line of <paramref name="_string"/>, not the whole.
+        /// </param>
         /// <returns></returns>
-        public static string HTMLEncodeAndEnrich(this string _string, APICommandCreator api) {
+        public static string HTMLEncodeAndEnrich(this string _string, APICommandCreator api, int? maxLength = null) {
             if (_string.StartsWith("http://") || _string.StartsWith("https://")) {
-                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s +
-                    (api.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator) ? Util.Configuration.C.HTMLPostfixIndicator : "") +
-                "\">" + s.HTMLEncode() + "</a>"));
+                var b = Util.Configuration.C.BaseUrl.ToString();
+                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (
+                    (
+                        s.StartsWith(b) && // Added restriction to only internal links at 16 Nov 2018.
+                        api.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator)
+                    ) ?
+                    Util.Configuration.C.HTMLPostfixIndicator :  // For internal links (within AgoRapide-site), keep result of clicking link in HTML-format also in HTML-format.
+                    "" /// For external links or when result is not <see cref="ResponseFormat.HTML"/> (like <see cref="ResponseFormat.JSON"/> or <see cref="ResponseFormat.CSV"/>), do not modify link
+                ) +
+                "\">" + s.HTMLEncode(maxLength) + "</a>"));
             }
-            return HTMLEncode(_string).Replace("\r\n", "\r\n<br>");
+            return _string.HTMLEncode(maxLength).Replace("\r\n", "\r\n<br>");
         }
 
         /// <summary>
@@ -909,7 +927,7 @@ namespace AgoRapide.Core {
         /// <param name="html">Already encoded as HTML</param>
         /// <param name="tooltip">Not to be encoded as HTML. May be null or empty in which case only <paramref name="html"/> will be returned</param>
         /// <returns></returns>
-        public static string HTMLEncloseWithinTooltip(this string html, string tooltip, bool excludeHintThatTooltipExists=false) => string.IsNullOrEmpty(tooltip) ? html : "<span title=\"" + tooltip.HTMLEncode() + "\">" + html + (excludeHintThatTooltipExists ? "" : " (+)") + "</span>";
+        public static string HTMLEncloseWithinTooltip(this string html, string tooltip, bool excludeHintThatTooltipExists = false) => string.IsNullOrEmpty(tooltip) ? html : "<span title=\"" + tooltip.HTMLEncode() + "\">" + html + (excludeHintThatTooltipExists ? "" : " (+)") + "</span>";
 
         /// <summary>
         /// Encloses <paramref name="html"/> within toogle-click to show / hide. 
@@ -921,7 +939,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static string HTMLEncloseWithInVisibilityToggle(this string title, string html) {
             var id = Util.GetNextId();
-            return 
+            return
                 "<div id=\"header_" + id + "\" name=\"header_" + id + "\" onclick=\"try { " +
                     "$('#inner_" + id + "').toggle(); " +
                     "} catch (err) { console.log(err.toString()); } return false;\">" +
