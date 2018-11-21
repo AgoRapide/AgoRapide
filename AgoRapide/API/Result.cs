@@ -294,6 +294,71 @@ namespace AgoRapide.API {
         }
 
         /// <summary>
+        /// There are three levels of packaging PDF information.
+        /// <see cref="PDFView.GenerateResult"/>
+        ///   <see cref="PDFView.GetPDFStart"/>
+        ///   <see cref="Result.ToPDFDetailed"/>
+        ///     <see cref="BaseEntity.ToPDFDetailed"/> (called from <see cref="Result.ToPDFDetailed"/>)
+        ///     <see cref="Result.ToPDFDetailed"/> (actual result, inserts itself at "!--DELIMITER--" left by <see cref="BaseEntity.ToPDFDetailed"/>). 
+        ///     <see cref="BaseEntity.ToPDFDetailed"/> (called from <see cref="Result.ToPDFDetailed"/>)
+        ///   <see cref="PDFView.GetPDFEnd"/>
+        /// 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [ClassMember(Description = "Uses the base method -" + nameof(BaseEntity.ToPDFDetailed) + "- for actual \"packaging\" of information")]
+        public override string ToPDFDetailed(Request request) {
+            AdjustAccordingToResultCodeAndMethod(request);
+            var retval = new StringBuilder();
+            if (SingleEntityResult != null) {
+                if (SingleEntityResult is Result) throw new InvalidObjectTypeException(SingleEntityResult, "Would have resulted in recursive call in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " if allowed");
+                retval.Append(SingleEntityResult.ToPDFDetailed(request).Replace("<!--DELIMITER-->",""));
+            } else if (MultipleEntitiesResult != null) {
+                if (MultipleEntitiesResult.Count == 0) {
+                    retval.AppendLine("No entities resulted from your query");
+                } else {
+
+                    if (request.URL.ToString().Contains("/CurrentContext/") && request.CurrentUser != null) { // URL as shown in header is not sufficient to explain where data comes from.
+                        retval.AppendLine();
+                        request.CurrentUser.PV<List<Context>>(CoreP.Context.A()).ForEach(c => retval.AppendLine(c.ToString()));
+                    }
+
+                    var types = MultipleEntitiesResult.Select(e => e.GetType()).Distinct().ToList();
+                    if (types.Count > 1) retval.AppendLine("Total entities" + request.PDFFieldSeparator + MultipleEntitiesResult.Count);
+                    types.ForEach(t => { /// Split up separate tables for each type because <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="BaseEntity.ToHTMLTableRow"/> are not compatible between different types
+                        // TODO: Note the (potentially performance degrading) sorting. It is not implemented for JSON on purpose.
+                        var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
+                        retval.AppendLine();
+                        retval.AppendLine("Entities of type " + t.ToStringVeryShort() + request.PDFFieldSeparator + thisTypeSorted.Count);
+                        retval.AppendLine();
+                        /// Note how PDF views are always supposed to be a detailed view
+                        /// (we are not really using <see cref="BaseEntity.ToPDFTableRowHeading"/> or <see cref="BaseEntity.ToPDFTableRow"/>
+                        /// In other words, the following is not relevant:
+                        //retval.AppendLine(thisTypeSorted[0].ToPDFTableRowHeading(request));
+                        //retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToPDFTableRow(request))));
+
+                        retval.AppendLine(string.Join("\r\n---------\r\n", thisTypeSorted.Select(e => e.ToPDFDetailed(request).Replace("<!--DELIMITER-->", ""))));
+                    });
+                }
+            } else if (ResultCode == ResultCode.ok) {
+                /// Do not bother with explaining. 
+                /// Our base method <see cref="BaseEntity.ToPDFDetailed"/> will return the actual result (see below).
+            } else {
+                retval.AppendLine("\r\nNo result from your query\r\n");
+                /// Our base method <see cref="BaseEntity.ToPDFDetailed"/> will return details needed (see below).
+            }
+            // TODO: Push all necessary TeX encodings like this down to the lowest possible level (where the TeX-output is actually generated)
+            retval.Replace("_", "\\_").Replace("&","\\&").Replace("#","\\#");
+
+            // TOOD: Remove this. Usually bug in non-related class related to scraping of HTML-pages
+            retval.Replace("Ã¥", "å");
+
+            /// Note how <see cref="BaseEntity.ToPDFDetailed"/> contains special code for <see cref="Result"/> hiding type and name
+            return base.ToPDFDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
+        }
+
+
+        /// <summary>
         /// There are three levels of packaging CSV information.
         /// <see cref="CSVView.GenerateResult"/>
         ///   <see cref="CSVView.GetCSVStart"/>
@@ -339,7 +404,7 @@ namespace AgoRapide.API {
                 /// Do not bother with explaining. 
                 /// Our base method <see cref="BaseEntity.ToCSVDetailed"/> will return the actual result (see below).
             } else {
-                retval.AppendLine("<p>No result from your query</p>");
+                retval.AppendLine("\r\nNo result from your query\r\n");
                 /// Our base method <see cref="BaseEntity.ToCSVDetailed"/> will return details needed (see below).
             }
 

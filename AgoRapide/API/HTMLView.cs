@@ -196,8 +196,9 @@ namespace AgoRapide.API {
         public virtual string GetHTMLEnd() =>
             Request.Method.MA.CoreMethod == CoreAPIMethod.RootIndex ? "" : ( /// <see cref="CoreAPIMethod.RootIndex"/> is only presented as <see cref="ResponseFormat.HTML"/>
             "<br>\r\n" +
-            "<p><a href=\"" + Request.JSONUrl + "\">" + ResponseFormat.JSON + " format for this request</a></p>\r\n<p>" +
-            "<p><a href=\"" + Request.CSVUrl + "\">" + ResponseFormat.CSV + " format for this request</a></p>\r\n<p>" +
+            "<p><a href=\"" + Request.JSONUrl + "\">" + ResponseFormat.JSON + "-format for this request</a></p>\r\n<p>" +
+            "<p><a href=\"" + Request.PDFUrl + "\">" + ResponseFormat.PDF + "-format for this request</a></p>\r\n<p>" +
+            "<p><a href=\"" + Request.CSVUrl + "\">" + ResponseFormat.CSV + "-format for this request</a></p>\r\n<p>" +
             (Request.CurrentUser != null ? "" : NotLoggedInExplanation) +
             "</body>\r\n" +
             "</html>\r\n");

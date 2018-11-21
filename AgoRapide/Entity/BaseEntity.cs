@@ -642,6 +642,161 @@ namespace AgoRapide {
         }
 
         private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrder
+            List<PropertyKey>> _PDFTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        /// <summary>
+        /// Note that in addition to the columns returned by <see cref="ToPDFTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToPDFTableRowHeading"/> and <see cref="ToPDFTableRow"/>
+        /// 
+        /// NOTE: If you want to override this method in your subclass then remember to always override correspondingly for 
+        /// NOTE: <see cref="ToPDFTableColumns"/>, <see cref="BaseEntity.ToPDFTableRowHeading"/> and <see cref="BaseEntity.ToPDFTableRow"/>
+        /// 
+        /// For examples of overriding see <see cref="APIMethod.ToPDFTableColumns"/>, <see cref="Property.ToPDFTableColumns"/> and <see cref="GeneralQueryResult.ToPDFTableColumns"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual List<PropertyKey> ToPDFTableColumns(Request request) => _PDFTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => GetType().GetChildPropertiesByPriority(request.PriorityOrderLimit));
+
+        private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrder
+            string> _PDFTableRowHeadingCache = new ConcurrentDictionary<string, string>();
+        /// <summary>
+        /// TODO: Most probably not relevant since PDF views are supposed to always be a detailed view.
+        /// 
+        /// May be overridden if you need finer control about how to present your entities.
+        /// 
+        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToPDFTableRowHeading"/> and <see cref="BaseEntity.ToPDFTableRow"/>
+        /// </summary>
+        /// <returns></returns>
+        public virtual string ToPDFTableRowHeading(Request request) => _PDFTableRowHeadingCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => {
+            var thisType = GetType().ToStringVeryShort();
+            return nameof(Id) + request.PDFFieldSeparator + /// Note that in addition to the columns returned by <see cref="ToPDFTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToPDFTableRowHeading"/> and <see cref="ToPDFTableRow"/>
+            string.Join(request.PDFFieldSeparator, ToPDFTableColumns(request).Select(key => new Func<string>(() => {
+                var retval = key.Key.PToString;
+                if (retval.StartsWith(thisType)) { // Note shortening of name here (often names will start with the same as the entity type, we then assume that we can safely remove the type-part).
+                    retval = retval.Substring(thisType.Length);
+                    if (retval.StartsWith("_")) retval = retval.Substring(1); /// Typical for <see cref="Database.PropertyKeyForeignKeyAggregate"/>
+                }
+                return retval;
+            })())
+            );
+            /// request.PDFFieldSeparator + nameof(Created); // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
+        });
+
+        /// <summary>
+        /// TODO: Most probably not relevant since PDF views are supposed to always be a detailed view.
+        /// 
+        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToPDFTableRow"/>).
+        /// 
+        /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToPDFTableRowHeading"/> and <see cref="BaseEntity.ToPDFTableRow"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual string ToPDFTableRow(Request request) =>
+            (Id <= 0 ? "" : Id.ToString()) + request.PDFFieldSeparator + /// Note that in addition to the columns returned by <see cref="ToPDFTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToPDFTableRowHeading"/> and <see cref="ToPDFTableRow"/>
+            string.Join(request.PDFFieldSeparator, GetType().GetChildPropertiesByPriority(
+                    PriorityOrder.Everything // We assume that all information is required for PDF
+                ).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ?
+                p.V<string>().Replace(request.PDFFieldSeparator, ":").Replace("\r\n", " // ") : // Note replacement here with : and //. TODO: Document better / create alternatives
+                "")
+            ) +
+            // request.PDFFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) + // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
+            "\r\n";
+
+        /// <summary>
+        /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToPDFDetailed"/> and <see cref="Result.ToPDFDetailed"/>). 
+        /// 
+        /// There are three levels of packaging PDF information.
+        /// <see cref="PDFView.GenerateResult"/>
+        ///   <see cref="PDFView.GetPDFStart"/>
+        ///   <see cref="Result.ToPDFDetailed"/>
+        ///     <see cref="BaseEntity.ToPDFDetailed"/> (called from <see cref="Result.ToPDFDetailed"/>)
+        ///     <see cref="Result.ToPDFDetailed"/> (actual result, inserts itself at "!--DELIMITER--" left by <see cref="BaseEntity.ToPDFDetailed"/>). 
+        ///     <see cref="BaseEntity.ToPDFDetailed"/> (called from <see cref="Result.ToPDFDetailed"/>)
+        ///   <see cref="PDFView.GetPDFEnd"/>
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual string ToPDFDetailed(Request request) {
+            var retval = new StringBuilder();
+
+            // Removed Type / Name for ALL results. Only confuses in PDF-context.
+            //if (new Func<bool>(() => { // Convoluted code due do erroneous suggestion by compiler to use Pattern matching (version as of March 2017)
+            //    switch (this) {
+            //        case Result result: return result.ResultCode == ResultCode.ok;
+            //        default: return false; 
+            //    }
+            //})()) {
+            //    // Do not show type or name because it will only be confusing
+            //} else {
+            //    var description = GetType().GetClassAttribute().Description;
+            //    retval.AppendLine(
+            //        "Type" + request.PDFFieldSeparator + GetType().ToStringVeryShort() + (string.IsNullOrEmpty(description) ? "" : (request.PDFFieldSeparator + request.PDFFieldSeparator + request.PDFFieldSeparator + description.Replace("\r\n", "\r\n" + request.PDFFieldSeparator + request.PDFFieldSeparator + request.PDFFieldSeparator + request.PDFFieldSeparator))) + "\r\n" +
+            //        "Name" + request.PDFFieldSeparator + IdFriendly);
+            //}
+
+            var a = GetType().GetClassAttribute();
+
+            /// NOTE: Sep 2017: Code below (parent, children, related entities, operations, suggested URLs) was copied from <see cref="ToHTMLDetailed"/> (via <see cref="ToCSVDetailed"/>).
+            /// NOTE: Something of it might not be needed for PDF-format
+
+            /// TODO: RECONSIDER IF THESE ARE NEEDED FOR PDF!
+            /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
+            /// TOOD: Consider removing this. 
+            if (a.ParentType != null && TryGetPV<QueryId>(CoreP.QueryIdParent.A(), out var queryIdParent)) { // Link from child to parent
+                queryIdParent.AssertIsSingle(() => ToString());
+                retval.AppendLine("Parent" + request.PDFFieldSeparator +
+                    queryIdParent + request.PDFFieldSeparator +
+                    a.ParentType.ToStringVeryShort() + request.PDFFieldSeparator +
+                    request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString()))
+                );
+            }
+
+            /// TODO: RECONSIDER IF THESE ARE NEEDED FOR PDF!
+            /// TODO: Should <see cref="ClassAttribute.ParentType"/> and <see cref="ClassAttribute.ChildrenType"/> be replaced with <see cref="PropertyKeyAttribute.ForeignKeyOf"/>?
+            if (a.ChildrenType != null) { // Link from parent to children
+                retval.AppendLine("Children" + request.PDFFieldSeparator +
+                    request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, a.ChildrenType, new QueryIdKeyOperatorValue(CoreP.QueryIdParent.A().Key, Operator.EQ, IdString.ToString()))
+                );
+            }
+
+            /// TODO: RECONSIDER IF THESE ARE NEEDED FOR PDF!
+            var whereForeignKey = GetType().GetTypesWhereIsForeignKey();
+            if (whereForeignKey.Count > 0) retval.AppendLine("Related entities:" + request.PDFFieldSeparator + "\r\n" + string.Join("\r\n", whereForeignKey.Select(t =>
+                t.type.ToStringVeryShort() + request.PDFFieldSeparator + request.API.CreateAPIUrl(CoreAPIMethod.EntityIndex, t.type, new QueryIdKeyOperatorValue(t.key.Key, Operator.EQ, Id))))
+            );
+
+            // TODO: REPLACE WITH SOMETHING BETTER, PREFERABLE SOMETHING INVISIBLE IN A TYPICAL SPREADSHEET PROGRAM
+            retval.AppendLine();
+            retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
+
+            retval.AppendLine();
+            retval.AppendLine(CreatePDFForExistingProperties(request));
+            // retval.AppendLine(CreatePDFForAddingProperties(request)); This is considered unnecessary. Eventually add as desired later.
+            return retval.ToString();
+        }
+
+        /// <summary>
+        /// Creates a PDF representation of the existing properties for this entity. 
+        /// Copied from <see cref="CreateHTMLForExistingProperties(Request)"/>. 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual string CreatePDFForExistingProperties(Request request) {
+            var retval = new StringBuilder();
+            if (Properties != null) {
+                var existing = GetExistingProperties(request.CurrentUser, AccessType.Read);
+                if (existing.Count > 0) {
+                    retval.AppendLine(existing.First().Value.ToPDFTableRowHeading(request));
+                    /// TODO: Implement a common comparer for use by both <see cref="CreateHTMLForExistingProperties"/> and <see cref="CreatePDFForExistingProperties"/>
+                    retval.AppendLine(string.Join("\r\n", existing.Values.OrderBy(p => ((long)p.Key.Key.A.PriorityOrder + int.MaxValue).ToString("0000000000") + p.Key.Key.PToString).Select(p => {
+                        return p.ToPDFTableRow(request);
+                    })));
+                }
+            }
+            return retval.ToString();
+        }
+
+        private static ConcurrentDictionary<
             string, // Key is GetType + _ + PriorityOrderLimit (but the latter is not significant)
             List<PropertyKey>> _CSVTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
         /// <summary>
@@ -729,7 +884,7 @@ namespace AgoRapide {
             }
             var a = GetType().GetClassAttribute();
 
-            /// NOTE: Sep 2017: Code below (parent, children, related entities, operations, suggested URLs) was copied form <see cref="ToHTMLDetailed"/>. 
+            /// NOTE: Sep 2017: Code below (parent, children, related entities, operations, suggested URLs) was copied from <see cref="ToHTMLDetailed"/>. 
             /// NOTE: Something of it might not be needed for CSV-format
 
             /// TODO: RECONSIDER IF THESE ARE NEEDED FOR CSV!

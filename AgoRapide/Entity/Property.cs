@@ -395,12 +395,12 @@ namespace AgoRapide {
                 case CoreP.QueryId: {
                         var v = V<QueryId>();
                         return new HTML(
-                            APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v.ToString(), 
-                            (Parent != null ? 
-                                Parent.GetType() : 
+                            APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex, v.ToString(),
+                            (Parent != null ?
+                                Parent.GetType() :
                                 typeof(BaseEntity)),
                                 parameters: v.ToString() // Added 17 Nov 2018 as bug-fix.
-                            ), 
+                            ),
                             originalString: null
                         );
                     }
@@ -411,7 +411,7 @@ namespace AgoRapide {
                                 (Parent != null && APIMethod.TryGetByCoreMethodAndEntityType(CoreAPIMethod.EntityIndex, Parent.GetType(), out _) ?
                                 Parent.GetType() : /// Note how parent may be <see cref="Result"/> or similar in which case no <see cref="APIMethod"/> exists, therefore the APIMethod.TryGetByCoreMethodAndEntityType test. 
                                 typeof(BaseEntity)
-                                ), 
+                                ),
                                 new QueryIdInteger(V<long>())
                             ),
                             originalString: null
@@ -424,18 +424,18 @@ namespace AgoRapide {
                             return new HTML(
                                 APICommandCreator.HTMLInstance.CreateAPILink(CoreAPIMethod.EntityIndex,
                                     InMemoryCache.EntityCache.TryGetValue(foreignKey, out var foreignEntity) ? foreignEntity.IdFriendly : v,
-                                    Key.Key.A.ForeignKeyOf, new QueryIdInteger(foreignKey)), 
+                                    Key.Key.A.ForeignKeyOf, new QueryIdInteger(foreignKey)),
                                 originalString: null
                             );
                         }
                         if (Key.Key.A.IsDocumentation) {
                             return new HTML(
-                                Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>"), 
+                                Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>"),
                                 originalString: v /// Important, add original string in order to show a shorter version in <see cref="BaseEntity.ToHTMLTableRow"/>
                             );
                         } else if (Documentator.Keys.TryGetValue(v, out var list)) {
                             return new HTML(
-                                Documentator.GetSingleReplacement(v, list), 
+                                Documentator.GetSingleReplacement(v, list),
                                 originalString: null
                             );
                         } else {
@@ -474,7 +474,7 @@ namespace AgoRapide {
                 if (typeof(HTML).Equals(t)) {
                     value = (T)(_value = new HTML( // Note caching in _value
                         string.Join(", ", Properties.Select(p => p.Value.V<HTML>())),
-                        originalString: string.Join(", ", Properties.Select(p => p.Value.V<string>())))); 
+                        originalString: string.Join(", ", Properties.Select(p => p.Value.V<string>()))));
                     return true;
                 } else if (typeof(string).Equals(t)) {
                     value = (T)(_value = string.Join(", ", Properties.Select(p => p.Value.V<string>()))); // Note caching in _value
@@ -594,6 +594,9 @@ namespace AgoRapide {
             GetType() + ".\r\n";
 
         /// <summary>
+        /// TODO: Improve on this. This hack is really ugly, most probably not threadsafe / workable
+        /// TODO: with multiple concurrent users.
+        /// 
         /// Hack for transferring information from 
         /// <see cref="BaseEntity.CreateHTMLForExistingProperties"/> and 
         /// <see cref="BaseEntity.CreateHTMLForAddingProperties"/> to 
@@ -607,7 +610,7 @@ namespace AgoRapide {
             string, // Key is GetType + _ + PriorityOrderLimit (but the latter is not significant)
             List<PropertyKey>> _HTMLTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
         public override List<PropertyKey> ToHTMLTableColumns(Request request) => _HTMLTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => new List<PropertyKey> {
-            /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
+            /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="BaseEntity.ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
             /// We therefore skip this:
             // PropertyP.PropertyKey.A(), 
 
@@ -616,6 +619,9 @@ namespace AgoRapide {
             PropertyP.PropertyCreated.A(),
             PropertyP.PropertyInvalid.A()
         });
+
+        /// Note how override of <see cref="BaseEntity.ToHTMLTableRowHeading"/> is not necessary since
+        /// <see cref="ToHTMLTableColumns"/> is sufficient.
 
         /// <summary>
         /// Note that may return multiple rows if <see cref="IsIsManyParent"/>
@@ -634,7 +640,7 @@ namespace AgoRapide {
                 // --------------------
                 // Column 1, Key
                 // --------------------
-                (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.WholeDescription) + /// Note that in addition to the columns returned by<see cref="ToHTMLTableColumns"/> an extra column with<see cref="BaseEntity.Id" /> is also returned by<see cref="ToHTMLTableRowHeading" /> and <see cref="ToHTMLTableRow"/>
+                (Id <= 0 ? IdFriendly.HTMLEncode() : request.API.CreateAPILink(this)).HTMLEncloseWithinTooltip(a.WholeDescription) + /// Note that in addition to the columns returned by<see cref="ToHTMLTableColumns"/> an extra column with<see cref="BaseEntity.Id" /> is also returned by<see cref="BaseEntity.ToHTMLTableRowHeading" /> and <see cref="ToHTMLTableRow"/>
                 "</td><td>" +
 
                 // --------------------
@@ -787,6 +793,32 @@ namespace AgoRapide {
 
             return base.ToHTMLDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
         }
+
+        private static ConcurrentDictionary<
+            string, // Key is GetType + _ + PriorityOrderLimit (but the latter is not significant)
+            List<PropertyKey>> _PDFTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        /// <summary>
+        /// Most probably not used / not relevant.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public override List<PropertyKey> ToPDFTableColumns(Request request) => _PDFTableRowColumnsCache.GetOrAdd(GetType() + "_" + request.PriorityOrderLimit, k => new List<PropertyKey> {
+            PropertyP.PropertyValue.A(),
+        });
+
+        public override string ToPDFTableRowHeading(Request request) {
+            // For PDF we do not use the table format as of Nov 2018, so there is no heading at all
+            return "";
+        }
+
+        public override string ToPDFTableRow(Request request) {
+            // Note how PDF format is supposed to be less technical and more human-friendly in nature
+            return
+                Key.Key.PToString + request.PDFFieldSeparator +
+                (Key.Key.A.IsPassword ? "[SET]" : V<string>()) + "\r\n";
+        }
+
+        public override string ToPDFDetailed(Request request) => throw new NotImplementedException("Supposed not relevant for PDF-format");
 
         private static ConcurrentDictionary<
             string, // Key is GetType + _ + PriorityOrderLimit

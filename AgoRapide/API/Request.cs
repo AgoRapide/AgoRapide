@@ -59,10 +59,19 @@ namespace AgoRapide.API {
 
         /// <summary>   
         /// TODO: This is just a preparation for a more dynamic approach.
+        /// TODO: Move into <see cref="CSVView"/>?
         /// 
         /// TODO: Implement this through a setting, either in <see cref="Configuration"/> or for <see cref="CurrentUser"/>
         /// </summary>
         public string CSVFieldSeparator = ";";
+
+        /// <summary>   
+        /// TODO: This is just a preparation for a more dynamic approach.
+        /// TODO: Move into <see cref="PDFView"/>?
+        /// 
+        /// TODO: Implement this through a setting, either in <see cref="Configuration"/> or for <see cref="CurrentUser"/>
+        /// </summary>
+        public string PDFFieldSeparator = ": ";
 
         public Result Result { get; } = new Result();
 
@@ -201,6 +210,7 @@ namespace AgoRapide.API {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return new JSONView(this).GenerateResult();
                 case ResponseFormat.HTML: return new HTMLView(this).GenerateResult();
+                case ResponseFormat.PDF: return new PDFView(this).GenerateResult();
                 case ResponseFormat.CSV: return new CSVView(this).GenerateResult();
                 default: throw new InvalidEnumException(ResponseFormat);
             }
@@ -242,6 +252,7 @@ namespace AgoRapide.API {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return URL;
                 case ResponseFormat.HTML: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.HTMLPostfixIndicator.Length));
+                case ResponseFormat.PDF: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.PDFPostfixIndicator.Length));
                 case ResponseFormat.CSV: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.CSVPostfixIndicator.Length));
                 default: throw new InvalidEnumException(ResponseFormat);
             }
@@ -256,7 +267,23 @@ namespace AgoRapide.API {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return new Uri(strUrl + Util.Configuration.C.HTMLPostfixIndicator);
                 case ResponseFormat.HTML: return URL;
+                case ResponseFormat.PDF: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.PDFPostfixIndicator.Length) + Util.Configuration.C.HTMLPostfixIndicator);
                 case ResponseFormat.CSV: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.CSVPostfixIndicator.Length) + Util.Configuration.C.HTMLPostfixIndicator);
+                default: throw new InvalidEnumException(ResponseFormat);
+            }
+        })());
+
+        private Uri _PDFUrl;
+        /// <summary>
+        /// Gives corresponding URL for <see cref="ResponseFormat.PDF"/>
+        /// </summary>
+        public Uri PDFUrl => _PDFUrl ?? (_PDFUrl = new Func<Uri>(() => {
+            var strUrl = URL.ToString();
+            switch (ResponseFormat) {
+                case ResponseFormat.JSON: return new Uri(strUrl + Util.Configuration.C.PDFPostfixIndicator);
+                case ResponseFormat.HTML: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.HTMLPostfixIndicator.Length) + Util.Configuration.C.PDFPostfixIndicator);
+                case ResponseFormat.PDF: return URL;
+                case ResponseFormat.CSV: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.CSVPostfixIndicator.Length) + Util.Configuration.C.PDFPostfixIndicator);
                 default: throw new InvalidEnumException(ResponseFormat);
             }
         })());
@@ -270,6 +297,7 @@ namespace AgoRapide.API {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return new Uri(strUrl + Util.Configuration.C.CSVPostfixIndicator);
                 case ResponseFormat.HTML: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.HTMLPostfixIndicator.Length) + Util.Configuration.C.CSVPostfixIndicator);
+                case ResponseFormat.PDF: return new Uri(strUrl.Substring(0, strUrl.Length - Util.Configuration.C.PDFPostfixIndicator.Length) + Util.Configuration.C.CSVPostfixIndicator);
                 case ResponseFormat.CSV: return URL;
                 default: throw new InvalidEnumException(ResponseFormat);
             }
@@ -280,6 +308,7 @@ namespace AgoRapide.API {
             switch (ResponseFormat) {
                 case ResponseFormat.JSON: return APICommandCreator.JSONInstance;
                 case ResponseFormat.HTML: return APICommandCreator.HTMLInstance;
+                case ResponseFormat.PDF: return APICommandCreator.PDFInstance;
                 case ResponseFormat.CSV: return APICommandCreator.CSVInstance;
                 default: throw new InvalidEnumException(ResponseFormat);
             }
@@ -330,6 +359,8 @@ namespace AgoRapide.API {
             var urlSegments = url.Split('/').ToList();
             if (responseFormat == ResponseFormat.HTML) {
                 urlSegments.RemoveAt(urlSegments.Count - 1); /// Corresponds to <see cref="Configuration.HTMLPostfixIndicator"/>.
+            } else if (responseFormat == ResponseFormat.PDF) {
+                urlSegments.RemoveAt(urlSegments.Count - 1); /// Corresponds to <see cref="Configuration.PDFPostfixIndicator"/>.
             } else if (responseFormat == ResponseFormat.CSV) {
                 urlSegments.RemoveAt(urlSegments.Count - 1); /// Corresponds to <see cref="Configuration.CSVPostfixIndicator"/>.
             }
@@ -509,6 +540,7 @@ namespace AgoRapide.API {
         public static ResponseFormat GetResponseFormatFromURL(Uri url) {
             var urlToLower = url.ToString().ToLower();
             if (urlToLower.EndsWith(Util.Configuration.C.HTMLPostfixIndicatorToLower)) return ResponseFormat.HTML;
+            if (urlToLower.EndsWith(Util.Configuration.C.PDFPostfixIndicatorToLower)) return ResponseFormat.PDF;
             if (urlToLower.EndsWith(Util.Configuration.C.CSVPostfixIndicatorToLower)) return ResponseFormat.CSV;
             return ResponseFormat.JSON;
         }

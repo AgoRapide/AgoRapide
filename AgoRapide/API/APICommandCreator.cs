@@ -90,6 +90,7 @@ namespace AgoRapide.API {
 
         public static APICommandCreator JSONInstance = new APICommandCreator(ResponseFormat.JSON);
         public static APICommandCreator HTMLInstance = new APICommandCreator(ResponseFormat.HTML);
+        public static APICommandCreator PDFInstance = new APICommandCreator(ResponseFormat.PDF);
         public static APICommandCreator CSVInstance = new APICommandCreator(ResponseFormat.CSV);
     }
 }

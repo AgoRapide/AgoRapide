@@ -74,8 +74,9 @@ namespace AgoRapide.API {
         /// </summary>
         /// <returns></returns>
         public virtual string GetCSVEnd() =>
-            ResponseFormat.JSON + " format for this request" + Request.CSVFieldSeparator + Request.JSONUrl + "\r\n" +
-            ResponseFormat.HTML + " format for this request" + Request.CSVFieldSeparator + Request.HTMLUrl + "\r\n" +
+            ResponseFormat.JSON + "-format for this request" + Request.CSVFieldSeparator + Request.JSONUrl + "\r\n" +
+            ResponseFormat.HTML + "-format for this request" + Request.CSVFieldSeparator + Request.HTMLUrl + "\r\n" +
+            ResponseFormat.PDF + "-format for this request" + Request.CSVFieldSeparator + Request.PDFUrl + "\r\n" +
             "Generated " + DateTime.Now.ToString(DateTimeFormat.DateHourMin);
     }
 }

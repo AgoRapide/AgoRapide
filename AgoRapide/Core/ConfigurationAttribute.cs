@@ -353,6 +353,18 @@ namespace AgoRapide.Core {
         [ClassMember(Description = "Maximum length that will be shown for strings in -" + nameof(BaseEntity.ToHTMLTableRow) + "- representation")]
         public int HTMLTableRowStringMaxLength { get; set; } = 80;
 
+        [ClassMember(Description = "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.PDF) + "- is desired by client.")]
+        public string PDFPostfixIndicator { get; set; } = "/PDF";
+
+        private string _PDFPostfixIndicatorToLower;
+        public string PDFPostfixIndicatorToLower => _PDFPostfixIndicatorToLower ?? (_PDFPostfixIndicatorToLower = PDFPostfixIndicator.ToLower());
+
+        private string _PDFPostfixIndicatorWithoutLeadingSlash;
+        public string PDFPostfixIndicatorWithoutLeadingSlash => _PDFPostfixIndicatorWithoutLeadingSlash ?? (_PDFPostfixIndicatorWithoutLeadingSlash = (!(string.IsNullOrEmpty(PDFPostfixIndicator) && PDFPostfixIndicator.Length > 1) && PDFPostfixIndicator.StartsWith("/")) ? PDFPostfixIndicator.Substring(1) : throw new Exception("Invalid " + nameof(PDFPostfixIndicator) + " (" + PDFPostfixIndicator + "), unable to generate " + nameof(PDFPostfixIndicatorWithoutLeadingSlash) + "."));
+
+        private string _PDFPostfixIndicatorWithoutLeadingSlashToLower;
+        public string PDFPostfixIndicatorWithoutLeadingSlashToLower => _PDFPostfixIndicatorWithoutLeadingSlashToLower ?? (_PDFPostfixIndicatorWithoutLeadingSlashToLower = PDFPostfixIndicatorWithoutLeadingSlash.ToLower());
+
         [ClassMember(Description = "Indicator at end of API request URL indicating that -" + nameof(ResponseFormat.CSV) + "- is desired by client.")]
         public string CSVPostfixIndicator { get; set; } = "/CSV";
 

@@ -38,9 +38,17 @@ namespace AgoRapide {
         /// See also <see cref="HTMLView"/>, <see cref="BaseEntity.ToHTMLTableRowHeading"/>, <see cref="BaseEntity.ToHTMLTableRow"/>, <see cref="BaseEntity.ToHTMLDetailed"/>
         /// </summary>
         [EnumValue(Description = 
-            "For human consumption, note how -" + nameof(HTMLView) + "- inserts lots of useful links and documentation in the returned data.\r\n" +
+            "For human online consumption, note how -" + nameof(HTMLView) + "- inserts lots of useful links and documentation in the returned data.\r\n" +
             "Will be used when the request URL ends with -" + nameof(ConfigurationAttribute.HTMLPostfixIndicator) + "-. (\"HTML\").")]
         HTML,
+
+        /// <summary>
+        /// See also <see cref="PDFView"/>
+        /// </summary>
+        [EnumValue(Description =
+            "For human offline consumption / paper format..\r\n" +
+            "Will be used when the request URL ends with -" + nameof(ConfigurationAttribute.PDFPostfixIndicator) + "-. (\"PDF\").")]
+        PDF,
 
         /// <summary>
         /// See also <see cref="CSVView"/>

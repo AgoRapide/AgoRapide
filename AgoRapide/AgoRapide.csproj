@@ -89,6 +89,7 @@
     <Compile Include="API\APIMethodMapper.cs" />
     <Compile Include="API\BaseController.cs" />
     <Compile Include="API\BasicAuthenticationAttribute.cs" />
+    <Compile Include="API\PDFView.cs" />
     <Compile Include="API\CSVView.cs" />
     <Compile Include="API\DrillDownSuggestion.cs" />
     <Compile Include="API\FieldIterator.cs" />

@@ -45,27 +45,17 @@ namespace AgoRapide.API {
 
             var nonCore = routes.Where(r => {
                 switch (r.MA.CoreMethod) {
-                    //case CoreMethod.None: 
-                    //    // TODO: GET RID OF THESE SPECIAL CASES. Mark MethodAttribute instead (that is, mark RootIndex and GenericMethod with
-                    //    // TODO: something). AND DO NOT CARE ABOUT THE REST!
-                    //case CoreMethod.EntityIndex:       // There is nothing special with this method routing-wise
-                    //case CoreMethod.MethodIndex:       // There is nothing special with this method routing-wise
-                    //case CoreMethod.PropertyIndex:     // There is nothing special with this method routing-wise
-                    //case CoreMethod.ExceptionDetails:  // There is nothing special with this method routing-wise
-                    //case CoreMethod.HTTPStatus:        // There is nothing special with this method routing-wise
-                    //    return true;
                     //// TODO: GET RID OF THESE SPECIAL CASES. Mark MethodAttribute instead (that is, mark RootIndex and GenericMethod with
                     //// TODO: something). AND DO NOT CARE ABOUT THE REST!
                     case CoreAPIMethod.RootIndex:
                     case CoreAPIMethod.GenericMethod: return false;
                     default: return true;
-                        //// TODO: GET RID OF THESE SPECIAL CASES. Mark MethodAttribute instead (that is, mark RootIndex and GenericMethod with
-                        //// TODO: something). AND DO NOT CARE ABOUT THE REST!
-                        //default: throw new InvalidEnumException(r.A.A.CoreMethod);
                 }
             });
             /// <see cref="ResponseFormat.HTML"/>
             nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t + "_" + Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, (Util.Configuration.C.APIPrefix + t + Util.Configuration.C.HTMLPostfixIndicator).Replace("//", "/"), r.Defaults)));
+            /// <see cref="ResponseFormat.PDF"/>
+            nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t + "_" + Util.Configuration.C.PDFPostfixIndicatorWithoutLeadingSlash, (Util.Configuration.C.APIPrefix + t + Util.Configuration.C.PDFPostfixIndicator).Replace("//", "/"), r.Defaults)));
             /// <see cref="ResponseFormat.CSV"/>
             nonCore.ForEach(r => r.RouteTemplates.ForEach(t => tempMapper(r, t + "_" + Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlash, (Util.Configuration.C.APIPrefix + t + Util.Configuration.C.CSVPostfixIndicator).Replace("//", "/"), r.Defaults)));
             /// <see cref="ResponseFormat.JSON"/>
@@ -82,6 +72,7 @@ namespace AgoRapide.API {
             var rootIndex = singleFinder(CoreAPIMethod.RootIndex);
             tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex, "", rootIndex.Defaults);
             tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex + "_" + Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, Util.Configuration.C.HTMLPostfixIndicatorWithoutLeadingSlash, rootIndex.Defaults);
+            tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex + "_" + Util.Configuration.C.PDFPostfixIndicatorWithoutLeadingSlash, Util.Configuration.C.PDFPostfixIndicatorWithoutLeadingSlash, rootIndex.Defaults);
             tempMapper(rootIndex, nameof(CoreAPIMethod) + "_" + CoreAPIMethod.RootIndex + "_" + Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlash, Util.Configuration.C.CSVPostfixIndicatorWithoutLeadingSlash, rootIndex.Defaults);
 
             var genericMethod = singleFinder(CoreAPIMethod.GenericMethod); /// See <see cref="BaseController.AgoRapideGenericMethod"/>
