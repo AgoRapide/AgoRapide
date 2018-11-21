@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2016, 2017 Bjørn Erling Fløtten, Trondheim, Norway
+﻿// Copyright (c) 2016, 2017, 2018 Bjørn Erling Fløtten, Trondheim, Norway
 // MIT licensed. Details at https://github.com/AgoRapide/AgoRapide/blob/master/LICENSE
 using System;
 using System.Linq;
