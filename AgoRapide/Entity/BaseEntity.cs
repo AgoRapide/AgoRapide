@@ -705,7 +705,7 @@ namespace AgoRapide {
         /// <summary>
         /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToPDFDetailed"/> and <see cref="Result.ToPDFDetailed"/>). 
         /// 
-        /// There are three levels of packaging PDF information.
+        /// There are three levels of packaging PDF information (or actually TEX, since that is the intermediate format used)
         /// <see cref="PDFView.GenerateResult"/>
         ///   <see cref="PDFView.GetPDFStart"/>
         ///   <see cref="Result.ToPDFDetailed"/>

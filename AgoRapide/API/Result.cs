@@ -294,7 +294,7 @@ namespace AgoRapide.API {
         }
 
         /// <summary>
-        /// There are three levels of packaging PDF information.
+        /// There are three levels of packaging PDF information (or actually TEX, since that is the intermediate format used)
         /// <see cref="PDFView.GenerateResult"/>
         ///   <see cref="PDFView.GetPDFStart"/>
         ///   <see cref="Result.ToPDFDetailed"/>
