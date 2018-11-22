@@ -312,7 +312,7 @@ namespace AgoRapide.API {
             var retval = new StringBuilder();
             if (SingleEntityResult != null) {
                 if (SingleEntityResult is Result) throw new InvalidObjectTypeException(SingleEntityResult, "Would have resulted in recursive call in " + System.Reflection.MethodBase.GetCurrentMethod().Name + " if allowed");
-                retval.Append(SingleEntityResult.ToPDFDetailed(request).Replace("<!--DELIMITER-->",""));
+                retval.Append(SingleEntityResult.ToPDFDetailed(request).Replace("<!--DELIMITER-->", ""));
             } else if (MultipleEntitiesResult != null) {
                 if (MultipleEntitiesResult.Count == 0) {
                     retval.AppendLine("No entities resulted from your query");
@@ -330,14 +330,17 @@ namespace AgoRapide.API {
                         var thisTypeSorted = MultipleEntitiesResult.Where(e => e.GetType().Equals(t)).OrderBy(e => e.IdFriendly).ToList();
                         retval.AppendLine();
                         retval.AppendLine("Entities of type " + t.ToStringVeryShort() + request.PDFFieldSeparator + thisTypeSorted.Count);
-                        retval.AppendLine();
+                        retval.AppendLine("\r\n---------\r\n"); // Recognized below and replaced with \pagebreak);
+
                         /// Note how PDF views are always supposed to be a detailed view
                         /// (we are not really using <see cref="BaseEntity.ToPDFTableRowHeading"/> or <see cref="BaseEntity.ToPDFTableRow"/>
                         /// In other words, the following is not relevant:
                         //retval.AppendLine(thisTypeSorted[0].ToPDFTableRowHeading(request));
                         //retval.AppendLine(string.Join("", thisTypeSorted.Select(e => e.ToPDFTableRow(request))));
 
-                        retval.AppendLine(string.Join("\r\n---------\r\n", thisTypeSorted.Select(e => e.ToPDFDetailed(request).Replace("<!--DELIMITER-->", ""))));
+                        retval.AppendLine(string.Join(
+                            "\r\n---------\r\n", // Recognized below and replaced with \pagebreak
+                            thisTypeSorted.Select(e => e.ToPDFDetailed(request).Replace("<!--DELIMITER-->", ""))));
                     });
                 }
             } else if (ResultCode == ResultCode.ok) {
@@ -347,14 +350,40 @@ namespace AgoRapide.API {
                 retval.AppendLine("\r\nNo result from your query\r\n");
                 /// Our base method <see cref="BaseEntity.ToPDFDetailed"/> will return details needed (see below).
             }
+
             // TODO: Push all necessary TeX encodings like this down to the lowest possible level (where the TeX-output is actually generated)
-            retval.Replace("_", "\\_").Replace("&","\\&").Replace("#","\\#");
+
+            retval.Replace(
+                "<", @"{\textless}").Replace(
+                ">", @"{\textgreater}").Replace(
+                "«", "``").Replace(
+                "»", "''").Replace(
+                "_", @"\_").Replace(
+                "&", @"\&").Replace(
+                "#", @"\#").Replace(
+                "\r\n---------\r\n", @"{\pagebreak}");
 
             // TOOD: Remove this. Usually bug in non-related class related to scraping of HTML-pages
             retval.Replace("Ã¥", "å");
 
+            // Unsuccessful attempt (unexplained TeX compilation failure)
+            //// Try to create URLs in PDF (this is a bit of a hack, should have been handled on a lower level)
+            //var s1 = retval.ToString().Split("https://");
+            //var first = true;
+            //var s2 = s1.Select(s => {
+            //    if (first) {
+            //        first = false;
+            //        return s; 
+            //    }
+            //    var pos = s.IndexOf("\r\n");
+            //    if (pos == -1) pos = s.Length;
+            //    return @"\url{https://" + s.Substring(0, pos) + "}" + s.Substring(pos);
+            //});
+            //var strRetval = string.Join("", s2);
+            var strRetval = retval.ToString();
+
             /// Note how <see cref="BaseEntity.ToPDFDetailed"/> contains special code for <see cref="Result"/> hiding type and name
-            return base.ToPDFDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
+            return base.ToPDFDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", strRetval);
         }
 
 

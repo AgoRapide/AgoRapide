@@ -39,7 +39,7 @@ namespace AgoRapide.API {
 
                 // Save file
                 var filename = System.IO.Path.GetTempFileName();
-                System.IO.File.WriteAllText(filename + ".tex", TEX.ToString(), Encoding.Default);
+                System.IO.File.WriteAllText(filename + ".tex", TEX.ToString(), Encoding.UTF8);
 
                 // Inspiration from https://stackoverflow.com/questions/5367557/how-to-parse-command-line-output-from-c/5367686#5367686
                 var cmdStartInfo = new System.Diagnostics.ProcessStartInfo {
@@ -73,26 +73,71 @@ namespace AgoRapide.API {
                 cmdProcess.BeginOutputReadLine();
                 cmdProcess.BeginErrorReadLine();
 
-                cmdProcess.StandardInput.WriteLine(@"cd C:\Users\Bjorn\AppData\Local\Programs\MiKTeX 2.9\miktex\bin\x64");
-                cmdProcess.StandardInput.WriteLine("pdflatex " + filename + ".tex");
-                cmdProcess.StandardInput.WriteLine("exit");
-                cmdProcess.WaitForExit();
-                if (errorReceived.Length > 0) {
-                    throw new PDFCompilationException(
-                        "Error received.\r\n" +
+                cmdProcess.StandardInput.WriteLine(@"cd " + System.IO.Path.GetDirectoryName(filename));
+                cmdProcess.StandardInput.WriteLine(
+                    "\"" + @"C:\Users\Bjorn\AppData\Local\Programs\MiKTeX 2.9\miktex\bin\x64\pdflatex" + "\" " +
+                    System.IO.Path.GetFileName(filename) + ".tex");
+
+                Exception getException(string message) {
+                    return new PDFCompilationException(
+                        message + "\r\n-------------------------\r\n\r\n" +
                         "Filename: " + filename + "\r\n" +
                         "ErrorReceived: " + errorReceived + "\r\n\r\n" +
                         "DataReceived: " + dataReceived);
                 }
-                if (!dataReceived.ToString().Contains("something nice")) throw new PDFCompilationException(
-                    "Compilation assumed to have failed.\r\n" +
-                    "Filename: " + filename + "\r\n" +
-                    "DataReceived: " + dataReceived);
+                void bestEfforFailsafeTerminator() { // Try to ensure that process will terminate, ignore any exceptions
+                    try {
+                        cmdProcess.StandardInput.WriteLine((char)26); // Terminate pdflatex (if still running)
+                        cmdProcess.StandardInput.WriteLine("exit"); // Terminate System32\cmd.exe
+                    } catch (Exception) {
+                        // Ignore exception
+                    }
+                }
+                var i = 0;
+                while (true) {
+                    var data = dataReceived.ToString();
+                    if (data.Contains("Output written on") && data.Contains("Transcript written on")) {
+                        bestEfforFailsafeTerminator();
+                        cmdProcess.StandardInput.WriteLine("exit");
+                        break;
+                    }
 
-                if (!System.IO.File.Exists(filename + ".pdf")) throw new PDFCompilationException(
-                    "Compilation failed. PDF not found.\r\n" +
-                    "Filename: " + filename + "\r\n" +
-                    "DataReceived: " + dataReceived);
+                    if (errorReceived.Length > 0) {
+                        System.Threading.Thread.Sleep(500); // Ensure complete error is "read"
+                        bestEfforFailsafeTerminator();
+                        throw getException("Error received");
+                    }
+
+                    if (
+                        data.Contains(" ==> Fatal error occurred") || 
+                        data.Contains("Type  H <return>  for immediate help.") ||
+                        data.Contains("! Undefined control sequence")
+                        ) {
+                        System.Threading.Thread.Sleep(500); // Ensure complete data is "read"
+                        bestEfforFailsafeTerminator();
+                        throw getException("Error message received from pdflatex");
+                    }
+
+                    System.Threading.Thread.Sleep(500);
+                    if ((i++) > 20) { // Timeout after 10 sec.
+                        bestEfforFailsafeTerminator();
+                        throw getException("Compilation timeout");
+                    }
+                }
+                i = 0;
+                while (true) {
+                    if (cmdProcess.HasExited) break;
+                    System.Threading.Thread.Sleep(500);
+                    if ((i++) > 2) { // Timeout
+                        bestEfforFailsafeTerminator();
+                        throw getException(@"Timeout waiting for System32\cmd.exe to exit");
+                    }
+                }
+                cmdProcess.Close();
+
+                if (!System.IO.File.Exists(filename + ".pdf")) {
+                    throw getException("PDF not found (" + filename + ".pdf" + ")");
+                }
 
                 /// TODO: Add support for headers and location (see both <see cref="HTMLView.GenerateResult"/> and <see cref="PDFView.GenerateResult"/>)
                 string location = null;
@@ -106,6 +151,17 @@ namespace AgoRapide.API {
                     StatusCode = System.Net.HttpStatusCode.OK,
                     Content = new System.Net.Http.ByteArrayContent(System.IO.File.ReadAllBytes(filename + ".pdf"))
                 };
+                new List<string> { filename, filename + ".tex", filename + ".pdf" }.ForEach(f => {
+                    try {
+                        System.IO.File.Delete(f);
+                    } catch (Exception ex) {
+                        getException(
+                            "Exception " + ex.GetType() + "\r\n" +
+                            "with message " + ex.Message +"\r\n" +
+                            "occurred when attempting to delete file " + f);
+                    }
+                });
+
                 retval.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment") {
                     FileName = Request.Method.MA.Id.IdFriendly + ".pdf"
                 }; // TOOD: Improve on filename, make more specific
@@ -132,8 +188,8 @@ namespace AgoRapide.API {
             @"
             \documentclass[a4paper,12pt]{article}
             \usepackage[utf8]{inputenc}
-            \usepackage{amsmath}
-            \usepackage{graphicx} 
+            \usepackage{graphicx}
+            \usepackage{hyperref}
             \setlength{\parindent}{0.0in}
             \setlength{\parskip}{0.25in}
             \setlength{\topmargin}{-0.6in}
@@ -145,20 +201,23 @@ namespace AgoRapide.API {
             \begin{flushleft}
             " +
             "\\section*{AgoRapide PDF}\r\n" +
-            Util.Configuration.C.RootUrl + "\r\n" +
-            (Request.CurrentUser == null ? "" : (nameof(Request.CurrentUser) + Request.PDFFieldSeparator + Request.CurrentUser.IdFriendly + Request.PDFFieldSeparator + Request.API.CreateAPIUrl(Request.CurrentUser) + "\r\n")) +
-            ((Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity == null) ? "" : (nameof(BaseEntity.RepresentedByEntity) + Request.PDFFieldSeparator + Request.CurrentUser.RepresentedByEntity.IdFriendly + Request.PDFFieldSeparator + Request.API.CreateAPIUrl(Request.CurrentUser.RepresentedByEntity) + "\r\n")) +
-            "URL" + Request.PDFFieldSeparator + Request.URL + "\r\n";
+            Util.Configuration.C.RootUrl + "\r\n\r\n" +
+            (Request.CurrentUser == null ? "" : (nameof(Request.CurrentUser) + Request.PDFFieldSeparator + Request.CurrentUser.IdFriendly + Request.PDFFieldSeparator + Request.API.CreateAPIUrl(Request.CurrentUser) + "\r\n\r\n")) +
+            ((Request.CurrentUser == null || Request.CurrentUser.RepresentedByEntity == null) ? "" : (nameof(BaseEntity.RepresentedByEntity) + Request.PDFFieldSeparator + Request.CurrentUser.RepresentedByEntity.IdFriendly + Request.PDFFieldSeparator + Request.API.CreateAPIUrl(Request.CurrentUser.RepresentedByEntity) + "\r\n\r\n")) +
+            "URL" + Request.PDFFieldSeparator + Request.URL + "\r\n\r\n" +
+            "Generated " + DateTime.Now.ToString(DateTimeFormat.DateHourMin) +
+            @"\pagebreak";
 
         /// <summary>
         /// TODO: Make configurable through <see cref="Util.Configuration"/>
         /// </summary>
         /// <returns></returns>
         public virtual string GetPDFEnd() =>
-            ResponseFormat.JSON + "-format for this request" + Request.PDFFieldSeparator + Request.JSONUrl + "\r\n" +
-            ResponseFormat.HTML + "-format for this request" + Request.PDFFieldSeparator + Request.HTMLUrl + "\r\n" +
-            ResponseFormat.PDF + "-format for this request" + Request.PDFFieldSeparator + Request.CSVUrl + "\r\n" +
-            "Generated " + DateTime.Now.ToString(DateTimeFormat.DateHourMin) +
+            @"\pagebreak" + "\r\n" + // This information may have limited value.
+            ResponseFormat.JSON + "-format for this request" + Request.PDFFieldSeparator + Request.JSONUrl + "\r\n\r\n" +
+            ResponseFormat.HTML + "-format for this request" + Request.PDFFieldSeparator + Request.HTMLUrl + "\r\n\r\n" +
+            ResponseFormat.PDF + "-format for this request" + Request.PDFFieldSeparator + Request.CSVUrl + "\r\n\r\n" +
+            // "Generated " + DateTime.Now.ToString(DateTimeFormat.DateHourMin) + // Moved to GetPDFStart instead
             @"
             \end{flushleft}
             \end{document}
