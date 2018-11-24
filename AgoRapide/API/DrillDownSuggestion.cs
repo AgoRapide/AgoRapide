@@ -151,7 +151,9 @@ namespace AgoRapide.API {
             /// NOTE: the parallelization here would have no effect.
             Parallel.ForEach(type.GetChildProperties().Values, key => {
 
-                if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
+                // Added support for IsMany 24 Nov 2018.
+                // if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
+
                 if (limitToSingleKey != null && key.Key.CoreP != limitToSingleKey.Key.CoreP) return;
 
                 var properties = entities.Select(e => e.Properties == null ? null : (e.Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null));
@@ -248,9 +250,10 @@ namespace AgoRapide.API {
                     objStrValues = new List<(object, string)> { }; // null, "NULL" will be added below
                     mixOfNullsAndNotNullFound = true;
                 } else {
-
                     // Note how Distinct() is called weakly typed for object, meaning it uses the Equals(object other)-method.
-                    var objValues = properties.Select(p => p?.Value ?? null).Distinct();
+                    var objValues = !key.Key.A.IsMany ?
+                        properties.Select(p => p?.Value ?? null).Distinct() :             // Added support for IsMany 24 Nov 2018.
+                        properties.Select(p => p?.Value ?? null).SelectMany(o => o == null ? new List<object> { null } : o as List<object> ?? throw new InvalidObjectTypeException(o, typeof(List<object>), "For all IsMany-properties the expected Property Value is List<object>" + Util.BreakpointEnabler)).Distinct();
 
                     /// Note that the Distinct() operation done above will not work properly of IEquatable is not implemented for the actual type.
                     /// We therefore work around this by collecting together all object-values with the same string-representation
@@ -302,6 +305,11 @@ namespace AgoRapide.API {
 
                 Util.EnumGetValues<Operator>().ForEach(o => {
                     if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.IsMatch(BaseEntity)"/>
+
+                    if (key.Key.PToString == "AircraftRegistrationId") {
+                        var a = 1;
+                    }
+
                     if (!key.Key.A.OperatorsAsHashSet.Contains(o)) return;
 
                     var objStrValuesForThisOperator = objStrValues;

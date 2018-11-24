@@ -261,8 +261,18 @@ namespace AgoRapide.Core {
                 default:
                     switch (Operator) {
                         case Operator.EQ:
+                            if (p.Key.Key.A.IsMany) { 
+                                // Return TRUE if any item in list matches.
+                                /// Note (very) pragmatic approach here to IsMany. This is practical for drill-down queries for instance (<see cref="API.DrillDownSuggestion.Create"/> for instance)
+                                /// TODO: Create a more formalised and mathematically sound approach for this.
+                                return (p.Value as List<object>)?.Any(o => o.Equals(Value)) ?? throw new InvalidObjectTypeException(p.Value, typeof(List<object>), ToString());
+                            }
                             return p.Value.Equals(Value);
                         case Operator.NEQ:
+                            if (p.Key.Key.A.IsMany) {
+                                // Return TRUE if no item in list matches. See also comment above.
+                                return !(p.Value as List<object>)?.Any(o => o.Equals(Value)) ?? throw new InvalidObjectTypeException(p.Value, typeof(List<object>), ToString());
+                            }
                             return !p.Value.Equals(Value);
                         default:
                             var lngValue = Value as long?;

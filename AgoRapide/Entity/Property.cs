@@ -216,7 +216,8 @@ namespace AgoRapide {
         public void AddPropertyForIsManyParent(CoreP key, Property property) {
             AssertIsManyParent();
             Properties.AddValue2(key, property);
-            _value = null; /// Important since <see cref="TryGetV{T}"/> caches last value found for a given type
+            _value = null; // Important since this is generated ad-hoc for IsManyParent.
+            _tryGetVCache = null; /// Important since <see cref="TryGetV{T}"/> caches last value found for a given type
         }
 
         /// <summary>
@@ -264,7 +265,7 @@ namespace AgoRapide {
                 /// Above is not sufficient for instance when <param name="key"/> does not originate from EnumMapper.
                 /// Therefore we must to this instead:
                 PropertyKeyMapper.GetA(key.Key.CoreP).PropertyKeyAsIsManyParentOrTemplate;
-            // TODO: Code above is a bit slow performance wise (there are two dictionary look ups involved)
+            /// TODO: Code above is a bit slow performance wise (there are two dictionary look ups involved)
             /// TODO: Code above is run whenever an <see cref="PropertyKeyAttribute.IsMany"/> property is read from database for instance.
 
             return new Property(dummy: null) {
@@ -335,15 +336,19 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// TODO: Fix name for this!
+        /// Note how 
+        /// 1) <see cref="PropertyCounter"/> is allowed to change this value AFTER initialization, 
+        /// 2) For <see cref="PropertyLogger"/> this is a <see cref="StringBuilder"/> which gets appended to, and how
+        /// 3) value is ad-hoc generated for <see cref="IsIsManyParent"/>.
         /// </summary>
         public object _value { get; protected set; }
         /// <summary>
         /// The generic value for this property. Corresponds to <see cref="PropertyT{T}._genericValue"/>
-        /// 
-        /// TODO: Add support of value as List[] for <see cref="IsIsManyParent"/>. Could for instance be created here if _value is null.
+        /// For <see cref="IsIsManyParent"/> will always be of type List{object} (and ad-hoc generated through <see cref="V{T}"/>)
         /// </summary>
-        public object Value => _value ?? throw new NullReferenceException(nameof(_value) + ".\r\n" + (IsIsManyParent ? ("Possible cause: " + nameof(IsIsManyParent) + ", as of June 2017 these are not initialized with " + nameof(_value) + "\r\n") : "") + "Details: " + ToString());
+        public object Value => _value ?? ((IsIsManyParent ?
+            (_value = V<List<object>>()) : /// Note ad-hoc initialization of _value for IsMany (and reset in <see cref="AddPropertyForIsManyParent"/>)
+            null) ?? throw new NullReferenceException(nameof(_value) + ". Details: " + ToString()));
 
         private Percentile _percentile;
         /// <summary>
@@ -449,6 +454,7 @@ namespace AgoRapide {
             }
         })());
 
+        private object _tryGetVCache = null;
         public T V<T>() => TryGetV(out T retval) ? retval : throw new InvalidPropertyException("Unable to convert value '" + _stringValue + "' to " + typeof(T).ToString() + ", A.Type: " + (Key.Key.A.Type?.ToString() ?? "[NULL]") + ". Was the Property-object correct initialized? Details: " + ToString());
         /// <summary>
         /// TODO: Decide what "Try" really means. 
@@ -468,24 +474,29 @@ namespace AgoRapide {
                 return true;
             } // Note how "as T" is not possible to use here
 
+            if (_tryGetVCache != null && _tryGetVCache is T) {
+                value = (T)_tryGetVCache;
+                return true;
+            }
+
             var t = typeof(T);
 
             if (IsIsManyParent) {
                 if (typeof(HTML).Equals(t)) {
-                    value = (T)(_value = new HTML( // Note caching in _value
+                    value = (T)(_tryGetVCache = new HTML(
                         string.Join(", ", Properties.Select(p => p.Value.V<HTML>())),
                         originalString: string.Join(", ", Properties.Select(p => p.Value.V<string>()))));
                     return true;
                 } else if (typeof(string).Equals(t)) {
-                    value = (T)(_value = string.Join(", ", Properties.Select(p => p.Value.V<string>()))); // Note caching in _value
+                    value = (T)(_tryGetVCache = string.Join(", ", Properties.Select(p => p.Value.V<string>())));
                     return true;
                 }
                 if (typeof(List<string>).Equals(t)) {
-                    value = (T)(_value = Properties.Select(p => p.Value.V<string>()).ToList()); // Note caching in _value
+                    value = (T)(_tryGetVCache = Properties.Select(p => p.Value.V<string>()).ToList());
                     return true;
                 }
                 if (typeof(List<object>).Equals(t)) {
-                    value = (T)(_value = Properties.Select(p => p.Value.Value).ToList()); // Note caching in _value
+                    value = (T)(_tryGetVCache = Properties.Select(p => p.Value.Value).ToList());
                     return true;
                 }
                 if (t.IsGenericType) {
@@ -495,8 +506,7 @@ namespace AgoRapide {
                         // InvalidTypeException.AssertAssignable(p.Value.Value.GetType(), Key.Key.A.Type, () => p.ToString());
                         iList.Add(p.Value.Value);
                     });
-                    _value = iList; // Note caching in _value
-                    value = (T)_value;
+                    value = (T)(_tryGetVCache = iList);
                     return true;
                 }
                 if (Properties.Count == 1) {
@@ -505,8 +515,7 @@ namespace AgoRapide {
                         /// This looks like a IsMany-property has been used as a single-property (at least being asked for as a single-value property now)
                         /// Since <see cref="BaseEntity.AddProperty{T}"/> accepts single-properties (one at a time), do the same now for retrieval. 
                         /// TODO: This is a somewhat dubious practice. 
-                        _value = Properties.First().Value._value;
-                        value = (T)_value;
+                        value = (T)(_tryGetVCache = Properties.First().Value._value);
                         return true;
                     }
                 }

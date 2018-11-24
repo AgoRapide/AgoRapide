@@ -43,11 +43,20 @@ namespace AgoRapide.Database {
         /// </summary>
         public static readonly FileCache Instance = new FileCache();
 
-        private const string RECORD_SEPARATOR = "\r\n-!-\r\n";
         /// <summary>
-        /// TODO: Improve in this. Enable storing of strings containing linefeeds for instead. 
+        /// TODO: Improve on this. 
+        /// </summary>
+        private const string RECORD_SEPARATOR = "\r\n-!-\r\n";
+
+        /// <summary>
+        /// TODO: Improve on this. 
         /// </summary>
         private const string FIELD_SEPARATOR = "\\\\\r\n";
+
+        /// <summary>
+        /// TODO: Improve on this. 
+        /// </summary>
+        private const string ISMANY_SEPARATOR = "/,/";
 
         private static ConcurrentDictionary<Type, List<PropertyKey>> _propertyKeyCache = new ConcurrentDictionary<Type, List<PropertyKey>>();
         [ClassMember(
@@ -92,12 +101,25 @@ namespace AgoRapide.Database {
                 GetFingerprint(type) + RECORD_SEPARATOR +
                 string.Join(RECORD_SEPARATOR, entities.Select(e =>
                     string.Join(FIELD_SEPARATOR, propertiesOrder.Select(p => {
-                        if (typeof(long).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
-                            return e.TryGetPV<long>(p, out var t) ? t.ToString() : "";
-                        } else if (typeof(double).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
-                            return e.TryGetPV<double>(p, out var t) ? t.ToString2() : "";
+                        if (p.Key.A.IsMany) {
+                            if (!e.Properties.TryGetValue(p.Key.CoreP, out var m)) return "";
+                            return string.Join(ISMANY_SEPARATOR, m.Properties.Values.Select(v => {
+                                if (typeof(long).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
+                                    return v.V<long>().ToString();
+                                } else if (typeof(double).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
+                                    return v.V<double>().ToString2();
+                                } else {
+                                    return v.V<string>();
+                                }
+                            }));
                         } else {
-                            return e.PV(p, "");
+                            if (typeof(long).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
+                                return e.TryGetPV<long>(p, out var t) ? t.ToString() : "";
+                            } else if (typeof(double).Equals(p.Key.A.Type)) { /// Do not use the string value as returned by Property because that will involve <see cref="NumberFormat"/> which parser does not understand
+                                return e.TryGetPV<double>(p, out var t) ? t.ToString2() : "";
+                            } else {
+                                return e.PV(p, "");
+                            }
                         }
                     }))
                 )),
@@ -164,15 +186,35 @@ namespace AgoRapide.Database {
                         // This property just does not exist
                         i++; return;
                     }
-                    if (!o.Key.TryValidateAndParse(properties[i], out var result)) throw new InvalidFileException(filepath, r, o, properties[i], result.ErrorResponse);
-                    if (i == 0) {
-                        /// The primary key (<see cref="DBField.id"/>) is stored as first property. 
-                        if (!entitiesFromDatabase.TryGetValue(result.Result.V<long>(), out entity)) throw new InvalidFileException(filepath, r, o, properties[i], "Not found in " + nameof(entitiesFromDatabase));
-                        /// Only get entity, continue with next property
+                    if (o.Key.A.IsMany) {
+                        if (i == 0) throw new InvalidCountException("IsMany not expected for i == 0 (which is supposed to be the Primary key)");
+
+                        // TODO: DELETE THIS COMMENT
+                        // This attempt will fail because ConvertListToIsManyParent will not accept a List<object>
+                        //entity.Properties[o.Key.CoreP] = Util.ConvertListToIsManyParent(entity, o, properties[i].Split(ISMANY_SEPARATOR).Select(s =>
+                        //      o.Key.TryValidateAndParse(s, out var result) ? result.Result.Value : throw new InvalidFileException(filepath, r, o, "All values:\r\n" + properties[i] + "\r\nsingle value: " + s, result.ErrorResponse)
+                        //).ToList(), () => "Original value: " + properties[i]);
+
+                        var isManyParent = entity.Properties.GetOrAddIsManyParent(o);
+                        properties[i].Split(ISMANY_SEPARATOR).ForEach(s => {
+                            if (!o.Key.TryValidateAndParse(s, out var result)) throw new InvalidFileException(filepath, r, o, "All values:\r\n" + properties[i] + "\r\nSingle value: " + s, result.ErrorResponse);
+                            isManyParent.AddPropertyForIsManyParent(
+                                isManyParent.GetNextIsManyId().IndexAsCoreP, 
+                                result.Result // Note how id is NOT currect set for result.Result now (only given to isManyParent).
+                            );
+                        });
+                        i++; return;
+                    } else {
+                        if (!o.Key.TryValidateAndParse(properties[i], out var result)) throw new InvalidFileException(filepath, r, o, properties[i], result.ErrorResponse);
+                        if (i == 0) {
+                            /// The primary key (<see cref="DBField.id"/>) is stored as first property. 
+                            if (!entitiesFromDatabase.TryGetValue(result.Result.V<long>(), out entity)) throw new InvalidFileException(filepath, r, o, properties[i], "Not found in " + nameof(entitiesFromDatabase));
+                            /// Only get entity, continue with next property
+                            i++; return;
+                        }
+                        entity.Properties[o.Key.CoreP] = result.Result; // Enrich with property from disk.
                         i++; return;
                     }
-                    entity.Properties[o.Key.CoreP] = result.Result; // Enrich with property from disk.
-                    i++; return;
                 });
             }
             entities = entitiesFromDatabase.Values.ToList();

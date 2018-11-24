@@ -223,11 +223,11 @@ namespace AgoRapide.Core {
         }
 
         [ClassMember(Description = "Returns all related types for the given context.")]
-        public static List<Type> GetAllRelatedTypes(List<Context> contexts) => contexts.Select(c => c.Type).Distinct().SelectMany(t => {
+        public static List<Type> GetAllRelatedTypes(List<Context> contexts) => contexts?.Select(c => c.Type).Distinct().SelectMany(t => {
             var retval = new List<Type> { t };
             retval.AddRange(GetPossibleTraversalsFromType(t).Keys);
             return retval;
-        }).Distinct().ToList();
+        }).Distinct().ToList() ?? throw new ArgumentNullException(nameof(contexts) + Util.BreakpointEnabler);
 
         /// <summary>
         /// Returns all entities found for the given context collection, ordered by type.

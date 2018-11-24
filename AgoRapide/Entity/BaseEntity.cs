@@ -341,10 +341,6 @@ namespace AgoRapide {
             if (!key.Key.A.IsMany) {
                 InvalidTypeException.AssertAssignable(typeof(T), key.Key.A.Type, () => key.Key.PToString); // Added 20 Sep 2017
                 AddProperty(new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute), detailer);
-                //Properties.AddValue2(key.Key.CoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute) {
-                //    ParentId = Id,
-                //    Parent = this
-                //}, detailer);
                 return;
             }
 
@@ -354,6 +350,10 @@ namespace AgoRapide {
             if (isManyParent != null) { // We are an IsMany parent, add at next available id.
                 if (key is PropertyKeyWithIndex) throw new PropertyKeyWithIndex.InvalidPropertyKeyException(nameof(key) + " as " + nameof(PropertyKeyWithIndex) + " not allowed (" + nameof(PropertyKeyWithIndex.Index) + " not allowed)");
                 isManyParent.Properties.Add(isManyParent.GetNextIsManyId().IndexAsCoreP, new PropertyT<T>(key.PropertyKeyWithIndex, value)); /// Note how <see cref="PropertyT{T}.PropertyT"/> will fail if value is a List now (not corresponding to <see cref="PropertyKeyAttribute.IsMany"/>)
+
+                /// TODO: Compare isManyParent.Properties above with call to <see cref="Property.AddPropertyForIsManyParent"/> below (which resets _tryGetVCache).
+                /// TOOD: Should the same reset be done here?
+                /// TODO: What in general is the difference betwen isManyParent.Properties.Add here and isManyParent.AddPropertyForIsManyParent below?
             } else {
                 var t = typeof(T);
                 if (t.IsGenericType) {
