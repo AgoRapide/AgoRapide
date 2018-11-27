@@ -353,7 +353,8 @@ namespace AgoRapide.API {
 
             // TODO: Push all necessary TeX encodings like this down to the lowest possible level (where the TeX-output is actually generated)
 
-            retval.Replace(
+            var strRetval = base.ToPDFDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", retval.ToString());
+            strRetval = strRetval.Replace(
                 "<", @"{\textless}").Replace(
                 ">", @"{\textgreater}").Replace(
                 "«", "``").Replace(
@@ -364,7 +365,7 @@ namespace AgoRapide.API {
                 "\r\n---------\r\n", @"{\pagebreak}");
 
             // TOOD: Remove this. Usually bug in non-related class related to scraping of HTML-pages
-            retval.Replace("Ã¥", "å");
+            strRetval = strRetval.Replace("Ã¥", "å");
 
             // Unsuccessful attempt (unexplained TeX compilation failure)
             //// Try to create URLs in PDF (this is a bit of a hack, should have been handled on a lower level)
@@ -380,10 +381,10 @@ namespace AgoRapide.API {
             //    return @"\url{https://" + s.Substring(0, pos) + "}" + s.Substring(pos);
             //});
             //var strRetval = string.Join("", s2);
-            var strRetval = retval.ToString();
+            // var strRetval = retval.ToString();
 
             /// Note how <see cref="BaseEntity.ToPDFDetailed"/> contains special code for <see cref="Result"/> hiding type and name
-            return base.ToPDFDetailed(request).ReplaceWithAssert("<!--DELIMITER-->", strRetval);
+            return strRetval;
         }
 
 
