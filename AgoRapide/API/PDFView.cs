@@ -74,9 +74,7 @@ namespace AgoRapide.API {
                 cmdProcess.BeginErrorReadLine();
 
                 cmdProcess.StandardInput.WriteLine(@"cd " + System.IO.Path.GetDirectoryName(filename));
-                cmdProcess.StandardInput.WriteLine(
-                    "\"" + @"C:\Users\Bjorn\AppData\Local\Programs\MiKTeX 2.9\miktex\bin\x64\pdflatex" + "\" " +
-                    System.IO.Path.GetFileName(filename) + ".tex");
+                cmdProcess.StandardInput.WriteLine(Util.Configuration.C.MiKTeXPDFLatexPath + System.IO.Path.GetFileName(filename) + ".tex");
 
                 Exception getException(string message) {
                     return new PDFCompilationException(
@@ -111,7 +109,8 @@ namespace AgoRapide.API {
                     if (
                         data.Contains(" ==> Fatal error occurred") || 
                         data.Contains("Type  H <return>  for immediate help.") ||
-                        data.Contains("! Undefined control sequence")
+                        data.Contains("! Undefined control sequence") ||
+                        data.Contains("Missing $ inserted")
                         ) {
                         System.Threading.Thread.Sleep(500); // Ensure complete data is "read"
                         bestEfforFailsafeTerminator();

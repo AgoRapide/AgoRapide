@@ -379,6 +379,9 @@ namespace AgoRapide.Core {
 
         public string GenericMethodRouteTemplate = "{*url}";
 
+        [ClassMember(Description = "Relevant when using -" + nameof(ResponseFormat.PDF) + "- / -" + nameof(PDFView) + "-.")]
+        public string MiKTeXPDFLatexPath { get; set; } = "\"" + @"C:\Program Files\MiKTeX 2.9\miktex/bin/x64\pdflatex" + "\" "; // Note trailing space
+
         /// <summary>
         /// TODO: Consider moving these "outside" of <see cref="ConfigurationAttribute"/>-class like other <see cref="EnumType.PropertyKey"/>
         /// </summary>
