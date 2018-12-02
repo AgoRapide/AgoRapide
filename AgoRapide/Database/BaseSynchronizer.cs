@@ -68,7 +68,7 @@ namespace AgoRapide.Database {
                 SynchronizationsInProgress.TryRemove(Id, out _);
             }
         }
-     
+
         private ConcurrentDictionary<Type, List<BaseEntity>> SynchronizeGetEntities(BaseDatabase db, Result result) {
             result.LogInternal("", GetType());
             var types = PV(SynchronizerP.SynchronizerExternalType.A(), defaultValue: new List<Type>());
@@ -92,9 +92,23 @@ namespace AgoRapide.Database {
                 return r;
             }
             var retval = SynchronizeInternal(db, result);
+
             if (retval.Count != types.Count) throw new InvalidCountException(retval.Count, types.Count,
                 "Found " + retval.KeysAsString() + ", expected " + string.Join(", ", types.Select(t => t.ToStringVeryShort())) + ".\r\n" +
                 "Resolution: Ensure that " + GetType() + "." + nameof(SynchronizeInternal) + " really returns data for all the types given in " + SynchronizerP.SynchronizerExternalType + ".");
+            
+            retval.ForEach(e => { // Ensure for each type that all entities have unique primary keys
+                var fk = e.Key.GetExternalPrimaryKey();
+                e.Value.ToDictionary2(entity => entity.TryGetPV<string>(fk, out var fkv) ?
+                    fkv :
+                    throw new Extensions.ExternalPrimaryKeyNotFoundException(
+                        nameof(PropertyKeyAttribute.ExternalForeignKeyOf) + " not found for entity " + entity.ToString() + ".\r\n" +
+                        "Resolution: Ensure that " + GetType().ToStringShort() + " sets a " + fk.Key.PToString + " for each entity returned"),
+                    entity => true,
+                    () => "Resolution: Ensure that " + GetType().ToStringShort() + " sets unique values for " + fk.Key.PToString + " for each entity returned"
+                );
+            });
+
             db.UpdateProperty(Id, this, SynchronizerP.SynchronizerLastUpdate.A(), DateTime.Now);
             return retval;
         }
@@ -128,8 +142,7 @@ namespace AgoRapide.Database {
             /// because that would specify neither <see cref="AggregationType"/> nor T (which is even more important, as we are called for different types, meaning value stored for last type would just be overridden)
             SetAndStoreCount(AggregationKey.Get(AggregationType.Count, type, CountP.CountTotal.A()), externalEntities.Count, result, db);
 
-            /// If no keys are found here, a typical cause may be missing statements in your Startup.cs
-            var externalPrimaryKey = type.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " != null for " + type);
+            var externalPrimaryKey = type.GetExternalPrimaryKey();
 
             var internalEntities = db.GetAllEntities(type);
             var internalEntitiesByExternalPrimaryKey = internalEntities.ToDictionary2(e => e.Properties.GetValue(externalPrimaryKey.Key.CoreP, () => e.ToString()).Value, e => e);
@@ -192,10 +205,9 @@ namespace AgoRapide.Database {
                         if (!entity.Properties.TryGetValue(p.Key.CoreP, out var fk)) return;
                         if (indexesThisForeignKeyType == null) {
                             if (!foreignPrimaryKeyToPrimaryKeyIndexes.TryGetValue(foreignType, out indexesThisForeignKeyType)) { // Note how we ensure that we build index for a specific foreignType only when needed and only once, even if referred from different properties.
-                                var externalPrimaryKeyOfForeignType = foreignType.GetChildProperties().Values.Single(k => k.Key.A.ExternalPrimaryKeyOf != null, () => nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + " of " + foreignType);
                                 indexesThisForeignKeyType = (foreignPrimaryKeyToPrimaryKeyIndexes[foreignType] = // Construct index                                    
                                     entities.GetValue(foreignType, () => "Possible resolution: Add " + foreignType + " to " + SynchronizerP.SynchronizerExternalType).ToDictionary(
-                                        entityOfForeignType => entityOfForeignType.Properties.GetValue(externalPrimaryKeyOfForeignType.Key.CoreP, () => externalPrimaryKeyOfForeignType.ToString() + " not found for " + entityOfForeignType.ToString()).Value,
+                                        entityOfForeignType => entityOfForeignType.Properties.GetValue(foreignType.GetExternalPrimaryKey().Key.CoreP, () => foreignType.GetExternalPrimaryKey().ToString() + " not found for " + entityOfForeignType.ToString()).Value,
                                         entityOfForeignType => entityOfForeignType.Id
                                     ));
                             }
