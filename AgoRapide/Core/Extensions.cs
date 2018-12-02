@@ -393,11 +393,13 @@ namespace AgoRapide.Core {
             return retval;
         }
 
-        [ClassMember(Description = "Alernative to IEnumerable.ToDictionary. Gives better exception for duplicate keys (will explain WHICH key is a duplicate).")]
-        public static Dictionary<TKey, TElement> ToDictionary2<TSource, TKey, TElement>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector) {
+        [ClassMember(Description =
+            "Alernative to IEnumerable.ToDictionary. " +
+            "Gives better exception for duplicate keys (will explain WHICH key is a duplicate).")]
+        public static Dictionary<TKey, TElement> ToDictionary2<TSource, TKey, TElement>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector, Func<string> detailer = null) {
             var retval = new Dictionary<TKey, TElement>();
             source.ForEach(e => {
-                retval.AddValue(keySelector(e), elementSelector(e), () => "Element " + e.ToString());
+                retval.AddValue(keySelector(e), elementSelector(e), () => "Element " + e.ToString() + detailer.Result("\r\nDetails: "));
             });
             return retval;
         }
@@ -740,6 +742,30 @@ namespace AgoRapide.Core {
         public static Dictionary<CoreP, PropertyKey> GetChildProperties(this Type type) {
             PropertyKeyMapper.AssertMapEnumFinalizeHasCompleted(); // This assert is done in order to avoid invalid cache issues if called during startup.
             return _childPropertiesCache.GetOrAdd(type, t => PropertyKeyMapper.AllCoreP.Where(key => key.Key.HasParentOfType(type)).ToDictionary(key => key.Key.CoreP, key => key));
+        }
+
+        public static PropertyKey GetExternalPrimaryKey(this Type type) => TryGetExternalPrimaryKey(type, out var retval) ? retval : throw new ExternalPrimaryKeyNotFoundException(
+            nameof(PropertyKeyAttribute.ExternalForeignKeyOf) + " not found for " + type + ".\r\n" +
+            "Possible resolution: Ensure that -" + nameof(PropertyKeyAttribute) + "-.- " + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "- has been defined for one of the properties belonging to " + type.ToStringShort() + "\r\n" +
+            "The current properties defined for " + type.ToStringShort() + " are: " + string.Join(", ", GetChildProperties(type)) + "\r\n" +
+            (GetChildProperties(type).Count > 0 ? "" : ("General hint: Remember mapping of " + nameof(EnumType.PropertyKey) + "-enums in your Startup.cs (refer to code block which ends with " + nameof(PropertyKeyMapper.MapEnumFinalize) + ")")));
+
+        private static ConcurrentDictionary<Type, PropertyKey> _externalPrimaryKeysCache = new ConcurrentDictionary<Type, PropertyKey>();
+        public static bool TryGetExternalPrimaryKey(this Type type, out PropertyKey propertyKey) => null != (propertyKey = _externalPrimaryKeysCache.GetOrAdd(type, t => {
+            var candidates = t.GetChildProperties().Values.Where(k => k.Key.A.ExternalPrimaryKeyOf != null).ToList();
+            switch (candidates.Count) {
+                case 0: return null;
+                case 1: return candidates.First();
+                default:
+                    throw new ExternalPrimaryKeyNotFoundException(
+                       "Multiple (" + candidates.Count + ") " + nameof(PropertyKeyAttribute.ExternalForeignKeyOf) + " found for " + type + ".\r\n" +
+                       "Possible resolution: Ensure that there is exact one -" + nameof(PropertyKeyAttribute) + "-.- " + nameof(PropertyKeyAttribute.ExternalPrimaryKeyOf) + "- defined for one of the properties belonging to " + type.ToStringShort() + "\r\n" +
+                       "Currenctly the following " + candidates.Count + " are defined: " + string.Join(", ", candidates.Select(c => c.Key.PToString)));
+            }
+        }));
+
+        public class ExternalPrimaryKeyNotFoundException : ApplicationException {
+            public ExternalPrimaryKeyNotFoundException(string message) : base(message) { }
         }
 
         private static ConcurrentDictionary<Type, ClassAttribute> _classAttributeCache = new ConcurrentDictionary<Type, ClassAttribute>();

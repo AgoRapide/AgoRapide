@@ -595,13 +595,12 @@ namespace AgoRapide {
                 } else if ("AgoRapide".Equals(GetType().Assembly.GetName().Name)) {
                     /// Developers of AgoRapide library itself are expected to understand this issue
                 } else {
-                    var childProperties = GetType().GetChildProperties();
-                    if (childProperties.Any(c => c.Value.Key.A.ExternalPrimaryKeyOf != null)) {
+                    if (GetType().TryGetExternalPrimaryKey(out _)) {
                         /// Looks like originates from external source through <see cref="BaseSynchronizer"/>. For those it is quite normal if nothing can be added. 
                     } else {
                         /// In all other cases, give hint about access
                         var a = GetType().GetClassAttribute();
-
+                        var childProperties = GetType().GetChildProperties();
 
                         // TODO: Create general mechanism for adding links to HTML text like this (links are indicated with starting -'s and trailing -'s.)
                         // TODO: And of course cache result, expect for request.CurrentUser.Name which will change. 
