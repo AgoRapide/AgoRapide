@@ -78,7 +78,6 @@ namespace AgoRapide {
                 var objValue = (object)value;
                 switch (objValue) {
                     case long v: return v.ToString(key.Key.A.NumberFormat);
-                    // case double v: return v.ToString2();
                     case double v: return v.ToString(key.Key.A.NumberFormat);
                     case DateTime v: return v.ToString(key.Key.A.DateTimeFormat); /// Correction 22 Sep 2017 (instead of always using <see cref="DateTimeFormat.DateHourMin"/>)
                     case TimeSpan v: return v.TotalHours < 24 ? v.ToString(@"hh\:mm\:ss") : v.ToString(@"d\.hh\:mm\:ss"); /// Note corresponding code in <see cref="PropertyT{T}.PropertyT"/> and <see cref="PropertyKeyAttributeEnriched.Initialize"/>
