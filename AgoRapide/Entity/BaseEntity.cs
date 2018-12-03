@@ -846,7 +846,17 @@ namespace AgoRapide {
                     /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
                     PriorityOrder.Everything // We assume that all information is required for CSV
                 ).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ?
-                p.V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ") : // Note replacement here with : and //. TODO: Document better / create alternatives
+                new Func<string>(() => {
+                    var r = p.V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ");
+                    if (p.Key.Key.A.Type == typeof(long)) {
+                        r = r.Replace(",", "").Replace(".",""); // Remove any thousands separators that may have been included as they are only a potential for confusion (worst case scenario is if they are erroneusly taken for decimal points).
+
+                        /// NOTE: See code in <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> 
+                        /// NOTE:    case long v: return v.ToString(key.Key.A.NumberFormat);
+                        /// NOTE: for how a comma or full stop might have been introduced in <see cref="Property._stringValue"/>
+                    }
+                    return r;
+                })() : // Note replacement here with : and //. TODO: Document better / create alternatives
                 "")
             ) +
             // request.CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) + // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
