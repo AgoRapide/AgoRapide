@@ -834,6 +834,25 @@ namespace AgoRapide {
         });
 
         /// <summary>
+        /// Constructs a string representation of <paramref name="p"/>'s value suitable for CSV-format.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="p">May be null in which case <see cref="string.Empty"/> will be returned</param>
+        /// <returns></returns>
+        public static string GetCSVPropertyValue(Request request, Property p) {
+            if (p == null) return "";
+            var r = p.V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // "); // Note replacement here with : and //. TODO: Document better / create alternatives
+            if (p.Key.Key.A.Type == typeof(long)) {
+                r = r.Replace(",", "").Replace(".", ""); // Remove any thousands separators that may have been included as they are only a potential for confusion (worst case scenario is if they are erroneusly taken for decimal points).
+
+                /// NOTE: See code in <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> 
+                /// NOTE:    case long v: return v.ToString(key.Key.A.NumberFormat);
+                /// NOTE: for how a comma or full stop might have been introduced in <see cref="Property._stringValue"/>
+                /// NOTE: (which again was returned when <see cref="Property.V{string}"/> was called just above).
+            }
+            return r;
+        }
+        /// <summary>
         /// Note that may be overridden if you need finer control about how to present your entities (like <see cref="Property.ToCSVTableRow"/>).
         /// 
         /// NOTE: Remember to always override correspondingly for <see cref="BaseEntity.ToCSVTableRowHeading"/> and <see cref="BaseEntity.ToCSVTableRow"/>
@@ -845,19 +864,7 @@ namespace AgoRapide {
             string.Join(request.CSVFieldSeparator, GetType().GetChildPropertiesByPriority(
                     /// request.PriorityOrderLimit   Replaced 29 Sep 2017 with <see cref="PriorityOrder.Everything"/>
                     PriorityOrder.Everything // We assume that all information is required for CSV
-                ).Select(key => Properties.TryGetValue(key.Key.CoreP, out var p) ?
-                new Func<string>(() => {
-                    var r = p.V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ");
-                    if (p.Key.Key.A.Type == typeof(long)) {
-                        r = r.Replace(",", "").Replace(".",""); // Remove any thousands separators that may have been included as they are only a potential for confusion (worst case scenario is if they are erroneusly taken for decimal points).
-
-                        /// NOTE: See code in <see cref="PropertyT{T}.PropertyT(PropertyKeyWithIndex, T, string, BaseAttribute)"/> 
-                        /// NOTE:    case long v: return v.ToString(key.Key.A.NumberFormat);
-                        /// NOTE: for how a comma or full stop might have been introduced in <see cref="Property._stringValue"/>
-                    }
-                    return r;
-                })() : // Note replacement here with : and //. TODO: Document better / create alternatives
-                "")
+                ).Select(key => GetCSVPropertyValue(request, Properties.TryGetValue(key.Key.CoreP, out var p) ? p : null))
             ) +
             // request.CSVFieldSeparator + Created.ToString(DateTimeFormat.DateHourMin) + // When used with <see cref="BaseSynchronizer"/> Created is especially of little value since it is only the date for the first synchronization.
             "\r\n";

@@ -10,7 +10,8 @@ namespace AgoRapide.API {
 
     /// <summary>
     /// Note how care has been taken in order to ensure that this class can behave just like any another <see cref="BaseEntity"/>-class regarding
-    /// presentation as HTML / JSON / CSV.
+    /// presentation as HTML / JSON / CSV. 
+    /// (but note how some methods like <see cref="ToHTMLTableColumns"/> have been overrided from their basic implementation in <see cref="BaseEntity"/>)
     /// 
     /// TODO: Note that <see cref="ResponseFormat.JSON"/> is currently missing <see cref="LeftmostColumn"/>
     /// TOOD: Consider adding it to <see cref="BaseEntity.Properties"/> in <see cref="FieldIterator.FieldIterator"/>
@@ -36,20 +37,6 @@ namespace AgoRapide.API {
         [ClassMember(Description = "Something like Sum, Median or 'Product = WidgetXYZ'")]
         public string LeftmostColumn { get; private set; }
 
-        /// TODO: To be deleted. 
-        /// TODO: Wrong assumption. This should probably be added by "normal" mechanism for presenting results.
-        //public FieldIterator(AggregationType rowKey, List<Property> columns) {
-        //    LeftmostColumn = rowKey.ToString();
-        //    Columns = columns;
-        //}
-
-        /// TODO: To be deleted. 
-        /// TODO: Wrong assumption since there are different <see cref="DrillDownSuggestion"/> for each column
-        //public FieldIterator(DrillDownSuggestion drillDownSuggestion, List<Property> columns) {
-        //    LeftmostColumn = drillDownSuggestion.Text;
-        //    Columns = columns;
-        //}
-
         public FieldIterator(string leftmostColumn, List<Property> columns) {
             LeftmostColumn = leftmostColumn ?? throw new ArgumentNullException(nameof(leftmostColumn));
             Columns = columns ?? throw new ArgumentNullException(nameof(columns));
@@ -65,27 +52,19 @@ namespace AgoRapide.API {
         public override string ToHTMLTableRowHeading(Request request, List<AggregationType> aggregateRows) {
             // Note how this has no cache because the columns will differ between instances.
             var headers = "<tr><th>&nbsp;</th>" + string.Join("", Columns.Select(p => "<th>" + p.Key.ToHTMLTableHeader() + "</th>")) + "</tr>";
-            ///// TODO: Why "deny" use of <param name="aggregateRows"/> here?
-            //if (aggregateRows != null && aggregateRows.Count > 0) throw new NotNullReferenceException(nameof(aggregateRows));
             aggregateRows = aggregateRows?.Where(a => ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() > 0).ToList() ?? null;
 
             return "<thead>" +
                 (aggregateRows == null || aggregateRows.Count == 0 ? "" : (
                     headers + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
                     string.Join("", aggregateRows.Select(a => {
-                        // if (ToHTMLTableColumns(request).Where(t => t.Key.A.AggregationTypes.Any(ka => ka == a)).Count() == 0) return "";
                         return "<tr><th>" + a + "</th>" +
                             string.Join("", ToHTMLTableColumns(request).Select(key => "<th align=\"right\">" +
                                 (key.Key.A.AggregationTypes.Contains(a) ? ("<!--" + key.Key.PToString + "_" + a + "-->") : "") +
                                 "</th>")) +
                         "</tr>";
-                    })) // +
-                        // headers.Replace(">" + nameof(IdFriendly) + "<",">&nbsp;<") // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
+                    }))
                 )) +
-                // Removed 29 Nov 2017
-                //"<tr><th>Context</th>" +
-                //    string.Join("", ToHTMLTableColumns(request).Select(key => "<th  style=\"vertical-align:top\"><!--" + key.Key.PToString + "_Context--></th>")) +
-                //"</tr>" +
                 headers + // Note how field names (headers) are repeated multiple times. TODO: Make better when very few aggregations / contexts suggestions.
                 "</thead>";
         }
@@ -97,35 +76,10 @@ namespace AgoRapide.API {
         public override string ToHTMLDetailed(Request request) => throw new NotImplementedException("Would be rather meaningless to implement anyway.");
     
         public override List<PropertyKey> ToCSVTableColumns(Request request) => ToHTMLTableColumns(request);
-        // public override string ToCSVTableRowHeading(Request request) => throw new NotImplementedException(); // There is no need for overriding this
-        public override string ToCSVTableRow(Request request) =>
-            LeftmostColumn + request.CSVFieldSeparator + string.Join(request.CSVFieldSeparator, Columns.Select(p =>
-                p.V<string>().Replace(request.CSVFieldSeparator, ":").Replace("\r\n", " // ") // Note replacement here with : and //. TODO: Document better / create alternatives
-            )) + "\r\n";
+
+        public override string ToCSVTableRow(Request request) => LeftmostColumn + request.CSVFieldSeparator + 
+            string.Join(request.CSVFieldSeparator, Columns.Select(p => GetCSVPropertyValue(request, p))) + "\r\n";
 
         public override string ToCSVDetailed(Request request) => throw new NotImplementedException("Would be rather meaningless to implement anyway.");
     }
-
-    // TODO: Decide if this is needed? 
-    // TODO: Maybe keys have to be generated dynamically anyway?
-    //[Enum(AgoRapideEnumType = EnumType.PropertyKey)]
-    //public enum FieldIteratorP {
-
-    //    None,
-
-    //    [PropertyKey(Type = typeof(long), Group = typeof(FieldIteratorPropertiesDescriber))]
-    //    Value,
-    //}
-
-    //public static class ExtensionsFieldIteratorP {
-    //    public static PropertyKey A(this FieldIteratorP p) => PropertyKeyMapper.GetA(p);
-    //}
-
-    //public class FieldIteratorPropertiesDescriber : IGroupDescriber {
-    //    public void EnrichKey(PropertyKeyAttributeEnriched key) {
-    //        key.AddParent(typeof(FieldIterator));
-    //        key.A.AccessLevelRead = AccessLevel.Relation; 
-    //        key.A.AccessLevelWrite = AccessLevel.Relation;
-    //    }
-    //}
 }
