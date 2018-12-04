@@ -306,10 +306,6 @@ namespace AgoRapide.API {
                 Util.EnumGetValues<Operator>().ForEach(o => {
                     if (o != Operator.EQ) return; /// Because not supported by <see cref="QueryIdKeyOperatorValue.IsMatch(BaseEntity)"/>
 
-                    if (key.Key.PToString == "AircraftRegistrationId") {
-                        var a = 1;
-                    }
-
                     if (!key.Key.A.OperatorsAsHashSet.Contains(o)) return;
 
                     var objStrValuesForThisOperator = objStrValues;
