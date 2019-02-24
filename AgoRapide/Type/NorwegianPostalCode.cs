@@ -59,7 +59,6 @@ namespace AgoRapide {
         /// enumAttribute.Cleaner=
         /// 
         /// TODO: IMPLEMENT CHAINING OF VALIDATION!
-
         /// <summary>
         /// TODO: Do away with need for double overloads (for both <see cref="P"/> and <see cref="CoreP"/>)
         /// </summary>
