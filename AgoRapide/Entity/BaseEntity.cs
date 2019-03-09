@@ -202,7 +202,12 @@ namespace AgoRapide {
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <returns></returns>
-        public T PV<T>(PropertyKey key) => TryGetPV(key, out T retval) ? retval : throw new InvalidPropertyException<T>(key.Key.CoreP, PExplained(key), ToString());
+        public T PV<T>(PropertyKey key) => TryGetPV(key, out T retval) ? retval :
+            (
+                (Properties?.TryGetValue(key.Key.CoreP, out var property) ?? false) ?
+                (false ? default(T) : throw new InvalidPropertyException<T>(key.Key.CoreP, PExplained(key), ToString())) :
+                (false ? default(T) : throw new PropertyNotFoundException<T>(key.Key.CoreP, ToString()))
+            );
 
         /// <summary>
         /// Calls <see cref="TryGetPV{T}(TProperty, out T)"/>, returns <paramref name="defaultValue"/> if that fails.
@@ -339,7 +344,13 @@ namespace AgoRapide {
             if (detailer == null) detailer = () => ToString();
 
             if (!key.Key.A.IsMany) {
-                InvalidTypeException.AssertAssignable(typeof(T), key.Key.A.Type, () => key.Key.PToString); // Added 20 Sep 2017
+                InvalidTypeException.AssertAssignable(typeof(T), key.Key.A.Type, () =>
+                    "The type required (" + key.Key.A.Type.ToString() + ") for " + key.Key.PToString + " " +
+                    "is not assignable from the type given (" + typeof(T).ToStringShort() + ")." +
+                    (key.Key.A.Type.IsValueType && typeof(T).IsValueType ? "\r\nThere might be an implicit conversion available but that was not taken into consideration now." : "") +
+                    (key.Key.A.Type.Equals(typeof(long)) && typeof(T).Equals(typeof(int)) ? "\r\nAlso, int-values are generally not allowed in AgoRapide. Use long instead." : "")
+                /// See also <see cref="TypeIntNotSupportedByAgoRapideException"/> for general explanation about int / long.
+                );
                 AddProperty(new PropertyT<T>(key.PropertyKeyWithIndex, value, strValue, valueAttribute), detailer);
                 return;
             }
@@ -389,9 +400,17 @@ namespace AgoRapide {
                     "Details: " + details) { }
         }
 
+        public class PropertyNotFoundException<T> : ApplicationException {
+            public PropertyNotFoundException(CoreP p, string details) : base(
+                    "No value found for " + p.A().Key.PToString + "\r\n" +
+                    "Expected a value of type " + typeof(T) + ".\r\n" +
+                    "Details: " + details) {
+            }
+        }
+
         private static ConcurrentDictionary<
-            string, // Key is GetType + _ + PriorityOrderLimit
-            List<PropertyKey>> _HTMLTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
+        string, // Key is GetType + _ + PriorityOrderLimit
+        List<PropertyKey>> _HTMLTableRowColumnsCache = new ConcurrentDictionary<string, List<PropertyKey>>();
         /// <summary>
         /// Note that in addition to the columns returned by <see cref="ToHTMLTableColumns"/> an extra column with <see cref="BaseEntity.Id"/> is also returned by <see cref="ToHTMLTableRowHeading"/> and <see cref="ToHTMLTableRow"/>
         /// 

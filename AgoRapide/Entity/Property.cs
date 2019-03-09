@@ -582,7 +582,10 @@ namespace AgoRapide {
         /// </summary>
         public class InvalidPropertyException : ApplicationException {
             public InvalidPropertyException(string message) : base(message) { }
-            public InvalidPropertyException(Property p, string message) : base("Property " + p.Id + " is invalid.\r\nDetails: " + message + ".\r\nProperty details: " + p.ToString()) { }
+            public InvalidPropertyException(Property p, string message) : base(
+                "Property " + p.Id + " is invalid.\r\n" +
+                "Details: " + message + ".\r\n" +
+                "Property details: " + p.ToString()) { }
         }
 
         /// <summary>
