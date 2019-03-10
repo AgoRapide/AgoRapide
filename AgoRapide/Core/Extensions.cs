@@ -169,7 +169,6 @@ namespace AgoRapide.Core {
             }
         }
 
-        public static T GetValue<T>(this List<T> list, int index) => GetValue(list, index, null);
         /// <summary>
         /// Gives better error messages when accessing list with index out of range
         /// </summary>
@@ -178,17 +177,17 @@ namespace AgoRapide.Core {
         /// <param name="dictionary"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static T GetValue<T>(this List<T> list, int index, Func<string> detailer) {
+        public static T GetValue<T>(this List<T> list, int index, Func<string> detailer = null) {
             if (list == null) throw new NullReferenceException(nameof(list) + detailer.Result("\r\nDetails: "));
             if (index >= list.Count) throw new IndexOutOfRangeException(nameof(index) + ": " + index + ", " + list.ListAsString() + detailer.Result("\r\n-- -\r\nDetails: "));
             return list[index];
         }
 
-        // public static TValue GetValue<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) => GetValue(dictionary, key, null);
         /// <summary>
         /// Gives better error messages when reading value from directory if key does not exist
         /// 
         /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
+        /// (explained in <see cref="KeysAsString2{TKey, TValue}(Dictionary{TKey, TValue})"/>)
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -207,6 +206,7 @@ namespace AgoRapide.Core {
         /// Gives better error messages when reading value from directory if key does not exist
         /// 
         /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
+        /// (explained in <see cref="KeysAsString2{TKey, TValue}(ConcurrentDictionary{TKey, TValue})"/>)
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -222,11 +222,11 @@ namespace AgoRapide.Core {
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException(Util.BreakpointEnabler + "Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
-        public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null); // What we really would want is "where T : Enum"
         /// <summary>
         /// Gives better error messages when reading value from directory if key does not exist
         /// 
-        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
+        /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/> 
+        /// (explained in <see cref="KeysAsString2{TKey, TValue}(Dictionary{TKey, TValue})"/>)
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -237,16 +237,16 @@ namespace AgoRapide.Core {
         /// Used to give details in case of an exception being thrown
         /// </param>
         /// <returns></returns>
-        public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public static TValue GetValue2<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer = null) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
         }
 
-        public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) where TKey : struct, IFormattable, IConvertible, IComparable => GetValue2(dictionary, key, null);  // What we really would want is "where T : Enum"
         /// <summary>
         /// Gives better error messages when reading value from directory if key does not exist
         /// 
         /// Note how <see cref="GetValue2"/> is more preferable than <see cref="GetValue"/> due to restrictions on <typeparamref name="TKey"/>
+        /// (explained in <see cref="KeysAsString2{TKey, TValue}(ConcurrentDictionary{TKey, TValue})"/>)
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -257,7 +257,7 @@ namespace AgoRapide.Core {
         /// Used to give details in case of an exception being thrown
         /// </param>
         /// <returns></returns>
-        public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
+        public static TValue GetValue2<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, Func<string> detailer = null) where TKey : struct, IFormattable, IConvertible, IComparable { // What we really would want is "where T : Enum"
             if (dictionary == null) throw new NullReferenceException(nameof(dictionary) + detailer.Result("\r\nDetails: "));
             return dictionary.TryGetValue(key, out var retval) ? retval : throw new KeyNotFoundException("Key '" + key.ToString() + "' not found in dictionary. Dictionary.Count: " + dictionary.Count + " " + dictionary.KeysAsString2() + detailer.Result("\r\n---\r\nDetails: "));
         }
@@ -932,7 +932,7 @@ namespace AgoRapide.Core {
         public static string HTMLEncodeAndEnrich(this string _string, APICommandCreator api, int? maxLength = null) {
             if (_string.StartsWith("http://") || _string.StartsWith("https://")) {
                 var b = Util.Configuration.C.BaseUrl.ToString();
-                return string.Join("\r\n<br>", _string.Split("\r\n").Select(s => "<a href=\"" + s + (
+                return string.Join("<br>\r\n", _string.Split("\r\n").Select(s => "<a href=\"" + s + (
                     (
                         s.StartsWith(b) && // Added restriction to only internal links at 16 Nov 2018.
                         api.ResponseFormat == ResponseFormat.HTML && !s.EndsWith(Util.Configuration.C.HTMLPostfixIndicator)
@@ -942,7 +942,7 @@ namespace AgoRapide.Core {
                 ) +
                 "\">" + s.HTMLEncode(maxLength) + "</a>"));
             }
-            return _string.HTMLEncode(maxLength).Replace("\r\n", "\r\n<br>");
+            return _string.HTMLEncode(maxLength).Replace("\r\n", "<br>\r\n");
         }
 
         /// <summary>
