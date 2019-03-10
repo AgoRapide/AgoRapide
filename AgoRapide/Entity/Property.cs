@@ -435,7 +435,7 @@ namespace AgoRapide {
                         }
                         if (Key.Key.A.IsDocumentation) {
                             return new HTML(
-                                Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "\r\n<br>"),
+                                Documentator.ReplaceKeys(v.HTMLEncode()).Replace("\r\n", "<br>\r\n"),
                                 originalString: v /// Important, add original string in order to show a shorter version in <see cref="BaseEntity.ToHTMLTableRow"/>
                             );
                         } else if (Documentator.Keys.TryGetValue(v, out var list)) {
