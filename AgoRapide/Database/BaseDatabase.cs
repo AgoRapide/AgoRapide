@@ -244,7 +244,7 @@ namespace AgoRapide.Database {
                     var foundDateTimeComparerAmongRows = false;  // TRUE means that sums across rows are not relevant because they would probably be meaningless (adding ThisYear to ThisMonth for instance)
 
                     DrillDownSuggestion.Create(q.ColumnType, columnTypeEntities.Values, limitToSingleKey: q.ColumnKey, excludeQuantileSuggestions: true,
-                        includeAllSuggestions: true /// Extremely important, if not given then some data will be left out.
+                        includeAllSuggestions: true /// Extremely important, if not given then some data will be left out. Will be ignored for keys of type <see cref="DateTime"/>
                     ).Values.ForEach(operatorsColumn => {
                         operatorsColumn.ForEach(operatorColumn => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
                             operatorColumn.Value.
@@ -282,7 +282,7 @@ namespace AgoRapide.Database {
                                     }
 
                                     DrillDownSuggestion.Create(requiredType, newRequiredTypeEntities.Values, limitToSingleKey: q.RowKey, excludeQuantileSuggestions: true,
-                                        includeAllSuggestions: true /// Extremely important, if not some data will be left out.
+                                        includeAllSuggestions: true /// Extremely important, if not some data will be left out. Will be ignored for keys of type <see cref="DateTime"/>
                                     ).Values.ForEach(operatorsRow => {
                                         operatorsRow.ForEach(operatorRow => { /// TODO: Structure of result from <see cref="DrillDownSuggestion.Create"/> is too complicated. 
                                             operatorRow.Value.

@@ -96,6 +96,7 @@ namespace AgoRapide.API {
         /// TODO: (therefore the introduction of <paramref name="includeAllSuggestions"/>
         /// TOOD: but there may be some subtle bugs remaining which could lead to suggestions being omitted 
         /// TOOD: (this would again lead to a "0"-value in the corresponding <see cref="FieldIterator"/> row / column).
+        /// TODO: Apr 2019: Situation has not been improved (see "HACK: Added 22 Apr 2019. Note how this excludes possibility of iterating over individual dates.")
         /// 
         /// Note that result is <see cref="ConcurrentDictionary{TKey, TValue}"/> instead of <see cref="Dictionary{TKey, TValue}"/> because code 
         /// executes in parallell.
@@ -115,7 +116,8 @@ namespace AgoRapide.API {
         /// <param name="excludeQuantileSuggestions">Useful in combination with <see cref="QueryIdFieldIterator"/> for which quantiles will mostly be confusing</param>
         /// <param name="includeAllSuggestions">
         /// If TRUE then drill-down suggestion will be given even if ALL <paramref name="entities"/> satisfy the suggestion. 
-        /// Essentially to set to TRUE when used in combination with <see cref="QueryIdFieldIterator"/>
+        /// Essentially to set to TRUE when used in combination with <see cref="QueryIdFieldIterator"/>. 
+        /// Will be ignored for keys of type <see cref="DateTime"/> (see "HACK: Added 22 Apr 2019. Note how this excludes possibility of iterating over individual dates.")
         /// </param>
         /// <returns></returns>
         [ClassMember(Description = "Returns all relevant drill-down suggestions")]
@@ -150,9 +152,6 @@ namespace AgoRapide.API {
             /// NOTE: If for instance <param name="type"/> has only one child property that is computationaly expensive, then
             /// NOTE: the parallelization here would have no effect.
             Parallel.ForEach(type.GetChildProperties().Values, key => {
-
-                // Added support for IsMany 24 Nov 2018.
-                // if (key.Key.A.IsMany) return; /// These are not supported by <see cref="Property.Value"/>
 
                 if (limitToSingleKey != null && key.Key.CoreP != limitToSingleKey.Key.CoreP) return;
 
@@ -227,12 +226,19 @@ namespace AgoRapide.API {
                 List<(object, string)> objStrValues = null; // This are the actual values that we will offer for drill-down, like "Monday", "42", "John", "Smith" or similar.
 
                 var addDateTimeComparer = key.Key.A.Type == typeof(DateTime);
+                if (addDateTimeComparer && includeAllSuggestions) {
+                    includeAllSuggestions = false; // HACK: Added 22 Apr 2019. Note how this excludes possibility of iterating over individual dates.
+                    /// NOTE: If you want to add the possibility of iterating over invividual dates then one possible solution is to add
+                    /// NOTE: another field to <see cref="PropertyKeyAttribute"/> called DoNotUseDateTimeComparer for instance.
+                }
 
                 /// TODO: Decide about <see cref="Operator.NEQ"/>. As of Sep 2017 we use <see cref="SetOperator.Remove"/> as substitute
                 if (key.Key.A.Operators.Length == 1 && key.Key.A.Operators[0] == Operator.EQ && !key.Key.A.HasLimitedRange && !includeAllSuggestions) {
                     // Our only choice is limiting to NULL or NOT NULL values.  
                     if (entities.All(e => e.Properties == null || !e.Properties.TryGetValue(key.Key.CoreP, out _))) { // None are set.
-                        if (addDateTimeComparer) goto calculate_objStrValues;
+                        if (addDateTimeComparer) {
+                            goto calculate_objStrValues;
+                        }
                         if (percentileDrilldowns.Count > 0) { // HACK, TODO: MAKE PRETTIER!
                             retval.Add(key.Key.CoreP, new Dictionary<Operator, Dictionary<string, DrillDownSuggestion>> { { Operator.EQ, percentileDrilldowns } });
                         }
