@@ -798,7 +798,7 @@ namespace AgoRapide {
             adderWithLink(DBField.iid, InvalidatorId);
             retval.AppendLine("</table>");
 
-            request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
+            APICommandCreator.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
                 request.Result.AddProperty(CoreP.SuggestedUrl.A(), request.API.CreateAPIUrl(cmd));
                 retval.AppendLine("<p>" + request.API.CreateAPILink(cmd, "History") + "</p>");
             });
@@ -938,7 +938,7 @@ namespace AgoRapide {
             adder(DBField.invalid, Invalid?.ToString(DateTimeFormat.DateHourMinSec));
             adderWithLink(DBField.iid, InvalidatorId);
 
-            request.API.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
+            APICommandCreator.CreateAPICommand(CoreAPIMethod.History, GetType(), new QueryIdInteger(Id)).Use(cmd => {
                 request.Result.AddProperty(CoreP.SuggestedUrl.A(), cmd);
                 retval.AppendLine("History" + request.CSVFieldSeparator + cmd);
             });

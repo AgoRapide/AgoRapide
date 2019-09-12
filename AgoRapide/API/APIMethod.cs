@@ -260,11 +260,17 @@ namespace AgoRapide.API {
 
         /// <summary>
         /// Inserts <paramref name="parameters"/> into <see cref="RouteTemplates"/> according to <see cref="PropertyKeyAttributeEnriched.ConvertObjectToString"/>
+        /// Example: If template is "Person/{Id}" and first element of <paramref name="parameters"/> contains 42 then the result will be "Person/42".
+        ///          (correspondingly the first element of <see cref="Parameters"/> is used to know that "{Id}" is the name of the first parameter).
         /// </summary>
-        /// <param name="parameters"></param>
+        /// <param name="parameters">This number of elements in this list must correspond to number of elements in <see cref="Parameters"/></param>
         /// <returns></returns>
         public string GetAPICommand(params object[] parameters) {
-            if (parameters.Length != Parameters.Count) throw new InvalidCountException(nameof(parameters) + ".Length (" + parameters.Length + ") != " + nameof(Parameters) + ".Count (" + Parameters.Count + ") for " + ToString());
+            if (parameters.Length != Parameters.Count) throw new InvalidCountException(
+                nameof(parameters) + ".Length (" + parameters.Length + ") != " + nameof(Parameters) + ".Count (" + Parameters.Count + ") for " + ToString() + ". " +
+                "Explanation: " +
+                "This method expects " + Parameters.Count + " parameters (" + string.Join(", ",Parameters.Select(p => p.Key.PToString)) + ") " +
+                "but " + parameters.Length + " was given (" + string.Join(", ", parameters.Select(p => p.GetType().ToStringVeryShort())) + ")");
             var retval = RouteTemplates[0];
             for (var i = 0; i < parameters.Length; i++) {
                 if (Parameters.Count <= i) return retval;

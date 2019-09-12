@@ -180,11 +180,12 @@ namespace AgoRapide.API {
                     string.Join("", Context.GetAllRelatedTypes(Request.CurrentUser.PV(CoreP.Context.A(), new List<Context>())).Select(t =>
                        "&nbsp;" +
                        Request.API.CreateAPILink(
-                       CoreAPIMethod.EntityIndex,
-                       t.ToStringVeryShort(), /// TODO: Consider using <see cref="Extensions.ToStringDB"/> instead
-                        t,
-                       new QueryIdContext()
-                   )))
+                           CoreAPIMethod.EntityIndex,
+                           t.ToStringVeryShort(), /// TODO: Consider using <see cref="Extensions.ToStringDB"/> instead
+                            t,
+                           new QueryIdContext()
+                       )
+                    ))
                 ) +
             "</p>"
             ;

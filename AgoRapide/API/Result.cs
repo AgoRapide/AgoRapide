@@ -157,7 +157,7 @@ namespace AgoRapide.API {
                                     part.Append(string.Join("<br>", contextsThisKey.Select(c => {
                                         var queryId = (QueryIdKeyOperatorValue)c.Context.QueryId;
                                         // TODO: Fix compile error here!
-                                        return request.API.CreateAPILink(request.API.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(c.Id), PropertyOperation.SetInvalid), c.Context.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
+                                        return request.API.CreateAPILink(APICommandCreator.CreateAPICommand(CoreAPIMethod.PropertyOperation, typeof(Property), new QueryIdInteger(c.Id), PropertyOperation.SetInvalid), c.Context.SetOperator + " " + queryId.Operator + " " + queryId.Value + " => " + PropertyOperation.SetInvalid);
                                     })));
                                 }
                                 if (part.Length > 0) replacementThisKey.Append(part.ToString());

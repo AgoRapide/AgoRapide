@@ -296,12 +296,12 @@ namespace AgoRapide.Core {
 
         private Uri _baseUrl;
         /// <summary>
-        /// Example: https://bapi.agorapide.com/api/ or http://localhost:59294/api/
+        /// Example: https://sample.agorapide.com/api/ or http://localhost:59294/api/
         /// </summary>
         [ClassMember(
             Description =
                 "URL that is prepended to every API-command generated through code. " +
-                "See -" + nameof(APIMethod.GetAPICommand) + "- / -" + nameof(APICommandCreator.CreateAPICommand) + "-",
+                "See -" + nameof(APICommandCreator.CreateAPIUrl) + "-",
             LongDescription =
                 "Equivalent to -" + nameof(RootUrl) + "- plus -" + nameof(APIPrefix) + "-"
         )]
