@@ -15,7 +15,7 @@ namespace AgoRapide.API {
     /// </summary>
     [Class(
         Description =
-            "Container class with information about a given REST API request.\r\n" +
+            "Container class with information about a given incoming REST API request.\r\n" +
             "Super class -" + nameof(Request) + "- is a minimal version used when request from client was not fully understood " +
             "(invalid parameters for instance or because some exceptions occurred at parsing of request).\r\n" +
             "Sub class -" + nameof(ValidRequest) + "- is the more exact version with actual validated -" + nameof(ValidRequest.Parameters) + "-"

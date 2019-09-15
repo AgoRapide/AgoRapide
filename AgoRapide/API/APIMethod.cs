@@ -269,7 +269,7 @@ namespace AgoRapide.API {
             if (parameters.Length != Parameters.Count) throw new InvalidCountException(
                 nameof(parameters) + ".Length (" + parameters.Length + ") != " + nameof(Parameters) + ".Count (" + Parameters.Count + ") for " + ToString() + ". " +
                 "Explanation: " +
-                "This method expects " + Parameters.Count + " parameters (" + string.Join(", ",Parameters.Select(p => p.Key.PToString)) + ") " +
+                "This method expects " + Parameters.Count + " parameters (" + string.Join(", ", Parameters.Select(p => p.Key.PToString)) + ") " +
                 "but " + parameters.Length + " was given (" + string.Join(", ", parameters.Select(p => p.GetType().ToStringVeryShort())) + ")");
             var retval = RouteTemplates[0];
             for (var i = 0; i < parameters.Length; i++) {
@@ -789,8 +789,7 @@ namespace AgoRapide.API {
             var cid = GetClassMember(System.Reflection.MethodBase.GetCurrentMethod(), db).Id;
             var classMembers = ApplicationPart.AllApplicationParts.Where(e => e.Value is ClassMember).Select(e => (ClassMember)e.Value).ToList();
             AllMethods.ForEach(method => {
-                void updater<T>(PropertyKey key, T value)
-                { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
+                void updater<T>(PropertyKey key, T value) { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
                     db.UpdateProperty(cid, method, key, value, result: null, SkipSetValid: TimeSpan.FromDays(1)); // Use of SkipSetValid reduces startup time of application, especially useful when developing.
                 }
                 var idFriendly = method.PV<string>(APIMethodP.ImplementatorIdFriendly.A());
@@ -856,8 +855,7 @@ namespace AgoRapide.API {
 
             if (method.Properties == null) method.Properties = new ConcurrentDictionary<CoreP, Property>();
 
-            void updater<T>(PropertyKey key, T value)
-            { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
+            void updater<T>(PropertyKey key, T value) { // Bug with auto formatting (CTRL-K, D)? Brace is not correct placed
                 db.UpdateProperty(cid, method, key, value, result: null, SkipSetValid: TimeSpan.FromDays(1)); // Use of SkipSetValid reduces startup time of application, especially useful when developing.
             }
 
@@ -885,7 +883,7 @@ namespace AgoRapide.API {
             /// TODO: Add check for <see cref="CoreP.Key"/> and only suggest <see cref="CoreP.Value"/>, 
             /// TODO: that are valid for the given key.
             var suggestedUrls = new List<string>();
-            var suggestedBaseEntityMethodUrls = new List<string>();
+            var entityOperationUrls = new List<string>();
             if (method.Parameters.Count == 0) {
                 suggestedUrls.Add(method.RouteTemplates[0]);
             } else if (method.Parameters.All(p => p.Key.A.SampleValues != null && p.Key.A.SampleValues.Length > 0)) {
@@ -897,30 +895,44 @@ namespace AgoRapide.API {
                 } else {
                     var p = method.Parameters[0].Key;
                     p.A.SampleValues.ForEach(v0 => {
-                        /// TODO: Make better code than this!
+                        /// TODO: Make better code than this!                       
                         var t0 = t.Replace("{" + p.PToString + "}", v0);
-                        var tBaseEntityMethod0 = p.CoreP != CoreP.QueryId ? null : t; // Keep {QueryId} in this URL
+
+                        // Keep {QueryId} in this URL
+                        // Note that if first parameter is not {QueryId} then no entity operations will be suggested
+                        // as entity operation is always assume to start with a {QueryId} in order to identify relevant entities.
+                        var entityOperation0 = p.CoreP != CoreP.QueryId ? null : t;
+
                         if (method.Parameters.Count <= 1) {
                             suggestedUrls.Add(t0);
-                            if (tBaseEntityMethod0 != null) suggestedBaseEntityMethodUrls.Add(tBaseEntityMethod0);
+                            if (entityOperation0 != null) {
+                                // Only Something/{QueryId} will be suggested (since only one parameter)
+                                entityOperationUrls.Add(entityOperation0);
+                            }
                         } else {
                             p = method.Parameters[1].Key;
                             p.A.SampleValues.ForEach(v1 => {
                                 /// TODO: Make better code than this!
                                 var t1 = t0.Replace("{" + p.PToString + "}", v1);
-                                var tBaseEntityMethod1 = tBaseEntityMethod0?.Replace("{" + p.PToString + "}", v1) ?? null;
+                                var entityOperation1 = entityOperation0?.Replace("{" + p.PToString + "}", v1) ?? null;
                                 if (method.Parameters.Count <= 2) {
                                     suggestedUrls.Add(t1);
-                                    if (tBaseEntityMethod1 != null) suggestedBaseEntityMethodUrls.Add(tBaseEntityMethod1);
+                                    if (entityOperation1 != null) {
+                                        // Only Something/{QueryId}/SomeOperation will be suggested (since only two parameters)
+                                        entityOperationUrls.Add(entityOperation1);
+                                    }
                                 } else {
                                     p = method.Parameters[2].Key;
                                     p.A.SampleValues.ForEach(v2 => {
                                         /// TODO: Make better code than this!
                                         var t2 = t1.Replace("{" + p.PToString + "}", v2);
-                                        var tBaseEntityMethod2 = tBaseEntityMethod1?.Replace("{" + p.PToString + "}", v2) ?? null;
+                                        var entityOperation2 = entityOperation1?.Replace("{" + p.PToString + "}", v2) ?? null;
                                         if (method.Parameters.Count <= 3) {
                                             suggestedUrls.Add(t2);
-                                            if (tBaseEntityMethod2 != null) suggestedBaseEntityMethodUrls.Add(tBaseEntityMethod2);
+                                            if (entityOperation2 != null) {
+                                                // Only Something/{QueryId}/SomeOperation/AnotherCombination will be suggested (since only three parameters)
+                                                entityOperationUrls.Add(entityOperation2);
+                                            }
                                         } else {
                                             // Add more permutations. 
                                             // TODO: Make better code than this!
@@ -937,8 +949,8 @@ namespace AgoRapide.API {
             updater(CoreP.SuggestedUrl.A(), suggestedUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl.ToString() + s)).ToList());
 
             // TODO: Fix reason for duplicates occurring here (necessitating the Distinct-operation)
-            suggestedBaseEntityMethodUrls = suggestedBaseEntityMethodUrls.Distinct().ToList();
-            updater(APIMethodP.BaseEntityMethodUrl.A(), suggestedBaseEntityMethodUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl.ToString() + s)).ToList());
+            entityOperationUrls = entityOperationUrls.Distinct().ToList();
+            updater(APIMethodP.EntityOperationUrl.A(), entityOperationUrls.Select(s => new Uri(Util.Configuration.C.BaseUrl.ToString() + s)).ToList());
 
             if (method.MA.Environment < Util.Configuration.C.Environment) {
                 IgnoredMethods.Add(method); // Moved from start. We want to update database anyway.
@@ -997,11 +1009,26 @@ namespace AgoRapide.API {
         /// </summary>
         [PropertyKey(
             Description =
+                "Contains suggested URLs for operating on entities.\r\n" +
+                "Will always contain {QueryId} within, like \"Person/{QueryId}/SetInvalid.\r\n" +
+                "In other words contains possible URLs (containing {QueryId} as first parameter) that this method is relevant for.\r\n" +
+                "\r\n" +
                 "Equivalent to -" + nameof(CoreP.SuggestedUrl) + "- with a -" + nameof(QueryId) + "- parameter " +
-                "except that the parameter {queryId} is left as a literal string within the string",
+                "except that the parameter {queryId} is left as a literal string within the string.\r\n" +
+                "\r\n" +
+                "Examples: \r\n" +
+                "  For a method Person/{QueryId}:\r\n" +
+                "     Person/{QueryId}\r\n" +
+                "  For a method Person/{QueryId}/{PropertyOperation}: (" + nameof(PropertyOperation) + ") \r\n" +
+                "     Person/{QueryId}/SetValid\r\n" +
+                "     Person/{QueryId}/SetInvalid\r\n" +
+                "\r\n" +
+                "The practical application of this is to automatically suggest in the resulting API relevant operations that " +
+                "can be performed on a given entity (see -" + nameof(BaseEntity.EntityOperationUrls) + "-)). This puts lesser " +
+                "demand on generating a user interface since many of the relevant operations are automatically generated",
             IsMany = true,
             Type = typeof(Uri), AccessLevelRead = AccessLevel.Anonymous, PriorityOrder = PriorityOrder.Important, Parents = new Type[] { typeof(APIMethod) })]
-        BaseEntityMethodUrl,
+        EntityOperationUrl,
 
         /// <summary>
         /// Does not originate from <see cref="APIMethodAttribute.RouteTemplate"/> but from

@@ -572,19 +572,13 @@ namespace AgoRapide.Core {
             return header + function();
         }
 
-        /// <summary>
-        /// Note that included values are not limited to <see cref="CoreAPIMethod.BaseEntityMethod"/>.
-        /// TODO: Maybe therefore change name of this property?
-        /// </summary>
-        private static ConcurrentDictionary<Type, List<APIMethod>> _baseEntityMethodsCache = new ConcurrentDictionary<Type, List<APIMethod>>();
-        [ClassMember(
-            Description =
-                "Returns all methods actual for instances of a given (-" + nameof(BaseEntity) + "-) type. " +
-                "Note that the methods returned are not limited to -" + nameof(CoreAPIMethod.BaseEntityMethod) + "-.")]
-        public static List<APIMethod> GetBaseEntityMethods(this Type type) => _baseEntityMethodsCache.GetOrAdd(type, t => APIMethod.AllMethods.Where(m =>
+        private static ConcurrentDictionary<Type, List<APIMethod>> _entityOperationUrlsCache = new ConcurrentDictionary<Type, List<APIMethod>>();
+        [ClassMember(Description = 
+            "Returns relevant methods containing -" + nameof(APIMethodP.EntityOperationUrl) + "- for the given type.\r\n")]
+        public static List<APIMethod> GetEntityOperationUrlsForType(this Type type) => _entityOperationUrlsCache.GetOrAdd(type, t => APIMethod.AllMethods.Where(m =>
             m.EntityType != null &&
             m.EntityType.IsAssignableFrom(t) &&
-            m.PV<List<Uri>>(APIMethodP.BaseEntityMethodUrl.A()).Count > 0
+            m.PV<List<Uri>>(APIMethodP.EntityOperationUrl.A()).Count > 0
         ).ToList());
 
         /// <summary>

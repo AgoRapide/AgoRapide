@@ -166,7 +166,9 @@ namespace AgoRapide.Core {
         /// <param name="entity">Id may be null (in which case empty list will be returned)</param>
         /// <param name="strict">If FALSE then will always return both <see cref="SetOperator.Remove"/> and <see cref="SetOperator.Union"/></param>
         /// <returns></returns>
-        [ClassMember(Description = "Does a best effort attempt at returning correct data. Note that the returned result may have omissions or contain superfluous items")]
+        [ClassMember(Description = 
+            "Does a best effort attempt at returning correct data. " +
+            "Note that the returned result may have omissions or contain superfluous items")]
         public static List<GeneralQueryResult> GetPossibleContextOperationsForCurrentUserAndEntity(Request request, BaseEntity entity, bool strict) {
             var retval = new List<GeneralQueryResult>();
             if (entity is Property) return retval; // This most probably only creates confusion in the API HTML administrative interface.

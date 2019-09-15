@@ -539,7 +539,7 @@ namespace AgoRapide {
             });
 
             // Suggested URLs for this specific entity
-            if (Id > 0) retval.Append("<p>" + string.Join("<br>", BaseEntityUrls.Select(url => request.API.CreateAPILink(url.Item1).HTMLEncloseWithinTooltip(url.Item2))) + "</p>");
+            if (Id > 0) retval.Append("<p>" + string.Join("<br>", EntityOperationUrls.Select(url => request.API.CreateAPILink(url.uri).HTMLEncloseWithinTooltip(url.description))) + "</p>");
 
             retval.AppendLine("<!--DELIMITER-->"); // Useful if sub-class wants to insert something in between here
             retval.AppendLine(CreateHTMLForExistingProperties(request));
@@ -547,19 +547,35 @@ namespace AgoRapide {
             return retval.ToString();
         }
 
-        private List<(Uri, string)> _baseEntityUrls;
+        private List<(Uri, string)> _entityOperationUrls;
         /// <summary>
-        /// TODO: Maybe rename into "UrlsForOperationOnThisEntity" or "RelevantUrls"
         /// 
-        /// Returns <see cref="Extensions.GetBaseEntityMethods(Type)"/> relevant for this instance, with this.<see cref="Id"/> filled in, that is, returns complete URLs.
-        /// 
-        /// See also <see cref="Context.GetPossibleContextOperationsForCurrentUserAndEntity"/>
         /// </summary>
-        [ClassMember(Description = "Returns urls (with \"link text\" / help-text) for operation on this entity.")]
-        public List<(Uri, string)> BaseEntityUrls => _baseEntityUrls ?? (_baseEntityUrls = GetType().GetBaseEntityMethods().SelectMany(m => m.PV<List<Uri>>(APIMethodP.BaseEntityMethodUrl.A()).Select(uri => (new Uri(uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString())), m.A.Description))).OrderBy(url => url.ToString()).ToList());
+        [ClassMember(Description =
+            "Returns automatically generated urls (with \"link text\" / help-text) for operating on this entity.\r\n" +
+            "The urls have -" + nameof(BaseEntity.Id) + "- filled in, that is, this method returns complete (clickable) URLs. " +
+            "\r\n" +
+            "Works through -" + nameof(Extensions.GetEntityOperationUrlsForType) + "- and -" + nameof(APIMethodP.EntityOperationUrl) + "- " +
+            "in order to give operations relevant for this instance.\r\n" +
+            "\r\n" +
+            "The practical application of this is to automatically suggest in the resulting API relevant operations that " +
+            "can be performed on a given entity. This puts lesser " +
+            "demand on generating a user interface since many of the relevant operations are automatically generated.\r\n" +
+            "\r\n" +
+            "Example for a Person-type entity could for instance be:\r\n" +
+            "({http://localhost:52668/api/Person/298789}, \"Shows entities of type -Person- as identified by {QueryId}.\"\r\n" +
+            "({http://localhost:52668/api/Person/298789/SetInvalid}, \"Operates on property as identified by {QueryId} with {PropertyOperation} one of SetValid, SetInvalid.\".\r\n" +
+            "\r\n" +
+            "See also -" + nameof(Context.GetPossibleContextOperationsForCurrentUserAndEntity) + "-."
+        )]
+        public List<(Uri uri, string description)> EntityOperationUrls => _entityOperationUrls ?? (_entityOperationUrls =
+            GetType().GetEntityOperationUrlsForType().SelectMany(m => m.PV<List<Uri>>(APIMethodP.EntityOperationUrl.A()).Select(
+                uri => (new Uri(uri.ToString().Replace("{" + CoreP.QueryId + "}", Id.ToString())), m.A.Description))).OrderBy(
+                url => url.ToString()).ToList());
 
         /// <summary>
-        /// Creates an HTML representation of the existing properties for this entity, including input fields and save buttons (through <see cref="Property.ToHTMLTableRow"/>
+        /// Creates an HTML representation of the existing properties for this entity, 
+        /// including input fields and save buttons (for changing the value of the properties) (through <see cref="Property.ToHTMLTableRow"/>).
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -594,7 +610,8 @@ namespace AgoRapide {
         }
 
         /// <summary>
-        /// Creates an HTML representation for properties to add for this entity, including input fields and save buttons (through <see cref="Property.ToHTMLTableRow"/>
+        /// Creates an HTML representation for properties to add for this entity, 
+        /// including input fields and save buttons (through <see cref="Property.ToHTMLTableRow"/>
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -1053,5 +1070,4 @@ namespace AgoRapide {
         public Dictionary<string, JSONProperty0> Properties { get; set; }
         public long Id { get; set; }
     }
-
 }

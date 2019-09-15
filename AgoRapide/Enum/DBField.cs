@@ -25,11 +25,11 @@ namespace AgoRapide {
         AgoRapideEnumType = EnumType.PropertyKey)] /// Note choice of <see cref="EnumType"/> (and correspondingly <see cref="PropertyKeyAttribute"/> below)
     public enum DBField {
 
+        /// <summary>
+        /// Note how None is not 0 but -1 (<see cref="Util.EnumGetValues{T}"/> should therefore be used with caution as it defaults to excluding the 0-value)
+        /// </summary>
         None = -1,
 
-        /// <summary>
-        /// Note how does not contain None (<see cref="Util.EnumGetValues{T}"/> should therefore be used with caution)
-        /// </summary>
         [PropertyKey(
             Description = "Primary key in database. Corresponds to -" + nameof(CoreP.DBId) + "-.",
             Type = typeof(long))]
@@ -99,21 +99,35 @@ namespace AgoRapide {
             Type = typeof(string))]
         strv = 11,
 
+        /// TODO: Currently (Sep 2019) properties are stored with individual fields for information about valid and invalid 
+        /// TODO: (<see cref="DBField.valid"/> / <see cref="DBField.vid"/> and <see cref="DBField.invalid"/> / <see cref="DBField.iid"/>)
+        /// TODO: with the concept of <see cref="PropertyOperation"/> for setting these values.
+        /// TODO: A possible change in database structure could be having properties 
+        /// TODO: "acting" on other properties, like SetValid / SetInvalid being stored
+        /// TODO: as separate properties in the databasen. This would get rid of four <see cref="DBField"/>-values.
+        /// TODO: In addition it would also enable true immutable storage of properties in the database, with
+        /// TODO: corresponding possibilities for, among others things, blockchain validation.
         [PropertyKey(
             Description = "Timestamp when last known valid",
             Type = typeof(DateTime))]
         valid = 12,
 
+        /// TODO: See documention for <see cref="DBField.valid"/> for how we could possible get rid of 
+        /// TODO. <see cref="DBField.valid"/> / <see cref="DBField.vid"/> and <see cref="DBField.invalid"/> / <see cref="DBField.iid"/>.
         [PropertyKey(
             Description = "Validator id (entity which last validated this property)",
             Type = typeof(long))]
         vid = 13,
 
+        /// TODO: See documention for <see cref="DBField.valid"/> for how we could possible get rid of 
+        /// TODO. <see cref="DBField.valid"/> / <see cref="DBField.vid"/> and <see cref="DBField.invalid"/> / <see cref="DBField.iid"/>.
         [PropertyKey(
             Description = "Timestamp when invalidated (NULL if still valid (that is NULL indicates 'current' properties))",
             Type = typeof(DateTime))]
         invalid = 14,
 
+        /// TODO: See documention for <see cref="DBField.valid"/> for how we could possible get rid of 
+        /// TODO. <see cref="DBField.valid"/> / <see cref="DBField.vid"/> and <see cref="DBField.invalid"/> / <see cref="DBField.iid"/>.
         [PropertyKey(
             Description = "Invalidator id (entity which invalidated this property)",
             Type = typeof(long))]
