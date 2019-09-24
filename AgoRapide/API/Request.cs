@@ -26,7 +26,13 @@ namespace AgoRapide.API {
         public APIMethod Method { get; private set; }
 
         /// <summary>
-        /// May be null (for instance for anonymous requests)
+        /// The entity identified as the one creating this request. 
+        /// Evaluation of access rights, the <see cref="Context"/>-concept and so on are all based on this identity.
+        /// 
+        /// (Note that the actual entity doing the request may actually be given as <see cref="BaseEntity.RepresentedByEntity"/>,
+        /// that is CurrentUser.RepresentedByEntity. See <see cref="BaseDatabase.SwitchIfHasEntityToRepresent"/>.)
+        /// 
+        /// May be null (for instance for anonymous requests). 
         /// </summary>
         public BaseEntity CurrentUser { get; set; }
 

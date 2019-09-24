@@ -17,7 +17,10 @@ namespace AgoRapide.Core {
     public class Configuration : ApplicationPart {
 
         public ConfigurationAttribute _c { get; private set; }
-        public ConfigurationAttribute C { get => _c ?? throw new NullReferenceException(nameof(C)); set => _c = value ?? throw new NullReferenceException(nameof(value)); }
+        public ConfigurationAttribute C {
+            get => _c ?? throw new NullReferenceException(nameof(C));
+            set => _c = value ?? throw new NullReferenceException(nameof(value));
+        }
 
         /// <summary>
         /// Dummy constructor for use by <see cref="BaseDatabase.TryGetEntityById"/>. 

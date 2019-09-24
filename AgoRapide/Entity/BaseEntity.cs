@@ -15,10 +15,12 @@ namespace AgoRapide {
 
     /// <summary>
     /// Main inheriting classes:
-    /// <see cref="ApplicationPart"/>
+    /// <see cref="ApplicationPart"/>, 
     /// <see cref="APIDataObject"/> 
     /// 
-    /// Other examples of inheriting classes: <see cref="Parameters"/>, <see cref="Result"/>. 
+    /// Other examples of inheriting classes: 
+    /// <see cref="Parameters"/>, 
+    /// <see cref="Result"/>. 
     /// 
     /// This class is deliberately not made abstract in order to faciliate use of "where T: new()" constraint in method signatures like
     /// <see cref="BaseDatabase.GetEntityById{T}(long)"/>. Since there are no natural abstract methods in this class this should be quite ok 

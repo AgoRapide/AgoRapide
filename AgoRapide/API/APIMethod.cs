@@ -393,49 +393,56 @@ namespace AgoRapide.API {
         /// </summary>
         public List<RouteSegmentClass> RouteSegments { get; private set; }
 
-        private static HashSet<Type> _allEntityTypes;
+        private static HashSet<Type> _allBaseEntityDerivedTypes;
         /// <summary>
+        /// To be called once at application startup with relevant assemblies as parameter. 
         /// </summary>
         /// <param name="clientAssemblies">
-        /// Used to look for <see cref="AgoRapide.BaseEntity"/>-derived class in your project. 
-        /// Do not include assembly where <see cref="BaseEntity"/> resides as that is included automatically
-        /// </param>
-        /// <param name="exclude">
-        /// Types to exclude. You might want to exclude <see cref="Person"/> as that class is provided only out of convenience.
+        /// Used to look for the <see cref="AgoRapide.BaseEntity"/>-derived types in your project. 
         /// 
-        /// In addition to types given here the following will also be excluded:
+        /// You do not need to include the assembly where <see cref="BaseEntity"/> resides as that is included automatically 
+        /// (in other words, you do not need to include the AgoRapide.dll-assembly itself).
+        /// </param>
+        /// <param name="typesToExclude">
+        /// You might want to exclude <see cref="Person"/> as that class is provided only out of convenience.
+        /// 
+        /// In addition to types given here the following types will always be excluded:
         /// All <see cref="Type.IsGenericTypeDefinition"/>
         /// All <see cref="Type.IsAbstract"/>
-        /// <see cref="BaseEntity"/>
+        /// The type of <see cref="BaseEntity"/> itself.
         /// </param>
         [ClassMember(Description =
-            "Adds all -" + nameof(BaseEntity) + "- types found in the given assemblies to -" + nameof(APIMethod.AllEntityTypes) + "-. "
+            "Adds all -" + nameof(BaseEntity) + "--derived types found in the given assemblies to -" + nameof(APIMethod.AllBaseEntityDerivedTypes) + "-. " +
+            "(Note however that -" + nameof(BaseEntity) + "- itself is NOT added, together with generic and abstract types.)"
         )]
-        public static void SetEntityTypes(IEnumerable<System.Reflection.Assembly> clientAssemblies, IEnumerable<Type> exclude) {
+        public static void FindAndSetAllBaseEntityDerivedTypes(IEnumerable<System.Reflection.Assembly> clientAssemblies, IEnumerable<Type> typesToExclude) {
             Util.AssertCurrentlyStartingUp();
-            var assemblies = clientAssemblies.ToList(); assemblies.Add(typeof(BaseEntity).Assembly);
-            _allEntityTypes = new HashSet<Type>();
-            assemblies.SelectMany(a => a.GetTypes()).Where(t => {
+            if (_allBaseEntityDerivedTypes != null) throw new NotNullReferenceException(nameof(_allBaseEntityDerivedTypes) + ": Call to " + nameof(FindAndSetAllBaseEntityDerivedTypes) + " should only be done once at application startup");
+            _allBaseEntityDerivedTypes = new HashSet<Type>();
+            var assemblies = clientAssemblies?.ToList() ?? throw new NullReferenceException(nameof(clientAssemblies));
+            if (!assemblies.Contains(typeof(BaseEntity).Assembly)) assemblies.Add(typeof(BaseEntity).Assembly);
+            assemblies.Distinct().SelectMany(a => a.GetTypes()).Where(t => {
                 if (!typeof(BaseEntity).IsAssignableFrom(t)) return false;
                 if (t.IsGenericTypeDefinition) return false;
                 if (t.IsAbstract) return false; /// Typically <see cref="ApplicationPart"/>, <see cref="APIDataObject"/>, <see cref="BaseSynchronizer"/>
-                if (t.Equals(typeof(BaseEntity))) return false; /// Note how this is not abstract. See else comment for <see cref="_allEntityTypes"/>, do not include <see cref="BaseEntity"/>                
+                if (t.Equals(typeof(BaseEntity))) return false; /// Note how this is not abstract. See else comment for <see cref="_allBaseEntityDerivedTypes"/>, do not include <see cref="BaseEntity"/>                
+                if (typesToExclude?.Contains(t) ?? throw new NullReferenceException(nameof(typesToExclude))) return false;
                 return true;
             }).ForEach(t => {
-                if (t.Equals(typeof(BaseEntity))) throw new InvalidTypeException(t, "Not needed in " + nameof(AllEntityTypes) + " collection");
-                if (_allEntityTypes.Contains(t)) throw new InvalidTypeException(t, "Already contained in " + nameof(_allEntityTypes));
-                _allEntityTypes.Add(t);
+                if (t.Equals(typeof(BaseEntity))) throw new InvalidTypeException(t, "Not needed in " + nameof(AllBaseEntityDerivedTypes) + " collection"); // Strictly unnecessary assertion due to being excluded above, nice to clarify though.
+                if (_allBaseEntityDerivedTypes.Contains(t)) throw new InvalidTypeException(t, "Already contained in " + nameof(_allBaseEntityDerivedTypes));
+                _allBaseEntityDerivedTypes.Add(t);
             });
         }
 
         [ClassMember(
             Description =
-                "All relevant -" + nameof(BaseEntity) + "--types.\r\n" +
-                "Note how -" + nameof(BaseEntity) + "- is NOT included in this collection.",
+                "All relevant -" + nameof(BaseEntity) + "--derived  types for the whole application.\r\n" +
+                "Note how -" + nameof(BaseEntity) + "- is NOT included in this collection, together with generic and abstract types.",
             LongDescription =
-                "Set by -" + nameof(SetEntityTypes) + "-."
+                "Set by -" + nameof(FindAndSetAllBaseEntityDerivedTypes) + "- which again is called once at application startup."
         )]
-        public static HashSet<Type> AllEntityTypes { get => _allEntityTypes ?? throw new NullReferenceException(nameof(_allEntityTypes)); }
+        public static HashSet<Type> AllBaseEntityDerivedTypes => _allBaseEntityDerivedTypes ?? throw new NullReferenceException(nameof(_allBaseEntityDerivedTypes) + ": Should have been set at application startup by call to " + nameof(FindAndSetAllBaseEntityDerivedTypes));
 
         protected static Dictionary<string, APIMethod> _allMethodsByRouteTemplate;
         /// <summary>
@@ -690,7 +697,7 @@ namespace AgoRapide.API {
                 );
             }
 
-            var types = AllEntityTypes.ToList(); types.Add(typeof(BaseEntity));
+            var types = AllBaseEntityDerivedTypes.ToList(); types.Add(typeof(BaseEntity));
             types.ForEach(t => {
                 InvalidTypeException.AssertAssignable(t, typeof(BaseEntity), null);
                 var a = t.GetClassAttribute();

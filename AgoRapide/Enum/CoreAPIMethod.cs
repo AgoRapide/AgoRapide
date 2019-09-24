@@ -26,10 +26,12 @@ namespace AgoRapide {
         None,
 
         /// <summary>
-        /// Note that application specific and therefore not implemented in <see cref="BaseController"/>
+        /// Note that application specific and therefore not implemented in <see cref="BaseController"/>. 
+        /// There is a supporting metod <see cref="BaseController.GeneralQuery"/> however, that you should use. 
+        /// This supporting method is based on <see cref="ConfigurationAttribute.TPersonType"/>. 
         /// </summary>
         [EnumValue(Description =
-            "The application specific general query when looking up a context. " +
+            "The application specific general lookup query, usually when querying for instances of -" + nameof(ConfigurationAttribute.TPersonType) + "-. " +
             "Typical example could be somebody in a support department looking up a customer based on whatever identification is available. " +
             "Result is communicated through -" + nameof(GeneralQueryResult) + "-")]
         GeneralQuery,

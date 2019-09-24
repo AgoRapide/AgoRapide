@@ -15,7 +15,7 @@ namespace AgoRapide {
     /// Note that this class is NOT actually used in the AgoRapide-library itself.
     /// Is is provided out of convenience to make it easy to get started with the library. 
     /// 
-    /// You may exclude this class at call to <see cref="APIMethod.SetEntityTypes"/> (usually located in your Startup.cs).
+    /// You may exclude this class at call to <see cref="APIMethod.FindAndSetAllBaseEntityDerivedTypes"/> (usually located in your Startup.cs).
     /// 
     /// Note use of "TPerson" type-parameter in methods like <see cref="BaseController.AddFirstAdminUser{TPerson}"/> and <see cref="BaseController.GeneralQuery{TPerson}"/> 
     /// enabling you to implement your own class substituting for <see cref="Person"/>. 

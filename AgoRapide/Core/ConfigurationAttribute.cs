@@ -85,17 +85,42 @@ namespace AgoRapide.Core {
 
         public Environment Environment { get; set; } = Environment.Test;
 
+        private Type _TPersonType;
+        /// <summary>
+        /// Type of <see cref="AnonymousUser"/> and <see cref="SystemUser"/> and
+        /// the type normally used for <see cref="CoreAPIMethod.GeneralQuery"/>, in other words, the object type used for storing
+        /// information about human users of your system.
+        /// 
+        /// Normally set from <see cref="CoreStartup.Initialize"/>
+        /// </summary>
+        public Type TPersonType {
+            get => _TPersonType ?? throw new NullReferenceException(nameof(TPersonType) + ". Should have been set at application startup");
+            set {
+                if (_TPersonType != null) throw new NotNullReferenceException(nameof(TPersonType) + ": Call to " + nameof(TPersonType) + "[Set] should only be done once at application startup");
+                if (value == null) throw new ArgumentNullException(nameof(TPersonType));
+                if (!typeof(BaseEntity).IsAssignableFrom(value)) throw new InvalidTypeException(value, typeof(BaseEntity), nameof(TPersonType) + " must be assignable to " + typeof(BaseEntity).ToStringShort());
+                _TPersonType = value;
+            }
+        }
+
         private BaseEntity _anonymousUser;
         /// <summary>
         /// The <see cref="AnonymousUser"/> should be created at application startup if it does not exist in database.  
+        /// 
+        /// Normally set from <see cref="CoreStartup.Initialize"/>. Must be of type <see cref="TPersonType"/>. 
+        /// 
+        /// Used by <see cref="BasicAuthenticationAttribute.AuthenticateAsync"/> when the relevant API-method does not 
+        /// require authentication. 
         /// </summary>
         public BaseEntity AnonymousUser {
-            get {
-                if (_anonymousUser == null) throw new NullReferenceException(nameof(AnonymousUser) + ". Should have been set at application startup, like in your Startup.cs");
-                if (_anonymousUser.Id <= 0) throw new Exception(nameof(_anonymousUser) + " not set up correctly (" + nameof(_anonymousUser.Id) + ": " + _anonymousUser.Id + ")");
-                return _anonymousUser;
+            get => _anonymousUser ?? throw new NullReferenceException(nameof(AnonymousUser) + ". Should have been set at application startup");
+            set {
+                if (_anonymousUser != null) throw new NotNullReferenceException(nameof(_anonymousUser) + ": Call to " + nameof(AnonymousUser) + "[Set] should only be done once at application startup");
+                if (value == null) throw new ArgumentNullException(nameof(AnonymousUser));
+                if (value.Id <= 0) throw new ArgumentException(nameof(AnonymousUser) + " not set up correctly (" + nameof(value.Id) + ": " + value.Id + "), should be 1 or greater.");
+                InvalidTypeException.AssertEquals(value.GetType(), TPersonType, () => nameof(AnonymousUser) + " must be of type specified by configuration attribute " + nameof(TPersonType) + " (" + TPersonType.ToStringShort() + ")");
+                _anonymousUser = value;
             }
-            set => _anonymousUser = value ?? throw new NullReferenceException(nameof(AnonymousUser));
         }
 
         private BaseEntity _systemUser;
@@ -105,10 +130,19 @@ namespace AgoRapide.Core {
         /// <see cref="ClassMember"/> for that purpose. 
         /// 
         /// Note that <see cref="AnonymousUser"/> on the other hand, IS stored in database.
+        /// 
+        /// Normally set from <see cref="CoreStartup.Initialize"/>. Must be of type <see cref="TPersonType"/>. 
+        /// 
+        /// Used for making queries towards database when <see cref="AccessLevel.System"/> is needed.
         /// </summary>
         public BaseEntity SystemUser {
-            get => _systemUser ?? throw new NullReferenceException(nameof(SystemUser) + ". Should have been set at application startup, like in your Startup.cs");
-            set => _systemUser = value ?? throw new NullReferenceException(nameof(SystemUser));
+            get => _systemUser ?? throw new NullReferenceException(nameof(SystemUser) + ". Should have been set at application startup");
+            set {
+                if (_systemUser != null) throw new NotNullReferenceException(nameof(_systemUser) + ": Call to " + nameof(SystemUser) + "[Set] should only be done once at application startup");
+                if (value == null) throw new ArgumentNullException(nameof(SystemUser));
+                InvalidTypeException.AssertEquals(value.GetType(), TPersonType, () => nameof(SystemUser) + " must be of type specified by configuration attribute " + nameof(TPersonType) + " (" + TPersonType.ToStringShort() + ")");
+                _systemUser = value;
+            }
         }
 
         private List<string> _superfluousStackTraceStrings = new List<string>();

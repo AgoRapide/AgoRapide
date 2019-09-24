@@ -473,7 +473,7 @@ namespace AgoRapide.Core {
         /// The return value is considered SQL "safe" in the sense that it may be inserted directly into an SQL statement. 
         /// 
         /// <see cref="Extensions.ToStringDB"/> corresponds to <see cref="Util.TryGetTypeFromString"/>
-        /// Now how types in <see cref="APIMethod.AllEntityTypes"/> are stored in a short-hand form.
+        /// Now how types in <see cref="APIMethod.AllBaseEntityDerivedTypes"/> are stored in a short-hand form.
         /// 
         /// See also <see cref="ToStringShort(Type)"/> and <see cref="ToStringVeryShort(Type)"/>
         ///
@@ -511,7 +511,7 @@ namespace AgoRapide.Core {
         /// <param name="type"></param>
         /// <returns></returns>
         public static string ToStringDB(this Type type) => _toStringDBCache.GetOrAdd(type, t => {
-            if (APIMethod.AllEntityTypes.Contains(t)) return t.ToStringVeryShort(); /// Now how types in <see cref="APIMethod.AllEntityTypes"/> are stored in a short-hand form.
+            if (APIMethod.AllBaseEntityDerivedTypes.Contains(t)) return t.ToStringVeryShort(); /// Now how types in <see cref="APIMethod.AllBaseEntityDerivedTypes"/> are stored in a short-hand form.
             var retval = t.ToString() + "," + t.Assembly.GetName().Name;
             if (!t.IsGenericType) return ToStringShort(t) + " : " + retval;
             var arguments = t.GetGenericArguments();

@@ -19,12 +19,12 @@ namespace AgoRapide.Core {
         public static bool CurrentlyStartingUp = true;
         [ClassMember(
             Description =
-                "Normally called form non-thread safe methods that should be run single-threaded at application startup only.",
+                "Normally called from non-thread safe methods that should be run single-threaded at application startup only.",
             LongDescription =
                 "NOTE: If you want to remove a call to this method somewhere in the AgoRapide code " +
                 "then you must first make that code, and all corresponding collections and methods, thread-safe first.\r\n" +
                 "NOTE: Most probably you should NEVER remove any such calls as there is also a performance advantage of finished initialization " +
-                "in \"peace and quite\" at application startup.")]
+                "in \"peace and quiet\" at application startup.")]
         public static void AssertCurrentlyStartingUp() {
             if (!CurrentlyStartingUp) throw new SomeCodeOnlyToBeRunAtStartupHasBeenCalledAfterStartupFinishedException();
         }
@@ -454,7 +454,7 @@ namespace AgoRapide.Core {
         public static Type GetTypeFromString(string strType) => TryGetTypeFromString(strType, out var retval) ? retval : throw new InvalidTypeException(strType);
         /// <summary>
         /// <see cref="Extensions.ToStringDB"/> corresponds to <see cref="Util.TryGetTypeFromString"/>
-        /// Now how types in <see cref="APIMethod.AllEntityTypes"/> are understood also in a short-hand form. 
+        /// Now how types in <see cref="APIMethod.AllBaseEntityDerivedTypes"/> are understood also in a short-hand form. 
         /// 
         /// See <see cref="Extensions.ToStringDB"/> for documentation. 
         /// 
@@ -470,11 +470,11 @@ namespace AgoRapide.Core {
                     case 1:
                         s = t[0].Trim();
                         if ("Entity".Equals(s)) return typeof(BaseEntity);
-                        var candidates = APIMethod.AllEntityTypes.Where(e => s.Equals(e.ToStringVeryShort()) || s.Equals(e.ToStringShort()) || s.Equals(e.ToString())).ToList();
+                        var candidates = APIMethod.AllBaseEntityDerivedTypes.Where(e => s.Equals(e.ToStringVeryShort()) || s.Equals(e.ToStringShort()) || s.Equals(e.ToString())).ToList();
                         switch (candidates.Count) {
                             case 0: break; /// Finding type as a <see cref="BaseEntity"/>-type did not succeed. Continue in normal manner.
                             case 1: return candidates[0];
-                            default: throw new InvalidCountException(candidates.Count, 1, "Multiple " + nameof(APIMethod.AllEntityTypes) + " corresponds to '" + strType + "'. (" + string.Join(",", candidates.Select(e => e.ToStringDB())) + ")");
+                            default: throw new InvalidCountException(candidates.Count, 1, "Multiple " + nameof(APIMethod.AllBaseEntityDerivedTypes) + " corresponds to '" + strType + "'. (" + string.Join(",", candidates.Select(e => e.ToStringDB())) + ")");
                         }
                         break;
                     case 2: s = t[1].Trim(); break;

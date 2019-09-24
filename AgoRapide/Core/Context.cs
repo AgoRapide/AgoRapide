@@ -443,17 +443,17 @@ namespace AgoRapide.Core {
         /// 
         /// TODO: Implement traversing over more than one level. Start with a limit of two levels (do not use recursivity)
         /// </summary>
-        /// <param name="fromType">Must be one of <see cref="APIMethod.AllEntityTypes"/></param>
-        /// <param name="toType">Must be one of <see cref="APIMethod.AllEntityTypes"/></param>
+        /// <param name="fromType">Must be one of <see cref="APIMethod.AllBaseEntityDerivedTypes"/></param>
+        /// <param name="toType">Must be one of <see cref="APIMethod.AllBaseEntityDerivedTypes"/></param>
         /// <param name="traversal">Returned value will be either null or have Count > 0</param>
         /// <returns></returns>
         public static bool TryGetTraversal(Type fromType, Type toType, out List<Traversal> traversal) {
             if (_getTraversalCache == null) {
                 Util.AssertCurrentlyStartingUp();
                 _getTraversalCache = new Dictionary<Type, Dictionary<Type, List<Traversal>>>();
-                APIMethod.AllEntityTypes.ForEach(from => {
+                APIMethod.AllBaseEntityDerivedTypes.ForEach(from => {
                     var traversalFrom = (_getTraversalCache[from] = new Dictionary<Type, List<Traversal>>());
-                    APIMethod.AllEntityTypes.ForEach(to => {
+                    APIMethod.AllBaseEntityDerivedTypes.ForEach(to => {
                         var traversalThisCombination = new List<Traversal>();
                         from.GetChildProperties().Values.Where(p => p.Key.A.ForeignKeyOf != null).ForEach(key => { /// <see cref="TraversalDirection.FromForeignKey"/>
                             if (to.IsAssignableFrom(key.Key.A.ForeignKeyOf)) {
@@ -520,9 +520,9 @@ namespace AgoRapide.Core {
             public InvalidTraversalException(Type fromType, Type toType, string message) : base(
                 "Unable to traverse from " + fromType.ToStringVeryShort() + " to " + toType.ToStringVeryShort() + ".\r\n" +
                 (typeof(BaseEntity).IsAssignableFrom(fromType) ? "" : "Possible cause: " + nameof(fromType) + " not of type " + nameof(BaseEntity) + ".\r\n") +
-                (APIMethod.AllEntityTypes.Contains(fromType) ? "" : "Possible cause: " + nameof(fromType) + " not known by any " + nameof(APIMethod) + ".\r\n") +
+                (APIMethod.AllBaseEntityDerivedTypes.Contains(fromType) ? "" : "Possible cause: " + nameof(fromType) + " not known by any " + nameof(APIMethod) + ".\r\n") +
                 (typeof(BaseEntity).IsAssignableFrom(toType) ? "" : "Possible cause: " + nameof(toType) + " not of type " + nameof(BaseEntity) + ".\r\n") +
-                (APIMethod.AllEntityTypes.Contains(toType) ? "" : "Possible cause: " + nameof(toType) + " not known by any " + nameof(APIMethod) + ".\r\n") +
+                (APIMethod.AllBaseEntityDerivedTypes.Contains(toType) ? "" : "Possible cause: " + nameof(toType) + " not known by any " + nameof(APIMethod) + ".\r\n") +
                 "Details: " + message) { }
             public InvalidTraversalException(string message, Exception inner) : base(message, inner) { }
         }
