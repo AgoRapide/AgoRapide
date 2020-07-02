@@ -13,8 +13,8 @@ namespace AgoRapide {
 
     [Enum(
         AgoRapideEnumType = EnumType.DocumentationOnlyEnum,
-        Description = 
-            "Categories different types of enum used in AgoRapide. The most important one is " + nameof(PropertyKey) + ".\r\n" + 
+        Description =
+            "Categories different types of enum used in AgoRapide. The most important one is " + nameof(PropertyKey) + ".\r\n" +
             "Note how this enum -" + nameof(EnumType) + "- is itself a -" + nameof(EnumType.DocumentationOnlyEnum) + "-"
     )]
     public enum EnumType {
@@ -50,6 +50,6 @@ namespace AgoRapide {
         Description = "Provides a central repository of explanation of terms that are not present in the C# code.",
         LongDescription = "Corresponding -" + nameof(BaseAttribute) + "- is -" + nameof(EnumAttribute) + "- / -" + nameof(EnumValueAttribute) + "-. "
         )]
-        DocumentationOnlyEnum,        
+        DocumentationOnlyEnum,
     }
 }

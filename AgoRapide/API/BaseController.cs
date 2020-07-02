@@ -745,7 +745,7 @@ namespace AgoRapide.API {
             /// ResetEntityCache removed from code 28 Sep 2017 because does not work well with <see cref="BaseSynchronizer"/> / <see cref="CacheUse.All"/>
             // InMemoryCache.ResetEntityCache(); // Reset as a precaution
 
-            var msg = "An internal exception of type " + ex.GetType().ToStringShort() + " occurred in " + GetType().ToStringShort() + ".\r\n" +
+            var msg = "An internal exception of type " + Util.GetExceptionChainAsString(ex) + " occurred in " + GetType().ToStringShort() + ".\r\n" +
                     (string.IsNullOrEmpty(exceptionMessage) ? "" : "Exception message: " + exceptionMessage + ".\r\n") +
                     (string.IsNullOrEmpty(caller) ? "" : "Method that failed: " + caller + ".\r\n") +
                     "Consult log at server for more details.\r\n" +

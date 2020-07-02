@@ -20,7 +20,7 @@ namespace AgoRapide.Core {
     /// TODO: Implement a lot of properties here as <see cref="CoreP"/> and move documentation there so can be made available via 
     /// TODO: <see cref="BaseAttribute.GetProperties"/>-mechanism in order to push this information out to the API interface.
     /// </summary>
-    [Enum(Description =
+    [Class(Description =
         "Specialized version of -" + nameof(EnumValueAttribute) + "- which describes an enum value of type -" + nameof(EnumType.PropertyKey) + "- (see that one for documentation). " +
         "Member of -" + nameof(PropertyKey) + "-. (through -" + nameof(PropertyKeyAttributeEnriched) + "-). " +
         "Super class -" + nameof(EnumValueAttribute) + "- describes \"ordinary\" enum values (that is, those NOT of type -" + nameof(EnumType.PropertyKey) + "-)")]

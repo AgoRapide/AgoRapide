@@ -293,6 +293,19 @@ namespace AgoRapide.Core {
             }
         }
 
+        [ClassMember(Description =
+            "Follows the chain of " + nameof(Exception.InnerException) + " and returns types as comma-separated string"
+        )]
+        public static string GetExceptionChainAsString(Exception ex) {
+            var retval = new StringBuilder();
+            while (ex != null) {
+                if (retval.Length > 0) retval.Append(", ");
+                retval.Append(ex.GetType().ToStringShort());
+                ex = ex.InnerException;
+            }
+            return retval.ToString();
+        }
+
         /// <summary>
         /// Gives as much information about exception as possible.
         /// </summary>
@@ -300,6 +313,7 @@ namespace AgoRapide.Core {
         /// <returns></returns>
         public static string GetExeptionDetails(Exception ex) {
             var msg = new StringBuilder();
+            msg.AppendLine(GetExceptionChainAsString(ex));
             while (ex != null) {
                 msg.AppendLine("Exception: " + ex.GetType().ToStringShort() + "\r\n");
                 msg.AppendLine("Message: " + ex.Message.ToString() + "\r\n");
