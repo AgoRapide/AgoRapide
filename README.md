@@ -4,9 +4,9 @@
 - NOTE: a library for building data-oriented backend applications.
 ```
 
-NOTE: AgoRapide 2020 code is [here](https://bitbucket.org/BjornErlingFloetten/arcore/src) 
+NOTE: AgoRapide 2020 code is [here](https://bitbucket.org/BjornErlingFloetten/arcore) 
 
-NOTE: AgoRapide 2020 documentation is here: [here](http://bef.no/agorapidedoc/)
+NOTE: AgoRapide 2020 documentation is [here](http://bef.no/agorapidedoc/)
 
 .
 
@@ -16,7 +16,7 @@ NOTE: AgoRapide 2020 documentation is here: [here](http://bef.no/agorapidedoc/)
 Use AgoRapide and this goal comes within your reach!
 
 
-# AgoRapide
+# AgoRapide 2017
 Lightweight pragmatic integrated library for creation of .NET REST APIs offering JSON, HTML, PDF and CSV views. Key-value single table database storage with data-driven entity model. Written in C# 7.0 using Visual Studio 2017.
 
 &#x1F53A; PLEASE NOTE: AgoRapide is currently in the beta-stage of development. Do not use it for any production purposes yet. Only use it if you are curious and / or want to help us with contributions. One welcome contribution would for instance be attending to TODO's in this document! 
