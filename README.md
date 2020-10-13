@@ -3,10 +3,12 @@
 - NOTE: AgoRapide 2017 has been replaced with AgoRapide 2020, 
 - NOTE: a library for building data-oriented backend applications.
 ```
+
 NOTE: AgoRapide 2020 code is [here](https://bitbucket.org/BjornErlingFloetten/arcore/src) 
+
 NOTE: AgoRapide 2020 documentation is here: [here](http://bef.no/agorapidedoc/)
 
-
+.
 
 
 "The shape of a program should reflect only the problem it needs to solve" - [Paul Graham - Revenge of the Nerds](http://www.paulgraham.com/icad.html).
