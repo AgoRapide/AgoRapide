@@ -6,7 +6,7 @@
 
 NOTE: AgoRapide 2020 code is [here](https://bitbucket.org/BjornErlingFloetten/arcore) 
 
-NOTE: AgoRapide 2020 documentation is [here](http://bef.no/agorapidedoc/)
+NOTE: AgoRapide 2020 documentation is [here](http://ARNorthwind.AgoRapide.com/RQ/doc/toc)
 
 .
 
